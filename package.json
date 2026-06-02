@@ -1,0 +1,35 @@
+{
+  "name": "hakkyo-mvp",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.0",
+    "@tiptap/extension-image": "^3.24.0",
+    "@tiptap/extension-link": "^3.24.0",
+    "@tiptap/extension-placeholder": "^3.24.0",
+    "@tiptap/extension-youtube": "^3.24.0",
+    "@tiptap/react": "^3.24.0",
+    "@tiptap/starter-kit": "^3.24.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^6.23.1",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1"
+  }
+}
