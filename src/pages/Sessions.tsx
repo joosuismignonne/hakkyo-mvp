@@ -6,6 +6,7 @@ import {
   formatProgramDateRange,
   resolveApplicationDeadline,
   resolveVenue,
+  parseIncludedSessionsList,
   type TrackView,
 } from '../lib/programDisplay'
 import ApplyModal from '../components/ApplyModal'
@@ -140,9 +141,31 @@ function SectionLabel({ children, mobileHidden }: { children: React.ReactNode; m
   )
 }
 
-// Derive a program type label from track data — no DB changes required
+// Derive a program type label from included_sessions, falling back to class_count
 function resolveTrackType(s: TrackView): string | null {
   if (s.category === 'community') return 'Language Exchange'
+
+  const classes = parseIncludedSessionsList(s.included_sessions)
+    .map(c => c.toLowerCase())
+
+  if (classes.length > 0) {
+    const hasKo = classes.some(c => c.includes('korean'))
+    const hasEn = classes.some(c => c.includes('english'))
+    const hasFr = classes.some(c => c.includes('french'))
+    const hasAo = classes.some(c => c.includes('active output'))
+    const langCount = [hasKo, hasEn, hasFr].filter(Boolean).length
+
+    if (hasAo && langCount >= 2) return 'Full Course'
+    if (hasAo && langCount === 0) return 'Active Output'
+    if (hasEn && hasFr && !hasKo && !hasAo) return 'EN/FR Course'
+    if (hasKo && hasFr && !hasEn && !hasAo) return 'KR/FR Course'
+    if (hasKo && hasEn && !hasFr && !hasAo) return 'KR/EN Course'
+    if (hasKo && langCount === 1) return 'Korean Class'
+    if (hasEn && langCount === 1) return 'English Class'
+    if (hasFr && langCount === 1) return 'French Class'
+  }
+
+  // Fallback: derive from class_count / name
   const name = (s.name_en ?? '').toLowerCase()
   if (name.includes('active output')) return 'Active Output'
   if (s.class_count > 1) return 'Course'
@@ -151,7 +174,14 @@ function resolveTrackType(s: TrackView): string | null {
 }
 
 const TYPE_BADGE_STYLE: Record<string, string> = {
+  'Korean Class':       'bg-gray-100 text-gray-600',
+  'English Class':      'bg-gray-100 text-gray-600',
+  'French Class':       'bg-gray-100 text-gray-600',
   'Single Class':       'bg-gray-100 text-gray-500',
+  'EN/FR Course':       'bg-gray-100 text-gray-600',
+  'KR/FR Course':       'bg-gray-100 text-gray-600',
+  'KR/EN Course':       'bg-gray-100 text-gray-600',
+  'Full Course':        'bg-gray-100 text-gray-600',
   'Course':             'bg-gray-100 text-gray-600',
   'Active Output':      'bg-yellow-light text-yellow-hover',
   'Language Exchange':  'bg-blue-50 text-blue-500',

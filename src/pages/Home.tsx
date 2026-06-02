@@ -4,9 +4,31 @@ import { getTracks, getNotices } from '../lib/db'
 import { useLang } from '../context/LangContext'
 import type { ProgramTrack, Notice } from '../types'
 import ApplyModal from '../components/ApplyModal'
+import { parseIncludedSessionsList } from '../lib/programDisplay'
 
-// Minimal program type — same derivation as Sessions page
-function resolveTrackType(s: ProgramTrack): string | null {
+// Program type label derived from included_sessions — mirrors Sessions page logic
+function resolveTrackType(s: ProgramTrack & { included_sessions?: unknown }): string | null {
+  const classes = parseIncludedSessionsList(s.included_sessions)
+    .map(c => c.toLowerCase())
+
+  if (classes.length > 0) {
+    const hasKo = classes.some(c => c.includes('korean'))
+    const hasEn = classes.some(c => c.includes('english'))
+    const hasFr = classes.some(c => c.includes('french'))
+    const hasAo = classes.some(c => c.includes('active output'))
+    const langCount = [hasKo, hasEn, hasFr].filter(Boolean).length
+
+    if (hasAo && langCount >= 2) return 'Full Course'
+    if (hasAo && langCount === 0) return 'Active Output'
+    if (hasEn && hasFr && !hasKo && !hasAo) return 'EN/FR Course'
+    if (hasKo && hasFr && !hasEn && !hasAo) return 'KR/FR Course'
+    if (hasKo && hasEn && !hasFr && !hasAo) return 'KR/EN Course'
+    if (hasKo && langCount === 1) return 'Korean Class'
+    if (hasEn && langCount === 1) return 'English Class'
+    if (hasFr && langCount === 1) return 'French Class'
+  }
+
+  // Fallback: derive from class_count / name
   const name = (s.name_en ?? '').toLowerCase()
   if (name.includes('active output')) return 'Active Output'
   if (s.class_count > 1) return 'Course'
