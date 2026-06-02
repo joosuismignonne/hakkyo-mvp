@@ -23,7 +23,8 @@ export default function Nav() {
     <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
-        <Link to="/" className="font-bold text-base tracking-tight text-gray-900 shrink-0">
+        <Link to="/" className="flex items-center gap-2 font-bold text-base tracking-tight text-gray-900 shrink-0">
+          <img src="/logo.png" alt="HAKKYO" width={28} height={28} className="h-7 w-7 shrink-0 object-contain" />
           HAKKYO
         </Link>
 
