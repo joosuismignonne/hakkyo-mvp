@@ -5,6 +5,15 @@ import { useLang } from '../context/LangContext'
 import type { ProgramTrack, Notice } from '../types'
 import ApplyModal from '../components/ApplyModal'
 
+// Minimal program type — same derivation as Sessions page
+function resolveTrackType(s: ProgramTrack): string | null {
+  const name = (s.name_en ?? '').toLowerCase()
+  if (name.includes('active output')) return 'Active Output'
+  if (s.class_count > 1) return 'Course'
+  if (s.class_count === 1) return 'Single Class'
+  return null
+}
+
 function StatusBadge({ status, enrolled, capacity }: {
   status: 'open' | 'closed'; enrolled: number; capacity: number
 }) {
@@ -136,6 +145,7 @@ export default function Home() {
   const [tracks, setTracks] = useState<ProgramTrack[]>([])
   const [notices, setNotices] = useState<Notice[]>([])
   const [applying, setApplying] = useState<string | null>(null)
+  const [applyingLE, setApplyingLE] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -194,128 +204,195 @@ export default function Home() {
     <>
       {/* ── HERO ──────────────────────────────────────────────────── */}
       <div className="border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-4 py-10 md:py-14">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                HAKKYO
-              </h1>
-              <p className="text-gray-500 text-base">
-                Montréal Language Community
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link to="/sessions" className="btn-yellow px-5 py-2.5 text-base">
-                {t('Explore Programs', 'Explore Programs', 'Explore Programs')} →
+        <div className="max-w-5xl mx-auto px-4 py-20 md:py-32">
+          <div className="max-w-xl">
+            <p className="text-[11px] font-semibold tracking-[0.22em] text-gray-400 uppercase mb-7">
+              Montréal · Language · Community
+            </p>
+            <h1 className="text-5xl md:text-6xl font-light tracking-tight text-gray-900 leading-[1.04] mb-8">
+              HAKKYO
+            </h1>
+            <p className="text-base text-gray-500 leading-relaxed mb-10 max-w-sm">
+              {t(
+                '학교로 돌아가자. The feeling of school, again.',
+                '학교로 돌아가자. The feeling of school, again.',
+                '학교로 돌아가자. The feeling of school, again.',
+              )}
+            </p>
+            <div className="flex items-center gap-7">
+              <Link
+                to="/sessions"
+                className="text-sm font-medium text-gray-900 underline decoration-gray-300 underline-offset-4 hover:decoration-yellow transition-colors"
+              >
+                {t('프로그램 보기', 'Explore Programs', 'Voir les programmes')} →
               </Link>
-              <Link to="/schedule" className="btn-outline">
-                {t('View Board', 'View Board', 'View Board')}
+              <Link
+                to="/schedule"
+                className="text-sm text-gray-400 hover:text-gray-700 transition-colors"
+              >
+                {t('Board', 'Board', 'Tableau')}
               </Link>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-10 space-y-12">
+      <div className="max-w-5xl mx-auto px-4 py-14 md:py-20 space-y-20">
 
         {/* ── PROGRAMS ──────────────────────────────────────────── */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <p className="section-title">{t('프로그램', 'Programs', 'Programmes')}</p>
+          <div className="flex items-baseline justify-between mb-9">
+            <p className="section-title">{t('PROGRAMS', 'Programs', 'Programmes')}</p>
             <Link to="/sessions" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
               {t('전체 보기', 'View all', 'Tout voir')} →
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {tracks.map(s => (
-              <div key={s.id} className="card flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-gray-900">{sessionTitle(s)}</h3>
-                  <StatusBadge status={s.status} enrolled={s.enrolled} capacity={s.capacity} />
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {tracks.map(s => {
+              const audience  = targetAudience(s)
+              const included  = includedSessions(s)
+              const duration  = trackDuration(s)
+              const trackType = resolveTrackType(s)
+              const isOpen    = s.status === 'open'
 
-                <div className="text-sm text-gray-500 space-y-1">
-                  <div>
-                    <span className="hidden sm:inline text-gray-400 text-xs mr-1">{t('대상', 'Target', 'Cible')}:</span>
-                    {targetAudience(s)}
+              // Compact meta: only non-empty values, no "-" placeholders
+              const metaParts = [
+                included !== '-' ? included : null,
+                duration  !== '-' ? duration  : null,
+              ].filter(Boolean)
+
+              return (
+                <div key={s.id} className="card flex flex-col gap-0 p-0 overflow-hidden">
+                  {/* Card body */}
+                  <div className="flex flex-col gap-4 p-6 flex-1">
+                    {/* Status + type row */}
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={s.status} enrolled={s.enrolled} capacity={s.capacity} />
+                      {trackType && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                          {trackType}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title + audience */}
+                    <div className="flex-1 space-y-1.5">
+                      <h3 className="text-lg font-medium text-gray-900 leading-snug">
+                        {sessionTitle(s)}
+                      </h3>
+                      {audience !== '-' && (
+                        <p className="text-sm text-gray-400 leading-snug">{audience}</p>
+                      )}
+                    </div>
+
+                    {/* Meta */}
+                    {metaParts.length > 0 && (
+                      <p className="text-xs text-gray-400">
+                        {metaParts.join(' · ')}
+                      </p>
+                    )}
                   </div>
-                  <div>
-                    <span className="hidden sm:inline text-gray-400 text-xs mr-1">{t('포함 클래스', 'Included classes', 'Cours inclus')}:</span>
-                    {includedSessions(s)}
-                  </div>
-                  <div>
-                    <span className="hidden sm:inline text-gray-400 text-xs mr-1">{t('기간', 'Duration', 'Durée')}:</span>
-                    {trackDuration(s)}
+
+                  {/* Card footer */}
+                  <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-between gap-3 bg-gray-50/50">
+                    <span className="font-semibold text-gray-900 text-sm">{trackPrice(s)}</span>
+                    <button
+                      disabled={!isOpen}
+                      onClick={() => isOpen && setApplying(s.id)}
+                      className={isOpen
+                        ? 'btn-yellow px-5'
+                        : 'btn-outline px-5 opacity-40 cursor-not-allowed'}
+                    >
+                      {isOpen
+                        ? t('신청하기', 'Apply', 'S\'inscrire')
+                        : t('마감', 'Closed', 'Fermé')}
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
-                  <span className="font-semibold text-gray-900 text-sm shrink-0">{trackPrice(s)}</span>
-                  <TrackInterest trackId={s.id} t={t} />
-                </div>
-
-                <button
-                  disabled={s.status === 'closed'}
-                  onClick={() => s.status === 'open' && setApplying(s.id)}
-                  className={s.status === 'open'
-                    ? 'btn-yellow w-full text-center'
-                    : 'btn-outline w-full opacity-40 cursor-not-allowed'}
-                >
-                  {s.status === 'open'
-                    ? t('신청하기', 'Apply Now', 'S\'inscrire')
-                    : t('마감', 'Closed', 'Fermé')}
-                </button>
-              </div>
-            ))}
+              )
+            })}
             {tracks.length === 0 && (
-              <p className="text-sm text-gray-400 col-span-full">
-                No programs available yet.
+              <p className="text-sm text-gray-400 col-span-full py-6">
+                {t('등록된 프로그램이 없습니다.', 'No programs available yet.', 'Aucun programme disponible.')}
               </p>
             )}
           </div>
         </section>
 
-        {/* ── NOTICES ───────────────────────────────────────────── */}
+        {/* ── LANGUAGE EXCHANGE CTA ─────────────────────────────── */}
+        <section className="border-t border-gray-100 pt-14">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-8">
+            <div className="max-w-sm space-y-3">
+              <p className="text-[11px] font-semibold tracking-[0.22em] text-gray-400 uppercase">
+                Community
+              </p>
+              <h2 className="text-2xl font-light text-gray-900 tracking-tight">
+                Language Exchange
+              </h2>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {t(
+                  '수업 등록 없이 HAKKYO 커뮤니티에서 대화로 참여하세요.',
+                  'Join the HAKKYO community through conversation. No class registration required.',
+                  'Rejoignez la communauté par la conversation. Sans inscription obligatoire.',
+                )}
+              </p>
+            </div>
+            <button
+              onClick={() => setApplyingLE(true)}
+              className="btn-outline shrink-0 w-full sm:w-auto"
+            >
+              {t('Apply for Language Exchange', 'Apply for Language Exchange', 'S\'inscrire — Échange linguistique')}
+            </button>
+          </div>
+        </section>
+
+        {/* ── BOARD ─────────────────────────────────────────────── */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <p className="section-title">{t('보드', 'Board', 'Board')}</p>
+          <div className="flex items-baseline justify-between mb-9">
+            <p className="section-title">{t('Board', 'Board', 'Board')}</p>
             <Link to="/schedule" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
               {t('전체 보기', 'View all', 'Tout voir')} →
             </Link>
           </div>
 
-          <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
+          <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
             {notices.map(n => (
-              <div key={n.id} className="px-4 py-3.5 bg-white hover:bg-gray-50 transition-colors">
-                <div className="flex items-center gap-3 mb-1">
+              <div key={n.id} className="px-5 py-4 bg-white hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3 mb-1.5">
                   <span className={[
-                    'text-xs font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide',
+                    'text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide',
                     n.type === 'event'    ? 'bg-yellow-light text-yellow-hover' :
                     n.type === 'schedule' ? 'bg-blue-50 text-blue-600' :
                     'bg-gray-100 text-gray-500',
                   ].join(' ')}>
-                    {n.type === 'event'    ? t('이벤트', 'Events', 'Événements') :
-                     n.type === 'schedule' ? t('채용', 'Hiring', 'Recrutement') :
-                     t('공지', 'Notices', 'Avis')}
+                    {n.type === 'event'    ? t('Event', 'Event', 'Événement') :
+                     n.type === 'schedule' ? t('Hiring', 'Hiring', 'Recrutement') :
+                     t('Notice', 'Notice', 'Avis')}
                   </span>
                   <span className="text-xs text-gray-400">{n.date}</span>
                 </div>
                 <p className="font-medium text-sm text-gray-900">{noticeTitle(n)}</p>
-                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{noticeBody(n)}</p>
+                {noticeBody(n) && (
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{noticeBody(n)}</p>
+                )}
               </div>
             ))}
             {notices.length === 0 && (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">
+              <p className="px-5 py-8 text-sm text-gray-400 text-center">
                 {t('공지가 없습니다.', 'No notices yet.', 'Aucun avis.')}
               </p>
             )}
           </div>
         </section>
+
       </div>
 
       {applying && (
         <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />
+      )}
+      {applyingLE && (
+        <ApplyModal languageExchange onClose={() => setApplyingLE(false)} />
       )}
     </>
   )

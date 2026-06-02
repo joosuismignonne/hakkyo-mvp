@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase, isConfigured } from '../lib/supabase'
 import {
   getTracks,     saveTrack,     deleteTrack,     setTrackStatus,
@@ -6,7 +7,9 @@ import {
   getContents,   saveContent,   deleteContent,
   getAllQuestions, saveQuestion, deleteQuestion, swapQuestionOrder,
   getApplications, setApplicationStatus,
+  getLeSettings, saveLeSettings,
 } from '../lib/db'
+import type { LeSettings } from '../lib/db'
 import type { ProgramTrack, Notice, Content, FormQuestion, Application, ContentCategory, ContentType } from '../types'
 import {
   CONTENT_CATEGORIES,
@@ -366,15 +369,6 @@ function SessionsAdmin() {
                   value={editing.application_deadline || ''}
                   onChange={e => set('application_deadline', e.target.value || null)}
                 />
-              </FL>
-              <FL label="Day (legacy)">
-                <input className="input" value={editing.day_of_week ?? ''} onChange={e => set('day_of_week', e.target.value)} />
-              </FL>
-              <FL label="Time (legacy)">
-                <input className="input" value={editing.time ?? ''} onChange={e => set('time', e.target.value)} />
-              </FL>
-              <FL label="Location (legacy)">
-                <input className="input" value={editing.location ?? ''} onChange={e => set('location', e.target.value)} />
               </FL>
               <FL label="Capacity">
                 <input type="number" className="input" value={editing.capacity ?? 12} onChange={e => set('capacity', Number(e.target.value) || 0)} />
@@ -1394,6 +1388,12 @@ type SiteSettingsRow = {
   footer_text_ko?: string
   footer_text_en?: string
   footer_text_fr?: string
+  programs_season_label?: string
+  language_exchange_title?: string
+  language_exchange_description_ko?: string
+  language_exchange_description_en?: string
+  language_exchange_description_fr?: string
+  language_exchange_button_text?: string
 }
 
 function SiteSettingsAdmin() {
@@ -1410,9 +1410,15 @@ function SiteSettingsAdmin() {
     location_ko: 'Montréal',
     location_en: 'Montréal',
     location_fr: 'Montréal',
-    footer_text_ko: '다국어 문화 플랫폼',
-    footer_text_en: 'Multilingual Cultural Platform',
-    footer_text_fr: 'Plateforme culturelle multilingue',
+    footer_text_ko: 'A Montréal community built around language and conversation.',
+    footer_text_en: 'A Montréal community built around language and conversation.',
+    footer_text_fr: 'A Montréal community built around language and conversation.',
+    programs_season_label: '',
+    language_exchange_title: '',
+    language_exchange_description_ko: '',
+    language_exchange_description_en: '',
+    language_exchange_description_fr: '',
+    language_exchange_button_text: '',
   })
 
   const load = useCallback(async () => {
@@ -1467,6 +1473,12 @@ function SiteSettingsAdmin() {
       footer_text_ko: form.footer_text_ko ?? '',
       footer_text_en: form.footer_text_en ?? '',
       footer_text_fr: form.footer_text_fr ?? '',
+      programs_season_label: form.programs_season_label ?? '',
+      language_exchange_title: form.language_exchange_title ?? '',
+      language_exchange_description_ko: form.language_exchange_description_ko ?? '',
+      language_exchange_description_en: form.language_exchange_description_en ?? '',
+      language_exchange_description_fr: form.language_exchange_description_fr ?? '',
+      language_exchange_button_text: form.language_exchange_button_text ?? '',
     }
     try {
       if (rowId) {
@@ -1537,6 +1549,49 @@ function SiteSettingsAdmin() {
               onChange={set}
             />
           </div>
+          <FL label="Programs season label">
+            <input
+              className="input"
+              value={form.programs_season_label ?? ''}
+              onChange={e => set('programs_season_label', e.target.value)}
+              placeholder="e.g. Season 3 · 2025–2026"
+            />
+            <p className="text-xs text-gray-400 mt-1">Shown below the Programs page title. Leave empty to hide.</p>
+          </FL>
+          <div className="border-t border-gray-100 pt-4 space-y-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Language Exchange CTA</p>
+            <FL label="Title">
+              <input
+                className="input"
+                value={form.language_exchange_title ?? ''}
+                onChange={e => set('language_exchange_title', e.target.value)}
+                placeholder="Language Exchange"
+              />
+              <p className="text-xs text-gray-400 mt-1">Leave empty to use "Language Exchange".</p>
+            </FL>
+            <div>
+              <p className="label mb-1">Description</p>
+              <LangFields
+                prefix="language_exchange_description"
+                ko={form.language_exchange_description_ko ?? ''}
+                en={form.language_exchange_description_en ?? ''}
+                fr={form.language_exchange_description_fr ?? ''}
+                onChange={set}
+                multiline
+                textareaRows={2}
+              />
+              <p className="text-xs text-gray-400 mt-1">Leave empty to use the default description.</p>
+            </div>
+            <FL label="Button text">
+              <input
+                className="input"
+                value={form.language_exchange_button_text ?? ''}
+                onChange={e => set('language_exchange_button_text', e.target.value)}
+                placeholder="Apply for Language Exchange"
+              />
+              <p className="text-xs text-gray-400 mt-1">Leave empty to use "Apply for Language Exchange".</p>
+            </FL>
+          </div>
           <button onClick={save} disabled={saving} className="btn-yellow">
             {saving ? 'Saving…' : 'Save Settings'}
           </button>
@@ -1546,19 +1601,120 @@ function SiteSettingsAdmin() {
   )
 }
 
+// ─── Language Exchange Settings Admin ─────────────────────────────────────────
+function LeSettingsAdmin() {
+  const [form, setForm] = useState<LeSettings>({})
+  const [rowId, setRowId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  const load = useCallback(async () => {
+    setErr('')
+    setSaved(false)
+    const data = await getLeSettings().catch(e => { setErr(e.message); return {} as LeSettings })
+    setForm(data)
+    setRowId(data.id ?? null)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  async function save() {
+    setSaving(true); setErr(''); setSaved(false)
+    try {
+      await saveLeSettings({ ...form, id: rowId ?? undefined })
+      setSaved(true)
+      await load()
+    } catch (e: unknown) {
+      setErr((e as Error).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <Spinner />
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      {err && <ErrorMsg msg={err} />}
+      {saved && <p className="text-sm text-green-600">Saved.</p>}
+      <FormCard title="Language Exchange Settings">
+        <div className="space-y-4">
+          <FL label="Schedule">
+            <input
+              className="input"
+              value={form.schedule ?? ''}
+              onChange={e => set('schedule', e.target.value)}
+              placeholder="e.g. Every Saturday · 14:00–16:00"
+            />
+            <p className="text-xs text-gray-400 mt-1">Shown on the Programs page CTA. Leave empty to hide.</p>
+          </FL>
+          <FL label="Location name">
+            <input
+              className="input"
+              value={form.location_name ?? ''}
+              onChange={e => set('location_name', e.target.value)}
+              placeholder="e.g. HAKKYO Space"
+            />
+          </FL>
+          <FL label="Location address">
+            <input
+              className="input"
+              value={form.location_address ?? ''}
+              onChange={e => set('location_address', e.target.value)}
+              placeholder="e.g. Montréal, QC"
+            />
+          </FL>
+          <FL label="Google Maps URL">
+            <input
+              type="url"
+              className="input"
+              value={form.google_maps_url ?? ''}
+              onChange={e => set('google_maps_url', e.target.value)}
+              placeholder="https://maps.google.com/..."
+            />
+          </FL>
+          <FL label="Notes">
+            <input
+              className="input"
+              value={form.notes ?? ''}
+              onChange={e => set('notes', e.target.value)}
+              placeholder="Any additional info shown below schedule"
+            />
+          </FL>
+          <button onClick={save} disabled={saving} className="btn-yellow">
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </FormCard>
+    </div>
+  )
+}
+
 // ─── Root Admin page ───────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'sessions',     label: 'Programs',     Component: SessionsAdmin    },
-  { id: 'notices',      label: 'Notices',       Component: NoticesAdmin     },
-  { id: 'content',      label: 'Content',       Component: ContentAdmin     },
-  { id: 'questions',    label: 'Questions',     Component: QuestionsAdmin   },
-  { id: 'applications', label: 'Applications',  Component: ApplicationsAdmin},
-  { id: 'settings',     label: 'Site Settings', Component: SiteSettingsAdmin },
+  { id: 'sessions',     label: 'Programs',        Component: SessionsAdmin    },
+  { id: 'notices',      label: 'Notices',          Component: NoticesAdmin     },
+  { id: 'content',      label: 'Content',          Component: ContentAdmin     },
+  { id: 'questions',    label: 'Questions',        Component: QuestionsAdmin   },
+  { id: 'applications', label: 'Applications',     Component: ApplicationsAdmin},
+  { id: 'le',           label: 'Lang. Exchange',   Component: LeSettingsAdmin  },
+  { id: 'settings',     label: 'Site Settings',    Component: SiteSettingsAdmin },
 ]
 
 export default function Admin() {
   const [tab, setTab] = useState('sessions')
   const active = TABS.find(t => t.id === tab)!
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    if (supabase) await supabase.auth.signOut()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -1569,6 +1725,14 @@ export default function Admin() {
             Demo mode — changes are local only
           </span>
         )}
+        <div className="ml-auto">
+          <button
+            onClick={handleLogout}
+            className="text-xs text-gray-400 hover:text-gray-700 transition-colors border border-gray-200 rounded px-2.5 py-1"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -1587,233 +1751,3 @@ export default function Admin() {
     </div>
   )
 }
-// ─── Editable Detailed Program/Track Info for Admin ────────────────────────────
-
-function EditableProgramFields({
-  state,
-  setState,
-}: {
-  state: any
-  setState: (fn: (prev: any) => any) => void
-}) {
-  // Helper to update a given field in state
-  const update = (k: string, v: any) => {
-    setState((s: any) => ({ ...s, [k]: v }))
-  }
-
-  // Effect: auto-calculate total_price, but allow manual override
-  useEffect(() => {
-    // Only auto-update if the admin hasn't manually overridden total_price
-    // If total_price === calculated value or empty, then recalc
-    const calc = Number(state.price_per_class || 0) * Number(state.class_count || 0)
-    if (
-      state._total_price_manual !== true &&
-      (Number(state.total_price) !== calc || !state.total_price)
-    ) {
-      update('total_price', calc)
-    }
-    // eslint-disable-next-line
-  }, [state.price_per_class, state.class_count])
-
-  // Mark manual override if admin types a value
-  const onTotalPriceChange = (v: string) => {
-    setState((s: any) => ({
-      ...s,
-      total_price: v,
-      _total_price_manual: true,
-    }))
-  }
-
-  // category: program/community selectable, default from language type
-  const langTypes = [
-    { key: "korean", label: "Korean" },
-    { key: "english", label: "English" },
-    { key: "french", label: "French" },
-    { key: "exchange", label: "Language Exchange" },
-    { key: "active_output", label: "Active Output" }
-  ]
-
-  // setting category automatically based on language/type
-  const onLangTypeChange = (v: string) => {
-    update('lang_type', v)
-    if (v === "exchange") update('category', 'community')
-    else update('category', 'program')
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Category selector */}
-      <FL label="Category">
-        <select
-          className="input"
-          value={state.category ?? ""}
-          onChange={e => update('category', e.target.value)}
-        >
-          <option value="">Select category</option>
-          <option value="program">Program</option>
-          <option value="community">Community</option>
-        </select>
-      </FL>
-
-      {/* Language/type */}
-      <FL label="Type/Language">
-        <select
-          className="input"
-          value={state.lang_type ?? ""}
-          onChange={e => onLangTypeChange(e.target.value)}
-        >
-          <option value="">Select type/language</option>
-          {langTypes.map(lang => (
-            <option value={lang.key} key={lang.key}>{lang.label}</option>
-          ))}
-        </select>
-      </FL>
-
-      <FL label="Price per class">
-        <input
-          className="input"
-          type="number"
-          min="0"
-          step="1"
-          value={state.price_per_class ?? ""}
-          onChange={e => {
-            update('price_per_class', e.target.value)
-            // removing manual override if class_count or price changes
-            setState(s => ({ ...s, _total_price_manual: false }))
-          }}
-        />
-      </FL>
-      <FL label="Number of classes">
-        <input
-          className="input"
-          type="number"
-          min="0"
-          step="1"
-          value={state.class_count ?? ""}
-          onChange={e => {
-            update('class_count', e.target.value)
-            setState(s => ({ ...s, _total_price_manual: false }))
-          }}
-        />
-      </FL>
-      <FL label="Total price">
-        <input
-          className="input"
-          type="number"
-          min="0"
-          step="1"
-          value={state.total_price ?? ""}
-          onChange={e => onTotalPriceChange(e.target.value)}
-        />
-        <p className="text-xs text-gray-400 pt-1">
-          Calculated, but can be overridden manually.
-        </p>
-      </FL>
-      <FL label="Start date">
-        <input
-          className="input"
-          type="date"
-          value={state.start_date ?? ""}
-          onChange={e => update('start_date', e.target.value)}
-        />
-      </FL>
-      <FL label="End date">
-        <input
-          className="input"
-          type="date"
-          value={state.end_date ?? ""}
-          onChange={e => update('end_date', e.target.value)}
-        />
-      </FL>
-      <FL label="Duration (weeks)">
-        <input
-          className="input"
-          type="number"
-          min="0"
-          step="1"
-          value={state.duration_weeks ?? ""}
-          onChange={e => update('duration_weeks', e.target.value)}
-        />
-      </FL>
-      <FL label="Day of week">
-        <input
-          className="input"
-          type="text"
-          placeholder="e.g. Monday, Thurs"
-          value={state.day_of_week ?? ""}
-          onChange={e => update('day_of_week', e.target.value)}
-        />
-      </FL>
-      <FL label="Time">
-        <input
-          className="input"
-          type="text"
-          placeholder="e.g. 19:00–21:00"
-          value={state.time ?? ""}
-          onChange={e => update('time', e.target.value)}
-        />
-      </FL>
-      <FL label="Location">
-        <input
-          className="input"
-          type="text"
-          value={state.location ?? ""}
-          onChange={e => update('location', e.target.value)}
-        />
-      </FL>
-      <FL label="Capacity">
-        <input
-          className="input"
-          type="number"
-          min="0"
-          step="1"
-          value={state.capacity ?? ""}
-          onChange={e => update('capacity', e.target.value)}
-        />
-      </FL>
-      <FL label="Recommended?">
-        <select
-          className="input"
-          value={state.recommended ? 'yes' : 'no'}
-          onChange={e => update('recommended', e.target.value === "yes")}
-        >
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-      </FL>
-      <FL label="Is free?">
-        <select
-          className="input"
-          value={state.is_free ? 'yes' : 'no'}
-          onChange={e => update('is_free', e.target.value === "yes")}
-        >
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-      </FL>
-      <FL label="Status">
-        <select
-          className="input"
-          value={state.status ?? ""}
-          onChange={e => update('status', e.target.value)}
-        >
-          <option value="">Select status</option>
-          <option value="open">Open</option>
-          <option value="closed">Closed</option>
-        </select>
-      </FL>
-      <FL label="Notes">
-        <textarea
-          className="input resize-none"
-          rows={2}
-          value={state.notes ?? ""}
-          onChange={e => update('notes', e.target.value)}
-        />
-      </FL>
-    </div>
-  )
-}
-
-// You should use <EditableProgramFields state={state} setState={setState} />
-// inside your admin session/content/program creation/edit forms,
-// placing it inside the form UI to display these fields.

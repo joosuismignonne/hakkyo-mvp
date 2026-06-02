@@ -116,6 +116,12 @@ export interface Application {
   total_price: number | null
   selected_label: string | null
   status: 'pending' | 'contacted' | 'confirmed' | 'waitlist' | 'rejected'
+  // Language Exchange specific columns
+  application_type?: string | null
+  city?: string | null
+  language_level?: string | null
+  referral_source?: string | null
+  message?: string | null
   created_at?: string
   session?: Session
   track?: ProgramTrack

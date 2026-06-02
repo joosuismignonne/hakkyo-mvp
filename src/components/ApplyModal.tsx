@@ -1,17 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTracks, getQuestions, submitApplication } from '../lib/db'
+import { getTracks, getQuestions, submitApplication, submitLeApplication } from '../lib/db'
 import { useLang } from '../context/LangContext'
 import type { ProgramTrack, FormQuestion } from '../types'
 
 interface Props {
   onClose: () => void
-  preselectedTrackId?: string   // skip to form immediately
+  preselectedTrackId?: string        // skip to form immediately
   defaultType?: 'program' | 'community'
+  languageExchange?: boolean         // open directly as Language Exchange application
 }
 
 type Step = 'type' | 'track' | 'form'
 
-export default function ApplyModal({ onClose, preselectedTrackId, defaultType }: Props) {
+// Hardcoded questions shown only in Language Exchange mode
+const LE_QUESTIONS = [
+  { id: 'le_city',   ko: '현재 거주 도시',               en: 'Current city',                     fr: 'Ville actuelle',                              type: 'text',     required: true,  options: '' },
+  { id: 'le_level',  ko: '언어 레벨',                    en: 'Language level',                   fr: 'Niveau de langue',                            type: 'select',   required: false, options: 'Beginner,Intermediate,Advanced,Native' },
+  { id: 'le_source', ko: 'HAKKYO를 어떻게 알게 되셨나요?', en: 'How did you hear about HAKKYO?',   fr: 'Comment avez-vous entendu parler de HAKKYO?', type: 'text',     required: false, options: '' },
+  { id: 'le_goal',   ko: '목표 / 메시지',                 en: 'Goal / message',                   fr: 'Objectif / message',                          type: 'textarea', required: false, options: '' },
+] as const
+
+export default function ApplyModal({ onClose, preselectedTrackId, defaultType, languageExchange }: Props) {
   const { lang, t } = useLang()
 
   // ── Data ────────────────────────────────────────────────────────────────────
@@ -20,7 +29,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType }:
   const [tracksLoading, setTracksLoading] = useState(true)
 
   // ── Flow state ───────────────────────────────────────────────────────────────
-  const [step, setStep]           = useState<Step>(() => preselectedTrackId ? 'form' : 'type')
+  const [step, setStep]           = useState<Step>(() => (preselectedTrackId || languageExchange) ? 'form' : 'type')
   const [chosenType, setChosenType] = useState<'program' | 'community' | null>(defaultType ?? null)
   const [selectedTrack, setSelectedTrack] = useState<ProgramTrack | null>(null)
 
@@ -88,6 +97,34 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType }:
       setError(t('이름과 이메일은 필수입니다.', 'Name and email are required.', 'Le nom et l\'email sont requis.'))
       return
     }
+
+    if (languageExchange) {
+      if (!answers['le_city']?.trim()) {
+        setError(t('현재 거주 도시를 입력해주세요.', 'Please enter your current city.', 'Veuillez entrer votre ville actuelle.'))
+        return
+      }
+      setSubmitting(true); setError('')
+      try {
+        await submitLeApplication({
+          name:           form.name,
+          email:          form.email,
+          phone:          form.phone,
+          instagram:      form.instagram,
+          city:           answers['le_city']?.trim()   ?? '',
+          languageLevel:  answers['le_level']?.trim()  ?? '',
+          referralSource: answers['le_source']?.trim() ?? '',
+          message:        answers['le_goal']?.trim()   ?? '',
+        })
+        setDone(true)
+      } catch (err: unknown) {
+        console.error(err)
+        setError(err instanceof Error ? err.message : 'Submission failed. Please try again.')
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+
     const missing = questions.filter(q => q.required && !answers[q.id]?.trim())
     if (missing.length > 0) {
       setError(t('필수 항목을 모두 입력해주세요.', 'Please fill in all required fields.', 'Veuillez remplir tous les champs obligatoires.'))
@@ -133,21 +170,27 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType }:
 
           <div className="mt-1 sm:mt-0">
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
-              {step === 'type'  ? t('등록', 'Registration', 'Inscription') :
-               step === 'track' ? t('프로그램 선택', 'Choose a program', 'Choisir un programme') :
-               selectedTrack    ? trackName(selectedTrack) : t('등록', 'Registration', 'Inscription')}
+              {languageExchange
+                ? t('커뮤니티 신청', 'Community Application', 'Candidature communauté')
+                : step === 'type'  ? t('등록', 'Registration', 'Inscription')
+                : step === 'track' ? t('프로그램 선택', 'Choose a program', 'Choisir un programme')
+                : selectedTrack    ? trackName(selectedTrack)
+                : t('등록', 'Registration', 'Inscription')}
             </p>
             <h2 className="font-bold text-gray-900 text-base">
-              {step === 'type'  ? 'HAKKYO' :
-               step === 'track' ? (chosenType === 'program'
-                 ? t('프로그램', 'Programs', 'Programmes')
-                 : t('커뮤니티', 'Community', 'Communauté')) :
-               selectedTrack    ? effPrice(selectedTrack) : ''}
+              {languageExchange
+                ? 'Language Exchange'
+                : step === 'type'  ? 'HAKKYO'
+                : step === 'track' ? (chosenType === 'program'
+                    ? t('프로그램', 'Programs', 'Programmes')
+                    : t('커뮤니티', 'Community', 'Communauté'))
+                : selectedTrack    ? effPrice(selectedTrack)
+                : ''}
             </h2>
           </div>
 
           <div className="flex items-center gap-2 ml-3">
-            {step !== 'type' && !preselectedTrackId && (
+            {step !== 'type' && !preselectedTrackId && !languageExchange && (
               <button onClick={() => setStep(step === 'form' && !preselectedTrackId ? 'track' : 'type')}
                 className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
                 ← {t('뒤로', 'Back', 'Retour')}
@@ -307,8 +350,13 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType }:
           {!done && step === 'form' && (
             <form ref={formRef} onSubmit={handleSubmit} className="flex-1">
 
-              {/* Selected track summary */}
-              {selectedTrack && (
+              {/* Track / LE summary strip */}
+              {languageExchange ? (
+                <div className="mx-5 mt-4 mb-2 bg-gray-50 rounded-xl px-4 py-3 text-sm flex items-center justify-between">
+                  <span className="font-medium text-gray-900">Language Exchange</span>
+                  <span className="font-semibold text-gray-900">{t('무료', 'Free', 'Gratuit')}</span>
+                </div>
+              ) : selectedTrack ? (
                 <div className="mx-5 mt-4 mb-2 bg-gray-50 rounded-xl px-4 py-3 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-gray-900">{trackName(selectedTrack)}</span>
@@ -320,7 +368,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType }:
                     </p>
                   )}
                 </div>
-              )}
+              ) : null}
 
               <div className="px-5 pb-4 pt-3 space-y-5">
                 {/* Contact info */}
@@ -350,8 +398,49 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType }:
                   </div>
                 </div>
 
-                {/* Dynamic questions */}
-                {questions.length > 0 && (
+                {/* Questions: LE hardcoded or DB dynamic */}
+                {languageExchange ? (
+                  <div>
+                    <p className="form-section-label">
+                      {t('추가 정보', 'Additional Info', 'Informations supplémentaires')}
+                    </p>
+                    <div className="space-y-4">
+                      {LE_QUESTIONS.map(q => {
+                        const label = lang === 'ko' ? q.ko : lang === 'fr' ? q.fr : q.en
+                        return (
+                          <div key={q.id}>
+                            <label className="label">
+                              {label}{q.required && <span className="text-red-400 ml-0.5">*</span>}
+                            </label>
+                            {q.type === 'textarea' ? (
+                              <textarea rows={3} required={q.required}
+                                value={answers[q.id] || ''}
+                                onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+                                className="input resize-none"
+                                placeholder={t('자유롭게 작성해주세요.', 'Your answer here…', 'Votre réponse ici…')}
+                              />
+                            ) : q.type === 'select' ? (
+                              <select required={q.required} value={answers[q.id] || ''}
+                                onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+                                className="input">
+                                <option value="">{t('선택하세요', 'Select…', 'Sélectionner…')}</option>
+                                {q.options.split(',').map(o => o.trim()).filter(Boolean).map(o => (
+                                  <option key={o} value={o}>{o}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input type="text" required={q.required}
+                                value={answers[q.id] || ''}
+                                onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+                                className="input"
+                              />
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : questions.length > 0 ? (
                   <div>
                     <p className="form-section-label">
                       {t('추가 정보', 'Additional Info', 'Informations supplémentaires')}
@@ -389,7 +478,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType }:
                       ))}
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* Sticky footer */}

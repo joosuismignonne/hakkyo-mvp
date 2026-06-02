@@ -14,8 +14,8 @@ export default function Nav() {
   const loc = useLocation()
 
   const links = [
-    { to: '/programs', label: t('Programs', 'Programs', 'Programs') },
-    { to: '/schedule', label: t('Board', 'Board', 'Board') },
+    { to: '/programs', label: t('PROGRAMS', 'PROGRAMS', 'PROGRAMS') },
+    { to: '/schedule', label: t('BOARD', 'BOARD', 'BOARD') },
     { to: '/content',  label: t('NEWS', 'NEWS', 'NEWS') },
   ]
 

@@ -8,6 +8,8 @@ import Schedule from './pages/Schedule'
 import Content from './pages/Content'
 import ContentDetail from './pages/ContentDetail'
 import Admin from './pages/Admin'
+import Login from './pages/Login'
+import RequireAuth from './components/RequireAuth'
 
 export default function App() {
   return (
@@ -23,7 +25,8 @@ export default function App() {
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/content" element={<Content />} />
               <Route path="/content/:id" element={<ContentDetail />} />
-              <Route path="/admin/*" element={<Admin />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin/*" element={<RequireAuth><Admin /></RequireAuth>} />
             </Routes>
           </main>
           <Footer />

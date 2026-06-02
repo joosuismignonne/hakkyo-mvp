@@ -20,9 +20,9 @@ const DEFAULTS = {
   instagram: '@hakkyo.mtl',
   location: { ko: 'Montréal', en: 'Montréal', fr: 'Montréal' } as Record<Lang, string>,
   footerText: {
-    ko: '다국어 문화 플랫폼',
-    en: 'Multilingual Cultural Platform',
-    fr: 'Plateforme culturelle multilingue',
+    ko: 'A Montréal community built around language and conversation.',
+    en: 'A Montréal community built around language and conversation.',
+    fr: 'A Montréal community built around language and conversation.',
   } as Record<Lang, string>,
 }
 

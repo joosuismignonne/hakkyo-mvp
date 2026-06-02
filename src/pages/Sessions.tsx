@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getTracks } from '../lib/db'
+import { getTracks, getSiteSettings, getLeSettings, type LeSettings } from '../lib/db'
 import { useLang } from '../context/LangContext'
 import {
   buildClassSchedule,
@@ -125,7 +125,7 @@ function TrackInterest({
         aria-pressed={data.clicked}
         className="text-base leading-none p-1.5 rounded-full hover:bg-gray-100 touch-manipulation shrink-0 disabled:cursor-default"
       >
-        {data.clicked ? '❤️' : '♡'}
+        {data.clicked ? '♥︎' : '♡'}
       </button>
       <span className="text-xs text-gray-400">{label}</span>
     </div>
@@ -140,18 +140,61 @@ function SectionLabel({ children, mobileHidden }: { children: React.ReactNode; m
   )
 }
 
+// Derive a program type label from track data — no DB changes required
+function resolveTrackType(s: TrackView): string | null {
+  if (s.category === 'community') return 'Language Exchange'
+  const name = (s.name_en ?? '').toLowerCase()
+  if (name.includes('active output')) return 'Active Output'
+  if (s.class_count > 1) return 'Course'
+  if (s.class_count === 1) return 'Single Class'
+  return null
+}
+
+const TYPE_BADGE_STYLE: Record<string, string> = {
+  'Single Class':       'bg-gray-100 text-gray-500',
+  'Course':             'bg-gray-100 text-gray-600',
+  'Active Output':      'bg-yellow-light text-yellow-hover',
+  'Language Exchange':  'bg-blue-50 text-blue-500',
+}
+
+function ProgramTypeBadge({ type }: { type: string }) {
+  const cls = TYPE_BADGE_STYLE[type] ?? 'bg-gray-100 text-gray-500'
+  return (
+    <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${cls}`}>
+      {type}
+    </span>
+  )
+}
+
 export default function Sessions() {
   const { lang, t } = useLang()
   const [tracks, setTracks] = useState<TrackView[]>([])
   const [applying, setApplying] = useState<string | null>(null)
+  const [applyingCommunity, setApplyingCommunity] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState('')
   const [filter,   setFilter]   = useState<'all' | 'open' | 'closed'>('all')
+  const [seasonLabel, setSeasonLabel] = useState<string | null>(null)
+  const [leTitle,       setLeTitle]       = useState<string | null>(null)
+  const [leDescKo,      setLeDescKo]      = useState<string | null>(null)
+  const [leDescEn,      setLeDescEn]      = useState<string | null>(null)
+  const [leDescFr,      setLeDescFr]      = useState<string | null>(null)
+  const [leButtonText,  setLeButtonText]  = useState<string | null>(null)
+  const [leSettings,    setLeSettings]    = useState<LeSettings>({})
 
   useEffect(() => {
-    getTracks()
-      .then(data => setTracks((data ?? []) as TrackView[]))
+    Promise.all([getTracks(), getSiteSettings(), getLeSettings()])
+      .then(([data, settings, le]) => {
+        setTracks((data ?? []) as TrackView[])
+        setSeasonLabel(settings.programs_season_label?.trim() || null)
+        setLeTitle(settings.language_exchange_title?.trim() || null)
+        setLeDescKo(settings.language_exchange_description_ko?.trim() || null)
+        setLeDescEn(settings.language_exchange_description_en?.trim() || null)
+        setLeDescFr(settings.language_exchange_description_fr?.trim() || null)
+        setLeButtonText(settings.language_exchange_button_text?.trim() || null)
+        setLeSettings(le)
+      })
       .catch(err => setError(err.message ?? 'Failed to load programs.'))
       .finally(() => setLoading(false))
   }, [])
@@ -163,7 +206,7 @@ export default function Sessions() {
   const category = (s: TrackView) =>
     s.category === 'community'
       ? t('커뮤니티', 'Community', 'Communauté')
-      : t('프로그램', 'Program', 'Programme')
+      : t('PROGRAM', 'Program', 'Programme')
   const price = (s: TrackView) => {
     if (s.is_free) return t('무료', 'Free', 'Gratuit')
     if (s.total_price != null) return `$${s.total_price} ${s.currency}`
@@ -173,7 +216,13 @@ export default function Sessions() {
   const duration = (s: TrackView) =>
     s.duration_weeks ? `${s.duration_weeks} ${t('주', 'weeks', 'semaines')}` : '—'
 
-  const visible = tracks.filter(s => filter === 'all' || s.status === filter)
+  // Programs (classes / courses) — subject to status filter
+  const programTracks  = tracks.filter(s => s.category !== 'community')
+  const programVisible = programTracks.filter(s => filter === 'all' || s.status === filter)
+
+  // Community / language exchange — shown separately, never filtered out
+  const communityTracks    = tracks.filter(s => s.category === 'community')
+  const openCommunityTrack = communityTracks.find(s => s.status === 'open') ?? null
 
   if (loading) {
     return (
@@ -195,8 +244,10 @@ export default function Sessions() {
     <div className="section">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{t('프로그램', 'Programs', 'Programmes')}</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Season 3 · 2025–2026</p>
+          <h1 className="text-2xl font-bold">{t('PROGRAMS', 'Programs', 'Programmes')}</h1>
+          {seasonLabel && (
+            <p className="text-gray-500 text-sm mt-0.5">{seasonLabel}</p>
+          )}
         </div>
         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden text-sm font-medium w-fit">
           {(['all', 'open', 'closed'] as const).map(f => (
@@ -213,7 +264,7 @@ export default function Sessions() {
       </div>
 
       <div className="space-y-3">
-        {visible.map(s => {
+        {programVisible.map(s => {
           const isExpanded = expanded === s.id
           const isOpen     = s.status === 'open'
           const spotsLeft  = s.capacity - s.enrolled
@@ -222,6 +273,7 @@ export default function Sessions() {
           const applyDeadline = resolveApplicationDeadline(s)
           const venue = resolveVenue(s)
           const classCount = classSchedule.length
+          const trackType = resolveTrackType(s)
 
           return (
             <div key={s.id} className="border border-gray-200 rounded-xl overflow-hidden">
@@ -235,7 +287,7 @@ export default function Sessions() {
                   <span className={isOpen ? 'badge-open' : 'badge-closed'}>
                     {isOpen ? t('모집 중', 'Open', 'Ouvert') : t('마감', 'Closed', 'Fermé')}
                   </span>
-                  <span className="text-xs text-gray-400">{category(s)}</span>
+                  {trackType && <ProgramTypeBadge type={trackType} />}
                   <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                     {title(s)}
                   </span>
@@ -372,14 +424,83 @@ export default function Sessions() {
           )
         })}
 
-        {visible.length === 0 && (
+        {programVisible.length === 0 && (
           <div className="py-12 text-center text-gray-400 text-sm">
             {t('프로그램이 없습니다.', 'No programs available yet.', 'Aucun programme disponible pour le moment.')}
           </div>
         )}
       </div>
 
-      {applying && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
+      {/* ── Language Exchange CTA ──────────────────────────────────────── */}
+      {(() => {
+        const ctaTitle = leTitle || 'Language Exchange'
+        const ctaDesc =
+          (lang === 'ko' ? leDescKo : lang === 'fr' ? leDescFr : leDescEn) ||
+          t(
+            'HAKKYO 커뮤니티에서 대화로 참여하세요. 수업 등록이 필요 없습니다.',
+            'Join the HAKKYO community through conversation. No class registration required.',
+            'Rejoignez la communauté HAKKYO par la conversation. Aucune inscription requise.',
+          )
+        const ctaButton = leButtonText || 'Apply for Language Exchange'
+
+        return (
+          <div className="mt-10 border border-gray-200 rounded-xl overflow-hidden">
+            {/* Yellow accent bar */}
+            <div className="h-0.5 w-full bg-yellow" />
+            <div className="px-6 py-7 flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+              <div className="space-y-2">
+                <p className="font-semibold text-gray-900 text-base tracking-tight">
+                  {ctaTitle}
+                </p>
+                <p className="text-sm text-gray-500 leading-relaxed">{ctaDesc}</p>
+                {(leSettings.schedule || leSettings.location_name) && (
+                  <div className="pt-1 space-y-1">
+                    {leSettings.schedule && (
+                      <p className="text-xs text-gray-500">
+                        <span className="font-medium text-gray-700">{t('일정', 'Schedule', 'Horaire')}</span>
+                        {' · '}{leSettings.schedule}
+                      </p>
+                    )}
+                    {leSettings.location_name && (
+                      <p className="text-xs text-gray-500">
+                        <span className="font-medium text-gray-700">{t('장소', 'Location', 'Lieu')}</span>
+                        {' · '}{leSettings.location_name}
+                        {leSettings.location_address && `, ${leSettings.location_address}`}
+                        {leSettings.google_maps_url && (
+                          <a
+                            href={leSettings.google_maps_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-2 underline decoration-gray-300 underline-offset-2 hover:decoration-yellow transition-colors"
+                          >
+                            Map →
+                          </a>
+                        )}
+                      </p>
+                    )}
+                    {leSettings.notes && (
+                      <p className="text-xs text-gray-400 italic">{leSettings.notes}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setApplyingCommunity(true)}
+                className="shrink-0 w-full sm:w-auto btn-outline"
+              >
+                {ctaButton}
+              </button>
+            </div>
+          </div>
+        )
+      })()}
+
+      {applying && (
+        <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />
+      )}
+      {applyingCommunity && (
+        <ApplyModal languageExchange onClose={() => setApplyingCommunity(false)} />
+      )}
     </div>
   )
 }

@@ -248,7 +248,18 @@ export interface SubmitPayload {
   instagram: string
   totalPrice?: number | null
   selectedLabel?: string | null
-  answers: Record<string, string>
+  answers: Record<string, string>   // keys must be real UUIDs from form_questions
+}
+
+export interface LeSubmitPayload {
+  name: string
+  email: string
+  phone: string
+  instagram: string
+  city: string
+  languageLevel: string
+  referralSource: string
+  message: string
 }
 
 export async function submitApplication(payload: SubmitPayload): Promise<void> {
@@ -289,12 +300,45 @@ export async function submitApplication(payload: SubmitPayload): Promise<void> {
   const rows = Object.entries(answers)
     .filter(([, v]) => v.trim())
     .map(([question_id, answer]) => ({ application_id: app.id, question_id, answer }))
+
+  console.log('[submitApplication] application_answers payload before insert:', rows)
+
   if (rows.length > 0) {
     const { error } = await db().from('application_answers').insert(rows)
     if (error) {
       console.error(error)
       throw error
     }
+  }
+}
+
+export async function submitLeApplication(payload: LeSubmitPayload): Promise<void> {
+  const { name, email, phone, instagram, city, languageLevel, referralSource, message } = payload
+  if (!isConfigured) {
+    await new Promise(r => setTimeout(r, 700))
+    return
+  }
+  const row = {
+    application_type: 'language_exchange',
+    selected_label:   'Language Exchange',
+    total_price:      0,
+    track_id:         null,
+    session_id:       null,
+    status:           'pending',
+    name,
+    email,
+    phone,
+    instagram,
+    city,
+    language_level:   languageLevel,
+    referral_source:  referralSource,
+    message,
+  }
+  console.log('[submitLeApplication] payload before insert:', row)
+  const { error } = await db().from('applications').insert(row)
+  if (error) {
+    console.error('[submitLeApplication] insert error:', error)
+    throw error
   }
 }
 
@@ -313,4 +357,68 @@ export async function setApplicationStatus(
 ): Promise<void> {
   const { error } = await db().from('applications').update({ status }).eq('id', id)
   if (error) throw error
+}
+
+// ─── Site Settings ────────────────────────────────────────────────────────────
+
+export interface SiteSettings {
+  programs_season_label?: string | null
+  language_exchange_title?: string | null
+  language_exchange_description_ko?: string | null
+  language_exchange_description_en?: string | null
+  language_exchange_description_fr?: string | null
+  language_exchange_button_text?: string | null
+}
+
+export async function getSiteSettings(): Promise<SiteSettings> {
+  if (!isConfigured) return {}
+  const { data, error } = await db()
+    .from('site_settings')
+    .select(
+      'programs_season_label, language_exchange_title, language_exchange_description_ko, language_exchange_description_en, language_exchange_description_fr, language_exchange_button_text'
+    )
+    .limit(1)
+    .maybeSingle()
+  if (error) {
+    console.error(error)
+    return {}
+  }
+  return (data ?? {}) as SiteSettings
+}
+
+// ─── Language Exchange Settings ───────────────────────────────────────────────
+
+export interface LeSettings {
+  id?: string
+  schedule?: string | null       // e.g. "Every Saturday · 14:00–16:00"
+  location_name?: string | null  // e.g. "HAKKYO Space"
+  location_address?: string | null
+  google_maps_url?: string | null
+  notes?: string | null
+}
+
+export async function getLeSettings(): Promise<LeSettings> {
+  if (!isConfigured) return {}
+  const { data, error } = await db()
+    .from('language_exchange_settings')
+    .select('*')
+    .limit(1)
+    .maybeSingle()
+  if (error) {
+    console.error(error)
+    return {}
+  }
+  return (data ?? {}) as LeSettings
+}
+
+export async function saveLeSettings(settings: LeSettings): Promise<void> {
+  if (!isConfigured) return
+  const { id, ...fields } = settings
+  if (id) {
+    const { error } = await db().from('language_exchange_settings').update(fields).eq('id', id)
+    if (error) throw error
+  } else {
+    const { error } = await db().from('language_exchange_settings').insert(fields)
+    if (error) throw error
+  }
 }

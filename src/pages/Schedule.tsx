@@ -24,9 +24,9 @@ export default function Schedule() {
   }, [])
 
   const typeLabel = (type: Notice['type']) =>
-    type === 'event'    ? t('이벤트', 'Events', 'Événements') :
-    type === 'schedule' ? t('채용', 'Hiring', 'Recrutement') :
-    t('공지', 'Notices', 'Avis')
+    type === 'event'    ? t('Events', 'Events', 'Événements') :
+    type === 'schedule' ? t('Hiring', 'Hiring', 'Recrutement') :
+    t('Notices', 'Notices', 'Avis')
 
   const noticeTitle = (n: Notice) =>
     lang === 'ko' ? n.title_ko : lang === 'fr' ? n.title_fr : n.title_en
@@ -55,7 +55,7 @@ export default function Schedule() {
     <div className="section">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">{t('보드', 'Board', 'Board')}</h1>
+          <h1 className="text-2xl font-bold">{t('BOARD', 'BOARD', 'BOARD')}</h1>
           <p className="text-gray-500 text-sm mt-1">
             {t(
               '공지 · 이벤트 · 채용 · 커뮤니티 소모임',
