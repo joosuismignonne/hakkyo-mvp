@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Calendar, Clock, DollarSign, MapPin, Pin, Users, Zap } from 'lucide-react'
 import { getTracks, getSiteSettings, getLeSettings, type LeSettings } from '../lib/db'
 import { useLang } from '../context/LangContext'
 import {
@@ -7,217 +9,407 @@ import {
   resolveApplicationDeadline,
   resolveVenue,
   parseIncludedSessionsList,
+  resolveTrackTypeLabel,
+  resolveProgramTypeChip,
   type TrackView,
 } from '../lib/programDisplay'
 import ApplyModal from '../components/ApplyModal'
+import CardActions from '../components/CardActions'
+import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
 
-function CapacityBar({ enrolled, capacity, t }: {
-  enrolled: number; capacity: number
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  const pct = capacity ? Math.min((enrolled / capacity) * 100, 100) : 0
-  const spotsLeft = capacity - enrolled
-  const color = pct >= 90 ? '#f97316' : pct >= 70 ? '#F5C518' : '#111'
-  return (
-    <div>
-      <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-        <span className="font-medium" style={{ color }}>
-          {capacity === 0
-            ? t('무제한', 'Unlimited', 'Illimité')
-            : (spotsLeft > 0
-              ? t('신청 가능', 'Available to apply', 'Disponible')
-              : t('마감', 'Full', 'Complet'))}
-        </span>
-      </div>
-      {capacity > 0 && (
-        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: color }} />
-        </div>
-      )}
-    </div>
-  )
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Lang = 'ko' | 'en' | 'fr'
+
+// ─── Language fallback ────────────────────────────────────────────────────────
+
+function pickText(lang: Lang, ko: string, en: string, fr: string): string {
+  const order = lang === 'ko' ? [ko, en, fr] : lang === 'fr' ? [fr, ko, en] : [en, ko, fr]
+  return order.find(s => s?.trim()) ?? ''
 }
 
-const TARGET_AUDIENCE_LABELS: Record<string, [string, string, string]> = {
-  montreal_local: [
-    '몬트리올 거주자 및 외국인 대상',
-    'For Montreal locals and international participants',
-    'Pour les résidents de Montréal et les participants internationaux',
-  ],
-  korean_speaker: [
-    '한국어 화자 대상',
-    'For Korean speakers',
-    'Pour les coréanophones',
-  ],
-  non_korean_speaker: [
-    '비한국어 화자 대상',
-    'For non-Korean speakers',
-    'Pour les non-coréanophones',
-  ],
-  everyone: [
-    '누구나 참여 가능',
-    'Open to everyone',
-    'Ouvert à tous',
-  ],
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return ''
+  try { return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(iso)) }
+  catch { return iso }
 }
 
-function formatTargetAudience(
-  value: string | null | undefined,
-  t: (ko: string, en: string, fr: string) => string,
-): string {
-  if (!value?.trim()) return '—'
-  const labels = TARGET_AUDIENCE_LABELS[value.trim().toLowerCase()]
-  if (!labels) return value
-  return t(labels[0], labels[1], labels[2])
+function resolvePrice(s: TrackView): string {
+  if (s.is_free) return 'Free'
+  if (s.total_price && s.total_price > 0) return `$${s.total_price} ${s.currency}`
+  if (s.class_count > 0 && s.price_per_class > 0) return `$${s.price_per_class * s.class_count} ${s.currency}`
+  if (s.price_per_class > 0) return `$${s.price_per_class} ${s.currency}`
+  return 'Free'
 }
 
-const INTEREST_KEY = 'hakkyo-interest:'
-
-type InterestData = { count: number; clicked: boolean }
-
-function loadInterest(trackId: string): InterestData {
-  try {
-    const raw = localStorage.getItem(INTEREST_KEY + trackId)
-    if (!raw) return { count: 0, clicked: false }
-    const parsed = JSON.parse(raw) as InterestData
-    return {
-      count: typeof parsed.count === 'number' ? parsed.count : 0,
-      clicked: !!parsed.clicked,
-    }
-  } catch {
-    return { count: 0, clicked: false }
-  }
-}
-
-function TrackInterest({
-  trackId,
-  t,
-}: {
-  trackId: string
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  const [data, setData] = useState<InterestData>(() => loadInterest(trackId))
-
-  function handleClick(e: React.MouseEvent) {
-    e.stopPropagation()
-    if (data.clicked) return
-    const next = { count: data.count + 1, clicked: true }
-    localStorage.setItem(INTEREST_KEY + trackId, JSON.stringify(next))
-    setData(next)
-  }
-
-  const label =
-    data.count > 0
-      ? t(
-          `${data.count}명이 관심 있어요`,
-          `${data.count} people are interested`,
-          `${data.count} personnes sont intéressées`,
-        )
-      : t('관심 표시하기', 'Show interest', 'Montrer son intérêt')
-
-  return (
-    <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={data.clicked}
-        aria-label={t('관심 표시', 'Show interest', 'Montrer son intérêt')}
-        aria-pressed={data.clicked}
-        className="text-base leading-none p-1.5 rounded-full hover:bg-gray-100 touch-manipulation shrink-0 disabled:cursor-default"
-      >
-        {data.clicked ? '♥︎' : '♡'}
-      </button>
-      <span className="text-xs text-gray-400">{label}</span>
-    </div>
-  )
-}
-
-function SectionLabel({ children, mobileHidden }: { children: React.ReactNode; mobileHidden?: boolean }) {
-  return (
-    <p className={`text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400 mb-2${mobileHidden ? ' hidden sm:block' : ''}`}>
-      {children}
-    </p>
-  )
-}
-
-// Derive a program type label from included_sessions, falling back to class_count
-function resolveTrackType(s: TrackView): string | null {
-  if (s.category === 'community') return 'Language Exchange'
-
-  const classes = parseIncludedSessionsList(s.included_sessions)
-    .map(c => c.toLowerCase())
-
-  if (classes.length > 0) {
-    const hasKo = classes.some(c => c.includes('korean'))
-    const hasEn = classes.some(c => c.includes('english'))
-    const hasFr = classes.some(c => c.includes('french'))
-    const hasAo = classes.some(c => c.includes('active output'))
-    const langCount = [hasKo, hasEn, hasFr].filter(Boolean).length
-
-    if (hasAo && langCount >= 2) return 'Full Course'
-    if (hasAo && langCount === 0) return 'Active Output'
-    if (hasEn && hasFr && !hasKo && !hasAo) return 'EN/FR Course'
-    if (hasKo && hasFr && !hasEn && !hasAo) return 'KR/FR Course'
-    if (hasKo && hasEn && !hasFr && !hasAo) return 'KR/EN Course'
-    if (hasKo && langCount === 1) return 'Korean Class'
-    if (hasEn && langCount === 1) return 'English Class'
-    if (hasFr && langCount === 1) return 'French Class'
-  }
-
-  // Fallback: derive from class_count / name
-  const name = (s.name_en ?? '').toLowerCase()
-  if (name.includes('active output')) return 'Active Output'
-  if (s.class_count > 1) return 'Course'
-  if (s.class_count === 1) return 'Single Class'
+function resolveDuration(s: TrackView): string | null {
+  const dur = (s as TrackView & { duration?: string }).duration
+  if (dur?.trim()) return dur.trim()
+  if (s.duration_weeks) return `${s.duration_weeks} weeks`
+  if (s.class_count > 1) return `${s.class_count} classes`
   return null
 }
 
-const TYPE_BADGE_STYLE: Record<string, string> = {
-  'Korean Class':       'bg-gray-100 text-gray-600',
-  'English Class':      'bg-gray-100 text-gray-600',
-  'French Class':       'bg-gray-100 text-gray-600',
-  'Single Class':       'bg-gray-100 text-gray-500',
-  'EN/FR Course':       'bg-gray-100 text-gray-600',
-  'KR/FR Course':       'bg-gray-100 text-gray-600',
-  'KR/EN Course':       'bg-gray-100 text-gray-600',
-  'Full Course':        'bg-gray-100 text-gray-600',
-  'Course':             'bg-gray-100 text-gray-600',
-  'Active Output':      'bg-yellow-light text-yellow-hover',
-  'Language Exchange':  'bg-blue-50 text-blue-500',
+// ─── Program type resolution ──────────────────────────────────────────────────
+
+// Derive up to 3 experience chips from structured track fields.
+// Falls back to type-specific semantic defaults when fields are sparse.
+function resolveExperienceChips(track: TrackView, typeLabel: string | null): string[] {
+  const chips: string[] = []
+  const type = (typeLabel ?? '').toLowerCase()
+
+  // ── Structured chips ──────────────────────────────────────────────────────
+  // Duration
+  if (track.duration_weeks && track.duration_weeks > 0) {
+    chips.push(`${track.duration_weeks} Weeks`)
+  } else if (track.class_count > 1) {
+    chips.push(`${track.class_count} Classes`)
+  }
+
+  // Group size
+  if (track.capacity > 0 && track.capacity <= 10) {
+    chips.push('Small Group')
+  } else if (track.capacity > 10 && track.capacity <= 20) {
+    chips.push('Group')
+  }
+
+  // Audience / level hint
+  if (track.target_audience === 'korean_speaker') {
+    chips.push('Korean Speakers')
+  } else if (track.target_audience === 'montreal_local') {
+    chips.push('All Speakers')
+  }
+
+  // ── Semantic fallbacks per type ───────────────────────────────────────────
+  const need = 3 - chips.length
+  if (need <= 0) return chips.slice(0, 3)
+
+  const fallbacks: Record<string, string[]> = {
+    korean:             ['Beginner Friendly', 'Conversation', 'Cultural'],
+    french:             ['Conversation', 'Montréal Life', 'Beginner Friendly'],
+    english:            ['Conversation', 'Beginner Friendly', 'Canadian Culture'],
+    'active output':    ['Speaking', 'Real Scenarios', 'Practice'],
+    'full course':      ['Complete Package', 'All Levels', 'Immersive'],
+    'language exchange':['Meet People', 'Open Level', 'Weekly'],
+  }
+
+  const key = Object.keys(fallbacks).find(k => type.includes(k))
+  if (key) {
+    for (const c of fallbacks[key]) {
+      if (chips.length >= 3) break
+      if (!chips.includes(c)) chips.push(c)
+    }
+  }
+
+  return chips.slice(0, 3)
 }
 
-function ProgramTypeBadge({ type }: { type: string }) {
-  const cls = TYPE_BADGE_STYLE[type] ?? 'bg-gray-100 text-gray-500'
+// ─── Card atoms ───────────────────────────────────────────────────────────────
+
+function TypeTag({ children, color = '#9CA3AF' }: { children: React.ReactNode; color?: string }) {
   return (
-    <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${cls}`}>
-      {type}
+    <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color }}>
+      {children}
     </span>
   )
 }
 
+function PinIndicator() {
+  return (
+    <span className="inline-flex items-center gap-1 text-gray-400">
+      <Pin size={10} />
+      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Pinned</span>
+    </span>
+  )
+}
+
+function MetaChip({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 bg-white border border-gray-200 rounded-full px-2.5 py-1 text-[10px] text-gray-600 whitespace-nowrap">
+      <Icon size={10} className="text-gray-400 shrink-0" />
+      {children}
+    </span>
+  )
+}
+
+// Borderless text chip — lighter weight than MetaChip, no icon
+function ExperienceChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center bg-gray-50 border border-gray-100 rounded-md px-2 py-0.5 text-[10px] text-gray-500 whitespace-nowrap">
+      {children}
+    </span>
+  )
+}
+
+// Primary program-type chip — the most prominent label on the card
+function PrimaryTypeChip({ emoji, label }: { emoji: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-gray-900 text-white rounded-lg px-2.5 py-1 text-[11px] font-semibold tracking-wide whitespace-nowrap">
+      <span>{emoji}</span>
+      <span>{label}</span>
+    </span>
+  )
+}
+
+// ─── Program card ─────────────────────────────────────────────────────────────
+
+const OPEN_COLOR   = '#111111'
+const CLOSED_COLOR = '#D1D5DB'
+
+function ProgramCard({ track, lang, onApply, t }: {
+  track: TrackView
+  lang: Lang
+  onApply: (id: string) => void
+  t: (ko: string, en: string, fr: string) => string
+}) {
+  const navigate   = useNavigate()
+  const isOpen     = track.status === 'open'
+  const dotColor   = isOpen ? OPEN_COLOR : CLOSED_COLOR
+  const name       = pickText(lang, track.name_ko, track.name_en, track.name_fr)
+  const description = pickText(lang, track.description_ko, track.description_en, track.description_fr)
+  const price      = resolvePrice(track)
+  const duration   = resolveDuration(track)
+  const typeLabel  = resolveTrackTypeLabel(track)
+  const typeChip   = resolveProgramTypeChip(track, typeLabel)
+  const expChips   = resolveExperienceChips(track, typeLabel)
+  const classSchedule = buildClassSchedule(track)
+  const programDates  = formatProgramDateRange(track)
+  const deadline      = resolveApplicationDeadline(track)
+  const venue         = resolveVenue(track)
+  const isPinned      = !!(track as TrackView & { is_pinned?: boolean }).is_pinned
+
+  return (
+    <article
+      onClick={() => navigate(`/programs/${track.id}`)}
+      className={`rounded-2xl border mb-3 px-5 py-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${isPinned ? 'border-gray-300 hover:border-gray-400 bg-white' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
+    >
+      {/* ── Meta row: source label only ── */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
+        <TypeTag>{t('프로그램', 'Program', 'Programme')}</TypeTag>
+        {isPinned && <PinIndicator />}
+      </div>
+
+      {/* ── Primary type chip ── */}
+      {typeChip && (
+        <div className="mb-3">
+          <PrimaryTypeChip emoji={typeChip.emoji} label={typeChip.label} />
+        </div>
+      )}
+
+      {/* ── Title ── */}
+      <h3 className="text-sm font-medium text-gray-900 leading-snug mb-2">{name}</h3>
+
+      {/* ── Description ── */}
+      {description && (
+        <p className="text-[13px] text-gray-500 leading-relaxed mb-3"
+           style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {description}
+        </p>
+      )}
+
+      {/* ── Experience chips ── */}
+      {expChips.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {expChips.map(c => <ExperienceChip key={c}>{c}</ExperienceChip>)}
+        </div>
+      )}
+
+      {/* ── Metadata chips ── */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
+        {track.start_date && <MetaChip icon={Calendar}>{programDates ?? fmtDate(track.start_date)}</MetaChip>}
+        {duration          && <MetaChip icon={Clock}>{duration}</MetaChip>}
+        <MetaChip icon={DollarSign}>{price}</MetaChip>
+        {deadline && isOpen && <MetaChip icon={Calendar}>{t('마감', 'Deadline', 'Clôture')} {deadline}</MetaChip>}
+      </div>
+
+      {/* ── Class schedule ── */}
+      {classSchedule.length > 0 && (
+        <div className="mb-3 space-y-0.5">
+          {classSchedule.map(row => (
+            <p key={`${row.name}-${row.when}`} className="text-[11px] text-gray-500">
+              <span className="font-medium text-gray-700">{row.name}</span>
+              <span className="text-gray-300 mx-1.5">·</span>
+              {row.when}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* ── Venue ── */}
+      {venue?.name && venue.name !== '—' && (
+        <div className="mb-3">
+          <MetaChip icon={MapPin}>
+            <span className="text-gray-600 font-medium">{venue.name}</span>
+            {venue.detail && <span className="text-gray-400 ml-1">{venue.detail}</span>}
+            {venue.mapsUrl && (
+              <a
+                href={venue.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="ml-2 underline decoration-gray-200 underline-offset-2 hover:text-gray-700 transition-colors"
+              >
+                Map →
+              </a>
+            )}
+          </MetaChip>
+        </div>
+      )}
+
+      {/* ── Status + CTA ── */}
+      <div className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between gap-3">
+        {isOpen ? (
+          <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-900">
+            {t('모집 중', '● OPEN', '● OUVERT')}
+          </span>
+        ) : (
+          <span className="text-[10px] tracking-wide uppercase text-gray-300">
+            {t('마감', 'Closed', 'Fermé')}
+          </span>
+        )}
+        <div className="flex items-center gap-2">
+          <CardActions
+            item={{
+              id:    track.id,
+              type:  'program',
+              title: track.name_en || track.name_ko,
+              image: null,
+              url:   `/programs/${track.id}`,
+              date:  track.start_date ?? track.created_at ?? null,
+            }}
+            url={`/programs/${track.id}`}
+            size={13}
+          />
+          {isOpen ? (
+            <button
+              onClick={e => { e.stopPropagation(); onApply(track.id) }}
+              className="border border-gray-900 rounded-lg px-4 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
+            >
+              {t('신청하기', 'Apply Now', "S'inscrire")}
+            </button>
+          ) : (
+            <span className="border border-gray-100 rounded-lg px-4 py-2 text-[11px] text-gray-300">
+              {t('마감', 'Closed', 'Fermé')}
+            </span>
+          )}
+        </div>
+      </div>
+    </article>
+  )
+}
+
+// ─── Language Exchange card ───────────────────────────────────────────────────
+
+function LanguageExchangeCard({
+  leTitle, leDesc, leButtonText, leSettings, onApply, t,
+}: {
+  leTitle: string
+  leDesc: string
+  leButtonText: string
+  leSettings: LeSettings
+  onApply: () => void
+  t: (ko: string, en: string, fr: string) => string
+}) {
+  const leExpChips = ['Meet People', 'Open Level', 'Weekly']
+
+  return (
+    <article
+      onClick={onApply}
+      className="rounded-2xl border border-gray-100 bg-white mb-3 px-5 py-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] hover:border-gray-200"
+    >
+      {/* Meta */}
+      <div className="flex items-center gap-2 mb-3">
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#111', display: 'inline-block', flexShrink: 0 }} />
+        <TypeTag>{t('커뮤니티', 'Community', 'Communauté')}</TypeTag>
+        <Users size={11} className="text-gray-400" />
+      </div>
+
+      {/* Primary type chip */}
+      <div className="mb-3">
+        <PrimaryTypeChip emoji="🌎" label="Language Exchange" />
+      </div>
+
+      <h3 className="text-sm font-medium text-gray-900 leading-snug mb-2">{leTitle}</h3>
+
+      <p className="text-[13px] text-gray-500 leading-relaxed mb-3"
+         style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {leDesc}
+      </p>
+
+      {/* Experience chips */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {leExpChips.map(c => <ExperienceChip key={c}>{c}</ExperienceChip>)}
+      </div>
+
+      {(leSettings.schedule || leSettings.location_name) && (
+        <div className="mb-3 space-y-0.5">
+          {leSettings.schedule && (
+            <p className="text-[11px] text-gray-500">
+              <span className="font-medium text-gray-700">{t('일정', 'Schedule', 'Horaire')}</span>
+              <span className="text-gray-300 mx-1.5">·</span>
+              {leSettings.schedule}
+            </p>
+          )}
+          {leSettings.location_name && (
+            <p className="text-[11px] text-gray-500">
+              <span className="font-medium text-gray-700">{t('장소', 'Location', 'Lieu')}</span>
+              <span className="text-gray-300 mx-1.5">·</span>
+              {leSettings.location_name}
+              {leSettings.location_address && `, ${leSettings.location_address}`}
+              {leSettings.google_maps_url && (
+                <a href={leSettings.google_maps_url} target="_blank" rel="noopener noreferrer"
+                   className="ml-2 underline decoration-gray-300 underline-offset-2 hover:text-gray-700 transition-colors">
+                  Map →
+                </a>
+              )}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Status + CTA */}
+      <div className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between gap-3">
+        <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-900">
+          {t('상시 모집', '● OPEN', '● OUVERT')}
+        </span>
+        <button
+          onClick={e => { e.stopPropagation(); onApply() }}
+          className="border border-gray-900 rounded-lg px-4 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
+        >
+          {leButtonText}
+        </button>
+      </div>
+    </article>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function Sessions() {
-  const { lang, t } = useLang()
-  const [tracks, setTracks] = useState<TrackView[]>([])
-  const [applying, setApplying] = useState<string | null>(null)
+  const { lang: rawLang, t } = useLang()
+  const lang = rawLang as Lang
+
+  const [tracks,           setTracks]           = useState<TrackView[]>([])
+  const [applying,         setApplying]         = useState<string | null>(null)
   const [applyingCommunity, setApplyingCommunity] = useState(false)
-  const [expanded, setExpanded] = useState<string | null>(null)
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState('')
-  const [filter,   setFilter]   = useState<'all' | 'open' | 'closed'>('all')
-  const [seasonLabel, setSeasonLabel] = useState<string | null>(null)
-  const [leTitle,       setLeTitle]       = useState<string | null>(null)
-  const [leDescKo,      setLeDescKo]      = useState<string | null>(null)
-  const [leDescEn,      setLeDescEn]      = useState<string | null>(null)
-  const [leDescFr,      setLeDescFr]      = useState<string | null>(null)
-  const [leButtonText,  setLeButtonText]  = useState<string | null>(null)
-  const [leSettings,    setLeSettings]    = useState<LeSettings>({})
+  const [loading,          setLoading]          = useState(true)
+  const [error,            setError]            = useState('')
+  const [filter,           setFilter]           = useState<'all' | 'open' | 'closed'>('all')
+
+  const [leTitle,      setLeTitle]      = useState<string | null>(null)
+  const [leDescKo,     setLeDescKo]     = useState<string | null>(null)
+  const [leDescEn,     setLeDescEn]     = useState<string | null>(null)
+  const [leDescFr,     setLeDescFr]     = useState<string | null>(null)
+  const [leButtonText, setLeButtonText] = useState<string | null>(null)
+  const [leSettings,   setLeSettings]   = useState<LeSettings>({})
 
   useEffect(() => {
     Promise.all([getTracks(), getSiteSettings(), getLeSettings()])
       .then(([data, settings, le]) => {
         setTracks((data ?? []) as TrackView[])
-        setSeasonLabel(settings.programs_season_label?.trim() || null)
         setLeTitle(settings.language_exchange_title?.trim() || null)
         setLeDescKo(settings.language_exchange_description_ko?.trim() || null)
         setLeDescEn(settings.language_exchange_description_en?.trim() || null)
@@ -229,308 +421,114 @@ export default function Sessions() {
       .finally(() => setLoading(false))
   }, [])
 
-  const title = (s: TrackView) =>
-    lang === 'ko' ? s.name_ko : lang === 'fr' ? s.name_fr : s.name_en
-  const desc = (s: TrackView) =>
-    lang === 'ko' ? s.description_ko : lang === 'fr' ? s.description_fr : s.description_en
-  const category = (s: TrackView) =>
-    s.category === 'community'
-      ? t('커뮤니티', 'Community', 'Communauté')
-      : t('PROGRAM', 'Program', 'Programme')
-  const price = (s: TrackView) => {
-    if (s.is_free) return t('무료', 'Free', 'Gratuit')
-    if (s.total_price != null) return `$${s.total_price} ${s.currency}`
-    if (s.class_count > 0) return `$${s.price_per_class * s.class_count} ${s.currency}`
-    return `$${s.price_per_class} ${s.currency}`
-  }
-  const duration = (s: TrackView) =>
-    s.duration_weeks ? `${s.duration_weeks} ${t('주', 'weeks', 'semaines')}` : '—'
+  // Sorting: pinned first, then open, then closed; within each group by start_date asc
+  const programTracks = tracks
+    .filter(s => s.category !== 'community')
+    .filter(s => filter === 'all' || s.status === filter)
+    .sort((a, b) => {
+      const ap = !!(a as TrackView & { is_pinned?: boolean }).is_pinned
+      const bp = !!(b as TrackView & { is_pinned?: boolean }).is_pinned
+      if (ap !== bp) return ap ? -1 : 1
+      if (a.status !== b.status) return a.status === 'open' ? -1 : 1
+      return (a.start_date ?? '').localeCompare(b.start_date ?? '')
+    })
 
-  // Programs (classes / courses) — subject to status filter
-  const programTracks  = tracks.filter(s => s.category !== 'community')
-  const programVisible = programTracks.filter(s => filter === 'all' || s.status === filter)
+  const communityTrack = tracks.find(s => s.category === 'community')
 
-  // Community / language exchange — shown separately, never filtered out
-  const communityTracks    = tracks.filter(s => s.category === 'community')
-  const openCommunityTrack = communityTracks.find(s => s.status === 'open') ?? null
+  const leDesc = (lang === 'ko' ? leDescKo : lang === 'fr' ? leDescFr : leDescEn)
+    ?? t(
+      'HAKKYO 커뮤니티에서 대화로 참여하세요.',
+      'Join the HAKKYO community through conversation. No class registration required.',
+      'Rejoignez la communauté HAKKYO par la conversation.',
+    )
 
   if (loading) {
     return (
-      <div className="section flex items-center justify-center h-48">
-        <div className="w-5 h-5 border-2 border-yellow border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center h-64">
+        <div className="w-4 h-4 border border-gray-300 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="section flex items-center justify-center h-48">
-        <p className="text-sm text-red-500">{error}</p>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-sm text-red-400">{error}</p>
       </div>
     )
   }
 
-  return (
-    <div className="section">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t('PROGRAMS', 'Programs', 'Programmes')}</h1>
-          {seasonLabel && (
-            <p className="text-gray-500 text-sm mt-0.5">{seasonLabel}</p>
-          )}
-        </div>
-        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden text-sm font-medium w-fit">
-          {(['all', 'open', 'closed'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={['px-3.5 py-2 transition-colors touch-manipulation',
-                filter === f ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50',
-              ].join(' ')}>
-              {f === 'all'  ? t('전체', 'All', 'Tout') :
-               f === 'open' ? t('모집 중', 'Open', 'Ouvert') :
-               t('마감', 'Closed', 'Fermé')}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {programVisible.map(s => {
-          const isExpanded = expanded === s.id
-          const isOpen     = s.status === 'open'
-          const spotsLeft  = s.capacity - s.enrolled
-          const classSchedule = buildClassSchedule(s)
-          const programDates = formatProgramDateRange(s)
-          const applyDeadline = resolveApplicationDeadline(s)
-          const venue = resolveVenue(s)
-          const classCount = classSchedule.length
-          const trackType = resolveTrackType(s)
-
+  const mainContent = (
+    <>
+      {/* Filter chips */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {(['all', 'open', 'closed'] as const).map(f => {
+          const on = filter === f
+          const label = f === 'all' ? t('전체', 'All', 'Tout') : f === 'open' ? t('모집 중', 'Open', 'Ouvert') : t('마감', 'Closed', 'Fermé')
           return (
-            <div key={s.id} className="border border-gray-200 rounded-xl overflow-hidden">
-              <button
-                className="w-full text-left flex items-center justify-between gap-3
-                           px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors touch-manipulation"
-                onClick={() => setExpanded(isExpanded ? null : s.id)}
-                aria-expanded={isExpanded}
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <span className={isOpen ? 'badge-open' : 'badge-closed'}>
-                    {isOpen ? t('모집 중', 'Open', 'Ouvert') : t('마감', 'Closed', 'Fermé')}
-                  </span>
-                  {trackType && <ProgramTypeBadge type={trackType} />}
-                  <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                    {title(s)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="hidden sm:flex flex-col items-end gap-0.5 text-sm text-gray-500">
-                    {classCount > 0 && (
-                      <span className="text-xs text-gray-400">
-                        {classCount} {t('클래스', 'classes', 'cours')}
-                      </span>
-                    )}
-                    <span className="font-semibold text-gray-900">{price(s)}</span>
-                  </div>
-                  <span className="sm:hidden font-semibold text-gray-900 text-sm">{price(s)}</span>
-                  <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
-
-              {isExpanded && (
-                <div className="border-t border-gray-100 bg-white">
-                  <div className="px-4 pt-5 pb-6 space-y-7">
-                    {/* Overview */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-4 sm:gap-y-5">
-                      <div>
-                        <SectionLabel mobileHidden>{t('대상', 'Audience', 'Public')}</SectionLabel>
-                        <p className="text-sm font-medium text-gray-900 leading-snug">
-                          {formatTargetAudience(s.target_audience, t)}
-                        </p>
-                      </div>
-                      <div>
-                        <SectionLabel>{t('총 가격', 'Total price', 'Prix total')}</SectionLabel>
-                        <p className="text-sm font-semibold text-gray-900">{price(s)}</p>
-                      </div>
-                      <div>
-                        <SectionLabel mobileHidden>{t('기간', 'Duration', 'Durée')}</SectionLabel>
-                        <p className="text-sm font-medium text-gray-900">{duration(s)}</p>
-                      </div>
-                      {programDates && (
-                        <div>
-                          <SectionLabel>{t('프로그램 기간', 'Program dates', 'Dates du programme')}</SectionLabel>
-                          <p className="text-sm font-medium text-gray-900">{programDates}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Application deadline */}
-                    {applyDeadline && isOpen && (
-                      <div className="rounded-lg border border-yellow/50 bg-yellow/5 px-4 py-3.5">
-                        <SectionLabel>{t('신청 마감', 'Application deadline', 'Date limite d\'inscription')}</SectionLabel>
-                        <p className="text-base font-semibold text-gray-900 tracking-tight">{applyDeadline}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {t(
-                            '마감일까지 신청서를 제출해 주세요.',
-                            'Submit your application before this date.',
-                            'Soumettez votre candidature avant cette date.',
-                          )}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Class schedule */}
-                    {classSchedule.length > 0 && (
-                      <div>
-                        <SectionLabel mobileHidden>{t('클래스 일정', 'Class schedule', 'Horaire des cours')}</SectionLabel>
-                        <ul className="divide-y divide-gray-100 rounded-lg border border-gray-100 overflow-hidden">
-                          {classSchedule.map(row => (
-                            <li
-                              key={`${row.name}-${row.when}`}
-                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 px-4 py-3 bg-gray-50/50"
-                            >
-                              <span className="text-sm font-semibold text-gray-900">{row.name}</span>
-                              <span className="text-sm text-gray-600 tabular-nums">{row.when}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Location */}
-                    {venue && (
-                      <div>
-                        <SectionLabel>{t('장소', 'Location', 'Lieu')}</SectionLabel>
-                        <div className="space-y-1">
-                          {venue.name && venue.name !== '—' && (
-                            <p className="text-base font-semibold text-gray-900">{venue.name}</p>
-                          )}
-                          {venue.detail && (
-                            <p className="text-sm text-gray-600">{venue.detail}</p>
-                          )}
-                          {venue.mapsUrl && (
-                            <a
-                              href={venue.mapsUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-sm font-medium text-gray-900 underline decoration-gray-300 underline-offset-2 hover:decoration-yellow mt-2"
-                            >
-                              {t('Google Maps에서 보기', 'View on Google Maps', 'Voir sur Google Maps')} →
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-5">
-                      {desc(s)}
-                    </p>
-
-                    <TrackInterest trackId={s.id} t={t} />
-                    <CapacityBar enrolled={s.enrolled} capacity={s.capacity} t={t} />
-
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-1">
-                      <button
-                        disabled={!isOpen}
-                        onClick={() => isOpen && setApplying(s.id)}
-                        className={['w-full sm:w-auto', isOpen ? 'btn-yellow px-8' : 'btn-outline opacity-40 cursor-not-allowed'].join(' ')}
-                      >
-                        {isOpen ? t('신청하기', 'Apply Now', 'S\'inscrire') : t('마감', 'Registration Closed', 'Inscriptions fermées')}
-                      </button>
-                      {isOpen && spotsLeft > 0 && s.start_date && (
-                        <span className="text-xs text-gray-400">
-                          {t('시작일', 'Starts', 'Début')}:{' '}
-                          <span className="text-gray-600 font-medium">{s.start_date}</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={[
+                'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.06em] transition-colors',
+                on ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700',
+              ].join(' ')}
+            >
+              {f === 'open' && <Zap size={11} className="shrink-0" />}
+              {label}
+            </button>
           )
         })}
-
-        {programVisible.length === 0 && (
-          <div className="py-12 text-center text-gray-400 text-sm">
-            {t('프로그램이 없습니다.', 'No programs available yet.', 'Aucun programme disponible pour le moment.')}
-          </div>
-        )}
       </div>
 
-      {/* ── Language Exchange CTA ──────────────────────────────────────── */}
-      {(() => {
-        const ctaTitle = leTitle || 'Language Exchange'
-        const ctaDesc =
-          (lang === 'ko' ? leDescKo : lang === 'fr' ? leDescFr : leDescEn) ||
-          t(
-            'HAKKYO 커뮤니티에서 대화로 참여하세요. 수업 등록이 필요 없습니다.',
-            'Join the HAKKYO community through conversation. No class registration required.',
-            'Rejoignez la communauté HAKKYO par la conversation. Aucune inscription requise.',
-          )
-        const ctaButton = leButtonText || 'Apply for Language Exchange'
-
-        return (
-          <div className="mt-10 border border-gray-200 rounded-xl overflow-hidden">
-            {/* Yellow accent bar */}
-            <div className="h-0.5 w-full bg-yellow" />
-            <div className="px-6 py-7 flex flex-col sm:flex-row sm:items-start justify-between gap-5">
-              <div className="space-y-2">
-                <p className="font-semibold text-gray-900 text-base tracking-tight">
-                  {ctaTitle}
-                </p>
-                <p className="text-sm text-gray-500 leading-relaxed">{ctaDesc}</p>
-                {(leSettings.schedule || leSettings.location_name) && (
-                  <div className="pt-1 space-y-1">
-                    {leSettings.schedule && (
-                      <p className="text-xs text-gray-500">
-                        <span className="font-medium text-gray-700">{t('일정', 'Schedule', 'Horaire')}</span>
-                        {' · '}{leSettings.schedule}
-                      </p>
-                    )}
-                    {leSettings.location_name && (
-                      <p className="text-xs text-gray-500">
-                        <span className="font-medium text-gray-700">{t('장소', 'Location', 'Lieu')}</span>
-                        {' · '}{leSettings.location_name}
-                        {leSettings.location_address && `, ${leSettings.location_address}`}
-                        {leSettings.google_maps_url && (
-                          <a
-                            href={leSettings.google_maps_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-2 underline decoration-gray-300 underline-offset-2 hover:decoration-yellow transition-colors"
-                          >
-                            Map →
-                          </a>
-                        )}
-                      </p>
-                    )}
-                    {leSettings.notes && (
-                      <p className="text-xs text-gray-400 italic">{leSettings.notes}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setApplyingCommunity(true)}
-                className="shrink-0 w-full sm:w-auto btn-outline"
-              >
-                {ctaButton}
-              </button>
-            </div>
-          </div>
-        )
-      })()}
-
-      {applying && (
-        <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />
+      {/* Program feed cards */}
+      {programTracks.length === 0 ? (
+        <div className="py-24 text-center">
+          <p className="text-sm text-gray-300 tracking-wide">
+            {t('프로그램이 없습니다.', 'No programs available.', 'Aucun programme disponible.')}
+          </p>
+        </div>
+      ) : (
+        <div>
+          {programTracks.map(track => (
+            <ProgramCard
+              key={track.id}
+              track={track}
+              lang={lang}
+              onApply={setApplying}
+              t={t}
+            />
+          ))}
+        </div>
       )}
-      {applyingCommunity && (
-        <ApplyModal languageExchange onClose={() => setApplyingCommunity(false)} />
+
+      {/* Language Exchange */}
+      {(communityTrack || leDesc) && (
+        <LanguageExchangeCard
+          leTitle={leTitle || 'Language Exchange'}
+          leDesc={leDesc}
+          leButtonText={leButtonText || t('신청하기', 'Apply for Language Exchange', "S'inscrire")}
+          leSettings={leSettings}
+          onApply={() => setApplyingCommunity(true)}
+          t={t}
+        />
       )}
-    </div>
+
+      <div className="border-t border-gray-100" />
+    </>
+  )
+
+  return (
+    <>
+      <PageShell
+        left={<LeftSidebar lang={lang} />}
+        right={<SharedRightSidebar lang={lang} />}
+      >
+        {mainContent}
+      </PageShell>
+
+      {applying          && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
+      {applyingCommunity && <ApplyModal languageExchange onClose={() => setApplyingCommunity(false)} />}
+    </>
   )
 }

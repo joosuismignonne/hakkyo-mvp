@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getContentById } from '../lib/db'
 import { useLang } from '../context/LangContext'
+import { pushRecent } from '../lib/memory'
+import { thumbnailUrl as getThumb } from '../lib/newsContent'
 import ArticleBody from '../components/ArticleBody'
 import VideoEmbed from '../components/VideoEmbed'
+import ImageGallery from '../components/ImageGallery'
 import {
   categoryLabel,
-  newsExcerpt,
   normalizeContent,
+  normalizeImageUrls,
   pickNewsBody,
   pickNewsTitle,
   resolveContentCategory,
@@ -31,8 +34,17 @@ export default function ContentDetail() {
     }
     getContentById(id)
       .then(data => {
-        if (!data) setError('Post not found.')
-        else setItem(normalizeContent(data))
+        if (!data) { setError('Post not found.'); return }
+        const normalized = normalizeContent(data)
+        setItem(normalized)
+        pushRecent({
+          id,
+          title: normalized.title_en || normalized.title_ko,
+          type:  'archive',
+          image: getThumb(normalized),
+          url:   `/news/${id}`,
+          date:  normalized.published_at ?? null,
+        })
       })
       .catch(err => setError(err.message ?? 'Failed to load article.'))
       .finally(() => setLoading(false))
@@ -41,7 +53,7 @@ export default function ContentDetail() {
   if (loading) {
     return (
       <div className="section flex items-center justify-center h-48">
-        <div className="w-5 h-5 border-2 border-yellow border-t-transparent rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -50,36 +62,43 @@ export default function ContentDetail() {
     return (
       <div className="section">
         <p className="text-sm text-red-500 mb-4">{error || 'Post not found.'}</p>
-        <Link to="/content" className="text-sm text-gray-600 hover:text-gray-900">
+        <Link to="/news" className="text-sm text-gray-600 hover:text-gray-900">
           ← {t('NEWS로 돌아가기', 'Back to NEWS', 'Retour aux NEWS')}
         </Link>
       </div>
     )
   }
 
-  const title = pickNewsTitle(item, lang)
-  const body = pickNewsBody(item, lang)
-  const thumb = thumbnailUrl(item)
-  const summary = newsExcerpt(body, 280)
+  const title    = pickNewsTitle(item, lang)
+  const body     = pickNewsBody(item, lang)
   const category = resolveContentCategory(item)
-  const video = videoEmbedFromUrl(item.video_url)
+  const video    = videoEmbedFromUrl(item.video_url)
+
+  // Build full image list: thumbnail + image_urls, deduped, normalised
+  const thumb = thumbnailUrl(item)
+  const extra = normalizeImageUrls(item.image_urls)
+  const allImages = (() => {
+    const all  = [thumb, ...extra].filter((u): u is string => typeof u === 'string' && u.trim() !== '')
+    const seen = new Set<string>()
+    return all.filter(u => seen.has(u) ? false : (seen.add(u), true))
+  })()
 
   return (
     <article className="section pb-16">
       <div className="max-w-[42rem] mx-auto">
         <Link
-          to="/content"
+          to="/news"
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 mb-8 transition-colors"
         >
           ← {t('NEWS', 'NEWS', 'NEWS')}
         </Link>
 
-        {thumb && (
-          <div className="mb-10 aspect-[2/1] sm:aspect-[21/9] w-full overflow-hidden rounded-xl bg-gray-100">
-            <img
-              src={thumb}
-              alt=""
-              className="h-full w-full object-cover"
+        {!video && allImages.length > 0 && (
+          <div className="mb-10 overflow-hidden rounded-xl">
+            <ImageGallery
+              images={allImages}
+              aspect="aspect-[2/1] sm:aspect-[21/9]"
+              rounded="rounded-xl"
             />
           </div>
         )}
@@ -100,11 +119,6 @@ export default function ContentDetail() {
             {title}
           </h1>
 
-          {summary && (
-            <p className="text-lg sm:text-xl text-gray-500 leading-relaxed font-light">
-              {summary}
-            </p>
-          )}
         </header>
 
         <ArticleBody body={body} />

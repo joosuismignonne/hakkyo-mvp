@@ -43,6 +43,7 @@ export interface ProgramTrack {
   description_fr: string
   notes: string
   recommended: boolean
+  is_pinned?: boolean | null
   status: 'open' | 'closed'
   is_free: boolean
   target_audience?: string | null
@@ -53,6 +54,15 @@ export interface ProgramTrack {
   venue_city?: string | null
   google_maps_url?: string | null
   created_at?: string
+  // ── Detail page fields (nullable; hidden when empty) ──────────────────────
+  overview?: string | null
+  target_participants?: string[] | null
+  learning_outcomes?: string[] | null
+  weekly_structure?: Array<{ week: number; title: string; description?: string }> | null
+  instructor_name?: string | null
+  instructor_bio?: string | null
+  instructor_image_url?: string | null
+  faq_items?: Array<{ question: string; answer: string }> | null
   // joined
   track_sessions?: { session_id: string; session?: Session }[]
 }
@@ -65,12 +75,24 @@ export interface Notice {
   body_ko: string
   body_en: string
   body_fr: string
-  type: 'notice' | 'schedule' | 'event'
+  type: 'notice' | 'hiring' | 'event'
   date: string
+  is_pinned?: boolean | null
   created_at?: string
+  // Optional rich fields (stored in DB when present)
+  image_url?:             string | null
+  tags?:                  string[] | null
+  location_name?:         string | null
+  map_url?:               string | null
+  instagram_url?:         string | null
+  external_url?:          string | null
+  related_program_label?: string | null
+  related_program_id?:    string | null
+  // Joined — populated by getNotices when related_program_id is set
+  related_program?:       ProgramTrack | null
 }
 
-export type ContentCategory = 'archive' | 'language' | 'news' | 'culture' | 'life'
+export type ContentCategory = 'archive' | 'montreal' | 'language' | 'culture'
 export type ContentType = 'text' | 'image' | 'video'
 
 export interface Content {
@@ -87,6 +109,7 @@ export interface Content {
   thumbnail_url?: string | null
   image_urls?: string[] | null
   video_url?: string | null
+  is_pinned?: boolean | null
   published_at: string
   created_at?: string
 }
@@ -123,9 +146,44 @@ export interface Application {
   referral_source?: string | null
   message?: string | null
   created_at?: string
+  answer_count?: number
   session?: Session
   track?: ProgramTrack
   answers?: ApplicationAnswer[]
+}
+
+export type CommunityCategory =
+  | 'housing'
+  | 'jobs'
+  | 'events'
+  | 'language_exchange'
+  | 'looking_for_people'
+  | 'help_needed'
+  | 'other'
+
+export interface CommunitySubmission {
+  id: string
+  type: string           // DB column: type (was 'category')
+  title: string
+  description: string
+  contact: string        // DB column: contact (holds submitter info)
+  location?: string | null
+  link?: string | null
+  image_url?: string | null
+  status: 'pending' | 'approved' | 'rejected' | 'published'
+  created_at?: string
+  updated_at?: string
+}
+
+export interface AdminNotification {
+  id: string
+  type: string
+  title: string
+  message: string
+  related_table?: string | null
+  related_id?: string | null
+  is_read: boolean
+  created_at?: string
 }
 
 export interface ApplicationAnswer {

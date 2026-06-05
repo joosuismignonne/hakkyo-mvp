@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes globe-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes modal-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 @layer base {
   * { box-sizing: border-box; }
   html { background: #fff; color: #111; -webkit-font-smoothing: antialiased; }
@@ -13,8 +28,8 @@
 @layer components {
   /* ── Buttons ── */
   .btn-yellow {
-    @apply inline-flex items-center justify-center bg-yellow text-black font-semibold
-           px-4 py-2.5 rounded-lg hover:bg-yellow-hover active:scale-95
+    @apply inline-flex items-center justify-center bg-gray-900 text-white font-semibold
+           px-4 py-2.5 rounded-lg hover:bg-gray-800 active:scale-95
            transition-all text-sm min-h-[44px] touch-manipulation;
   }
   .btn-black {
@@ -35,7 +50,7 @@
 
   /* ── Badges ── */
   .badge-open {
-    @apply inline-flex items-center bg-yellow text-black text-xs font-bold
+    @apply inline-flex items-center bg-gray-900 text-white text-xs font-bold
            px-2 py-0.5 rounded whitespace-nowrap;
   }
   .badge-closed {
@@ -50,13 +65,13 @@
   /* ── Form elements ── */
   .input {
     @apply w-full border border-gray-300 rounded-lg px-3 py-3 text-sm
-           focus:outline-none focus:ring-2 focus:ring-yellow focus:border-transparent
+           focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
            bg-white transition-shadow placeholder-gray-400 min-h-[48px];
     font-size: 16px; /* prevent iOS zoom */
   }
   .input-sm {
     @apply w-full border border-gray-200 rounded-lg px-3 py-2 text-sm
-           focus:outline-none focus:ring-2 focus:ring-yellow/50 focus:border-transparent
+           focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-transparent
            bg-white placeholder-gray-300;
     font-size: 14px;
   }
@@ -110,7 +125,7 @@
     @apply text-lg font-semibold text-gray-900 leading-snug;
   }
   .content-rich-editor .tiptap-editor-content blockquote {
-    @apply border-l-[3px] border-yellow pl-4 text-gray-600 italic;
+    @apply border-l-[3px] border-gray-900 pl-4 text-gray-600 italic;
   }
   .content-rich-editor .tiptap-editor-content ul {
     @apply list-disc pl-6;
@@ -153,7 +168,7 @@
     @apply text-[17px] leading-[1.75] text-gray-700;
   }
   .article-html-body blockquote {
-    @apply my-8 border-l-[3px] border-yellow pl-5 text-gray-600 italic;
+    @apply my-8 border-l-[3px] border-gray-900 pl-5 text-gray-600 italic;
   }
   .article-html-body ul {
     @apply mb-6 list-disc space-y-2 pl-6 text-gray-700;
@@ -169,7 +184,7 @@
     @apply my-10 w-full rounded-lg border border-gray-100;
   }
   .article-html-body a {
-    @apply font-medium text-gray-900 underline decoration-gray-300 underline-offset-[3px] hover:decoration-yellow;
+    @apply font-medium text-gray-900 underline decoration-gray-300 underline-offset-[3px] hover:decoration-gray-900;
   }
   .article-html-body div[data-youtube-video],
   .article-html-body .article-youtube {

@@ -1,12 +1,19 @@
 import { supabase, isConfigured } from './supabase'
 import {
   MOCK_SESSIONS, MOCK_TRACKS, MOCK_NOTICES, MOCK_CONTENTS, MOCK_QUESTIONS,
+  MOCK_COMMUNITY_SUBMISSIONS,
 } from './mock'
 import { isPublicMediaUrl } from './contentStorage'
 import { normalizeImageUrls } from './newsContent'
 import type {
   Session, ProgramTrack, Notice, Content, FormQuestion, Application,
+  CommunitySubmission, AdminNotification,
 } from '../types'
+
+// ─── Answer snapshot helper ───────────────────────────────────────────────────
+function questionLabel(q: FormQuestion): string {
+  return q.question_ko || q.question_en || q.question_fr || q.id
+}
 
 function contentSaveFields(c: Partial<Content>): Omit<Content, 'id' | 'created_at'> {
   const thumb = c.thumbnail_url?.trim() ?? ''
@@ -30,6 +37,43 @@ function contentSaveFields(c: Partial<Content>): Omit<Content, 'id' | 'created_a
 function db() {
   if (!supabase) throw new Error('Supabase is not configured.')
   return supabase
+}
+
+/** Stable string key for application id ↔ application_id matching */
+export function normalizeApplicationId(id: unknown): string {
+  if (id == null) return ''
+  return String(id).trim().toLowerCase().replace(/^\{|\}$/g, '')
+}
+
+const ANSWER_ID_PAGE_SIZE = 1000
+
+async function fetchAnswerCountByApplicationId(): Promise<Record<string, number>> {
+  const answerCountMap: Record<string, number> = {}
+  let from = 0
+  let totalRows = 0
+
+  while (true) {
+    const { data, error } = await db()
+      .from('application_answers')
+      .select('application_id')
+      .range(from, from + ANSWER_ID_PAGE_SIZE - 1)
+
+    if (error) throw error
+
+    const rows = data ?? []
+    totalRows += rows.length
+    for (const row of rows) {
+      const key = normalizeApplicationId(row.application_id)
+      if (!key) continue
+      answerCountMap[key] = (answerCountMap[key] ?? 0) + 1
+    }
+
+    if (rows.length < ANSWER_ID_PAGE_SIZE) break
+    from += ANSWER_ID_PAGE_SIZE
+  }
+
+  console.log('application_answers rows fetched for counting', totalRows)
+  return answerCountMap
 }
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
@@ -95,6 +139,19 @@ export async function getTracks(category?: 'program' | 'community'): Promise<Pro
   return (data ?? []) as unknown as ProgramTrack[]
 }
 
+export async function getTrackById(id: string): Promise<ProgramTrack | null> {
+  if (!isConfigured) {
+    return MOCK_TRACKS.find(t => t.id === id) ?? null
+  }
+  const { data, error } = await db()
+    .from('program_tracks')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  return data as ProgramTrack | null
+}
+
 export async function saveTrack(
   track: Partial<ProgramTrack>,
   _sessionIds: string[]
@@ -115,8 +172,15 @@ export async function saveTrack(
 }
 
 export async function deleteTrack(id: string): Promise<void> {
-  const { error } = await db().from('program_tracks').delete().eq('id', id)
+  console.log('[db] delete target table: program_tracks')
+  console.log('[db] delete id:', id)
+  const { data, error } = await db().from('program_tracks').delete().eq('id', id).select('id')
+  console.log('[db] delete result — data:', data, '| error:', error)
   if (error) throw error
+  if (!data || data.length === 0) throw new Error(
+    'Delete failed: 0 rows deleted from program_tracks. ' +
+    'Check that a DELETE RLS policy exists for the authenticated role.'
+  )
 }
 
 export async function setTrackStatus(id: string, status: 'open' | 'closed'): Promise<void> {
@@ -129,13 +193,27 @@ export async function setTrackStatus(id: string, status: 'open' | 'closed'): Pro
 export async function getNotices(): Promise<Notice[]> {
   if (!isConfigured) return MOCK_NOTICES
   const { data, error } = await db()
-    .from('notices').select('*').order('date', { ascending: false })
+    .from('notices')
+    .select('*')
+    .order('date', { ascending: false })
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as Notice[]
+}
+
+export async function getNoticeById(id: string): Promise<Notice | null> {
+  if (!isConfigured) return MOCK_NOTICES.find(n => n.id === id) ?? null
+  const { data, error } = await db()
+    .from('notices')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) return null
+  return data as Notice
 }
 
 export async function saveNotice(n: Partial<Notice>): Promise<void> {
-  const { id, created_at, ...fields } = n as Notice & { created_at?: string }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, created_at, related_program, ...fields } = n as Notice & { created_at?: string }
   if (id) {
     const { error } = await db().from('notices').update(fields).eq('id', id)
     if (error) throw error
@@ -146,8 +224,15 @@ export async function saveNotice(n: Partial<Notice>): Promise<void> {
 }
 
 export async function deleteNotice(id: string): Promise<void> {
-  const { error } = await db().from('notices').delete().eq('id', id)
+  console.log('[db] delete target table: notices')
+  console.log('[db] delete id:', id)
+  const { data, error } = await db().from('notices').delete().eq('id', id).select('id')
+  console.log('[db] delete result — data:', data, '| error:', error)
   if (error) throw error
+  if (!data || data.length === 0) throw new Error(
+    'Delete failed: 0 rows deleted from notices. ' +
+    'Check that a DELETE RLS policy exists for the authenticated role.'
+  )
 }
 
 // ─── Contents ─────────────────────────────────────────────────────────────────
@@ -186,8 +271,15 @@ export async function saveContent(c: Partial<Content>): Promise<void> {
 }
 
 export async function deleteContent(id: string): Promise<void> {
-  const { error } = await db().from('contents').delete().eq('id', id)
+  console.log('[db] delete target table: contents')
+  console.log('[db] delete id:', id)
+  const { data, error } = await db().from('contents').delete().eq('id', id).select('id')
+  console.log('[db] delete result — data:', data, '| error:', error)
   if (error) throw error
+  if (!data || data.length === 0) throw new Error(
+    'Delete failed: 0 rows deleted from contents. ' +
+    'Check that a DELETE RLS policy exists for the authenticated role.'
+  )
 }
 
 // ─── Form Questions ───────────────────────────────────────────────────────────
@@ -249,6 +341,7 @@ export interface SubmitPayload {
   totalPrice?: number | null
   selectedLabel?: string | null
   answers: Record<string, string>   // keys must be real UUIDs from form_questions
+  questions?: FormQuestion[]        // snapshot source — pass the loaded questions array
 }
 
 export interface LeSubmitPayload {
@@ -273,14 +366,20 @@ export async function submitApplication(payload: SubmitPayload): Promise<void> {
     totalPrice,
     selectedLabel,
     answers,
+    questions = [],
   } = payload
   if (!isConfigured) {
     await new Promise(r => setTimeout(r, 700))
     return
   }
-  const { data: app, error: appErr } = await db()
+  // Generate the ID client-side so we never need SELECT after INSERT.
+  // This avoids the RLS chicken-and-egg: INSERT + RETURNING requires a SELECT policy.
+  const applicationId = crypto.randomUUID()
+
+  const { error: appErr } = await db()
     .from('applications')
     .insert({
+      id:         applicationId,
       track_id:   trackId   ?? null,
       session_id: sessionId ?? null,
       name,
@@ -291,15 +390,27 @@ export async function submitApplication(payload: SubmitPayload): Promise<void> {
       selected_label: selectedLabel ?? null,
       status: 'pending',
     })
-    .select('id').single()
   if (appErr) {
     console.error(appErr)
     throw appErr
   }
 
+  // Build a lookup map from the questions snapshot passed at call time
+  const questionMap = new Map<string, FormQuestion>(questions.map(q => [q.id, q]))
+
   const rows = Object.entries(answers)
     .filter(([, v]) => v.trim())
-    .map(([question_id, answer]) => ({ application_id: app.id, question_id, answer }))
+    .map(([question_id, answer]) => {
+      const q = questionMap.get(question_id)
+      return {
+        application_id:          applicationId,
+        question_id,
+        answer,
+        question_label_snapshot: q ? questionLabel(q) : null,
+        question_type_snapshot:  q?.type  ?? null,
+        question_order_snapshot: q?.order_index ?? null,
+      }
+    })
 
   console.log('[submitApplication] application_answers payload before insert:', rows)
 
@@ -310,6 +421,59 @@ export async function submitApplication(payload: SubmitPayload): Promise<void> {
       throw error
     }
   }
+
+  // Fire notification — must never block or fail the submission
+  createAdminNotification({
+    type: 'application',
+    title: `New Application: ${selectedLabel ?? trackId ?? 'Program'}`,
+    message: `${name} (${email}) submitted an application.`,
+    related_table: 'applications',
+    related_id: applicationId,
+  }).catch(() => {})
+}
+
+
+// ─── Admin Notifications ──────────────────────────────────────────────────────
+
+export async function createAdminNotification(n: {
+  type: string
+  title: string
+  message: string
+  related_table?: string
+  related_id?: string
+}): Promise<void> {
+  if (!isConfigured) return
+  await db().from('admin_notifications').insert({ ...n, is_read: false })
+  // errors silently ignored by caller
+}
+
+export async function getAdminNotifications(): Promise<AdminNotification[]> {
+  if (!isConfigured) return []
+  const { data, error } = await db()
+    .from('admin_notifications')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50)
+  if (error) {
+    console.warn('[notifications]', error.message)
+    return []
+  }
+  return (data ?? []) as AdminNotification[]
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  if (!isConfigured) return
+  const { error } = await db().from('admin_notifications').update({ is_read: true }).eq('id', id)
+  if (error) console.warn('[notifications] markNotificationRead:', error.message)
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  if (!isConfigured) return
+  const { error } = await db()
+    .from('admin_notifications')
+    .update({ is_read: true })
+    .eq('is_read', false)
+  if (error) console.warn('[notifications] markAllNotificationsRead:', error.message)
 }
 
 export async function submitLeApplication(payload: LeSubmitPayload): Promise<void> {
@@ -318,7 +482,12 @@ export async function submitLeApplication(payload: LeSubmitPayload): Promise<voi
     await new Promise(r => setTimeout(r, 700))
     return
   }
-  const row = {
+
+  // Generate client-side UUID so answers can reference it without a SELECT round-trip
+  const applicationId = crypto.randomUUID()
+
+  const { error: appErr } = await db().from('applications').insert({
+    id:               applicationId,
     application_type: 'language_exchange',
     selected_label:   'Language Exchange',
     total_price:      0,
@@ -329,27 +498,70 @@ export async function submitLeApplication(payload: LeSubmitPayload): Promise<voi
     email,
     phone,
     instagram,
+    // Keep flat columns for backward compat — not relied on for Admin display
     city,
-    language_level:   languageLevel,
-    referral_source:  referralSource,
+    language_level:  languageLevel,
+    referral_source: referralSource,
     message,
+  })
+  if (appErr) {
+    console.error('[submitLeApplication] insert error:', appErr)
+    throw appErr
   }
-  console.log('[submitLeApplication] payload before insert:', row)
-  const { error } = await db().from('applications').insert(row)
-  if (error) {
-    console.error('[submitLeApplication] insert error:', error)
-    throw error
+
+  // Write each LE answer into application_answers as the single source of truth.
+  // question_id is null because LE questions are not stored in form_questions;
+  // question_label_snapshot preserves the label permanently.
+  const leAnswerDefs = [
+    { label: '현재 거주 도시',               type: 'text',     order: 1, value: city           },
+    { label: '언어 레벨',                    type: 'select',   order: 2, value: languageLevel   },
+    { label: 'HAKKYO를 어떻게 알게 되셨나요?', type: 'text',     order: 3, value: referralSource  },
+    { label: '목표 / 메시지',                 type: 'textarea', order: 4, value: message         },
+  ] as const
+
+  const answerRows = leAnswerDefs
+    .filter(a => a.value?.trim())
+    .map(a => ({
+      application_id:          applicationId,
+      question_id:             null,
+      answer:                  a.value,
+      question_label_snapshot: a.label,
+      question_type_snapshot:  a.type,
+      question_order_snapshot: a.order,
+    }))
+
+  if (answerRows.length > 0) {
+    const { error: ansErr } = await db().from('application_answers').insert(answerRows)
+    if (ansErr) {
+      console.error('[submitLeApplication] answers insert error:', ansErr)
+      throw ansErr
+    }
   }
 }
 
 export async function getApplications(): Promise<Application[]> {
   if (!isConfigured) return []
-  const { data, error } = await db()
-    .from('applications')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return (data ?? []) as unknown as Application[]
+
+  const [appsResult, answerCountMap] = await Promise.all([
+    db().from('applications').select('*').order('created_at', { ascending: false }),
+    fetchAnswerCountByApplicationId(),
+  ])
+  if (appsResult.error) throw appsResult.error
+
+  const applications = (appsResult.data ?? []).map(raw => {
+    const app = raw as Application
+    const idKey = normalizeApplicationId(app.id)
+    return {
+      ...app,
+      answer_count: answerCountMap[idKey] ?? 0,
+    }
+  }) as Application[]
+
+  console.log('apps ids', applications.map(a => a.id))
+  console.log('answer count map', answerCountMap)
+  console.log('mapped apps', applications.map(a => ({ id: a.id, answer_count: a.answer_count })))
+
+  return applications
 }
 
 export async function setApplicationStatus(
@@ -409,6 +621,116 @@ export async function getLeSettings(): Promise<LeSettings> {
     return {}
   }
   return (data ?? {}) as LeSettings
+}
+
+// ─── Community Submissions ────────────────────────────────────────────────────
+// SQL migration (run once in Supabase dashboard):
+//
+// create table community_submissions (
+//   id uuid default gen_random_uuid() primary key,
+//   name text not null,
+//   contact text not null,
+//   category text not null,
+//   title text not null,
+//   description text not null,
+//   image_url text,
+//   status text not null default 'pending',
+//   created_at timestamptz default now()
+// );
+//
+// Status workflow: pending → approved → published  (or pending → rejected)
+// Only 'published' rows appear on the public homepage feed.
+
+// Columns that actually exist in the DB
+const COMMUNITY_COLS = 'id, type, title, description, contact, location, link, image_url, status, created_at, updated_at'
+
+export interface CommunitySubmitPayload {
+  type: string           // maps to DB 'type' column (was 'category')
+  title: string
+  description: string
+  contact: string        // combined submitter info
+  location?: string | null
+  link?: string | null
+  image_url?: string | null
+}
+
+export async function submitCommunityPost(payload: CommunitySubmitPayload): Promise<void> {
+  if (!isConfigured) {
+    await new Promise(r => setTimeout(r, 600))
+    return
+  }
+  const { error } = await db()
+    .from('community_submissions')
+    .insert({ ...payload, status: 'pending' })
+  if (error) throw error
+}
+
+export async function getPublishedCommunityPosts(): Promise<CommunitySubmission[]> {
+  if (!isConfigured) {
+    return MOCK_COMMUNITY_SUBMISSIONS.filter(s => s.status === 'published')
+  }
+  const { data, error } = await db()
+    .from('community_submissions')
+    .select(COMMUNITY_COLS)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+  if (error) {
+    console.warn('[community] getPublishedCommunityPosts:', error.message)
+    return []
+  }
+  return (data ?? []) as CommunitySubmission[]
+}
+
+export async function getCommunityPostById(id: string): Promise<CommunitySubmission | null> {
+  if (!isConfigured) {
+    return MOCK_COMMUNITY_SUBMISSIONS.find(s => s.id === id) ?? null
+  }
+  const { data, error } = await db()
+    .from('community_submissions')
+    .select(COMMUNITY_COLS)
+    .eq('id', id)
+    .eq('status', 'published')
+    .single()
+  if (error) return null
+  return data as CommunitySubmission
+}
+
+// backward-compat alias
+export const getApprovedCommunityPosts = getPublishedCommunityPosts
+
+export async function getAllCommunitySubmissions(): Promise<CommunitySubmission[]> {
+  if (!isConfigured) return MOCK_COMMUNITY_SUBMISSIONS
+  const { data, error } = await db()
+    .from('community_submissions')
+    .select(COMMUNITY_COLS)
+    .order('created_at', { ascending: false })
+  if (error) {
+    console.warn('[community] getAllCommunitySubmissions:', error.message)
+    return []
+  }
+  return (data ?? []) as CommunitySubmission[]
+}
+
+export async function setCommunitySubmissionStatus(
+  id: string,
+  status: CommunitySubmission['status'],
+): Promise<void> {
+  if (!isConfigured) return
+  const { error } = await db().from('community_submissions').update({ status }).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteCommunitySubmission(id: string): Promise<void> {
+  if (!isConfigured) return
+  console.log('[db] delete target table: community_submissions')
+  console.log('[db] delete id:', id)
+  const { data, error } = await db().from('community_submissions').delete().eq('id', id).select('id')
+  console.log('[db] delete result — data:', data, '| error:', error)
+  if (error) throw error
+  if (!data || data.length === 0) throw new Error(
+    'Delete failed: 0 rows deleted from community_submissions. ' +
+    'Check that a DELETE RLS policy exists for the authenticated role.'
+  )
 }
 
 export async function saveLeSettings(settings: LeSettings): Promise<void> {

@@ -1,4 +1,4 @@
-import type { Session, ProgramTrack, Notice, Content, FormQuestion } from '../types'
+import type { Session, ProgramTrack, Notice, Content, FormQuestion, CommunitySubmission } from '../types'
 
 export const MOCK_SESSIONS: Session[] = [
   {
@@ -182,7 +182,7 @@ export const MOCK_NOTICES: Notice[] = [
     body_ko: '풀 트랙 첫 수업이 1월 12일 월요일 19:00에 시작됩니다.',
     body_en: 'Full Track first class: Monday Jan 12, 19:00. HAKKYO Space.',
     body_fr: 'Premier cours Formule complète : lundi 12 janvier, 19h. HAKKYO Space.',
-    type: 'schedule', date: '2026-01-12',
+    type: 'hiring', date: '2026-01-12',
   },
   {
     id: 'N3',
@@ -239,6 +239,45 @@ Finding identity between Korean, English, and French means accepting that you wi
     category: 'culture',
     type: 'text',
     published_at: '2025-06-10',
+  },
+]
+
+export const MOCK_COMMUNITY_SUBMISSIONS: CommunitySubmission[] = [
+  {
+    id: 'CS1',
+    type: 'housing',
+    title: 'Plateau apartment transfer — July 1',
+    description: 'Looking to transfer my 3½ in Plateau Mont-Royal. $1,050/month, available July 1. Quiet building, close to metro. Korean-speaking neighbours. DM me if interested.',
+    contact: 'Ji-hoon K. · jihoon@example.com',
+    location: null,
+    link: null,
+    image_url: null,
+    status: 'published',
+    created_at: '2026-05-28T10:00:00Z',
+  },
+  {
+    id: 'CS2',
+    type: 'looking_for_people',
+    title: 'Anyone going to MURAL Festival?',
+    description: 'Going to MURAL Festival this weekend and looking for people to explore with. Happy to speak Korean, English, or practise French together. Message me!',
+    contact: 'Soyeon L. · soyeon@example.com',
+    location: null,
+    link: null,
+    image_url: null,
+    status: 'approved',
+    created_at: '2026-05-20T14:00:00Z',
+  },
+  {
+    id: 'CS3',
+    type: 'help_needed',
+    title: 'Looking for help with RAMQ registration',
+    description: 'Just arrived in Montréal and need help navigating RAMQ health insurance registration. Happy to trade French conversation practice. Anyone who\'s done it recently?',
+    contact: 'Thomas B. · thomas@example.com',
+    location: null,
+    link: null,
+    image_url: null,
+    status: 'pending',
+    created_at: '2026-06-01T09:00:00Z',
   },
 ]
 

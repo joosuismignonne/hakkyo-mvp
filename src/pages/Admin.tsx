@@ -8,9 +8,11 @@ import {
   getAllQuestions, saveQuestion, deleteQuestion, swapQuestionOrder,
   getApplications, setApplicationStatus,
   getLeSettings, saveLeSettings,
+  getAllCommunitySubmissions, setCommunitySubmissionStatus, deleteCommunitySubmission,
+  getAdminNotifications, markNotificationRead, markAllNotificationsRead,
 } from '../lib/db'
 import type { LeSettings } from '../lib/db'
-import type { ProgramTrack, Notice, Content, FormQuestion, Application, ContentCategory, ContentType } from '../types'
+import type { ProgramTrack, Notice, Content, FormQuestion, Application, ContentCategory, ContentType, CommunitySubmission, AdminNotification } from '../types'
 import {
   CONTENT_CATEGORIES,
   CONTENT_TYPES,
@@ -39,7 +41,7 @@ const BODY_FIELD: Record<BodyLang, 'body_ko' | 'body_en' | 'body_fr'> = {
 
 // ─── Shared UI primitives ─────────────────────────────────────────────────────
 function Spinner() {
-  return <div className="py-8 text-center"><div className="w-5 h-5 border-2 border-yellow border-t-transparent rounded-full animate-spin mx-auto" /></div>
+  return <div className="py-8 text-center"><div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto" /></div>
 }
 function ErrorMsg({ msg }: { msg: string }) {
   return <p className="py-4 text-sm text-red-500">{msg}</p>
@@ -87,6 +89,67 @@ function SaveRow({ onSave, onCancel, saving, label = 'Save' }: {
         {saving ? 'Saving…' : label}
       </button>
       <button onClick={onCancel} className="btn-outline">Cancel</button>
+    </div>
+  )
+}
+
+// ─── Structured field editors ─────────────────────────────────────────────────
+
+type WeekRow = { week: number; title: string; description: string }
+type FaqRow  = { question: string; answer: string }
+
+function WeeklyStructureEditor({ value, onChange }: {
+  value: WeekRow[]
+  onChange: (v: WeekRow[]) => void
+}) {
+  function add()              { onChange([...value, { week: value.length + 1, title: '', description: '' }]) }
+  function remove(i: number)  { onChange(value.filter((_, idx) => idx !== i)) }
+  function upd(i: number, k: keyof WeekRow, v: string | number) {
+    onChange(value.map((r, idx) => idx === i ? { ...r, [k]: v } : r))
+  }
+  return (
+    <div className="space-y-2">
+      {value.map((row, i) => (
+        <div key={i} className="grid grid-cols-[48px_1fr_1fr_24px] gap-2 items-start">
+          <input type="number" className="input text-center" value={row.week}
+                 onChange={e => upd(i, 'week', Number(e.target.value))} placeholder="Wk" />
+          <input className="input" value={row.title}
+                 onChange={e => upd(i, 'title', e.target.value)} placeholder="Week title" />
+          <input className="input" value={row.description}
+                 onChange={e => upd(i, 'description', e.target.value)} placeholder="Description (optional)" />
+          <button type="button" onClick={() => remove(i)}
+                  className="text-gray-300 hover:text-red-500 text-lg leading-none mt-2">×</button>
+        </div>
+      ))}
+      <button type="button" onClick={add} className="text-xs text-gray-400 hover:text-gray-700">+ Add week</button>
+    </div>
+  )
+}
+
+function FaqEditor({ value, onChange }: {
+  value: FaqRow[]
+  onChange: (v: FaqRow[]) => void
+}) {
+  function add()             { onChange([...value, { question: '', answer: '' }]) }
+  function remove(i: number) { onChange(value.filter((_, idx) => idx !== i)) }
+  function upd(i: number, k: keyof FaqRow, v: string) {
+    onChange(value.map((r, idx) => idx === i ? { ...r, [k]: v } : r))
+  }
+  return (
+    <div className="space-y-3">
+      {value.map((row, i) => (
+        <div key={i} className="border border-gray-100 rounded-lg p-3 space-y-2">
+          <div className="flex gap-2">
+            <input className="input flex-1" value={row.question}
+                   onChange={e => upd(i, 'question', e.target.value)} placeholder="Question" />
+            <button type="button" onClick={() => remove(i)}
+                    className="text-gray-300 hover:text-red-500 text-lg leading-none px-1">×</button>
+          </div>
+          <textarea className="input resize-none w-full" rows={2} value={row.answer}
+                    onChange={e => upd(i, 'answer', e.target.value)} placeholder="Answer" />
+        </div>
+      ))}
+      <button type="button" onClick={add} className="text-xs text-gray-400 hover:text-gray-700">+ Add FAQ item</button>
     </div>
   )
 }
@@ -182,6 +245,15 @@ function SessionsAdmin() {
     is_free: false,
     notes: '',
 
+    overview: '',
+    target_participants: [],
+    learning_outcomes: [],
+    weekly_structure: [],
+    instructor_name: '',
+    instructor_bio: '',
+    instructor_image_url: '',
+    faq_items: [],
+
     status: 'open'
   })
 
@@ -219,7 +291,7 @@ function SessionsAdmin() {
     }
   }
   async function remove(id: string) {
-    if (!confirm('Delete this program?')) return
+    if (!confirm('Are you sure you want to delete this content? This action cannot be undone.')) return
     setErr('')
     try {
       await deleteTrack(id)
@@ -380,6 +452,13 @@ function SessionsAdmin() {
                 </select>
               </FL>
             </div>
+            {/* Pinned toggle */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={!!editing.is_pinned} onChange={e => set('is_pinned', e.target.checked)}
+                     className="w-4 h-4 rounded border-gray-300 accent-gray-900" />
+              <span className="text-sm text-gray-700">Pin to top of homepage feed</span>
+            </label>
+
             <div className="border-t border-gray-100 pt-4 space-y-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Public Programs page details
@@ -422,6 +501,90 @@ function SessionsAdmin() {
                 />
               </FL>
             </div>
+
+            {/* ── Detail page content ── */}
+            <div className="border-t border-gray-100 pt-4 space-y-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Detail page content
+              </p>
+
+              <FL label="Overview">
+                <textarea
+                  rows={3}
+                  className="input resize-y"
+                  placeholder="Short intro — what the program is and who it's for."
+                  value={(editing as Partial<ProgramTrack>).overview ?? ''}
+                  onChange={e => set('overview', e.target.value)}
+                />
+              </FL>
+
+              <FL label="Who It's For (one per line)">
+                <textarea
+                  rows={3}
+                  className="input resize-y font-mono text-sm"
+                  placeholder={"Korean speakers learning English\nBeginners welcome"}
+                  value={((editing as Partial<ProgramTrack>).target_participants ?? []).join('\n')}
+                  onChange={e => set('target_participants', e.target.value.split('\n'))}
+                />
+              </FL>
+
+              <FL label="What You'll Learn (one per line)">
+                <textarea
+                  rows={3}
+                  className="input resize-y font-mono text-sm"
+                  placeholder={"Build conversational fluency\nLearn grammar in context"}
+                  value={((editing as Partial<ProgramTrack>).learning_outcomes ?? []).join('\n')}
+                  onChange={e => set('learning_outcomes', e.target.value.split('\n'))}
+                />
+              </FL>
+
+              <div>
+                <p className="label mb-2">Weekly Structure</p>
+                <WeeklyStructureEditor
+                  value={(editing as Partial<ProgramTrack>).weekly_structure as WeekRow[] ?? []}
+                  onChange={v => set('weekly_structure', v)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <FL label="Instructor name">
+                  <input
+                    className="input"
+                    placeholder="e.g. Joohyeong"
+                    value={(editing as Partial<ProgramTrack>).instructor_name ?? ''}
+                    onChange={e => set('instructor_name', e.target.value)}
+                  />
+                </FL>
+                <FL label="Instructor image URL">
+                  <input
+                    type="url"
+                    className="input"
+                    placeholder="https://…"
+                    value={(editing as Partial<ProgramTrack>).instructor_image_url ?? ''}
+                    onChange={e => set('instructor_image_url', e.target.value)}
+                  />
+                </FL>
+              </div>
+
+              <FL label="Instructor bio">
+                <textarea
+                  rows={3}
+                  className="input resize-y"
+                  placeholder="Short bio about the instructor."
+                  value={(editing as Partial<ProgramTrack>).instructor_bio ?? ''}
+                  onChange={e => set('instructor_bio', e.target.value)}
+                />
+              </FL>
+
+              <div>
+                <p className="label mb-2">FAQ</p>
+                <FaqEditor
+                  value={(editing as Partial<ProgramTrack>).faq_items as FaqRow[] ?? []}
+                  onChange={v => set('faq_items', v)}
+                />
+              </div>
+            </div>
+
             <SaveRow onSave={save} onCancel={() => setEditing(null)} saving={saving} />
           </div>
         </FormCard>
@@ -514,35 +677,81 @@ function SessionsAdmin() {
 
 // ─── Notices Admin ─────────────────────────────────────────────────────────────
 function NoticesAdmin() {
-  const [rows,    setRows]    = useState<Notice[]>([])
-  const [editing, setEditing] = useState<Partial<Notice> | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
-  const [err,     setErr]     = useState('')
+  const [rows,      setRows]      = useState<Notice[]>([])
+  const [editing,   setEditing]   = useState<Partial<Notice> | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [saving,    setSaving]    = useState(false)
+  const [deleting,  setDeleting]  = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [err,       setErr]       = useState('')
+  const [tracks,    setTracks]    = useState<ProgramTrack[]>([])
 
   const load = useCallback(() =>
     getNotices().then(setRows).catch(e => setErr(e.message)).finally(() => setLoading(false))
   , [])
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+    getTracks('program').then(setTracks).catch(() => {})
+  }, [load])
 
   const blank = (): Partial<Notice> => ({
     title_ko:'', title_en:'', title_fr:'',
     body_ko:'', body_en:'', body_fr:'',
     type:'notice', date: new Date().toISOString().split('T')[0],
+    image_url: '',
+    location_name: '',
+    map_url: '',
+    instagram_url: '',
+    external_url: '',
+    related_program_label: '',
+    related_program_id: null,
   })
   const set = (k: string, v: unknown) => setEditing(e => e ? { ...e, [k]: v } : e)
+
+  const uploadFolder = () => (editing?.id ? `notice-${editing.id}` : 'notice-draft')
+
+  async function onImageFile(files: File[]) {
+    const images = filterImageFiles(files)
+    const file = images[0]
+    if (!file || !editing) return
+    setUploading(true); setErr('')
+    try {
+      const url = await uploadContentImage(file, uploadFolder())
+      set('image_url', url)
+    } catch (e: unknown) { setErr((e as Error).message) }
+    finally { setUploading(false) }
+  }
 
   async function save() {
     if (!editing) return
     setSaving(true); setErr('')
-    try { await saveNotice(editing); await load(); setEditing(null) }
+    try {
+      await saveNotice({
+        ...editing,
+        image_url:             isPublicMediaUrl(editing.image_url) ? editing.image_url : null,
+        location_name:         editing.location_name?.trim()         || null,
+        map_url:               editing.map_url?.trim()               || null,
+        instagram_url:         editing.instagram_url?.trim()         || null,
+        external_url:          editing.external_url?.trim()          || null,
+        related_program_label: editing.related_program_label?.trim() || null,
+        related_program_id:    editing.related_program_id    || null,
+      })
+      await load(); setEditing(null)
+    }
     catch (e: unknown) { setErr((e as Error).message) }
     finally { setSaving(false) }
   }
   async function remove(id: string) {
-    if (!confirm('Delete?')) return
-    try { await deleteNotice(id); setRows(r => r.filter(x => x.id !== id)) }
-    catch (e: unknown) { setErr((e as Error).message) }
+    if (!confirm('Are you sure you want to delete this content? This action cannot be undone.')) return
+    setDeleting(id); setErr('')
+    try {
+      await deleteNotice(id)
+      setRows(r => r.filter(x => x.id !== id))
+    } catch (e: unknown) {
+      setErr((e as Error).message ?? 'Failed to delete.')
+    } finally {
+      setDeleting(null)
+    }
   }
 
   if (loading) return <Spinner />
@@ -560,27 +769,129 @@ function NoticesAdmin() {
             <div className="grid grid-cols-2 gap-3">
               <FL label="Type">
                 <select className="input" value={editing.type} onChange={e => set('type', e.target.value)}>
-                  {['notice','schedule','event'].map(t => <option key={t} value={t}>{t}</option>)}
+                  {['hiring','event','notice'].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </FL>
               <FL label="Date"><input type="date" className="input" value={editing.date||''} onChange={e => set('date', e.target.value)} /></FL>
             </div>
+
+            {/* Pinned toggle */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={!!editing.is_pinned} onChange={e => set('is_pinned', e.target.checked)}
+                     className="w-4 h-4 rounded border-gray-300 accent-gray-900" />
+              <span className="text-sm text-gray-700">Pin to top of homepage feed</span>
+            </label>
+
+            {/* Image upload */}
+            <FL label="Cover image (optional)">
+              {editing.image_url && isPublicMediaUrl(editing.image_url) ? (
+                <div className="flex items-start gap-3">
+                  <img
+                    src={editing.image_url}
+                    alt=""
+                    className="w-24 h-16 object-cover rounded border border-gray-200 shrink-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => set('image_url', '')}
+                    className="text-xs text-red-500 hover:text-red-700 mt-1"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <ContentMediaDropzone
+                  disabled={uploading}
+                  onFiles={onImageFile}
+                />
+              )}
+              {uploading && <p className="text-xs text-gray-400 mt-1">Uploading…</p>}
+            </FL>
+
+            {/* Optional detail fields */}
+            <div className="pt-1 border-t border-gray-100">
+              <p className="label mb-3">Details (optional)</p>
+              <div className="grid grid-cols-1 gap-3">
+                <FL label="Location name">
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="e.g. HAKKYO Space, Café Osmo"
+                    value={editing.location_name ?? ''}
+                    onChange={e => set('location_name', e.target.value)}
+                  />
+                </FL>
+                <FL label="Map URL">
+                  <input
+                    type="url"
+                    className="input"
+                    placeholder="https://maps.google.com/..."
+                    value={editing.map_url ?? ''}
+                    onChange={e => set('map_url', e.target.value)}
+                  />
+                </FL>
+                <FL label="Instagram URL">
+                  <input
+                    type="url"
+                    className="input"
+                    placeholder="https://instagram.com/..."
+                    value={editing.instagram_url ?? ''}
+                    onChange={e => set('instagram_url', e.target.value)}
+                  />
+                </FL>
+                <FL label="External link">
+                  <input
+                    type="url"
+                    className="input"
+                    placeholder="https://..."
+                    value={editing.external_url ?? ''}
+                    onChange={e => set('external_url', e.target.value)}
+                  />
+                </FL>
+                <FL label="Related program">
+                  <select
+                    className="input"
+                    value={editing.related_program_id ?? ''}
+                    onChange={e => {
+                      const id = e.target.value || null
+                      const track = tracks.find(t => t.id === id)
+                      set('related_program_id', id)
+                      set('related_program_label', track?.name_en ?? null)
+                    }}
+                  >
+                    <option value="">— none —</option>
+                    {tracks.map(t => (
+                      <option key={t.id} value={t.id}>{t.name_en || t.name_ko}</option>
+                    ))}
+                  </select>
+                </FL>
+              </div>
+            </div>
+
             <SaveRow onSave={save} onCancel={() => setEditing(null)} saving={saving} />
           </div>
         </FormCard>
       )}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead><tr><Th>Title</Th><Th>Type</Th><Th>Date</Th><Th>Actions</Th></tr></thead>
+          <thead><tr><Th>Title</Th><Th>Type</Th><Th>Date</Th><Th>Image</Th><Th>Actions</Th></tr></thead>
           <tbody className="divide-y divide-gray-100">
             {rows.map(n => (
               <tr key={n.id}>
                 <Td><span className="font-medium">{n.title_en||n.title_ko}</span></Td>
                 <Td><span className="text-xs uppercase tracking-wide font-semibold text-gray-400">{n.type}</span></Td>
                 <Td>{n.date}</Td>
+                <Td>
+                  {n.image_url
+                    ? <img src={n.image_url} alt="" className="w-10 h-7 object-cover rounded border border-gray-200" />
+                    : <span className="text-xs text-gray-300">—</span>}
+                </Td>
                 <Td><div className="flex gap-2">
                   <button onClick={() => setEditing(n)} className="btn-ghost py-1 px-2">Edit</button>
-                  <button onClick={() => remove(n.id)} className="text-xs text-red-500 hover:text-red-700 px-2 py-1">Delete</button>
+                  <button onClick={() => remove(n.id)} disabled={deleting === n.id}
+                          className="text-xs text-red-500 hover:text-red-700 px-2 py-1 disabled:opacity-40">
+                    {deleting === n.id ? 'Deleting…' : 'Delete'}
+                  </button>
                 </div></Td>
               </tr>
             ))}
@@ -594,12 +905,13 @@ function NoticesAdmin() {
 // ─── Content Admin ─────────────────────────────────────────────────────────────
 function ContentAdmin() {
   const [rows,    setRows]    = useState<Content[]>([])
-  const [editing, setEditing] = useState<Partial<Content> | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
+  const [editing,  setEditing]  = useState<Partial<Content> | null>(null)
+  const [loading,  setLoading]  = useState(true)
+  const [saving,   setSaving]   = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [uploading, setUploading] = useState<'thumb' | 'images' | null>(null)
-  const [err,     setErr]     = useState('')
-  const [copyOk,  setCopyOk]  = useState<string | null>(null)
+  const [err,      setErr]      = useState('')
+  const [copyOk,   setCopyOk]   = useState<string | null>(null)
   const editorRefs = useRef<Record<BodyLang, Editor | null>>({
     ko: null,
     en: null,
@@ -617,7 +929,7 @@ function ContentAdmin() {
   const blank = (): Partial<Content> => ({
     title_ko:'', title_en:'', title_fr:'',
     body_ko:'', body_en:'', body_fr:'',
-    category: 'news',
+    category: 'montreal',
     type:'text',
     link:'',
     thumbnail_url: '',
@@ -698,7 +1010,7 @@ function ContentAdmin() {
       await saveContent({
         ...editing,
         type: normalizeContentType(editing.type),
-        category: (editing.category as ContentCategory) || 'news',
+        category: (editing.category as ContentCategory) || 'montreal',
         thumbnail_url: isPublicMediaUrl(thumb) ? thumb : null,
         image_urls: normalizeImageUrls(editing.image_urls).filter(isPublicMediaUrl),
         video_url: editing.video_url?.trim() || null,
@@ -710,9 +1022,16 @@ function ContentAdmin() {
     finally { setSaving(false) }
   }
   async function remove(id: string) {
-    if (!confirm('Delete?')) return
-    try { await deleteContent(id); setRows(r => r.filter(x => x.id !== id)) }
-    catch (e: unknown) { setErr((e as Error).message) }
+    if (!confirm('Are you sure you want to delete this content? This action cannot be undone.')) return
+    setDeleting(id); setErr('')
+    try {
+      await deleteContent(id)
+      setRows(r => r.filter(x => x.id !== id))
+    } catch (e: unknown) {
+      setErr((e as Error).message ?? 'Failed to delete.')
+    } finally {
+      setDeleting(null)
+    }
   }
 
   if (loading) return <Spinner />
@@ -871,7 +1190,7 @@ function ContentAdmin() {
               <FL label="Category">
                 <select
                   className="input"
-                  value={editing.category || 'news'}
+                  value={editing.category || 'montreal'}
                   onChange={e => set('category', e.target.value)}
                 >
                   {CONTENT_CATEGORIES.map(cat => (
@@ -915,7 +1234,10 @@ function ContentAdmin() {
                     image_urls: normalizeImageUrls(c.image_urls),
                     video_url: c.video_url ?? '',
                   })} className="btn-ghost py-1 px-2">Edit</button>
-                  <button onClick={() => remove(c.id)} className="text-xs text-red-500 hover:text-red-700 px-2 py-1">Delete</button>
+                  <button onClick={() => remove(c.id)} disabled={deleting === c.id}
+                          className="text-xs text-red-500 hover:text-red-700 px-2 py-1 disabled:opacity-40">
+                    {deleting === c.id ? 'Deleting…' : 'Delete'}
+                  </button>
                 </div></Td>
               </tr>
             ))}
@@ -995,9 +1317,9 @@ function QuestionsAdmin() {
       </div>
 
       {editingId === 'new' && (
-        <div className="border-2 border-yellow rounded-xl overflow-hidden">
-          <div className="bg-yellow/10 px-4 py-2.5 border-b border-yellow/20">
-            <p className="text-xs font-bold text-yellow-hover uppercase tracking-wide">New Question</p>
+        <div className="border-2 border-gray-900 rounded-xl overflow-hidden">
+          <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
+            <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">New Question</p>
           </div>
           <QuestionForm draft={draft} setD={setD} onSave={save} onCancel={cancelEdit} saving={saving} isNew />
         </div>
@@ -1101,7 +1423,7 @@ function QuestionForm({ draft, setD, onSave, onCancel, saving, isNew = false }: 
         <FL label="Required">
           <label className="flex items-center gap-2 cursor-pointer h-[42px]">
             <input type="checkbox" checked={draft.required||false} onChange={e => setD('required', e.target.checked)}
-              className="w-4 h-4 accent-yellow rounded" />
+              className="w-4 h-4 accent-black rounded" />
             <span className="text-sm text-gray-600">Yes</span>
           </label>
         </FL>
@@ -1122,79 +1444,116 @@ function QuestionForm({ draft, setD, onSave, onCancel, saving, isNew = false }: 
 }
 
 // ─── Applications Admin ─────────────────────────────────────────────────────────
+// Raw row shape returned by application_answers select('*')
+type AnswerRow = {
+  id: string
+  application_id: string
+  question_id: string | null
+  answer: string
+  question_label_snapshot: string | null
+  question_type_snapshot: string | null
+  question_order_snapshot: number | null
+  created_at: string
+  // optional: enriched after label lookup
+  question_label_current?: string | null
+}
+
 function ApplicationsAdmin() {
-  const [apps,           setApps]           = useState<Application[]>([])
-  const [selected,       setSelected]       = useState<Application | null>(null)
-  const [detailAnswers,  setDetailAnswers]  = useState<Application['answers']>([])
-  const [answersLoading, setAnswersLoading] = useState(false)
-  const [loading,        setLoading]        = useState(true)
-  const [err,            setErr]            = useState('')
-  const [statusFilter,   setStatusFilter]   = useState<'all' | Application['status']>('all')
-  const [searchQuery,  setSearchQuery]    = useState('')
+  const [apps,                       setApps]                       = useState<Application[]>([])
+  const [selected,                   setSelected]                   = useState<Application | null>(null)
+  const [selectedApplicationAnswers, setSelectedApplicationAnswers] = useState<AnswerRow[]>([])
+  const [answersLoading,             setAnswersLoading]             = useState(false)
+  const [answersError,               setAnswersError]               = useState('')
+  const [loading,                    setLoading]                    = useState(true)
+  const [err,                        setErr]                        = useState('')
+  const [statusFilter,               setStatusFilter]               = useState<'all' | Application['status']>('all')
+  const [searchQuery,                setSearchQuery]                = useState('')
 
   const load = useCallback(() =>
-    getApplications().then(setApps).catch(e => setErr(e.message)).finally(() => setLoading(false))
+    getApplications()
+      .then(fetched => {
+        setApps(fetched)
+        setSelected(prev => {
+          if (!prev) return prev
+          return fetched.find(a => a.id === prev.id) ?? prev
+        })
+      })
+      .catch(e => setErr(e.message))
+      .finally(() => setLoading(false))
   , [])
   useEffect(() => { load() }, [load])
 
+  // Fetch answers whenever the selected application changes
   useEffect(() => {
-    if (!selected?.id) {
-      setDetailAnswers([])
-      return
-    }
-    if (!isConfigured || !supabase) {
-      setDetailAnswers([])
+    if (!selected?.id || !isConfigured || !supabase) {
+      setSelectedApplicationAnswers([])
+      setAnswersError('')
       return
     }
 
-    let cancelled = false
+    let active = true
+    setSelectedApplicationAnswers([])
     setAnswersLoading(true)
+    setAnswersError('')
 
-    ;(async () => {
-      const { data: rows, error } = await supabase
+    async function fetchAnswers() {
+      if (!supabase) return
+
+      const { data: answers, error } = await supabase
         .from('application_answers')
-        .select('id, application_id, question_id, answer')
-        .eq('application_id', selected.id)
+        .select('*')
+        .eq('application_id', selected!.id)
+        .order('created_at', { ascending: true })
 
-      if (cancelled) return
+      if (!active) return
+
       if (error) {
-        console.error(error)
-        setDetailAnswers([])
+        setAnswersError(error.message)
         setAnswersLoading(false)
         return
       }
 
-      const answers = rows ?? []
-      const questionIds = [...new Set(answers.map((r) => r.question_id).filter(Boolean))]
-      const questionsById: Record<string, FormQuestion> = {}
+      const rows: AnswerRow[] = answers ?? []
 
-      if (questionIds.length > 0) {
+      // Always show answers as soon as the first query succeeds
+      setSelectedApplicationAnswers(rows)
+      setAnswersLoading(false)
+
+      // Optional: enrich labels from form_questions (must not block display)
+      const questionIds = [...new Set(rows.map(r => r.question_id).filter(Boolean))] as string[]
+      if (questionIds.length === 0 || !active) return
+
+      try {
         const { data: questions, error: qErr } = await supabase
           .from('form_questions')
           .select('id, question_ko, question_en, question_fr')
           .in('id', questionIds)
 
-        if (qErr) {
-          console.error(qErr)
-        } else {
-          for (const q of questions ?? []) {
-            questionsById[q.id] = q as FormQuestion
-          }
+        if (!active || qErr || !questions?.length) return
+
+        const labelMap: Record<string, string> = {}
+        for (const q of questions) {
+          labelMap[q.id] = q.question_ko || q.question_en || q.question_fr || q.id
         }
+        setSelectedApplicationAnswers(
+          rows.map(r => ({
+            ...r,
+            question_label_current: r.question_id ? (labelMap[r.question_id] ?? null) : null,
+          }))
+        )
+      } catch {
+        // Keep raw rows already in state
       }
-
-      setDetailAnswers(
-        answers.map((a) => ({
-          ...a,
-          question: questionsById[a.question_id],
-        })),
-      )
-      setAnswersLoading(false)
-    })()
-
-    return () => {
-      cancelled = true
     }
+
+    fetchAnswers().catch(e => {
+      if (active) {
+        setAnswersError((e as Error).message)
+        setAnswersLoading(false)
+      }
+    })
+
+    return () => { active = false }
   }, [selected?.id])
 
   async function updateStatus(id: string, status: Application['status']) {
@@ -1225,7 +1584,14 @@ function ApplicationsAdmin() {
   const statusBadgeClass = (status: Application['status']) =>
     status === 'confirmed' ? 'bg-green-100 text-green-700' :
     status === 'rejected'  ? 'bg-red-100 text-red-600'   :
-    'bg-yellow-light text-yellow-hover'
+    'bg-gray-100 text-gray-700'
+
+  const answerCount = (app: Application) => {
+    const n = app.answer_count
+    return typeof n === 'number' && !Number.isNaN(n) ? n : Number(n) || 0
+  }
+  const isOrphan = (app: Application) => answerCount(app) === 0
+  const selectedAnswerCount = selected ? answerCount(selected) : 0
 
   if (loading) return <Spinner />
 
@@ -1272,24 +1638,36 @@ function ApplicationsAdmin() {
             visible.map(a => {
               const legacyClass = a.session as unknown as Record<string, string> | undefined
               const programLabel = a.selected_label || legacyClass?.title_en || legacyClass?.title_ko
+              const count = answerCount(a)
               return (
                 <div
                   key={a.id}
-                  onClick={() => setSelected(a)}
-                  className={['px-4 py-3 cursor-pointer transition-colors',
-                    selected?.id === a.id ? 'bg-yellow-light' : 'hover:bg-gray-50',
+                  onClick={() => setSelected({ ...a, answer_count: answerCount(a) })}
+                  className={['px-4 py-3 cursor-pointer transition-colors border-l-2',
+                    selected?.id === a.id ? 'bg-gray-100' : 'hover:bg-gray-50',
+                    isOrphan(a) ? 'border-l-amber-400' : 'border-l-transparent',
                   ].join(' ')}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-sm">{a.name}</span>
-                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${statusBadgeClass(a.status)}`}>
-                      {a.status}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {isOrphan(a) && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                          Orphan
+                        </span>
+                      )}
+                      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${statusBadgeClass(a.status)}`}>
+                        {a.status}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">{a.email}</p>
                   {programLabel && (
                     <p className="text-xs text-gray-500 mt-0.5">{programLabel}</p>
                   )}
+                  <p className={`text-xs mt-0.5 ${count > 0 ? 'text-gray-500' : 'text-amber-700'}`}>
+                    {count > 0 ? `Answers: ${count}` : 'No answers'}
+                  </p>
                   {a.created_at && (
                     <p className="text-xs text-gray-300 mt-0.5">{a.created_at.split('T')[0]}</p>
                   )}
@@ -1343,26 +1721,57 @@ function ApplicationsAdmin() {
                 ))}
 
               <div className="pt-3 border-t border-gray-100 space-y-3">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Answers</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Answers</p>
+                  {!answersLoading && (
+                    <span className={`text-xs ${selectedAnswerCount > 0 ? 'text-gray-500' : 'text-amber-700'}`}>
+                      {selectedAnswerCount > 0 ? `Answers: ${selectedAnswerCount}` : 'No answers'}
+                    </span>
+                  )}
+                </div>
+
                 {answersLoading && (
                   <p className="text-xs text-gray-400">Loading answers…</p>
                 )}
-                {!answersLoading && detailAnswers && detailAnswers.length > 0 && (
-                  detailAnswers.map((a) => {
-                    const q = a.question
-                    const questionText =
-                      q?.question_en || q?.question_ko || q?.question_fr || a.question_id
-                    return (
-                      <div key={a.id}>
-                        <p className="text-xs text-gray-400 mb-0.5">{questionText}</p>
-                        <p className="text-gray-900 text-sm whitespace-pre-wrap">{a.answer}</p>
-                      </div>
-                    )
-                  })
+
+                {!answersLoading && answersError && (
+                  <p className="text-xs text-red-400">Could not load answers: {answersError}</p>
                 )}
-                {!answersLoading && (!detailAnswers || detailAnswers.length === 0) && (
-                  <p className="text-xs text-gray-400">No answers submitted.</p>
+
+                {!answersLoading && !answersError && selectedAnswerCount > 0 && selectedApplicationAnswers.length === 0 && (
+                  <p className="text-xs text-gray-500">
+                    {selectedAnswerCount} answer{selectedAnswerCount !== 1 ? 's' : ''} in database — loading rows failed or is still in progress.
+                  </p>
                 )}
+
+                {!answersLoading && !answersError && selectedAnswerCount === 0 && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 space-y-1.5 text-sm text-amber-900">
+                    <p>No answers found for this application ID.</p>
+                    <p className="text-xs font-mono text-amber-800 break-all">{selected.id}</p>
+                    <p className="text-xs text-amber-800/90 pt-0.5">
+                      This application has no rows in <code className="text-[11px]">application_answers</code>
+                      (failed submission or legacy record). You can delete it manually in Supabase if needed.
+                    </p>
+                    {(selected.city?.trim() || selected.message?.trim()) && (
+                      <p className="text-xs text-amber-800/90 pt-0.5 border-t border-amber-200/80 mt-2 pt-2">
+                        Legacy Language Exchange fields may still be on the application row (city, message, etc.).
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {selectedApplicationAnswers.map(answer => (
+                  <div key={answer.id}>
+                    <p className="text-xs text-gray-400 mb-0.5">
+                      {answer.question_label_snapshot ||
+                       answer.question_label_current ||
+                       (answer.question_id ? `Question ID: ${answer.question_id}` : '—')}
+                    </p>
+                    <p className="text-gray-900 text-sm whitespace-pre-wrap">
+                      {answer.answer?.trim() ? answer.answer : '—'}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -1695,21 +2104,331 @@ function LeSettingsAdmin() {
   )
 }
 
+// ─── Community Submissions Admin ──────────────────────────────────────────────
+
+const COMMUNITY_CAT_LABEL: Record<string, string> = {
+  housing:            'Housing',
+  jobs:               'Jobs',
+  events:             'Events',
+  language_exchange:  'Language Exchange',
+  looking_for_people: 'Looking for People',
+  help_needed:        'Help Needed',
+  other:              'Other',
+}
+
+function CommunityAdmin() {
+  const [submissions, setSubmissions] = useState<CommunitySubmission[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [filter,      setFilter]      = useState<'all' | 'pending' | 'approved' | 'rejected' | 'published'>('pending')
+  const [saving,      setSaving]      = useState<string | null>(null)
+  const [err,         setErr]         = useState('')
+
+  function load() {
+    setLoading(true)
+    setErr('')
+    getAllCommunitySubmissions()
+      .then(setSubmissions)
+      .catch(e => setErr(e?.message ?? 'Failed to load submissions.'))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(load, [])
+
+  async function setStatus(id: string, status: CommunitySubmission['status']) {
+    setSaving(id)
+    setErr('')
+    try {
+      await setCommunitySubmissionStatus(id, status)
+      setSubmissions(prev => prev.map(s => s.id === id ? { ...s, status } : s))
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to update status.')
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Are you sure you want to delete this content? This action cannot be undone.')) return
+    setSaving(id)
+    setErr('')
+    try {
+      await deleteCommunitySubmission(id)
+      setSubmissions(prev => prev.filter(s => s.id !== id))
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to delete submission.')
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  const visible = submissions.filter(s => filter === 'all' || s.status === filter)
+
+  if (loading) return <Spinner />
+
+  return (
+    <div>
+      {/* Filter bar + refresh */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {(['pending', 'approved', 'published', 'rejected', 'all'] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={[
+              'px-3 py-1.5 rounded-full text-xs font-semibold transition-colors capitalize',
+              filter === f ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+            ].join(' ')}
+          >
+            {f}
+            {f !== 'all' && (
+              <span className="ml-1.5 text-[10px] opacity-60">
+                {submissions.filter(s => s.status === f).length}
+              </span>
+            )}
+          </button>
+        ))}
+        <button
+          onClick={load}
+          className="ml-auto text-[11px] text-gray-400 hover:text-gray-700 transition-colors px-2 py-1.5"
+        >
+          ↻ Refresh
+        </button>
+      </div>
+
+      {err && (
+        <p className="text-xs text-red-500 mb-4 px-1">{err}</p>
+      )}
+
+      {visible.length === 0 ? (
+        <p className="text-sm text-gray-400 py-12 text-center">No submissions in this category.</p>
+      ) : (
+        <div className="space-y-4">
+          {visible.map(s => (
+            <div key={s.id} className="border border-gray-200 rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-b border-gray-100">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <span className={[
+                    'text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded',
+                    s.status === 'pending'   ? 'bg-gray-200 text-gray-700'  :
+                    s.status === 'approved'  ? 'bg-blue-100 text-blue-700'  :
+                    s.status === 'published' ? 'bg-gray-900 text-white'     :
+                    'bg-gray-100 text-gray-400 line-through',
+                  ].join(' ')}>
+                    {s.status}
+                  </span>
+                  <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                    {COMMUNITY_CAT_LABEL[s.type] ?? s.type}
+                  </span>
+                  <span className="text-[10px] text-gray-300">
+                    {s.created_at?.slice(0, 10) ?? ''}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* pending → approve */}
+                  {s.status === 'pending' && (
+                    <button
+                      onClick={() => setStatus(s.id, 'approved')}
+                      disabled={saving === s.id}
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40"
+                    >
+                      Approve
+                    </button>
+                  )}
+                  {/* approved → publish */}
+                  {s.status === 'approved' && (
+                    <button
+                      onClick={() => setStatus(s.id, 'published')}
+                      disabled={saving === s.id}
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors disabled:opacity-40"
+                    >
+                      Publish
+                    </button>
+                  )}
+                  {/* published → unpublish (back to approved) */}
+                  {s.status === 'published' && (
+                    <button
+                      onClick={() => setStatus(s.id, 'approved')}
+                      disabled={saving === s.id}
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-500 transition-colors disabled:opacity-40"
+                    >
+                      Unpublish
+                    </button>
+                  )}
+                  {/* reject (available for pending or approved) */}
+                  {(s.status === 'pending' || s.status === 'approved') && (
+                    <button
+                      onClick={() => setStatus(s.id, 'rejected')}
+                      disabled={saving === s.id}
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-500 transition-colors disabled:opacity-40"
+                    >
+                      Reject
+                    </button>
+                  )}
+                  <button
+                    onClick={() => remove(s.id)}
+                    disabled={saving === s.id}
+                    className="text-[11px] text-gray-300 hover:text-red-500 transition-colors px-2 py-1.5 disabled:opacity-40"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-4 py-4 space-y-3">
+                <h3 className="font-semibold text-gray-900 text-sm">{s.title}</h3>
+                <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{s.description}</p>
+                {s.location && (
+                  <p className="text-[11px] text-gray-400">📍 {s.location}</p>
+                )}
+                {s.link && (
+                  <a href={s.link} target="_blank" rel="noopener noreferrer"
+                     className="text-[11px] text-blue-500 hover:underline break-all block">
+                    {s.link}
+                  </a>
+                )}
+                {s.image_url && (
+                  <div className="rounded-lg overflow-hidden bg-gray-50 border border-gray-100" style={{ maxHeight: 300 }}>
+                    <img
+                      src={s.image_url}
+                      alt=""
+                      className="w-full object-cover"
+                      style={{ maxHeight: 300 }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  </div>
+                )}
+                <p className="text-[11px] text-gray-400 pt-0.5">Contact: {s.contact}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Notifications Admin ──────────────────────────────────────────────────────
+
+function NotificationsAdmin() {
+  const [notifications, setNotifications] = useState<AdminNotification[]>([])
+  const [loading, setLoading] = useState(true)
+  const [marking, setMarking] = useState(false)
+
+  function load() {
+    setLoading(true)
+    getAdminNotifications()
+      .then(setNotifications)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(load, [])
+
+  async function markRead(id: string) {
+    await markNotificationRead(id).catch(() => {})
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+  }
+
+  async function markAll() {
+    setMarking(true)
+    await markAllNotificationsRead().catch(() => {})
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+    setMarking(false)
+  }
+
+  const unread = notifications.filter(n => !n.is_read).length
+
+  if (loading) return <Spinner />
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-6">
+        {unread > 0 && (
+          <span className="text-[10px] font-bold tracking-[0.14em] uppercase bg-gray-900 text-white px-2 py-0.5 rounded-full">
+            {unread} unread
+          </span>
+        )}
+        <button onClick={load} className="text-[11px] text-gray-400 hover:text-gray-700 transition-colors">↻ Refresh</button>
+        {unread > 0 && (
+          <button
+            onClick={markAll}
+            disabled={marking}
+            className="ml-auto text-[11px] text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-40"
+          >
+            Mark all as read
+          </button>
+        )}
+      </div>
+
+      {notifications.length === 0 ? (
+        <p className="text-sm text-gray-400 py-12 text-center">No notifications yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {notifications.map(n => (
+            <div
+              key={n.id}
+              className={`border rounded-xl px-4 py-3.5 flex items-start gap-3 transition-colors ${
+                n.is_read ? 'border-gray-100 bg-white' : 'border-gray-300 bg-white'
+              }`}
+            >
+              {/* Unread dot */}
+              <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${n.is_read ? 'bg-transparent' : 'bg-gray-900'}`} />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                  <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-400">
+                    {n.type}
+                  </span>
+                  <span className="text-[10px] text-gray-300">
+                    {n.created_at ? new Date(n.created_at).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-gray-900 leading-snug">{n.title}</p>
+                <p className="text-[12px] text-gray-500 mt-0.5">{n.message}</p>
+              </div>
+
+              {!n.is_read && (
+                <button
+                  onClick={() => markRead(n.id)}
+                  className="text-[10px] text-gray-400 hover:text-gray-700 transition-colors shrink-0 mt-0.5"
+                >
+                  ✓ Read
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Root Admin page ───────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'sessions',     label: 'Programs',        Component: SessionsAdmin    },
-  { id: 'notices',      label: 'Notices',          Component: NoticesAdmin     },
-  { id: 'content',      label: 'Content',          Component: ContentAdmin     },
-  { id: 'questions',    label: 'Questions',        Component: QuestionsAdmin   },
-  { id: 'applications', label: 'Applications',     Component: ApplicationsAdmin},
-  { id: 'le',           label: 'Lang. Exchange',   Component: LeSettingsAdmin  },
-  { id: 'settings',     label: 'Site Settings',    Component: SiteSettingsAdmin },
+  { id: 'notifications', label: 'Notifications',   Component: NotificationsAdmin },
+  { id: 'sessions',      label: 'Programs',         Component: SessionsAdmin      },
+  { id: 'notices',       label: 'Notices',           Component: NoticesAdmin       },
+  { id: 'content',       label: 'Content',           Component: ContentAdmin       },
+  { id: 'community',     label: 'Community',         Component: CommunityAdmin     },
+  { id: 'questions',     label: 'Questions',         Component: QuestionsAdmin     },
+  { id: 'applications',  label: 'Applications',      Component: ApplicationsAdmin  },
+  { id: 'le',            label: 'Lang. Exchange',    Component: LeSettingsAdmin    },
+  { id: 'settings',      label: 'Site Settings',     Component: SiteSettingsAdmin  },
 ]
 
 export default function Admin() {
-  const [tab, setTab] = useState('sessions')
+  const [tab, setTab] = useState('notifications')
+  const [unreadCount, setUnreadCount] = useState(0)
   const active = TABS.find(t => t.id === tab)!
   const navigate = useNavigate()
+
+  // Fetch unread count for the badge on initial mount
+  useEffect(() => {
+    getAdminNotifications()
+      .then(ns => setUnreadCount(ns.filter(n => !n.is_read).length))
+      .catch(() => {})
+  }, [])
 
   async function handleLogout() {
     if (supabase) await supabase.auth.signOut()
@@ -1721,7 +2440,7 @@ export default function Admin() {
       <div className="flex items-center gap-3 mb-6">
         <h1 className="text-xl font-bold">Admin</h1>
         {!isConfigured && (
-          <span className="text-xs bg-yellow-light text-yellow-hover font-semibold px-2 py-0.5 rounded">
+          <span className="text-xs bg-gray-100 text-gray-600 font-semibold px-2 py-0.5 rounded">
             Demo mode — changes are local only
           </span>
         )}
@@ -1738,11 +2457,16 @@ export default function Admin() {
       {/* Tab bar */}
       <div className="flex gap-0 border-b border-gray-200 mb-6 overflow-x-auto">
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={['px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
-              tab === t.id ? 'border-yellow text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700',
+          <button key={t.id} onClick={() => { setTab(t.id); if (t.id === 'notifications') setUnreadCount(0) }}
+            className={['inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
+              tab === t.id ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700',
             ].join(' ')}>
             {t.label}
+            {t.id === 'notifications' && unreadCount > 0 && (
+              <span className="bg-gray-900 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 leading-none">
+                {unreadCount}
+              </span>
+            )}
           </button>
         ))}
       </div>

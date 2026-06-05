@@ -3,12 +3,18 @@ import { isHtmlBody, stripHtmlForExcerpt } from './htmlContent'
 
 export type NewsItem = Content
 
+export const CATEGORY_ICON: Record<ContentCategory, string> = {
+  archive:  '🗂',
+  montreal: '📍',
+  language: '💬',
+  culture:  '🎭',
+}
+
 export const CONTENT_CATEGORIES: ContentCategory[] = [
   'archive',
+  'montreal',
   'language',
-  'news',
   'culture',
-  'life',
 ]
 
 export const CONTENT_TYPES: ContentType[] = ['text', 'image', 'video']
@@ -27,7 +33,7 @@ export function resolveContentCategory(
   }
   const type = normalizeContentType(item.type)
   if (type === 'video') return 'archive'
-  return 'news'
+  return 'montreal'
 }
 
 export function categoryLabel(
@@ -35,11 +41,10 @@ export function categoryLabel(
   t: (ko: string, en: string, fr: string) => string,
 ): string {
   const labels: Record<ContentCategory, [string, string, string]> = {
-    archive:  ['ARCHIVE', 'ARCHIVE', 'ARCHIVE'],
-    language: ['LANGUAGE', 'LANGUAGE', 'LANGUAGE'],
-    news:     ['NEWS', 'NEWS', 'NEWS'],
-    culture:  ['CULTURE', 'CULTURE', 'CULTURE'],
-    life:     ['LIFE', 'LIFE', 'LIFE'],
+    archive:  ['아카이브', 'Archive',  'Archives'],
+    montreal: ['몬트리올',  'Montréal', 'Montréal'],
+    language: ['언어',     'Language', 'Langue'],
+    culture:  ['문화',     'Culture',  'Culture'],
   }
   const [ko, en, fr] = labels[category]
   return t(ko, en, fr)

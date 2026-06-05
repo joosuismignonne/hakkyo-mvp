@@ -217,7 +217,7 @@ export default function ContentRichEditor({
   }, [value, editor])
 
   return (
-    <div className="content-rich-editor overflow-hidden rounded-lg border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-yellow focus-within:border-transparent">
+    <div className="content-rich-editor overflow-hidden rounded-lg border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent">
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>

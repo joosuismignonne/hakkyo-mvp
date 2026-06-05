@@ -53,7 +53,7 @@ export default function ContentMediaDropzone({ multiple = false, disabled, onFil
         disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
       } ${
         dragOver
-          ? 'border-yellow bg-yellow/5'
+          ? 'border-gray-900 bg-gray-50'
           : 'border-gray-200 bg-gray-50 hover:border-gray-300'
       }`}
       onClick={() => !disabled && inputRef.current?.click()}

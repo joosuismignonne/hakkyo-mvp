@@ -93,7 +93,7 @@ export default function MarkdownArticle({ markdown }: { markdown: string }) {
           ),
           li: ({ children }) => <li className="leading-[1.75] pl-1">{children}</li>,
           blockquote: ({ children }) => (
-            <blockquote className="my-8 border-l-[3px] border-yellow pl-5 text-gray-600">
+            <blockquote className="my-8 border-l-[3px] border-gray-900 pl-5 text-gray-600">
               <div className="space-y-4 text-[17px] leading-[1.75] italic [&>p]:mb-0">{children}</div>
             </blockquote>
           ),
@@ -106,7 +106,7 @@ export default function MarkdownArticle({ markdown }: { markdown: string }) {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-gray-900 underline decoration-gray-300 underline-offset-[3px] transition-colors hover:decoration-yellow"
+                className="font-medium text-gray-900 underline decoration-gray-300 underline-offset-[3px] transition-colors hover:decoration-gray-900"
               >
                 {children}
               </a>

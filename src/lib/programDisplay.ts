@@ -56,6 +56,48 @@ export function resolveVenue(track: TrackView): VenueInfo | null {
   return { name: name || '—', detail, mapsUrl }
 }
 
+export function resolveTrackTypeLabel(s: TrackView): string | null {
+  if (s.category === 'community') return 'Language Exchange'
+  const classes = parseIncludedSessionsList(s.included_sessions).map(c => c.toLowerCase())
+  if (classes.length > 0) {
+    const hasKo = classes.some(c => c.includes('korean'))
+    const hasEn = classes.some(c => c.includes('english'))
+    const hasFr = classes.some(c => c.includes('french'))
+    const hasAo = classes.some(c => c.includes('active output'))
+    const langCount = [hasKo, hasEn, hasFr].filter(Boolean).length
+    if (hasAo && langCount >= 2) return 'Full Course'
+    if (hasAo && langCount === 0) return 'Active Output'
+    if (hasEn && hasFr && !hasKo && !hasAo) return 'EN / FR'
+    if (hasKo && hasFr && !hasEn && !hasAo) return 'KR / FR'
+    if (hasKo && hasEn && !hasFr && !hasAo) return 'KR / EN'
+    if (hasKo && langCount === 1) return 'Korean'
+    if (hasEn && langCount === 1) return 'English'
+    if (hasFr && langCount === 1) return 'French'
+  }
+  const name = (s.name_en ?? '').toLowerCase()
+  if (name.includes('active output')) return 'Active Output'
+  if (s.class_count === 1) return 'Single class'
+  if (s.class_count > 1)  return 'Course'
+  return null
+}
+
+export type ProgramTypeChip = { emoji: string; label: string }
+
+export function resolveProgramTypeChip(track: TrackView, typeLabel: string | null): ProgramTypeChip | null {
+  if (track.category === 'community') return { emoji: '🌎', label: 'Language Exchange' }
+  const t = (typeLabel ?? '').toLowerCase()
+  if (t === 'full course')     return { emoji: '⭐', label: 'Full Course' }
+  if (t === 'active output')   return { emoji: '🎤', label: 'Active Output' }
+  if (t === 'kr / fr')         return { emoji: '🇰🇷🇫🇷', label: 'Korean · French' }
+  if (t === 'kr / en')         return { emoji: '🇰🇷🇬🇧', label: 'Korean · English' }
+  if (t === 'en / fr')         return { emoji: '🇬🇧🇫🇷', label: 'English · French' }
+  if (t === 'korean')          return { emoji: '🇰🇷', label: 'Korean' }
+  if (t === 'french')          return { emoji: '🇫🇷', label: 'French' }
+  if (t === 'english')         return { emoji: '🇬🇧', label: 'English' }
+  if (typeLabel)               return { emoji: '📚', label: typeLabel }
+  return null
+}
+
 export function parseIncludedSessionsList(value: unknown): string[] {
   if (value == null) return []
   if (Array.isArray(value)) {
