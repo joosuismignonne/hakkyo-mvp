@@ -62,10 +62,6 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
   //   • question_tags overlaps with selectedTrack.program_tags, OR
   //   • legacy session_id matches the track id
   const visibleQuestions = useMemo<FormQuestion[]>(() => {
-    console.log('APPLY selectedTrack', selectedTrack)
-    console.log('APPLY selectedTrack.program_tags', selectedTrack?.program_tags)
-    console.log('APPLY all questions', questions)
-
     if (!questions.length) return []
     const programTags: string[] = selectedTrack?.program_tags ?? []
     const trackId = selectedTrack?.id
@@ -78,7 +74,6 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
       return qTags.some(t => programTags.includes(t))             // tag overlap
     })
 
-    console.log('APPLY visibleQuestions', result)
     return result
   }, [questions, selectedTrack])
 
@@ -470,23 +465,6 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
                   </div>
                 ) : (
                   <div>
-                    {/* ── DEBUG PANEL (always visible) ── */}
-                    <div className="mb-4 rounded-lg border-2 border-red-400 bg-red-50 p-3 text-[11px] font-mono leading-5 text-red-900">
-                      <p className="font-bold text-sm mb-2">DEBUG — question filter</p>
-                      <p><b>track.name_en:</b> {selectedTrack?.name_en ?? '—'}</p>
-                      <p><b>track.program_tags:</b> {JSON.stringify((selectedTrack as any)?.program_tags)}</p>
-                      <p className="mt-1"><b>all questions:</b> {questions.length}</p>
-                      <p><b>visible questions:</b> {visibleQuestions.length}</p>
-                      <div className="mt-2 space-y-1">
-                        {questions.map(q => (
-                          <p key={q.id} className={visibleQuestions.includes(q) ? 'text-green-700' : 'text-red-400 line-through'}>
-                            {visibleQuestions.includes(q) ? '✓' : '✗'} {q.question_en} — tags: {JSON.stringify((q as any).question_tags)}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Actual question form */}
                     {visibleQuestions.length > 0 && (
                       <div>
                         <p className="form-section-label">
