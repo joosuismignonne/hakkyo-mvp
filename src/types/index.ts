@@ -48,6 +48,8 @@ export interface ProgramTrack {
   is_free: boolean
   target_audience?: string | null
   included_sessions?: string[] | string | null
+  /** New: language/class tags used to match questions to this track. */
+  program_tags?: QuestionTag[]
   application_deadline?: string | null
   class_schedule?: string | null
   venue_name?: string | null
@@ -114,6 +116,8 @@ export interface Content {
   created_at?: string
 }
 
+export type QuestionTag = 'korean' | 'english' | 'french' | 'active_output'
+
 export interface FormQuestion {
   id: string
   question_ko: string
@@ -125,6 +129,8 @@ export interface FormQuestion {
   order_index: number
   session_id: string | null
   track_id: string | null
+  /** New: language/class tags. Empty array = show on all forms. */
+  question_tags: QuestionTag[]
   created_at?: string
 }
 

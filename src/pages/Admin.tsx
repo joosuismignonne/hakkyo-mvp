@@ -253,6 +253,7 @@ function SessionsAdmin() {
     instructor_bio: '',
     instructor_image_url: '',
     faq_items: [],
+    program_tags: [],
 
     status: 'open'
   })
@@ -395,6 +396,29 @@ function SessionsAdmin() {
                     <span>{opt.label}</span>
                   </label>
                 ))}
+              </div>
+            </div>
+            <div>
+              <p className="label mb-1">Program tags <span className="font-normal text-gray-400">(used to filter application questions)</span></p>
+              <p className="text-[11px] text-gray-400 mb-2">
+                Questions tagged with matching tags will appear on this program's application form.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {([ ['korean','Korean'], ['english','English'], ['french','French'], ['active_output','Active Output'] ] as [string,string][]).map(([tag, label]) => {
+                  const current: string[] = Array.isArray(editing.program_tags) ? editing.program_tags as string[] : []
+                  const checked = current.includes(tag)
+                  return (
+                    <label key={tag} className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        className="w-4 h-4 accent-black rounded"
+                        onChange={() => set('program_tags', checked ? current.filter(t => t !== tag) : [...current, tag])}
+                      />
+                      <span className="text-sm text-gray-700">{label}</span>
+                    </label>
+                  )
+                })}
               </div>
             </div>
             <div>
@@ -595,7 +619,7 @@ function SessionsAdmin() {
             <tr>
               <Th>Program</Th>
               <Th>Audience</Th>
-              <Th>Classes</Th>
+              <Th>Tags</Th>
               <Th>Price</Th>
               <Th>Duration</Th>
               <Th>Spots</Th>
@@ -615,9 +639,15 @@ function SessionsAdmin() {
                   {TRACK_TARGET_AUDIENCES.find(a => a.value === s.target_audience)?.label || ''}
                 </Td>
                 <Td>
-                  {Array.isArray(s.included_sessions)
-                    ? s.included_sessions.join(', ')
-                    : ''}
+                  <div className="flex flex-wrap gap-1">
+                    {(Array.isArray(s.program_tags) && s.program_tags.length > 0)
+                      ? (s.program_tags as string[]).map(tag => (
+                          <span key={tag} className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                            {tag}
+                          </span>
+                        ))
+                      : <span className="text-xs text-gray-300">—</span>}
+                  </div>
                 </Td>
                 <Td>{s.total_price ?? '-'}</Td>
                 <Td>{s.duration_weeks ?? '-'}</Td>
@@ -1266,6 +1296,7 @@ function QuestionsAdmin() {
     question_ko:'', question_en:'', question_fr:'',
     type:'text', options:'', required:false,
     order_index:(items.length||0) + 1, session_id:null,
+    question_tags: [],
   })
 
   const openEdit = (q: FormQuestion) => { setDraft({ ...q }); setEditingId(q.id) }
@@ -1345,10 +1376,17 @@ function QuestionsAdmin() {
                 <p className="font-medium text-sm text-gray-900 truncate">{q.question_en||q.question_ko}</p>
                 {q.question_ko && <p className="text-xs text-gray-400 truncate mt-0.5">{q.question_ko}</p>}
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                 <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{q.type}</span>
                 {q.required && <span className="text-xs font-semibold bg-red-50 text-red-500 px-1.5 py-0.5 rounded">Required</span>}
-                {q.session_id && <span className="text-xs font-semibold bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded">Class</span>}
+                {q.session_id && <span className="text-xs font-semibold bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded">Legacy scope</span>}
+                {Array.isArray(q.question_tags) && q.question_tags.length > 0
+                  ? (q.question_tags as string[]).map(tag => (
+                      <span key={tag} className="text-[10px] font-semibold bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded">
+                        {tag}
+                      </span>
+                    ))
+                  : <span className="text-[10px] text-gray-300 px-1 py-0.5">all programs</span>}
               </div>
               <div className="flex gap-1 shrink-0 ml-1">
                 {isEditing
@@ -1428,11 +1466,42 @@ function QuestionForm({ draft, setD, onSave, onCancel, saving, isNew = false }: 
           </label>
         </FL>
       </div>
-      <FL label="Class scope (blank = all classes)">
-        <input className="input-sm" value={draft.session_id||''}
-          onChange={e => setD('session_id', e.target.value||null)}
-          placeholder="Paste class UUID to limit this question to one class" />
-      </FL>
+      {/* Tag-based scoping — replaces the legacy UUID field */}
+      <div>
+        <p className="label mb-1">Question applies to</p>
+        <p className="text-[11px] text-gray-400 mb-2">
+          Leave all unchecked to show on every form. Check tags to show only when a matching program is selected.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {([ ['korean','Korean'], ['english','English'], ['french','French'], ['active_output','Active Output'] ] as [string,string][]).map(([tag, label]) => {
+            const tags: string[] = Array.isArray(draft.question_tags) ? draft.question_tags as string[] : []
+            const checked = tags.includes(tag)
+            return (
+              <label key={tag} className="flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  className="w-4 h-4 accent-black rounded"
+                  onChange={() => {
+                    const next = checked ? tags.filter(t => t !== tag) : [...tags, tag]
+                    setD('question_tags', next)
+                  }}
+                />
+                <span className="text-sm text-gray-700">{label}</span>
+              </label>
+            )
+          })}
+        </div>
+      </div>
+      {/* Legacy class scope UUID — kept for backward compat, hidden behind details */}
+      <details className="text-xs text-gray-400">
+        <summary className="cursor-pointer hover:text-gray-600">Legacy: Class scope UUID (advanced)</summary>
+        <div className="mt-2">
+          <input className="input-sm w-full" value={draft.session_id||''}
+            onChange={e => setD('session_id', e.target.value||null)}
+            placeholder="Paste class UUID to limit this question to one class" />
+        </div>
+      </details>
       <div className="flex items-center gap-2 pt-1">
         <button onClick={onSave} disabled={saving} className="btn-yellow">
           {saving ? 'Saving…' : isNew ? 'Add Question' : 'Save Changes'}
