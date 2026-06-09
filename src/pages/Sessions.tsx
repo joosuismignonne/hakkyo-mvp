@@ -229,11 +229,12 @@ function ProgramCard({ track, lang, onApply, t }: {
       {classSchedule.length > 0 && (
         <div className="mb-3 space-y-0.5">
           {classSchedule.map(row => (
-            <p key={`${row.name}-${row.when}`} className="text-[11px] text-gray-500">
-              <span className="font-medium text-gray-700">{row.name}</span>
-              <span className="text-gray-300 mx-1.5">·</span>
-              {row.when}
-            </p>
+            <div key={`${row.name}-${row.when}`} className="grid grid-cols-[1fr_auto] gap-x-3 items-baseline">
+              <span className="text-[11px] font-medium text-gray-700 truncate">{row.name}</span>
+              {row.when && (
+                <span className="text-[11px] text-gray-400 whitespace-nowrap">{row.when}</span>
+              )}
+            </div>
           ))}
         </div>
       )}

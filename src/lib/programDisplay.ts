@@ -10,7 +10,23 @@ export type VenueInfo = {
   mapsUrl: string
 }
 
-/** Parse admin textarea: `Class name | days | time` per line. */
+/** Normalise a raw time-range string: replace any hyphen/en-dash surrounded by
+ *  optional spaces with a single en-dash, no surrounding spaces.
+ *  "12:00 - 13:15"  →  "12:00–13:15"
+ *  "12:00 – 13:15"  →  "12:00–13:15"
+ */
+function normaliseTimeRange(raw: string): string {
+  return raw.trim().replace(/\s*[-–]\s*/g, '–')
+}
+
+/** Parse admin textarea: `Class name | days | time` per line.
+ *
+ *  Produces:
+ *    name = "English Class"
+ *    when = "Mon / Wed · 19:00–20:30"   (dot separator, en-dash in range, no parens)
+ *
+ *  Fallback: when = '' (never '—')
+ */
 export function parseClassScheduleText(text: string | null | undefined): ClassScheduleRow[] {
   if (!text?.trim()) return []
   return text
@@ -19,15 +35,15 @@ export function parseClassScheduleText(text: string | null | undefined): ClassSc
     .map(line => {
       const parts = line.split('|').map(p => p.trim()).filter(Boolean)
       if (parts.length >= 3) {
-        return { name: parts[0], when: `${parts[1]} · ${parts[2]}` }
+        const day  = parts[1]
+        const time = normaliseTimeRange(parts[2])
+        return { name: parts[0], when: `${day} · ${time}` }
       }
       if (parts.length === 2) {
-        return { name: parts[0], when: parts[1] }
+        return { name: parts[0], when: normaliseTimeRange(parts[1]) }
       }
-      if (parts.length === 1) {
-        return { name: parts[0], when: '—' }
-      }
-      return { name: line.trim(), when: '—' }
+      // Single-part line: just the class name, no time info
+      return { name: (parts[0] ?? line).trim(), when: '' }
     })
     .filter(row => row.name)
 }

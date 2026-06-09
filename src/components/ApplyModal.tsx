@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { getTracks, getQuestions, submitApplication, submitLeApplication } from '../lib/db'
 import { useLang } from '../context/LangContext'
 import type { ProgramTrack, FormQuestion } from '../types'
@@ -52,8 +52,35 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
       }
     }).finally(() => setTracksLoading(false))
 
+    // Load ALL questions; visibility is filtered client-side by track tags
     getQuestions().then(setQuestions).catch(console.error)
   }, [preselectedTrackId])
+
+  // ── Visible questions — filtered by selected track's tags ────────────────────
+  // A question is shown if:
+  //   • question_tags is empty (global), OR
+  //   • question_tags overlaps with selectedTrack.program_tags, OR
+  //   • legacy session_id matches the track id
+  const visibleQuestions = useMemo<FormQuestion[]>(() => {
+    console.log('APPLY selectedTrack', selectedTrack)
+    console.log('APPLY selectedTrack.program_tags', selectedTrack?.program_tags)
+    console.log('APPLY all questions', questions)
+
+    if (!questions.length) return []
+    const programTags: string[] = selectedTrack?.program_tags ?? []
+    const trackId = selectedTrack?.id
+    const result = questions.filter(q => {
+      // Legacy scope: keep questions scoped to this specific track UUID
+      if (q.session_id) return q.session_id === trackId
+      const qTags: string[] = q.question_tags ?? []
+      if (qTags.length === 0) return true                         // global
+      if (programTags.length === 0) return false                  // track untagged → only globals
+      return qTags.some(t => programTags.includes(t))             // tag overlap
+    })
+
+    console.log('APPLY visibleQuestions', result)
+    return result
+  }, [questions, selectedTrack])
 
   // ── Escape to close ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -125,7 +152,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
       return
     }
 
-    const missing = questions.filter(q => q.required && !answers[q.id]?.trim())
+    const missing = visibleQuestions.filter(q => q.required && !answers[q.id]?.trim())
     if (missing.length > 0) {
       setError(t('필수 항목을 모두 입력해주세요.', 'Please fill in all required fields.', 'Veuillez remplir tous les champs obligatoires.'))
       return
@@ -146,7 +173,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
         selectedLabel,
         name: form.name, email: form.email, phone: form.phone, instagram: form.instagram,
         answers,
-        questions,
+        questions: visibleQuestions,   // snapshot only the questions actually shown
       })
       setDone(true)
     } catch (err: unknown) {
@@ -441,45 +468,66 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
                       })}
                     </div>
                   </div>
-                ) : questions.length > 0 ? (
+                ) : (
                   <div>
-                    <p className="form-section-label">
-                      {t('추가 정보', 'Additional Info', 'Informations supplémentaires')}
-                    </p>
-                    <div className="space-y-4">
-                      {questions.map(q => (
-                        <div key={q.id}>
-                          <label className="label">
-                            {qLabel(q)}{q.required && <span className="text-red-400 ml-0.5">*</span>}
-                          </label>
-                          {q.type === 'textarea' ? (
-                            <textarea rows={3} required={q.required}
-                              value={answers[q.id] || ''}
-                              onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
-                              className="input resize-none"
-                              placeholder={t('자유롭게 작성해주세요.','Your answer here…','Votre réponse ici…')}
-                            />
-                          ) : q.type === 'select' ? (
-                            <select required={q.required} value={answers[q.id] || ''}
-                              onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
-                              className="input">
-                              <option value="">{t('선택하세요','Select…','Sélectionner…')}</option>
-                              {q.options?.split(',').map(o => o.trim()).filter(Boolean).map(o => (
-                                <option key={o} value={o}>{o}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input type="text" required={q.required}
-                              value={answers[q.id] || ''}
-                              onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
-                              className="input"
-                            />
-                          )}
-                        </div>
-                      ))}
+                    {/* ── DEBUG PANEL (always visible) ── */}
+                    <div className="mb-4 rounded-lg border-2 border-red-400 bg-red-50 p-3 text-[11px] font-mono leading-5 text-red-900">
+                      <p className="font-bold text-sm mb-2">DEBUG — question filter</p>
+                      <p><b>track.name_en:</b> {selectedTrack?.name_en ?? '—'}</p>
+                      <p><b>track.program_tags:</b> {JSON.stringify((selectedTrack as any)?.program_tags)}</p>
+                      <p className="mt-1"><b>all questions:</b> {questions.length}</p>
+                      <p><b>visible questions:</b> {visibleQuestions.length}</p>
+                      <div className="mt-2 space-y-1">
+                        {questions.map(q => (
+                          <p key={q.id} className={visibleQuestions.includes(q) ? 'text-green-700' : 'text-red-400 line-through'}>
+                            {visibleQuestions.includes(q) ? '✓' : '✗'} {q.question_en} — tags: {JSON.stringify((q as any).question_tags)}
+                          </p>
+                        ))}
+                      </div>
                     </div>
+
+                    {/* Actual question form */}
+                    {visibleQuestions.length > 0 && (
+                      <div>
+                        <p className="form-section-label">
+                          {t('추가 정보', 'Additional Info', 'Informations supplémentaires')}
+                        </p>
+                        <div className="space-y-4">
+                          {visibleQuestions.map(q => (
+                            <div key={q.id}>
+                              <label className="label">
+                                {qLabel(q)}{q.required && <span className="text-red-400 ml-0.5">*</span>}
+                              </label>
+                              {q.type === 'textarea' ? (
+                                <textarea rows={3} required={q.required}
+                                  value={answers[q.id] || ''}
+                                  onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+                                  className="input resize-none"
+                                  placeholder={t('자유롭게 작성해주세요.','Your answer here…','Votre réponse ici…')}
+                                />
+                              ) : q.type === 'select' ? (
+                                <select required={q.required} value={answers[q.id] || ''}
+                                  onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+                                  className="input">
+                                  <option value="">{t('선택하세요','Select…','Sélectionner…')}</option>
+                                  {q.options?.split(',').map(o => o.trim()).filter(Boolean).map(o => (
+                                    <option key={o} value={o}>{o}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input type="text" required={q.required}
+                                  value={answers[q.id] || ''}
+                                  onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+                                  className="input"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : null}
+                )}
               </div>
 
               {/* Sticky footer */}

@@ -284,16 +284,21 @@ export async function deleteContent(id: string): Promise<void> {
 
 // ─── Form Questions ───────────────────────────────────────────────────────────
 
-export async function getQuestions(sessionId?: string): Promise<FormQuestion[]> {
+// getQuestions now returns ALL questions without server-side filtering.
+// Filtering by track/tag is done client-side in ApplyModal.visibleQuestions
+// so that it can react to the user's selected track.
+export async function getQuestions(): Promise<FormQuestion[]> {
   if (!isConfigured) {
-    return MOCK_QUESTIONS.filter(q => !q.session_id || q.session_id === sessionId)
-      .sort((a, b) => a.order_index - b.order_index)
+    return MOCK_QUESTIONS.slice().sort((a, b) => a.order_index - b.order_index)
   }
-  let query = db().from('form_questions').select('*').order('order_index')
-  if (sessionId) query = query.or(`session_id.is.null,session_id.eq.${sessionId}`)
-  const { data, error } = await query
+
+  const { data, error } = await db()
+    .from('form_questions')
+    .select('*')
+    .order('order_index')
   if (error) throw error
-  return data ?? []
+
+  return (data ?? []) as FormQuestion[]
 }
 
 export async function getAllQuestions(): Promise<FormQuestion[]> {

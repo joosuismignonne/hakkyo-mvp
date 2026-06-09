@@ -60,7 +60,7 @@ function MetaRow({ icon: Icon, label, value }: {
     <div className="flex items-start gap-3 py-3 border-b border-gray-50 last:border-0">
       <Icon size={14} className="text-gray-300 shrink-0 mt-0.5" />
       <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide w-20 shrink-0">{label}</span>
-      <span className="text-[13px] text-gray-700">{value}</span>
+      <span className="text-[13px] text-gray-700 min-w-0 flex-1">{value}</span>
     </div>
   )
 }
@@ -333,9 +333,11 @@ export default function ProgramDetail() {
             value={
               <div className="space-y-1">
                 {classSchedule.map(row => (
-                  <div key={`${row.name}-${row.when}`} className="flex items-baseline gap-3">
-                    <span className="text-sm font-medium text-gray-900 w-28 shrink-0">{row.name}</span>
-                    <span className="text-sm text-gray-500">{row.when}</span>
+                  <div key={`${row.name}-${row.when}`} className="grid grid-cols-[1fr_auto] gap-x-4 items-baseline">
+                    <span className="text-sm font-medium text-gray-800">{row.name}</span>
+                    {row.when && (
+                      <span className="text-sm text-gray-500 whitespace-nowrap">{row.when}</span>
+                    )}
                   </div>
                 ))}
               </div>
