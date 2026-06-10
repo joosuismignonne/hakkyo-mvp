@@ -128,10 +128,18 @@ function PinIndicator() {
 
 // ─── Notice card ──────────────────────────────────────────────────────────────
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<img[^>]*>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function NoticeCard({ notice, lang }: { notice: Notice; lang: Lang }) {
   const t = (ko: string, en: string, fr: string) => pickText(lang, ko, en, fr)
   const title   = pickText(lang, notice.title_ko, notice.title_en, notice.title_fr)
-  const preview = pickText(lang, notice.body_ko,  notice.body_en,  notice.body_fr).slice(0, 280)
+  const preview = stripHtml(pickText(lang, notice.body_ko, notice.body_en, notice.body_fr)).slice(0, 160)
   const typeLabel = NOTICE_TYPE_LABEL[notice.type]
   const href = `/board/${notice.id}`
 
