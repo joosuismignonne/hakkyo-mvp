@@ -1278,6 +1278,560 @@ function ContentAdmin() {
   )
 }
 
+// ─── Unified Content Admin ─────────────────────────────────────────────────────
+// Writes to `contents` (News) or `notices` (Board) based on Publish To selection.
+// Board category → Notice.type mapping:  notice→'notice'  events→'event'  community→'hiring'
+// Board community subtype stored in Notice.tags[0].
+
+type PublishTo   = 'news' | 'board'
+type BoardCat    = 'notice' | 'events' | 'community'
+type CommSubtype = 'housing' | 'jobs' | 'roommates' | 'language-exchange' | 'general'
+
+interface UnifiedDraft {
+  publishTo:           PublishTo
+  id?:                 string
+  sourceTable?:        'contents' | 'notices'
+  // shared
+  title_ko: string;  title_en: string;  title_fr: string
+  body_ko:  string;  body_en:  string;  body_fr:  string
+  thumbnail_url:       string | null
+  image_urls:          string[]
+  video_url:           string
+  link:                string
+  is_pinned:           boolean
+  // news
+  newsCategory:        ContentCategory
+  contentType:         ContentType
+  published_at:        string
+  // board
+  boardCategory:       BoardCat
+  communitySubtype:    CommSubtype
+  date:                string
+  location_name:       string
+  map_url:             string
+  instagram_url:       string
+  external_url:        string
+  related_program_id:  string | null
+  related_program_label: string | null
+}
+
+const todayStr = () => new Date().toISOString().split('T')[0]
+
+function blankUnified(publishTo: PublishTo = 'news'): UnifiedDraft {
+  return {
+    publishTo,
+    title_ko: '', title_en: '', title_fr: '',
+    body_ko:  '', body_en:  '', body_fr:  '',
+    thumbnail_url: null, image_urls: [], video_url: '', link: '', is_pinned: false,
+    newsCategory: 'montreal', contentType: 'text', published_at: todayStr(),
+    boardCategory: 'notice', communitySubtype: 'general',
+    date: todayStr(),
+    location_name: '', map_url: '', instagram_url: '', external_url: '',
+    related_program_id: null, related_program_label: null,
+  }
+}
+
+function contentToDraft(c: Content): UnifiedDraft {
+  return {
+    ...blankUnified('news'),
+    id: c.id, sourceTable: 'contents',
+    title_ko: c.title_ko, title_en: c.title_en, title_fr: c.title_fr,
+    body_ko: c.body_ko,   body_en: c.body_en,   body_fr: c.body_fr,
+    thumbnail_url: c.thumbnail_url ?? null,
+    image_urls: normalizeImageUrls(c.image_urls),
+    video_url: c.video_url ?? '',
+    link: c.link ?? '',
+    is_pinned: !!c.is_pinned,
+    newsCategory: resolveContentCategory(c),
+    contentType: normalizeContentType(c.type),
+    published_at: c.published_at,
+  }
+}
+
+function noticeToDraft(n: Notice): UnifiedDraft {
+  const boardCategory: BoardCat =
+    n.type === 'event' ? 'events' : n.type === 'hiring' ? 'community' : 'notice'
+  return {
+    ...blankUnified('board'),
+    id: n.id, sourceTable: 'notices',
+    title_ko: n.title_ko, title_en: n.title_en, title_fr: n.title_fr,
+    body_ko: n.body_ko,   body_en: n.body_en,   body_fr: n.body_fr,
+    thumbnail_url: n.image_url ?? null,
+    is_pinned: !!n.is_pinned,
+    boardCategory,
+    communitySubtype: ((n.tags ?? [])[0] as CommSubtype | undefined) ?? 'general',
+    date: n.date,
+    location_name: n.location_name ?? '',
+    map_url: n.map_url ?? '',
+    instagram_url: n.instagram_url ?? '',
+    external_url: n.external_url ?? '',
+    related_program_id: n.related_program_id ?? null,
+    related_program_label: n.related_program_label ?? null,
+  }
+}
+
+function UnifiedContentAdmin() {
+  const [newsRows,    setNewsRows]    = useState<Content[]>([])
+  const [boardRows,   setBoardRows]   = useState<Notice[]>([])
+  const [editing,     setEditing]     = useState<UnifiedDraft | null>(null)
+  const [loading,     setLoading]     = useState(true)
+  const [saving,      setSaving]      = useState(false)
+  const [deleting,    setDeleting]    = useState<string | null>(null)
+  const [uploading,   setUploading]   = useState<'thumb' | 'images' | null>(null)
+  const [err,         setErr]         = useState('')
+  const [copyOk,      setCopyOk]      = useState<string | null>(null)
+  const [tracks,      setTracks]      = useState<ProgramTrack[]>([])
+
+  const editorRefs = useRef<Record<BodyLang, Editor | null>>({ ko: null, en: null, fr: null })
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [news, board] = await Promise.all([getContents(), getNotices()])
+      setNewsRows(news ?? [])
+      setBoardRows(board ?? [])
+    } catch (e: unknown) { setErr((e as Error).message) }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => {
+    void load()
+    getTracks('program').then(setTracks).catch(() => {})
+  }, [load])
+
+  const set = (k: string, v: unknown) =>
+    setEditing(e => e ? { ...e, [k]: v } : e)
+
+  const uploadFolder = () =>
+    editing?.id ? String(editing.id) : `draft-${editing?.publishTo ?? 'news'}`
+
+  async function onThumbFiles(files: File[]) {
+    const file = filterImageFiles(files)[0]
+    if (!file || !editing) return
+    setUploading('thumb'); setErr('')
+    try { set('thumbnail_url', await uploadContentImage(file, uploadFolder())) }
+    catch (e: unknown) { setErr((e as Error).message) }
+    finally { setUploading(null) }
+  }
+
+  async function onBodyImageFiles(files: File[]) {
+    const imgs = filterImageFiles(files)
+    if (!imgs.length || !editing) return
+    setUploading('images'); setErr('')
+    try {
+      const urls = await uploadContentImages(imgs, uploadFolder())
+      set('image_urls', [...(editing.image_urls ?? []), ...urls])
+    } catch (e: unknown) { setErr((e as Error).message) }
+    finally { setUploading(null) }
+  }
+
+  function removeBodyImage(url: string) {
+    if (!editing) return
+    set('image_urls', (editing.image_urls ?? []).filter(u => u !== url))
+  }
+
+  function insertBodyImage(lang: BodyLang, url: string) {
+    if (!editing) return
+    const field = BODY_FIELD[lang]
+    const editor = editorRefs.current[lang]
+    if (insertImageInEditor(editor, url)) { set(field, editor!.getHTML()); return }
+    set(field, `${(editing[field] as string) ?? ''}<p>${imageHtml(url)}</p>`)
+  }
+
+  async function copyHtml(url: string) {
+    try {
+      await navigator.clipboard.writeText(imageHtml(url))
+      setCopyOk(url)
+      window.setTimeout(() => setCopyOk(p => p === url ? null : p), 2000)
+    } catch { setErr('Could not copy to clipboard.') }
+  }
+
+  async function save() {
+    if (!editing) return
+    setSaving(true); setErr('')
+    try {
+      if (editing.publishTo === 'news') {
+        await saveContent({
+          ...(editing.id ? { id: editing.id } : {}),
+          title_ko: editing.title_ko, title_en: editing.title_en, title_fr: editing.title_fr,
+          body_ko: editing.body_ko,   body_en: editing.body_en,   body_fr: editing.body_fr,
+          category: editing.newsCategory,
+          type: editing.contentType,
+          thumbnail_url: isPublicMediaUrl(editing.thumbnail_url) ? editing.thumbnail_url : null,
+          image_urls: (editing.image_urls ?? []).filter(isPublicMediaUrl),
+          video_url: editing.video_url?.trim() || null,
+          link: editing.link?.trim() || undefined,
+          published_at: editing.published_at,
+          is_pinned: editing.is_pinned || undefined,
+        })
+      } else {
+        const noticeType: Notice['type'] =
+          editing.boardCategory === 'events'    ? 'event'  :
+          editing.boardCategory === 'community' ? 'hiring' : 'notice'
+        const tags: string[] | null =
+          editing.boardCategory === 'community' ? [editing.communitySubtype] : null
+        await saveNotice({
+          ...(editing.id ? { id: editing.id } : {}),
+          title_ko: editing.title_ko, title_en: editing.title_en, title_fr: editing.title_fr,
+          body_ko: editing.body_ko,   body_en: editing.body_en,   body_fr: editing.body_fr,
+          type: noticeType,
+          date: editing.date,
+          image_url: isPublicMediaUrl(editing.thumbnail_url) ? editing.thumbnail_url : null,
+          is_pinned: editing.is_pinned || undefined,
+          tags,
+          location_name:       editing.location_name?.trim()       || null,
+          map_url:             editing.map_url?.trim()             || null,
+          instagram_url:       editing.instagram_url?.trim()       || null,
+          external_url:        editing.external_url?.trim()        || null,
+          related_program_id:  editing.related_program_id          || null,
+          related_program_label: editing.related_program_label?.trim() || null,
+        })
+      }
+      await load(); setEditing(null)
+    } catch (e: unknown) { setErr((e as Error).message) }
+    finally { setSaving(false) }
+  }
+
+  async function remove(id: string, table: 'contents' | 'notices') {
+    if (!confirm('Delete this post? This cannot be undone.')) return
+    setDeleting(id); setErr('')
+    try {
+      if (table === 'contents') {
+        await deleteContent(id)
+        setNewsRows(r => r.filter(x => x.id !== id))
+      } else {
+        await deleteNotice(id)
+        setBoardRows(r => r.filter(x => x.id !== id))
+      }
+    } catch (e: unknown) { setErr((e as Error).message ?? 'Failed to delete.') }
+    finally { setDeleting(null) }
+  }
+
+  // ── combined list sorted newest-first ────────────────────────────────────────
+  type ListRow = { key: string; dest: string; title: string; date: string; onEdit: () => void; onDelete: () => void; deleteKey: string }
+  const listRows: ListRow[] = [
+    ...newsRows.map(c => ({
+      key: `news-${c.id}`,
+      dest: `News / ${resolveContentCategory(c).toUpperCase()}`,
+      title: c.title_en || c.title_ko,
+      date: c.published_at,
+      onEdit: () => setEditing(contentToDraft(c)),
+      onDelete: () => remove(c.id, 'contents'),
+      deleteKey: c.id,
+    })),
+    ...boardRows.map(n => {
+      const cat = n.type === 'event' ? 'Events' : n.type === 'hiring' ? 'Community' : 'Notice'
+      const sub = n.type === 'hiring' && n.tags?.[0] ? ` · ${n.tags[0]}` : ''
+      return {
+        key: `board-${n.id}`,
+        dest: `Board / ${cat}${sub}`,
+        title: n.title_en || n.title_ko,
+        date: n.date,
+        onEdit: () => setEditing(noticeToDraft(n)),
+        onDelete: () => remove(n.id, 'notices'),
+        deleteKey: n.id,
+      }
+    }),
+  ].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
+
+  if (loading) return <Spinner />
+
+  const d = editing
+
+  return (
+    <div className="space-y-4">
+      {err && <ErrorMsg msg={err} />}
+
+      <div className="flex gap-3 justify-end">
+        <button onClick={() => setEditing(blankUnified('news'))}  className="btn-yellow">+ News post</button>
+        <button onClick={() => setEditing(blankUnified('board'))} className="btn-outline">+ Board post</button>
+      </div>
+
+      {/* ── Editor form ── */}
+      {d && (
+        <FormCard title={d.id ? 'Edit post' : 'New post'}>
+          <div className="space-y-5">
+
+            {/* 1 ── Publish To */}
+            <div>
+              <p className="label mb-2">Publish to</p>
+              <div className="flex gap-2">
+                {(['news', 'board'] as PublishTo[]).map(pt => (
+                  <button
+                    key={pt}
+                    type="button"
+                    onClick={() => set('publishTo', pt)}
+                    className={[
+                      'flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors',
+                      d.publishTo === pt
+                        ? 'bg-gray-900 text-white border-gray-900'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400',
+                    ].join(' ')}
+                  >
+                    {pt === 'news' ? '📰 News' : '📋 Board'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 2 ── Category (conditional) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {d.publishTo === 'news' ? (
+                <FL label="Category">
+                  <select className="input" value={d.newsCategory}
+                    onChange={e => set('newsCategory', e.target.value as ContentCategory)}>
+                    {(['archive','montreal','language','culture'] as ContentCategory[]).map(c => (
+                      <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                    ))}
+                  </select>
+                </FL>
+              ) : (
+                <>
+                  <FL label="Board category">
+                    <select className="input" value={d.boardCategory}
+                      onChange={e => set('boardCategory', e.target.value as BoardCat)}>
+                      <option value="notice">Notice</option>
+                      <option value="events">Events</option>
+                      <option value="community">Community</option>
+                    </select>
+                  </FL>
+                  {d.boardCategory === 'community' && (
+                    <FL label="Community type">
+                      <select className="input" value={d.communitySubtype}
+                        onChange={e => set('communitySubtype', e.target.value as CommSubtype)}>
+                        <option value="housing">Housing</option>
+                        <option value="jobs">Jobs</option>
+                        <option value="roommates">Roommates</option>
+                        <option value="language-exchange">Language Exchange</option>
+                        <option value="general">General</option>
+                      </select>
+                    </FL>
+                  )}
+                </>
+              )}
+
+              {/* Date / Published */}
+              {d.publishTo === 'news' ? (
+                <FL label="Published date">
+                  <input type="date" className="input" value={d.published_at}
+                    onChange={e => set('published_at', e.target.value)} />
+                </FL>
+              ) : (
+                <FL label="Date">
+                  <input type="date" className="input" value={d.date}
+                    onChange={e => set('date', e.target.value)} />
+                </FL>
+              )}
+
+              {d.publishTo === 'news' && (
+                <FL label="Content type">
+                  <select className="input" value={d.contentType}
+                    onChange={e => set('contentType', e.target.value as ContentType)}>
+                    {CONTENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </FL>
+              )}
+            </div>
+
+            {/* 3 ── Title */}
+            <div>
+              <p className="label mb-1">Title</p>
+              <LangFields prefix="title"
+                ko={d.title_ko} en={d.title_en} fr={d.title_fr} onChange={set} />
+            </div>
+
+            {/* 4 ── Body (rich editor) */}
+            <div>
+              <p className="label mb-1">Body</p>
+              <p className="text-xs text-gray-400 mb-2">
+                Rich text — saved as HTML. Supports headings, lists, links, images, YouTube embeds.
+              </p>
+              <ContentBodyRichEditors
+                ko={d.body_ko} en={d.body_en} fr={d.body_fr}
+                onChange={set} editorRefs={editorRefs}
+              />
+            </div>
+
+            {/* 5 ── Thumbnail / cover image */}
+            <FL label={d.publishTo === 'news' ? 'Thumbnail' : 'Cover image'}>
+              {isPublicMediaUrl(d.thumbnail_url) ? (
+                <div className="flex items-start gap-3">
+                  <div className="w-32 aspect-[16/10] overflow-hidden rounded-lg border border-gray-200 bg-gray-50 shrink-0">
+                    <img src={d.thumbnail_url!} alt="Thumbnail preview"
+                      className="h-full w-full object-cover"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  </div>
+                  <button type="button" onClick={() => set('thumbnail_url', '')}
+                    className="text-xs text-red-500 hover:text-red-700 mt-1">Remove</button>
+                </div>
+              ) : (
+                <>
+                  <ContentMediaDropzone disabled={uploading === 'thumb'}
+                    onFiles={files => void onThumbFiles(files)} />
+                  <input type="url" className="input mt-2"
+                    placeholder="Or paste image URL (https://…)"
+                    value={d.thumbnail_url ?? ''}
+                    onChange={e => set('thumbnail_url', e.target.value)} />
+                </>
+              )}
+              {uploading === 'thumb' && <p className="text-xs text-gray-400 mt-1">Uploading…</p>}
+            </FL>
+
+            {/* 6 ── Body images (News only) */}
+            {d.publishTo === 'news' && (
+              <FL label="Body images">
+                <ContentMediaDropzone multiple disabled={uploading === 'images'}
+                  onFiles={files => void onBodyImageFiles(files)} />
+                {uploading === 'images' && <p className="text-xs text-gray-400 mt-1">Uploading…</p>}
+                {(d.image_urls ?? []).length > 0 && (
+                  <div className="mt-3 space-y-3">
+                    {(d.image_urls ?? []).map(url => (
+                      <div key={url} className="flex flex-col sm:flex-row gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <div className="sm:w-32 shrink-0 aspect-[4/3] overflow-hidden rounded-md border border-gray-200 bg-white">
+                          <img src={url} alt="" className="h-full w-full object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <code className="block truncate text-[10px] text-gray-500">{imageHtml(url)}</code>
+                          <div className="flex flex-wrap gap-1.5">
+                            <button type="button" onClick={() => void copyHtml(url)}
+                              className="btn-ghost py-1 px-2 text-xs">
+                              {copyOk === url ? 'Copied' : 'Copy HTML'}
+                            </button>
+                            {(['ko','en','fr'] as BodyLang[]).map(l => (
+                              <button key={l} type="button"
+                                onClick={() => insertBodyImage(l, url)}
+                                className="btn-ghost py-1 px-2 text-xs">
+                                Insert {l.toUpperCase()}
+                              </button>
+                            ))}
+                            <button type="button" onClick={() => removeBodyImage(url)}
+                              className="text-xs text-red-500 hover:text-red-700 px-2 py-1">
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </FL>
+            )}
+
+            {/* 7 ── Video URL (News only) */}
+            {d.publishTo === 'news' && (
+              <FL label="Video URL (YouTube / Vimeo)">
+                <input type="url" className="input"
+                  placeholder="https://www.youtube.com/watch?v=…"
+                  value={d.video_url ?? ''} onChange={e => set('video_url', e.target.value)} />
+              </FL>
+            )}
+
+            {/* 8 ── Link (News only) */}
+            {d.publishTo === 'news' && (
+              <FL label="Link (optional)">
+                <input className="input" value={d.link ?? ''}
+                  onChange={e => set('link', e.target.value)} />
+              </FL>
+            )}
+
+            {/* 9 ── Board-only: location / links / related program */}
+            {d.publishTo === 'board' && (
+              <details className="border border-gray-100 rounded-lg">
+                <summary className="px-4 py-2.5 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 rounded-lg">
+                  Location &amp; links (optional)
+                </summary>
+                <div className="px-4 pb-4 pt-2 grid grid-cols-1 gap-3">
+                  <FL label="Location name">
+                    <input type="text" className="input" placeholder="e.g. HAKKYO Space"
+                      value={d.location_name ?? ''} onChange={e => set('location_name', e.target.value)} />
+                  </FL>
+                  <FL label="Map URL">
+                    <input type="url" className="input" placeholder="https://maps.google.com/…"
+                      value={d.map_url ?? ''} onChange={e => set('map_url', e.target.value)} />
+                  </FL>
+                  <FL label="Instagram URL">
+                    <input type="url" className="input" placeholder="https://instagram.com/…"
+                      value={d.instagram_url ?? ''} onChange={e => set('instagram_url', e.target.value)} />
+                  </FL>
+                  <FL label="External link">
+                    <input type="url" className="input" placeholder="https://…"
+                      value={d.external_url ?? ''} onChange={e => set('external_url', e.target.value)} />
+                  </FL>
+                  <FL label="Related program">
+                    <select className="input" value={d.related_program_id ?? ''}
+                      onChange={e => {
+                        const id = e.target.value || null
+                        set('related_program_id', id)
+                        set('related_program_label', tracks.find(t => t.id === id)?.name_en ?? null)
+                      }}>
+                      <option value="">— none —</option>
+                      {tracks.map(t => (
+                        <option key={t.id} value={t.id}>{t.name_en || t.name_ko}</option>
+                      ))}
+                    </select>
+                  </FL>
+                </div>
+              </details>
+            )}
+
+            {/* 10 ── Pinned */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={d.is_pinned}
+                onChange={e => set('is_pinned', e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 accent-gray-900" />
+              <span className="text-sm text-gray-700">Pin to top of homepage feed</span>
+            </label>
+
+            <SaveRow onSave={save} onCancel={() => setEditing(null)} saving={saving} />
+          </div>
+        </FormCard>
+      )}
+
+      {/* ── Combined list ── */}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <Th>Title</Th>
+              <Th>Destination</Th>
+              <Th>Date</Th>
+              <Th>Actions</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {listRows.map(row => (
+              <tr key={row.key}>
+                <Td><span className="font-medium">{row.title || '—'}</span></Td>
+                <Td>
+                  <span className={[
+                    'text-xs font-semibold uppercase tracking-wide',
+                    row.dest.startsWith('News') ? 'text-blue-500' : 'text-amber-600',
+                  ].join(' ')}>
+                    {row.dest}
+                  </span>
+                </Td>
+                <Td>{row.date}</Td>
+                <Td>
+                  <div className="flex gap-2">
+                    <button onClick={row.onEdit} className="btn-ghost py-1 px-2">Edit</button>
+                    <button onClick={row.onDelete} disabled={deleting === row.deleteKey}
+                      className="text-xs text-red-500 hover:text-red-700 px-2 py-1 disabled:opacity-40">
+                      {deleting === row.deleteKey ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </div>
+                </Td>
+              </tr>
+            ))}
+            {listRows.length === 0 && (
+              <tr><Td><span className="text-gray-400">No posts yet.</span></Td><Td>{null}</Td><Td>{null}</Td><Td>{null}</Td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 // ─── Questions Admin ────────────────────────────────────────────────────────────
 function QuestionsAdmin() {
   const [items,     setItems]     = useState<FormQuestion[]>([])
@@ -2477,8 +3031,7 @@ function NotificationsAdmin() {
 const TABS = [
   { id: 'notifications', label: 'Notifications',   Component: NotificationsAdmin },
   { id: 'sessions',      label: 'Programs',         Component: SessionsAdmin      },
-  { id: 'notices',       label: 'Notices',           Component: NoticesAdmin       },
-  { id: 'content',       label: 'Content',           Component: ContentAdmin       },
+  { id: 'content',       label: 'Content',           Component: UnifiedContentAdmin },
   { id: 'community',     label: 'Community',         Component: CommunityAdmin     },
   { id: 'questions',     label: 'Questions',         Component: QuestionsAdmin     },
   { id: 'applications',  label: 'Applications',      Component: ApplicationsAdmin  },
