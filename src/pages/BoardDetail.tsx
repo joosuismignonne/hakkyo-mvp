@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react'
 import { getNoticeById } from '../lib/db'
 import { useLang } from '../context/LangContext'
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
+import ArticleBody from '../components/ArticleBody'
 import type { Notice } from '../types'
 
 type Lang = 'ko' | 'en' | 'fr'
@@ -93,18 +94,19 @@ export default function BoardDetail() {
         {title}
       </h1>
 
-      {/* Image */}
+      {/* Cover image — full aspect ratio, no cropping */}
       {notice.image_url && (
-        <div className="overflow-hidden rounded-xl mb-6 bg-gray-50" style={{ maxHeight: 480 }}>
-          <img src={notice.image_url} alt="" className="w-full object-cover" style={{ maxHeight: 480 }} />
+        <div className="rounded-xl overflow-hidden mb-6 bg-gray-50">
+          <img src={notice.image_url} alt=""
+            className="w-full h-auto object-contain rounded-xl" />
         </div>
       )}
 
-      {/* Body */}
+      {/* Body — renders HTML from rich text editor */}
       {body && (
-        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line mb-8">
-          {body}
-        </p>
+        <div className="mb-8">
+          <ArticleBody body={body} />
+        </div>
       )}
 
       {/* Tags */}
