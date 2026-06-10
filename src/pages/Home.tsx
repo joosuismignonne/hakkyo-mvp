@@ -738,12 +738,6 @@ export default function Home() {
     community: allItems.filter(i => i.kind === 'community').length,
   }), [allItems])
 
-  // IDs shown in the pinned grid — excluded from the regular feed
-  const pinnedIds = useMemo(
-    () => new Set(allItems.filter(i => i.pinned).slice(0, 3).map(i => i.data.id)),
-    [allItems],
-  )
-
   const suggestions = useMemo(() => {
     return allItems
       .filter(i => i.pinned || i.kind === 'content' || i.kind === 'notice')
@@ -758,11 +752,10 @@ export default function Home() {
   }, [allItems, lang])
 
   const feed = useMemo(() => {
-    let items = (filter === 'all' ? allItems : allItems.filter(i => i.kind === filter))
-      .filter(i => !pinnedIds.has(i.data.id))
+    let items = filter === 'all' ? allItems : allItems.filter(i => i.kind === filter)
     if (query.trim()) items = items.filter(i => itemMatches(i, query))
     return items
-  }, [allItems, filter, query, pinnedIds])
+  }, [allItems, filter, query])
 
   if (loading) {
     return (
