@@ -1677,45 +1677,55 @@ function UnifiedContentAdmin() {
               {uploading === 'thumb' && <p className="text-xs text-gray-400 mt-1">Uploading…</p>}
             </FL>
 
-            {/* 6 ── Body images (News only) */}
-            {d.publishTo === 'news' && (
-              <FL label="Body images">
-                <ContentMediaDropzone multiple disabled={uploading === 'images'}
-                  onFiles={files => void onBodyImageFiles(files)} />
-                {uploading === 'images' && <p className="text-xs text-gray-400 mt-1">Uploading…</p>}
-                {(d.image_urls ?? []).length > 0 && (
-                  <div className="mt-3 space-y-3">
-                    {(d.image_urls ?? []).map(url => (
-                      <div key={url} className="flex flex-col sm:flex-row gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                        <div className="sm:w-32 shrink-0 aspect-[4/3] overflow-hidden rounded-md border border-gray-200 bg-white">
-                          <img src={url} alt="" className="h-full w-full object-cover" />
-                        </div>
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <code className="block truncate text-[10px] text-gray-500">{imageHtml(url)}</code>
-                          <div className="flex flex-wrap gap-1.5">
-                            <button type="button" onClick={() => void copyHtml(url)}
+            {/* 6 ── Body images (all publish modes) */}
+            <FL label="Body images (optional)">
+              <p className="text-xs text-gray-400 mb-2">
+                Upload images, then insert them at the cursor position in any body editor.
+                {d.publishTo === 'board' && ' Inserted images are saved inside the body HTML.'}
+              </p>
+              <ContentMediaDropzone multiple disabled={uploading === 'images'}
+                onFiles={files => void onBodyImageFiles(files)} />
+              {uploading === 'images' && <p className="text-xs text-gray-400 mt-1">Uploading…</p>}
+              {(d.image_urls ?? []).length > 0 && (
+                <div className="mt-3 space-y-3">
+                  {(d.image_urls ?? []).map(url => (
+                    <div key={url} className="flex flex-col sm:flex-row gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div className="sm:w-32 shrink-0 aspect-[4/3] overflow-hidden rounded-md border border-gray-200 bg-white">
+                        <img src={url} alt="" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <code className="block truncate text-[10px] text-gray-500 select-all">{url}</code>
+                        <div className="flex flex-wrap gap-1.5">
+                          <button type="button"
+                            onClick={async () => {
+                              try { await navigator.clipboard.writeText(url); setCopyOk(url); window.setTimeout(() => setCopyOk(p => p === url ? null : p), 2000) }
+                              catch { setErr('Could not copy to clipboard.') }
+                            }}
+                            className="btn-ghost py-1 px-2 text-xs">
+                            {copyOk === url ? '✓ Copied' : 'Copy URL'}
+                          </button>
+                          <button type="button" onClick={() => void copyHtml(url)}
+                            className="btn-ghost py-1 px-2 text-xs">
+                            Copy HTML
+                          </button>
+                          {(['ko','en','fr'] as BodyLang[]).map(l => (
+                            <button key={l} type="button"
+                              onClick={() => insertBodyImage(l, url)}
                               className="btn-ghost py-1 px-2 text-xs">
-                              {copyOk === url ? 'Copied' : 'Copy HTML'}
+                              Insert {l.toUpperCase()}
                             </button>
-                            {(['ko','en','fr'] as BodyLang[]).map(l => (
-                              <button key={l} type="button"
-                                onClick={() => insertBodyImage(l, url)}
-                                className="btn-ghost py-1 px-2 text-xs">
-                                Insert {l.toUpperCase()}
-                              </button>
-                            ))}
-                            <button type="button" onClick={() => removeBodyImage(url)}
-                              className="text-xs text-red-500 hover:text-red-700 px-2 py-1">
-                              Remove
-                            </button>
-                          </div>
+                          ))}
+                          <button type="button" onClick={() => removeBodyImage(url)}
+                            className="text-xs text-red-500 hover:text-red-700 px-2 py-1">
+                            Remove
+                          </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </FL>
-            )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </FL>
 
             {/* 7 ── Video URL (News only) */}
             {d.publishTo === 'news' && (
