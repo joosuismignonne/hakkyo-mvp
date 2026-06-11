@@ -345,29 +345,40 @@ function LanguageExchangeCard({
         {leExpChips.map(c => <ExperienceChip key={c}>{c}</ExperienceChip>)}
       </div>
 
-      {(leSettings.schedule || leSettings.location_name) && (
+      {/* ── Schedule (same grid layout as ProgramCard) ── */}
+      {leSettings.schedule && (
         <div className="mb-3 space-y-0.5">
-          {leSettings.schedule && (
-            <p className="text-[11px] text-gray-500">
-              <span className="font-medium text-gray-700">{t('일정', 'Schedule', 'Horaire')}</span>
-              <span className="text-gray-300 mx-1.5">·</span>
+          <div className="grid grid-cols-[1fr_auto] gap-x-3 items-baseline">
+            <span className="text-[11px] font-medium text-gray-700 truncate">
+              {t('언어 교환', 'Language Exchange', 'Échange linguistique')}
+            </span>
+            <span className="text-[11px] text-gray-400 whitespace-nowrap">
               {leSettings.schedule}
-            </p>
-          )}
-          {leSettings.location_name && (
-            <p className="text-[11px] text-gray-500">
-              <span className="font-medium text-gray-700">{t('장소', 'Location', 'Lieu')}</span>
-              <span className="text-gray-300 mx-1.5">·</span>
-              {leSettings.location_name}
-              {leSettings.location_address && `, ${leSettings.location_address}`}
-              {leSettings.google_maps_url && (
-                <a href={leSettings.google_maps_url} target="_blank" rel="noopener noreferrer"
-                   className="ml-2 underline decoration-gray-300 underline-offset-2 hover:text-gray-700 transition-colors">
-                  Map →
-                </a>
-              )}
-            </p>
-          )}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Venue (same MetaChip style as ProgramCard) ── */}
+      {leSettings.location_name && (
+        <div className="mb-3">
+          <MetaChip icon={MapPin}>
+            <span className="text-gray-600 font-medium">{leSettings.location_name}</span>
+            {leSettings.location_address && (
+              <span className="text-gray-400 ml-1">{leSettings.location_address}</span>
+            )}
+            {leSettings.google_maps_url && (
+              <a
+                href={leSettings.google_maps_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="ml-2 underline decoration-gray-200 underline-offset-2 hover:text-gray-700 transition-colors"
+              >
+                Map →
+              </a>
+            )}
+          </MetaChip>
         </div>
       )}
 
