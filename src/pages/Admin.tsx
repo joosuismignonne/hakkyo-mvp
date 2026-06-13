@@ -2116,8 +2116,28 @@ type AnswerRow = {
   question_label_current?: string | null
 }
 
+// ── Helpers imported from ApplyPage ──────────────────────────────────────────
+import { detectProgLang, shortLevel, type ProgLang } from './ApplyPage'
+
+const PROG_LANG_LABEL: Record<ProgLang, string> = {
+  korean:  'Korean',
+  french:  'French',
+  english: 'English',
+}
+
+function getProgLangFromApp(app: ProgramApplication, tracksMap: Map<string, ProgramTrack>): ProgLang {
+  const track = app.program_id ? tracksMap.get(app.program_id) : null
+  if (track) return detectProgLang(track)
+  // fallback: try to parse the "lang:name" format stored in program_name
+  const prefix = app.program_name?.split(':')[0]?.toLowerCase()
+  if (prefix === 'french')  return 'french'
+  if (prefix === 'english') return 'english'
+  return 'korean'
+}
+
 function ApplicationsAdmin() {
   const [apps,         setApps]         = useState<ProgramApplication[]>([])
+  const [tracksMap,    setTracksMap]    = useState<Map<string, ProgramTrack>>(new Map())
   const [selected,     setSelected]     = useState<ProgramApplication | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [err,          setErr]          = useState('')
@@ -2127,9 +2147,10 @@ function ApplicationsAdmin() {
   const [notesSaving,  setNotesSaving]  = useState(false)
 
   const load = useCallback(() =>
-    getProgramApplications()
-      .then(fetched => {
+    Promise.all([getProgramApplications(), getTracks('program')])
+      .then(([fetched, tracks]) => {
         setApps(fetched)
+        setTracksMap(new Map(tracks.map(t => [t.id, t])))
         setSelected(prev => {
           if (!prev) return prev
           return fetched.find(a => a.id === prev.id) ?? prev
@@ -2170,21 +2191,14 @@ function ApplicationsAdmin() {
     s === 'reviewing'       ? 'bg-purple-100 text-purple-700' :
     'bg-gray-100 text-gray-500'
 
-  function shortKoreanLevel(raw: string): string {
-    if (raw.includes('beginner') || raw.includes('limit')) return 'Complete beginner'
-    if (raw.includes('basics'))    return 'Some basics'
-    if (raw.includes('simple'))    return 'Simple conversations'
-    if (raw.includes('struggle'))  return 'Intermediate'
-    if (raw.includes('comfortable')) return 'Fairly comfortable'
-    return raw
-  }
+  // shortLevel imported from ApplyPage handles all languages
 
   const visible = apps
     .filter(a => statusFilter === 'all' || a.status === statusFilter)
     .filter(a => {
       const q = searchQuery.trim().toLowerCase()
       if (!q) return true
-      return [a.name, a.email, a.phone, a.program_name, a.korean_level, a.time_in_montreal]
+      return [a.name, a.email, a.phone, a.program_name, a.korean_level, a.time_in_montreal, a.interest_in_korean]
         .some(f => (f ?? '').toLowerCase().includes(q))
     })
 
@@ -2193,63 +2207,67 @@ function ApplicationsAdmin() {
   const STATUSES: ProgramApplicationStatus[] = ['new','reviewing','accepted','waitlist','payment_pending','enrolled','cancelled']
 
   type ProfileRow = [string, string | null | undefined, 'normal' | 'highlight']
-  const PROFILE_SECTIONS: { label: string; rows: (a: ProgramApplication) => ProfileRow[] }[] = [
-    {
-      label: 'Basic Information',
-      rows: a => [
-        ['Email',        a.email,              'normal'],
-        ['Phone',        a.phone,              'normal'],
-        ['Contact via',  a.preferred_contact,  'normal'],
-        ['Instagram',    a.instagram,          'normal'],
-        ['Languages',    a.languages_spoken,   'normal'],
-      ],
-    },
-    {
-      label: 'Montréal Journey',
-      rows: a => [
-        ['Time in Montréal', a.time_in_montreal, 'highlight'],
-        ['Stage',            a.current_stage,    'normal'],
-        ['Currently focused on', a.current_focus, 'highlight'],
-      ],
-    },
-    {
-      label: 'Korean Journey',
-      rows: a => [
-        ['Korean level',  a.korean_level ? shortKoreanLevel(a.korean_level) : null, 'highlight'],
-        ['Experience',    a.previous_korean_exp,  'normal'],
-        ['Why Korean?',   a.interest_in_korean,   'normal'],
-      ],
-    },
-    {
-      label: 'Goals',
-      rows: a => [
-        ['First thing in Korean', a.first_korean_goal,   'normal'],
-        ['In 6 months',          a.six_month_goal,      'highlight'],
-        ['Why joining',          a.reason_for_joining,  'highlight'],
-      ],
-    },
-    {
-      label: 'Learning Style',
-      rows: a => [
-        ['Biggest challenge', a.biggest_challenge,    'normal'],
-        ['Environment',       a.preferred_environment, 'normal'],
-      ],
-    },
-    {
-      label: 'About HAKKYO',
-      rows: a => [
-        ['How found us',        a.how_found_hakkyo,  'normal'],
-        ['What interested you', a.what_interested,   'normal'],
-      ],
-    },
-    {
-      label: 'One Last Question',
-      rows: a => [
-        ['A great class',    a.definition_great_class, 'normal'],
-        ['Questions for us', a.questions_for_hakkyo,   'normal'],
-      ],
-    },
-  ]
+
+  function buildProfileSections(pl: ProgLang): { label: string; rows: (a: ProgramApplication) => ProfileRow[] }[] {
+    const langLabel = PROG_LANG_LABEL[pl]
+    return [
+      {
+        label: 'Basic Information',
+        rows: a => [
+          ['Email',        a.email,              'normal'],
+          ['Phone',        a.phone,              'normal'],
+          ['Contact via',  a.preferred_contact,  'normal'],
+          ['Instagram',    a.instagram,          'normal'],
+          ['Languages',    a.languages_spoken,   'normal'],
+        ],
+      },
+      {
+        label: 'Montréal Journey',
+        rows: a => [
+          ['Time in Montréal',     a.time_in_montreal, 'highlight'],
+          ['Stage',                a.current_stage,    'normal'],
+          ['Currently focused on', a.current_focus,    'highlight'],
+        ],
+      },
+      {
+        label: `${langLabel} Journey`,
+        rows: a => [
+          [`${langLabel} level`, a.korean_level ? shortLevel(a.korean_level) : null, 'highlight'],
+          ['Experience',         a.previous_korean_exp,                               'normal'],
+          [`Why ${langLabel}?`,  a.interest_in_korean,                                'normal'],
+        ],
+      },
+      {
+        label: 'Goals',
+        rows: a => [
+          [`First thing in ${langLabel}`, a.first_korean_goal,  'normal'],
+          ['In 6 months',                 a.six_month_goal,     'highlight'],
+          ['Why joining',                 a.reason_for_joining, 'highlight'],
+        ],
+      },
+      {
+        label: 'Learning Style',
+        rows: a => [
+          ['Biggest challenge', a.biggest_challenge,     'normal'],
+          ['Environment',       a.preferred_environment, 'normal'],
+        ],
+      },
+      {
+        label: 'About HAKKYO',
+        rows: a => [
+          ['How found us',        a.how_found_hakkyo, 'normal'],
+          ['What interested you', a.what_interested,  'normal'],
+        ],
+      },
+      {
+        label: 'One Last Question',
+        rows: a => [
+          ['A great class',    a.definition_great_class, 'normal'],
+          ['Questions for us', a.questions_for_hakkyo,   'normal'],
+        ],
+      },
+    ]
+  }
 
   return (
     <div className="space-y-4">
@@ -2309,7 +2327,7 @@ function ApplicationsAdmin() {
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     {a.korean_level && (
                       <span className="text-[11px] text-gray-500">
-                        {shortKoreanLevel(a.korean_level)}
+                        {shortLevel(a.korean_level)}
                       </span>
                     )}
                     {a.korean_level && a.time_in_montreal && (
@@ -2363,8 +2381,8 @@ function ApplicationsAdmin() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {selected.korean_level && (
                   <div className="bg-white rounded-lg px-3 py-2.5 border border-gray-100">
-                    <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">Korean</p>
-                    <p className="text-[12px] font-medium text-gray-700 leading-tight">{shortKoreanLevel(selected.korean_level)}</p>
+                    <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">{PROG_LANG_LABEL[getProgLangFromApp(selected, tracksMap)]}</p>
+                    <p className="text-[12px] font-medium text-gray-700 leading-tight">{shortLevel(selected.korean_level)}</p>
                   </div>
                 )}
                 {selected.time_in_montreal && (
@@ -2406,7 +2424,7 @@ function ApplicationsAdmin() {
 
             {/* Sectioned profile */}
             <div className="p-5 space-y-6 overflow-y-auto max-h-[540px]">
-              {PROFILE_SECTIONS.map(sec => {
+              {buildProfileSections(getProgLangFromApp(selected, tracksMap)).map(sec => {
                 const rows = sec.rows(selected).filter(([, v]) => v?.toString().trim())
                 if (rows.length === 0) return null
                 return (
