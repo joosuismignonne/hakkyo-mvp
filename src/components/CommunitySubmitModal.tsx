@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { trackEvent } from '../lib/analytics'
 import { X } from 'lucide-react'
 import { submitCommunityPost } from '../lib/db'
 import { useLang } from '../context/LangContext'
@@ -45,6 +46,7 @@ export default function CommunitySubmitModal({ onClose }: Props) {
         contact:     contactValue,
         image_url:   imageUrl.trim() || null,
       })
+      trackEvent('community_submit_click', { subtype })
       setDone(true)
     } catch {
       setError(t(

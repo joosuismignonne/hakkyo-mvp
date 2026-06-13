@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
+import { trackPageView } from './lib/analytics'
 import { LangProvider } from './context/LangContext'
 import Nav from './components/Nav'
 import Footer from './components/Footer'
@@ -23,6 +24,15 @@ function RedirectContentId() {
   return <Navigate to={`/news/${id}`} replace />
 }
 
+// Fires a GA4 page_view on every route change.
+function RouteTracker() {
+  const location = useLocation()
+  useEffect(() => {
+    trackPageView(location.pathname + location.search)
+  }, [location])
+  return null
+}
+
 // Listens for Supabase PASSWORD_RECOVERY event and redirects to the reset form.
 function AuthListener() {
   const navigate = useNavigate()
@@ -43,6 +53,7 @@ export default function App() {
     <LangProvider>
       <BrowserRouter>
         <div className="min-h-screen flex flex-col bg-white text-gray-900 font-sans">
+          <RouteTracker />
           <AuthListener />
           <Nav />
           <main className="flex-1">

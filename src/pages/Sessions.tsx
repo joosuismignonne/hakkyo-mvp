@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Clock, DollarSign, MapPin, Pin, Users, Zap } from 'lucide-react'
 import { getTracks, getSiteSettings, getLeSettings, type LeSettings } from '../lib/db'
+import { trackEvent } from '../lib/analytics'
 import { useLang } from '../context/LangContext'
 import {
   buildClassSchedule,
@@ -286,7 +287,11 @@ function ProgramCard({ track, lang, onApply, t }: {
           />
           {isOpen ? (
             <button
-              onClick={e => { e.stopPropagation(); onApply(track.id) }}
+              onClick={e => {
+                e.stopPropagation()
+                trackEvent('program_apply_click', { program_id: track.id, program_name: track.name_en || track.name_ko })
+                onApply(track.id)
+              }}
               className="border border-gray-900 rounded-lg px-4 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
             >
               {t('신청하기', 'Apply Now', "S'inscrire")}
@@ -388,7 +393,7 @@ function LanguageExchangeCard({
           {t('상시 모집', '● OPEN', '● OUVERT')}
         </span>
         <button
-          onClick={e => { e.stopPropagation(); onApply() }}
+          onClick={e => { e.stopPropagation(); trackEvent('le_apply_click'); onApply() }}
           className="border border-gray-900 rounded-lg px-4 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
         >
           {leButtonText}
