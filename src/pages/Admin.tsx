@@ -248,6 +248,7 @@ function SessionsAdmin() {
     overview: '',
     target_participants: [],
     learning_outcomes: [],
+    output_tags: [],
     weekly_structure: [],
     instructor_name: '',
     instructor_bio: '',
@@ -559,6 +560,16 @@ function SessionsAdmin() {
                   placeholder={"Build conversational fluency\nLearn grammar in context"}
                   value={((editing as Partial<ProgramTrack>).learning_outcomes ?? []).join('\n')}
                   onChange={e => set('learning_outcomes', e.target.value.split('\n'))}
+                />
+              </FL>
+
+              <FL label="Output Tags — shown on program cards (comma-separated)">
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Self Introduction, Café Ordering, Daily Conversation, Active Output"
+                  value={((editing as Partial<ProgramTrack>).output_tags ?? []).join(', ')}
+                  onChange={e => set('output_tags', e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
                 />
               </FL>
 

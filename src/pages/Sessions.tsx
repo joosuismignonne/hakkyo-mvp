@@ -144,6 +144,15 @@ function ExperienceChip({ children }: { children: React.ReactNode }) {
   )
 }
 
+// Output-focused tag — slightly more prominent than ExperienceChip
+function OutputTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center bg-gray-900 text-white rounded-md px-2 py-0.5 text-[10px] font-medium whitespace-nowrap">
+      {children}
+    </span>
+  )
+}
+
 // Primary program-type chip — the most prominent label on the card
 function PrimaryTypeChip({ emoji, label }: { emoji: string; label: string }) {
   return (
@@ -209,6 +218,15 @@ function ProgramCard({ track, lang, onApply, t }: {
            style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {description}
         </p>
+      )}
+
+      {/* ── Output tags ── */}
+      {(track.output_tags ?? []).filter(Boolean).length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {(track.output_tags as string[]).filter(Boolean).map(tag => (
+            <OutputTag key={tag}>{tag}</OutputTag>
+          ))}
+        </div>
       )}
 
       {/* ── Experience chips ── */}

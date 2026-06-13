@@ -65,6 +65,8 @@ export interface ProgramTrack {
   instructor_bio?: string | null
   instructor_image_url?: string | null
   faq_items?: Array<{ question: string; answer: string }> | null
+  /** Short outcome-focused tags shown on program cards, e.g. ["Self Introduction", "Active Output"] */
+  output_tags?: string[] | null
   // joined
   track_sessions?: { session_id: string; session?: Session }[]
 }
