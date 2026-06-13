@@ -562,20 +562,20 @@ export function shortLevel(raw: string): string {
 
 function Heading3({ t }: { t: T3 }) {
   return (
-    <div className="mb-2">
-      <h2 className="text-[24px] md:text-[28px] font-light text-gray-900 leading-tight">{t.fr}</h2>
-      <p className="text-[13px] text-gray-400 leading-snug mt-1">{t.en}</p>
-      <p className="text-[11px] text-gray-300 leading-snug mt-0.5">{t.ko}</p>
+    <div className="mb-3">
+      <h2 className="text-[26px] md:text-[30px] font-light text-gray-900 leading-tight">{t.fr}</h2>
+      <p className="text-[14px] text-gray-500 leading-snug mt-2">{t.en}</p>
+      <p className="text-[13px] text-gray-500 leading-snug mt-1">{t.ko}</p>
     </div>
   )
 }
 
 function Sub3({ t }: { t: T3 }) {
   return (
-    <div className="mb-8 space-y-0.5">
-      <p className="text-[13px] text-gray-500 leading-relaxed">{t.fr}</p>
-      <p className="text-[11px] text-gray-400 leading-relaxed">{t.en}</p>
-      <p className="text-[10px] text-gray-300 leading-relaxed">{t.ko}</p>
+    <div className="mb-8">
+      <p className="text-[13px] text-gray-600 leading-relaxed">{t.fr}</p>
+      <p className="text-[12px] text-gray-500 leading-relaxed mt-1.5">{t.en}</p>
+      <p className="text-[11px] text-gray-500 leading-relaxed mt-1">{t.ko}</p>
     </div>
   )
 }
@@ -584,18 +584,17 @@ function Label3({ t }: { t: T3 }) {
   return (
     <div className="mb-2">
       <p className="text-[12px] text-gray-700 font-medium leading-snug">{t.fr}</p>
-      <p className="text-[10px] text-gray-400 leading-snug mt-0.5">{t.en}</p>
-      <p className="text-[9px] text-gray-300 leading-snug mt-0.5">{t.ko}</p>
+      <p className="text-[11px] text-gray-500 leading-snug mt-1">{t.en}</p>
+      <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{t.ko}</p>
     </div>
   )
 }
 
 function SectionPill3({ label }: { label: T3 }) {
   return (
-    <div className="mb-5">
-      <p className="text-[10px] font-bold tracking-[0.16em] uppercase text-gray-600">{label.fr}</p>
-      <p className="text-[9px] tracking-[0.12em] uppercase text-gray-400 mt-0.5">{label.en}</p>
-      <p className="text-[8px] tracking-[0.10em] uppercase text-gray-300 mt-0.5">{label.ko}</p>
+    <div className="mb-6">
+      <p className="text-[10px] font-bold tracking-[0.16em] uppercase text-gray-700">{label.fr}</p>
+      <p className="text-[9px] tracking-[0.12em] uppercase text-gray-500 mt-1">{label.en} · {label.ko}</p>
     </div>
   )
 }
@@ -619,23 +618,15 @@ function RadioBtn({
         {String.fromCharCode(65 + index)}
       </span>
       <span className="flex-1 min-w-0">
-        <span className="block text-[13px] leading-snug">{option.fr}</span>
-        <span className={['block text-[11px] mt-0.5 leading-snug', selected ? 'opacity-60' : 'text-gray-400'].join(' ')}>{option.en}</span>
-        <span className={['block text-[10px] mt-0.5 leading-snug', selected ? 'opacity-40' : 'text-gray-300'].join(' ')}>{option.ko}</span>
+        <span className="block text-[14px] leading-snug">{option.fr}</span>
+        <span className={['block text-[12px] mt-1 leading-snug', selected ? 'opacity-60' : 'text-gray-500'].join(' ')}>{option.en} · {option.ko}</span>
       </span>
       {selected && <Check size={13} className="ml-auto shrink-0 mt-1" />}
     </button>
   )
 }
 
-function Btn3({ fr, en, ko }: { fr: string; en: string; ko: string }) {
-  return (
-    <span className="flex flex-col items-start leading-tight">
-      <span className="text-[13px] font-medium">{fr}</span>
-      <span className="text-[10px] opacity-70">{en} · {ko}</span>
-    </span>
-  )
-}
+// Btn3 removed — buttons now use plain FR text with a caption below
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Profile summary panel
@@ -711,18 +702,6 @@ function SummaryLine({ children, muted }: { children: React.ReactNode; muted?: b
     <p className={['text-[11px] leading-snug', muted ? 'text-gray-400' : 'text-gray-600'].join(' ')}>
       {children}
     </p>
-  )
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Debug badge
-// ──────────────────────────────────────────────────────────────────────────────
-
-function ProgLangBadge({ pl }: { pl: ProgLang }) {
-  return (
-    <div className="fixed top-16 right-3 z-50 bg-yellow-100 border border-yellow-300 rounded px-2 py-1 text-[10px] font-mono text-yellow-800 shadow-sm pointer-events-none">
-      APPLICATION_PROGRAM_LANGUAGE = {pl}
-    </div>
   )
 }
 
@@ -898,7 +877,6 @@ export default function ApplyPage() {
         className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center px-6"
         style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.15s ease' }}
       >
-        <ProgLangBadge pl={progLang} />
         <div className="max-w-lg w-full">
           {programName && (
             <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300 mb-6">{programName}</p>
@@ -934,13 +912,16 @@ export default function ApplyPage() {
           {hasDraft && (
             <p className="text-[11px] text-gray-400 mb-5">↩ Brouillon enregistré · Saved draft · 저장된 임시 지원서</p>
           )}
-          <button
-            onClick={() => transition(() => setStep(0))}
-            className="inline-flex items-center gap-3 bg-gray-900 text-white rounded-xl px-6 py-3.5 hover:bg-gray-700 transition-colors"
-          >
-            <Btn3 fr="Commencer" en="Begin" ko="시작하기" />
-            <ArrowRight size={15} className="shrink-0" />
-          </button>
+          <div>
+            <button
+              onClick={() => transition(() => setStep(0))}
+              className="inline-flex items-center gap-2 bg-gray-900 text-white rounded-xl px-6 py-3.5 text-[15px] font-light hover:bg-gray-700 transition-colors"
+            >
+              Commencer
+              <ArrowRight size={15} className="shrink-0" />
+            </button>
+            <p className="text-[12px] text-gray-400 mt-2">Begin · 시작하기</p>
+          </div>
         </div>
       </div>
     )
@@ -1020,7 +1001,6 @@ export default function ApplyPage() {
         className="max-w-2xl mx-auto px-6 py-10"
         style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.15s ease' }}
       >
-        <ProgLangBadge pl={progLang} />
         <div className="h-0.5 bg-gray-900 w-full mb-8 rounded-full" />
         <button onClick={back} className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-700 transition-colors mb-8">
           <ChevronLeft size={13} /> Retour · Back · 뒤로
@@ -1067,20 +1047,18 @@ export default function ApplyPage() {
           ))}
         </div>
         {error && <p className="text-sm text-red-500 mb-4 whitespace-pre-line">{error}</p>}
-        <button
-          onClick={submit}
-          disabled={submitting}
-          className="w-full bg-gray-900 text-white rounded-xl py-4 hover:bg-gray-700 transition-colors disabled:opacity-50 flex flex-col items-center gap-0.5"
-        >
-          {submitting ? (
-            <span className="text-[13px]">Envoi en cours… · Submitting…</span>
-          ) : (
-            <>
-              <span className="text-[14px] font-medium">Soumettre ma candidature</span>
-              <span className="text-[11px] opacity-60">Submit application · 지원서 제출</span>
-            </>
+        <div>
+          <button
+            onClick={submit}
+            disabled={submitting}
+            className="w-full bg-gray-900 text-white rounded-xl py-4 text-[15px] font-light hover:bg-gray-700 transition-colors disabled:opacity-50"
+          >
+            {submitting ? 'Envoi en cours…' : 'Soumettre ma candidature'}
+          </button>
+          {!submitting && (
+            <p className="text-[12px] text-gray-400 text-center mt-2">Submit application · 지원서 제출</p>
           )}
-        </button>
+        </div>
         <div className="text-center mt-4 space-y-0.5">
           <p className="text-[11px] text-gray-400">Nous lisons chaque candidature personnellement et vous répondrons dans les prochains jours.</p>
           <p className="text-[10px] text-gray-300">We review every application personally and follow up within a few days.</p>
@@ -1098,8 +1076,6 @@ export default function ApplyPage() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] flex flex-col" onKeyDown={handleKeyDown}>
-      <ProgLangBadge pl={progLang} />
-
       {/* Progress bar */}
       <div className="h-0.5 bg-gray-100 w-full">
         <div className="h-full bg-gray-900 transition-all duration-500" style={{ width: `${progress * 100}%` }} />
@@ -1180,26 +1156,27 @@ export default function ApplyPage() {
               })}
             </div>
 
-            <div className="mt-10 flex items-center gap-4">
-              <button
-                onClick={advance}
-                className="inline-flex items-center gap-3 bg-gray-900 text-white rounded-xl px-6 py-3 hover:bg-gray-700 transition-colors"
-              >
-                <Btn3
-                  fr={step === TOTAL - 1 ? 'Vérifier' : 'Continuer'}
-                  en={step === TOTAL - 1 ? 'Review' : 'Continue'}
-                  ko={step === TOTAL - 1 ? '검토하기' : '계속'}
-                />
-                <ArrowRight size={15} className="shrink-0" />
-              </button>
-              <span className="text-[11px] text-gray-300 hidden sm:inline">
-                <kbd className="border border-gray-200 rounded px-1 py-0.5 text-[9px] font-mono">Enter</kbd>
-              </span>
+            <div className="mt-10">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={advance}
+                  className="inline-flex items-center gap-2 bg-gray-900 text-white rounded-xl px-6 py-3.5 text-[15px] font-light hover:bg-gray-700 transition-colors"
+                >
+                  {step === TOTAL - 1 ? 'Vérifier' : 'Continuer'}
+                  <ArrowRight size={15} className="shrink-0" />
+                </button>
+                <span className="text-[11px] text-gray-300 hidden sm:inline">
+                  <kbd className="border border-gray-200 rounded px-1 py-0.5 text-[9px] font-mono">Enter</kbd>
+                </span>
+              </div>
+              <p className="text-[12px] text-gray-400 mt-2">
+                {step === TOTAL - 1 ? 'Review · 검토하기' : 'Continue · 계속'}
+              </p>
             </div>
 
             {!s.fields.some(f => f.required) && step > 1 && (
-              <button onClick={advance} className="mt-3 text-[11px] text-gray-300 hover:text-gray-500 transition-colors text-left">
-                Passer · Skip · 건너뛰기
+              <button onClick={advance} className="mt-3 text-[11px] text-gray-400 hover:text-gray-600 transition-colors text-left">
+                Passer <span className="text-gray-300">· Skip · 건너뛰기</span>
               </button>
             )}
 
