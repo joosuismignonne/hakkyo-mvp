@@ -107,11 +107,14 @@ export function LeftSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
             HAKKYO
           </p>
         </Link>
-        <div className="space-y-0.5 text-xs text-gray-400 leading-relaxed">
-          <p>Learn Korean.</p>
-          <p>Meet people.</p>
-          <p>Understand Montréal.</p>
+        <div className="space-y-0.5 text-xs text-gray-400 leading-relaxed mb-3">
+          <p>Learn Languages.</p>
+          <p>Meet People.</p>
+          <p>Build Your Life in Montréal.</p>
         </div>
+        <p className="text-[11px] text-gray-300 leading-relaxed">
+          Language classes, conversation groups, and community events.
+        </p>
       </div>
 
       <div className="border-t border-gray-100" />
