@@ -113,7 +113,7 @@ export function LeftSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
           <p>Build Your Life in Montréal.</p>
         </div>
         <p className="text-[11px] text-gray-300 leading-relaxed">
-          Language classes, conversation groups, and community events.
+          Korean, English, French, and real conversations.
         </p>
       </div>
 
