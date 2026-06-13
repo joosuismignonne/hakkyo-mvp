@@ -2,6 +2,27 @@ import type { ProgramTrack } from '../types'
 
 export type TrackView = ProgramTrack
 
+/**
+ * Normalise output_tags from the DB into a clean string[].
+ * Handles three storage shapes that can occur in practice:
+ *   - text[]  → already an array of separate strings   ✓
+ *   - text[]  → single-element array containing a comma-joined string
+ *               (happens when the whole CSV was saved as one value)
+ *   - string  → comma-joined string (defensive; shouldn't occur with text[])
+ */
+export function parseOutputTags(raw: string[] | string | null | undefined): string[] {
+  if (!raw) return []
+  if (typeof raw === 'string') {
+    return raw.split(',').map(s => s.trim()).filter(Boolean)
+  }
+  if (!Array.isArray(raw) || raw.length === 0) return []
+  // If the array has exactly one element that itself contains commas, split it
+  if (raw.length === 1 && raw[0].includes(',')) {
+    return raw[0].split(',').map(s => s.trim()).filter(Boolean)
+  }
+  return raw.map(s => s.trim()).filter(Boolean)
+}
+
 export type ClassScheduleRow = { name: string; when: string }
 
 export type VenueInfo = {

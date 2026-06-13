@@ -12,6 +12,7 @@ import {
   parseIncludedSessionsList,
   resolveTrackTypeLabel,
   resolveProgramTypeChip,
+  parseOutputTags,
   type TrackView,
 } from '../lib/programDisplay'
 import ApplyModal from '../components/ApplyModal'
@@ -221,13 +222,14 @@ function ProgramCard({ track, lang, onApply, t }: {
       )}
 
       {/* ── Output tags ── */}
-      {(track.output_tags ?? []).filter(Boolean).length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {(track.output_tags as string[]).filter(Boolean).map(tag => (
-            <OutputTag key={tag}>{tag}</OutputTag>
-          ))}
-        </div>
-      )}
+      {(() => {
+        const tags = parseOutputTags(track.output_tags)
+        return tags.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {tags.map(tag => <OutputTag key={tag}>{tag}</OutputTag>)}
+          </div>
+        ) : null
+      })()}
 
       {/* ── Experience chips ── */}
       {expChips.length > 0 && (

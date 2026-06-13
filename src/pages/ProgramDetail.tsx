@@ -12,6 +12,7 @@ import {
   parseIncludedSessionsList,
   resolveTrackTypeLabel,
   resolveProgramTypeChip,
+  parseOutputTags,
   type TrackView,
 } from '../lib/programDisplay'
 import ApplyModal from '../components/ApplyModal'
@@ -151,6 +152,7 @@ export default function ProgramDetail() {
   const targetParticipants = Array.isArray(track.target_participants) ? track.target_participants.filter(Boolean) : []
   const learningOutcomes   = Array.isArray(track.learning_outcomes)  ? track.learning_outcomes.filter(Boolean)  : []
   const faqItems           = Array.isArray(track.faq_items)          ? track.faq_items.filter(f => f.question)  : []
+  const outputTags         = parseOutputTags(track.output_tags)
 
   const mainContent = (
     <div>
@@ -186,6 +188,20 @@ export default function ProgramDetail() {
           <p className="text-sm text-gray-500 leading-relaxed max-w-[560px]">
             {descFull.slice(0, 200)}{descFull.length > 200 ? '…' : ''}
           </p>
+        )}
+
+        {/* ── Output tags ── */}
+        {outputTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {outputTags.map(tag => (
+              <span
+                key={tag}
+                className="inline-flex items-center bg-gray-900 text-white rounded-md px-2.5 py-1 text-[11px] font-medium whitespace-nowrap"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
