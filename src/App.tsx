@@ -11,6 +11,7 @@ import Content from './pages/Content'
 import ContentDetail from './pages/ContentDetail'
 import Admin from './pages/Admin'
 import ProgramDetail from './pages/ProgramDetail'
+import ApplyPage from './pages/ApplyPage'
 import BoardDetail from './pages/BoardDetail'
 import CommunityDetail from './pages/CommunityDetail'
 import Login from './pages/Login'
@@ -62,6 +63,7 @@ export default function App() {
               <Route path="/sessions" element={<Sessions />} />
               <Route path="/programs" element={<Sessions />} />
               <Route path="/programs/:id" element={<ProgramDetail />} />
+              <Route path="/apply/:id" element={<ApplyPage />} />
               <Route path="/board" element={<Schedule />} />
               <Route path="/board/:id" element={<BoardDetail />} />
               <Route path="/community/:id" element={<CommunityDetail />} />

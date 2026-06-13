@@ -8,6 +8,7 @@ import { normalizeImageUrls } from './newsContent'
 import type {
   Session, ProgramTrack, Notice, Content, FormQuestion, Application,
   CommunitySubmission, AdminNotification,
+  ProgramApplication, ProgramApplicationStatus,
 } from '../types'
 
 // ─── Answer snapshot helper ───────────────────────────────────────────────────
@@ -748,6 +749,60 @@ export async function deleteCommunitySubmission(id: string): Promise<void> {
     'Delete failed: 0 rows deleted from community_submissions. ' +
     'Check that a DELETE RLS policy exists for the authenticated role.'
   )
+}
+
+// ─── Program Applications (new system) ───────────────────────────────────────
+
+export async function submitProgramApplication(
+  data: Omit<ProgramApplication, 'id' | 'created_at' | 'updated_at' | 'status' | 'admin_notes'>,
+): Promise<string> {
+  if (!isConfigured) return 'demo-' + Math.random().toString(36).slice(2)
+  const { data: row, error } = await db()
+    .from('program_applications')
+    .insert({ ...data, status: 'new' })
+    .select('id')
+    .single()
+  if (error) throw error
+  return row.id as string
+}
+
+export async function getProgramApplications(programId?: string): Promise<ProgramApplication[]> {
+  if (!isConfigured) return []
+  let q = db()
+    .from('program_applications')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (programId) q = q.eq('program_id', programId)
+  const { data, error } = await q
+  if (error) throw error
+  return (data ?? []) as ProgramApplication[]
+}
+
+export async function getProgramApplicationById(id: string): Promise<ProgramApplication | null> {
+  if (!isConfigured) return null
+  const { data, error } = await db()
+    .from('program_applications')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  return data as ProgramApplication | null
+}
+
+export async function updateProgramApplicationStatus(
+  id: string,
+  status: ProgramApplicationStatus,
+): Promise<void> {
+  const { error } = await db().from('program_applications').update({ status }).eq('id', id)
+  if (error) throw error
+}
+
+export async function updateProgramApplicationNotes(
+  id: string,
+  admin_notes: string,
+): Promise<void> {
+  const { error } = await db().from('program_applications').update({ admin_notes }).eq('id', id)
+  if (error) throw error
 }
 
 export async function saveLeSettings(settings: LeSettings): Promise<void> {

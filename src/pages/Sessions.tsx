@@ -107,10 +107,9 @@ function PrimaryTypeChip({ emoji, label }: { emoji: string; label: string }) {
 const OPEN_COLOR   = '#111111'
 const CLOSED_COLOR = '#D1D5DB'
 
-function ProgramCard({ track, lang, onApply, t }: {
+function ProgramCard({ track, lang, t }: {
   track: TrackView
   lang: Lang
-  onApply: (id: string) => void
   t: (ko: string, en: string, fr: string) => string
 }) {
   const navigate      = useNavigate()
@@ -252,7 +251,7 @@ function ProgramCard({ track, lang, onApply, t }: {
               onClick={e => {
                 e.stopPropagation()
                 trackEvent('program_apply_click', { program_id: track.id, program_name: track.name_en || track.name_ko })
-                onApply(track.id)
+                navigate(`/apply/${track.id}`)
               }}
               className="border border-gray-900 rounded-lg px-4 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
             >
@@ -381,7 +380,6 @@ export default function Sessions() {
   const lang = rawLang as Lang
 
   const [tracks,           setTracks]           = useState<TrackView[]>([])
-  const [applying,         setApplying]         = useState<string | null>(null)
   const [applyingCommunity, setApplyingCommunity] = useState(false)
   const [loading,          setLoading]          = useState(true)
   const [error,            setError]            = useState('')
@@ -483,7 +481,6 @@ export default function Sessions() {
               key={track.id}
               track={track}
               lang={lang}
-              onApply={setApplying}
               t={t}
             />
           ))}
@@ -515,7 +512,6 @@ export default function Sessions() {
         {mainContent}
       </PageShell>
 
-      {applying          && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
       {applyingCommunity && <ApplyModal languageExchange onClose={() => setApplyingCommunity(false)} />}
     </>
   )

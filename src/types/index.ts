@@ -161,6 +161,51 @@ export interface Application {
   answers?: ApplicationAnswer[]
 }
 
+// ─── New application system ───────────────────────────────────────────────────
+
+export type ProgramApplicationStatus =
+  | 'new' | 'reviewing' | 'accepted' | 'waitlist'
+  | 'payment_pending' | 'enrolled' | 'cancelled'
+
+export interface ProgramApplication {
+  id: string
+  created_at: string
+  updated_at?: string | null
+  program_id?: string | null
+  program_name?: string | null
+  status: ProgramApplicationStatus
+  // Basic
+  name: string
+  preferred_name?: string | null
+  email: string
+  phone?: string | null
+  preferred_contact?: string | null
+  languages_spoken?: string | null
+  instagram?: string | null
+  // Montréal
+  time_in_montreal?: string | null
+  current_stage?: string | null
+  current_focus?: string | null
+  // Korean
+  previous_korean_exp?: string | null
+  korean_level?: string | null
+  interest_in_korean?: string | null
+  // Goals
+  reason_for_joining?: string | null
+  first_korean_goal?: string | null
+  six_month_goal?: string | null
+  // Learning style
+  biggest_challenge?: string | null
+  preferred_environment?: string | null
+  // HAKKYO questions
+  how_found_hakkyo?: string | null
+  what_interested?: string | null
+  definition_great_class?: string | null
+  questions_for_hakkyo?: string | null
+  // Admin
+  admin_notes?: string | null
+}
+
 export type CommunityCategory =
   | 'housing'
   | 'jobs'

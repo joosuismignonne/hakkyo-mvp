@@ -7,12 +7,13 @@ import {
   getContents,   saveContent,   deleteContent,
   getAllQuestions, saveQuestion, deleteQuestion, swapQuestionOrder,
   getApplications, setApplicationStatus,
+  getProgramApplications, updateProgramApplicationStatus, updateProgramApplicationNotes,
   getLeSettings, saveLeSettings,
   getAllCommunitySubmissions, setCommunitySubmissionStatus, deleteCommunitySubmission,
   getAdminNotifications, markNotificationRead, markAllNotificationsRead,
 } from '../lib/db'
 import type { LeSettings } from '../lib/db'
-import type { ProgramTrack, Notice, Content, FormQuestion, Application, ContentCategory, ContentType, CommunitySubmission, AdminNotification } from '../types'
+import type { ProgramTrack, Notice, Content, FormQuestion, Application, ContentCategory, ContentType, CommunitySubmission, AdminNotification, ProgramApplication, ProgramApplicationStatus } from '../types'
 import {
   CONTENT_CATEGORIES,
   CONTENT_TYPES,
@@ -2116,18 +2117,17 @@ type AnswerRow = {
 }
 
 function ApplicationsAdmin() {
-  const [apps,                       setApps]                       = useState<Application[]>([])
-  const [selected,                   setSelected]                   = useState<Application | null>(null)
-  const [selectedApplicationAnswers, setSelectedApplicationAnswers] = useState<AnswerRow[]>([])
-  const [answersLoading,             setAnswersLoading]             = useState(false)
-  const [answersError,               setAnswersError]               = useState('')
-  const [loading,                    setLoading]                    = useState(true)
-  const [err,                        setErr]                        = useState('')
-  const [statusFilter,               setStatusFilter]               = useState<'all' | Application['status']>('all')
-  const [searchQuery,                setSearchQuery]                = useState('')
+  const [apps,         setApps]         = useState<ProgramApplication[]>([])
+  const [selected,     setSelected]     = useState<ProgramApplication | null>(null)
+  const [loading,      setLoading]      = useState(true)
+  const [err,          setErr]          = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | ProgramApplicationStatus>('all')
+  const [searchQuery,  setSearchQuery]  = useState('')
+  const [notes,        setNotes]        = useState('')
+  const [notesSaving,  setNotesSaving]  = useState(false)
 
   const load = useCallback(() =>
-    getApplications()
+    getProgramApplications()
       .then(fetched => {
         setApps(fetched)
         setSelected(prev => {
@@ -2140,137 +2140,70 @@ function ApplicationsAdmin() {
   , [])
   useEffect(() => { load() }, [load])
 
-  // Fetch answers whenever the selected application changes
-  useEffect(() => {
-    if (!selected?.id || !isConfigured || !supabase) {
-      setSelectedApplicationAnswers([])
-      setAnswersError('')
-      return
-    }
+  // Sync notes field when selection changes
+  useEffect(() => { setNotes(selected?.admin_notes ?? '') }, [selected?.id])
 
-    let active = true
-    setSelectedApplicationAnswers([])
-    setAnswersLoading(true)
-    setAnswersError('')
-
-    async function fetchAnswers() {
-      if (!supabase) return
-
-      const { data: answers, error } = await supabase
-        .from('application_answers')
-        .select('*')
-        .eq('application_id', selected!.id)
-        .order('created_at', { ascending: true })
-
-      if (!active) return
-
-      if (error) {
-        setAnswersError(error.message)
-        setAnswersLoading(false)
-        return
-      }
-
-      const rows: AnswerRow[] = answers ?? []
-
-      // Always show answers as soon as the first query succeeds
-      setSelectedApplicationAnswers(rows)
-      setAnswersLoading(false)
-
-      // Optional: enrich labels from form_questions (must not block display)
-      const questionIds = [...new Set(rows.map(r => r.question_id).filter(Boolean))] as string[]
-      if (questionIds.length === 0 || !active) return
-
-      try {
-        const { data: questions, error: qErr } = await supabase
-          .from('form_questions')
-          .select('id, question_ko, question_en, question_fr')
-          .in('id', questionIds)
-
-        if (!active || qErr || !questions?.length) return
-
-        const labelMap: Record<string, string> = {}
-        for (const q of questions) {
-          labelMap[q.id] = q.question_ko || q.question_en || q.question_fr || q.id
-        }
-        setSelectedApplicationAnswers(
-          rows.map(r => ({
-            ...r,
-            question_label_current: r.question_id ? (labelMap[r.question_id] ?? null) : null,
-          }))
-        )
-      } catch {
-        // Keep raw rows already in state
-      }
-    }
-
-    fetchAnswers().catch(e => {
-      if (active) {
-        setAnswersError((e as Error).message)
-        setAnswersLoading(false)
-      }
-    })
-
-    return () => { active = false }
-  }, [selected?.id])
-
-  async function updateStatus(id: string, status: Application['status']) {
-    // Optimistic update
+  async function updateStatus(id: string, status: ProgramApplicationStatus) {
     setApps(a => a.map(x => x.id === id ? { ...x, status } : x))
     if (selected?.id === id) setSelected(s => s ? { ...s, status } : s)
-    try { await setApplicationStatus(id, status) }
+    try { await updateProgramApplicationStatus(id, status) }
     catch (e: unknown) { setErr((e as Error).message); await load() }
   }
 
-  function matchesSearch(app: Application, query: string): boolean {
-    const q = query.trim().toLowerCase()
-    if (!q) return true
-    const fields = [
-      app.name,
-      app.email,
-      app.phone,
-      app.instagram,
-      app.selected_label,
-    ]
-    return fields.some((f) => (f ?? '').toLowerCase().includes(q))
+  async function saveNotes() {
+    if (!selected) return
+    setNotesSaving(true)
+    try {
+      await updateProgramApplicationNotes(selected.id, notes)
+      setApps(a => a.map(x => x.id === selected.id ? { ...x, admin_notes: notes } : x))
+      setSelected(s => s ? { ...s, admin_notes: notes } : s)
+    } catch (e: unknown) { setErr((e as Error).message) }
+    finally { setNotesSaving(false) }
   }
+
+  const statusColor = (s: ProgramApplicationStatus) =>
+    s === 'enrolled'        ? 'bg-green-100 text-green-700' :
+    s === 'accepted'        ? 'bg-blue-100 text-blue-700'   :
+    s === 'cancelled'       ? 'bg-red-100 text-red-600'     :
+    s === 'payment_pending' ? 'bg-yellow-100 text-yellow-700' :
+    s === 'waitlist'        ? 'bg-orange-100 text-orange-700' :
+    s === 'reviewing'       ? 'bg-purple-100 text-purple-700' :
+    'bg-gray-100 text-gray-600'
 
   const visible = apps
-    .filter((a) => statusFilter === 'all' || a.status === statusFilter)
-    .filter((a) => matchesSearch(a, searchQuery))
-
-  const statusBadgeClass = (status: Application['status']) =>
-    status === 'confirmed' ? 'bg-green-100 text-green-700' :
-    status === 'rejected'  ? 'bg-red-100 text-red-600'   :
-    'bg-gray-100 text-gray-700'
-
-  const answerCount = (app: Application) => {
-    const n = app.answer_count
-    return typeof n === 'number' && !Number.isNaN(n) ? n : Number(n) || 0
-  }
-  const isOrphan = (app: Application) => answerCount(app) === 0
-  const selectedAnswerCount = selected ? answerCount(selected) : 0
+    .filter(a => statusFilter === 'all' || a.status === statusFilter)
+    .filter(a => {
+      const q = searchQuery.trim().toLowerCase()
+      if (!q) return true
+      return [a.name, a.email, a.phone, a.program_name, a.korean_level, a.time_in_montreal]
+        .some(f => (f ?? '').toLowerCase().includes(q))
+    })
 
   if (loading) return <Spinner />
+
+  const STATUSES: ProgramApplicationStatus[] = ['new','reviewing','accepted','waitlist','payment_pending','enrolled','cancelled']
+
+  const PROFILE_SECTIONS: { label: string; rows: (app: ProgramApplication) => [string, string | null | undefined][] }[] = [
+    { label: 'Contact', rows: a => [['Email', a.email], ['Phone', a.phone], ['Contact via', a.preferred_contact], ['Instagram', a.instagram], ['Languages', a.languages_spoken]] },
+    { label: 'Montréal', rows: a => [['Time here', a.time_in_montreal], ['Stage', a.current_stage], ['Focus', a.current_focus]] },
+    { label: 'Korean', rows: a => [['Level', a.korean_level], ['Experience', a.previous_korean_exp], ['Why Korean?', a.interest_in_korean]] },
+    { label: 'Goals', rows: a => [['Why HAKKYO?', a.reason_for_joining], ['What interested', a.what_interested], ['First goal', a.first_korean_goal], ['6 months', a.six_month_goal]] },
+    { label: 'Learning', rows: a => [['Challenge', a.biggest_challenge], ['Environment', a.preferred_environment]] },
+    { label: 'Open', rows: a => [['Great class means', a.definition_great_class], ['Questions', a.questions_for_hakkyo], ['How found us', a.how_found_hakkyo]] },
+  ]
 
   return (
     <div className="space-y-4">
       {err && <ErrorMsg msg={err} />}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {visible.length} application{visible.length !== 1 ? 's' : ''}
-          {!isConfigured && (
-            <span className="ml-2 text-xs text-gray-400">
-              (demo — connect Supabase to see real submissions)
-            </span>
-          )}
-        </p>
-        <div className="flex items-center border border-gray-200 rounded overflow-hidden text-xs font-semibold">
-        {(['all','pending','contacted','confirmed','waitlist','rejected'] as const).map(f => (
-            <button key={f} onClick={() => setStatusFilter(f)}
-              className={['px-2.5 py-1.5 transition-colors capitalize',
-                statusFilter === f ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50',
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">{visible.length} application{visible.length !== 1 ? 's' : ''}</p>
+        <div className="flex flex-wrap items-center gap-1">
+          {(['all', ...STATUSES] as const).map(f => (
+            <button key={f} onClick={() => setStatusFilter(f as 'all' | ProgramApplicationStatus)}
+              className={['px-2.5 py-1 rounded text-[11px] font-semibold transition-colors capitalize',
+                statusFilter === f ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
               ].join(' ')}>
-              {f}
+              {f.replace('_', ' ')}
             </button>
           ))}
         </div>
@@ -2282,153 +2215,89 @@ function ApplicationsAdmin() {
           <input
             type="search"
             className="input w-full"
-            placeholder="Search name, email, phone, instagram, program…"
+            placeholder="Search name, email, program, Korean level…"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
-          <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden max-h-[600px] overflow-y-auto">
-          {visible.length === 0 ? (
-            <div className="py-10 text-center text-gray-400 text-sm">
-              {isConfigured ? 'No applications yet.' : 'No applications in demo mode.'}
-            </div>
-          ) : (
-            visible.map(a => {
-              const legacyClass = a.session as unknown as Record<string, string> | undefined
-              const programLabel = a.selected_label || legacyClass?.title_en || legacyClass?.title_ko
-              const count = answerCount(a)
-              return (
+          <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden max-h-[640px] overflow-y-auto">
+            {visible.length === 0 ? (
+              <div className="py-10 text-center text-gray-400 text-sm">No applications yet.</div>
+            ) : (
+              visible.map(a => (
                 <div
                   key={a.id}
-                  onClick={() => setSelected({ ...a, answer_count: answerCount(a) })}
-                  className={['px-4 py-3 cursor-pointer transition-colors border-l-2',
+                  onClick={() => setSelected(a)}
+                  className={['px-4 py-3 cursor-pointer transition-colors',
                     selected?.id === a.id ? 'bg-gray-100' : 'hover:bg-gray-50',
-                    isOrphan(a) ? 'border-l-amber-400' : 'border-l-transparent',
                   ].join(' ')}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-sm">{a.name}</span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {isOrphan(a) && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                          Orphan
-                        </span>
-                      )}
-                      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${statusBadgeClass(a.status)}`}>
-                        {a.status}
-                      </span>
-                    </div>
+                    <span className="font-medium text-sm">{a.name}{a.preferred_name ? ` (${a.preferred_name})` : ''}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${statusColor(a.status)}`}>
+                      {a.status.replace('_',' ')}
+                    </span>
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">{a.email}</p>
-                  {programLabel && (
-                    <p className="text-xs text-gray-500 mt-0.5">{programLabel}</p>
-                  )}
-                  <p className={`text-xs mt-0.5 ${count > 0 ? 'text-gray-500' : 'text-amber-700'}`}>
-                    {count > 0 ? `Answers: ${count}` : 'No answers'}
-                  </p>
-                  {a.created_at && (
-                    <p className="text-xs text-gray-300 mt-0.5">{a.created_at.split('T')[0]}</p>
-                  )}
+                  {a.korean_level && <p className="text-xs text-gray-500 mt-0.5 truncate">{a.korean_level}</p>}
+                  {a.time_in_montreal && <p className="text-xs text-gray-400 mt-0.5">{a.time_in_montreal}</p>}
+                  {a.created_at && <p className="text-xs text-gray-300 mt-0.5">{a.created_at.split('T')[0]}</p>}
                 </div>
-              )
-            })
-          )}
+              ))
+            )}
           </div>
         </div>
 
         {/* Detail panel */}
         {selected ? (
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border border-gray-200 rounded-lg overflow-hidden flex flex-col">
             <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-              <span className="font-semibold text-sm">{selected.name}</span>
+              <div>
+                <span className="font-semibold text-sm">{selected.name}</span>
+                {selected.preferred_name && <span className="text-xs text-gray-400 ml-2">({selected.preferred_name})</span>}
+                {selected.program_name && <p className="text-xs text-gray-400 mt-0.5">{selected.program_name}</p>}
+              </div>
               <select
-  value={selected.status}
-  onChange={(e) => updateStatus(selected.id, e.target.value as Application['status'])}
-  className="border border-gray-200 rounded px-2 py-1 text-xs font-semibold bg-white"
->
-<option value="pending">Pending</option>
-<option value="contacted">Contacted</option>
-<option value="confirmed">Confirmed</option>
-<option value="waitlist">Waitlist</option>
-<option value="rejected">Rejected</option>
-</select>
+                value={selected.status}
+                onChange={e => updateStatus(selected.id, e.target.value as ProgramApplicationStatus)}
+                className="border border-gray-200 rounded px-2 py-1 text-xs font-semibold bg-white"
+              >
+                {STATUSES.map(s => (
+                  <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                ))}
+              </select>
             </div>
-            <div className="p-4 space-y-3 text-sm overflow-y-auto max-h-[520px]">
-              {([
-                ['Email', selected.email],
-                ['Phone', selected.phone],
-                ['Instagram', selected.instagram],
-                ['Selected', selected.selected_label],
-                [
-                  'Total price',
-                  selected.total_price != null ? `$${selected.total_price}` : '',
-                ],
-                [
-                  'Class',
-                  (selected.session as unknown as Record<string, string>)?.title_en || '',
-                ],
-                ['Applied', selected.created_at?.split('T')[0] || ''],
-                ['Status', selected.status],
-              ] as [string, string][])
-                .filter(([, v]) => v != null && String(v).trim() !== '')
-                .map(([k, v]) => (
-                  <div key={k} className="flex gap-3">
-                    <span className="text-gray-400 w-24 shrink-0 text-xs pt-0.5">{k}</span>
-                    <span className="text-gray-900 text-sm">{v}</span>
+
+            <div className="p-4 space-y-5 text-sm overflow-y-auto max-h-[580px]">
+              {PROFILE_SECTIONS.map(sec => {
+                const rows = sec.rows(selected).filter(([, v]) => v?.toString().trim())
+                if (rows.length === 0) return null
+                return (
+                  <div key={sec.label}>
+                    <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-400 mb-2">{sec.label}</p>
+                    <div className="space-y-2">
+                      {rows.map(([k, v]) => (
+                        <div key={k} className="grid grid-cols-[110px_1fr] gap-2">
+                          <span className="text-gray-400 text-xs pt-0.5">{k}</span>
+                          <span className="text-gray-800 text-sm leading-snug whitespace-pre-wrap">{v}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )
+              })}
 
-              <div className="pt-3 border-t border-gray-100 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Answers</p>
-                  {!answersLoading && (
-                    <span className={`text-xs ${selectedAnswerCount > 0 ? 'text-gray-500' : 'text-amber-700'}`}>
-                      {selectedAnswerCount > 0 ? `Answers: ${selectedAnswerCount}` : 'No answers'}
-                    </span>
-                  )}
-                </div>
-
-                {answersLoading && (
-                  <p className="text-xs text-gray-400">Loading answers…</p>
-                )}
-
-                {!answersLoading && answersError && (
-                  <p className="text-xs text-red-400">Could not load answers: {answersError}</p>
-                )}
-
-                {!answersLoading && !answersError && selectedAnswerCount > 0 && selectedApplicationAnswers.length === 0 && (
-                  <p className="text-xs text-gray-500">
-                    {selectedAnswerCount} answer{selectedAnswerCount !== 1 ? 's' : ''} in database — loading rows failed or is still in progress.
-                  </p>
-                )}
-
-                {!answersLoading && !answersError && selectedAnswerCount === 0 && (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 space-y-1.5 text-sm text-amber-900">
-                    <p>No answers found for this application ID.</p>
-                    <p className="text-xs font-mono text-amber-800 break-all">{selected.id}</p>
-                    <p className="text-xs text-amber-800/90 pt-0.5">
-                      This application has no rows in <code className="text-[11px]">application_answers</code>
-                      (failed submission or legacy record). You can delete it manually in Supabase if needed.
-                    </p>
-                    {(selected.city?.trim() || selected.message?.trim()) && (
-                      <p className="text-xs text-amber-800/90 pt-0.5 border-t border-amber-200/80 mt-2 pt-2">
-                        Legacy Language Exchange fields may still be on the application row (city, message, etc.).
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {selectedApplicationAnswers.map(answer => (
-                  <div key={answer.id}>
-                    <p className="text-xs text-gray-400 mb-0.5">
-                      {answer.question_label_snapshot ||
-                       answer.question_label_current ||
-                       (answer.question_id ? `Question ID: ${answer.question_id}` : '—')}
-                    </p>
-                    <p className="text-gray-900 text-sm whitespace-pre-wrap">
-                      {answer.answer?.trim() ? answer.answer : '—'}
-                    </p>
-                  </div>
-                ))}
+              {/* Admin notes */}
+              <div className="pt-3 border-t border-gray-100">
+                <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-400 mb-2">Internal notes</p>
+                <textarea
+                  rows={4}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 resize-none focus:outline-none focus:border-gray-400 transition-colors"
+                  placeholder="Notes visible only to admins…"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  onBlur={saveNotes}
+                />
+                {notesSaving && <p className="text-[11px] text-gray-400 mt-1">Saving…</p>}
               </div>
             </div>
           </div>

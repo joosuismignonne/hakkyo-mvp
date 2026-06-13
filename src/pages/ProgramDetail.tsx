@@ -15,7 +15,6 @@ import {
   parseOutputTags,
   type TrackView,
 } from '../lib/programDisplay'
-import ApplyModal from '../components/ApplyModal'
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
 import type { ProgramTrack } from '../types'
 
@@ -97,7 +96,6 @@ export default function ProgramDetail() {
   const [track,    setTrack]    = useState<ProgramTrack | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState('')
-  const [applying, setApplying] = useState(false)
 
   useEffect(() => {
     if (!id) { setError('Invalid program.'); setLoading(false); return }
@@ -208,7 +206,7 @@ export default function ProgramDetail() {
       {/* ── Top CTA ── */}
       <div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-100">
         {isOpen
-          ? <ApplyButton onClick={() => setApplying(true)} label={applyLabel} />
+          ? <ApplyButton onClick={() => navigate(`/apply/${id}`)} label={applyLabel} />
           : <span className="border border-gray-100 rounded-lg px-5 py-2.5 text-[12px] text-gray-300">{t('마감', 'Closed', 'Fermé')}</span>
         }
         {deadline && isOpen && (
@@ -428,7 +426,7 @@ export default function ProgramDetail() {
           }
         </p>
         {isOpen
-          ? <ApplyButton onClick={() => setApplying(true)} label={applyLabel} />
+          ? <ApplyButton onClick={() => navigate(`/apply/${id}`)} label={applyLabel} />
           : <span className="border border-gray-100 rounded-lg px-5 py-2.5 text-[12px] text-gray-300">{t('마감', 'Closed', 'Fermé')}</span>
         }
       </div>
@@ -444,12 +442,6 @@ export default function ProgramDetail() {
         {mainContent}
       </PageShell>
 
-      {applying && (
-        <ApplyModal
-          preselectedTrackId={track.id}
-          onClose={() => setApplying(false)}
-        />
-      )}
     </>
   )
 }
