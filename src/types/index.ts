@@ -112,6 +112,7 @@ export interface Content {
   image_urls?: string[] | null
   video_url?: string | null
   is_pinned?: boolean | null
+  feature_homepage?: boolean | null
   published_at: string
   created_at?: string
 }

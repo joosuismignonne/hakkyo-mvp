@@ -4,7 +4,7 @@ import {
   Search, Pin, Calendar, Clock, DollarSign,
   Newspaper, MessageSquare, BookOpen, Zap, Users,
 } from 'lucide-react'
-import { getTracks, getNotices, getContents, getPublishedCommunityPosts } from '../lib/db'
+import { getTracks, getNotices, getContents, getPublishedCommunityPosts, getFeaturedContent } from '../lib/db'
 import { useLang } from '../context/LangContext'
 import { normalizeContent, newsExcerpt, thumbnailUrl } from '../lib/newsContent'
 import type { ProgramTrack, Notice, Content, CommunitySubmission } from '../types'
@@ -364,6 +364,71 @@ function PinnedGrid({ items, lang }: {
   )
 }
 
+// ─── Community Moments ────────────────────────────────────────────────────────
+
+const MOMENT_BADGE: Record<string, string> = {
+  archive:  'Archive',
+  montreal: 'Community',
+  language: 'Language Exchange',
+  culture:  'Workshop',
+}
+
+function CommunityMoments({ items, lang }: { items: Content[]; lang: Lang }) {
+  if (items.length === 0) return null
+
+  return (
+    <section className="mb-8">
+      <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300 mb-1">
+        Community Moments
+      </p>
+      <p className="text-[11px] text-gray-400 mb-4">
+        Recent moments from classes, exchanges, workshops, and community events.
+      </p>
+
+      {/* 3-col grid on md+; horizontal scroll on mobile */}
+      <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible">
+        {items.map(item => {
+          const title = pickText(lang, item.title_ko, item.title_en, item.title_fr)
+          const thumb = thumbnailUrl(item)
+          const badge = MOMENT_BADGE[item.category ?? ''] ?? 'Community'
+          const date  = item.published_at ?? item.created_at
+
+          return (
+            <Link
+              key={item.id}
+              to={`/news/${item.id}`}
+              className="shrink-0 w-52 md:w-auto rounded-xl border border-gray-100 bg-white overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] hover:border-gray-200"
+            >
+              {/* Cover image */}
+              <div className="aspect-[4/3] bg-gray-50 overflow-hidden">
+                {thumb
+                  ? <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-2xl opacity-20">🌎</span>
+                    </div>
+                }
+              </div>
+
+              {/* Card body */}
+              <div className="p-3">
+                <span className="inline-block text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1.5">
+                  {badge}
+                </span>
+                <p className="text-[12px] font-medium text-gray-900 leading-snug line-clamp-2 mb-1">
+                  {title}
+                </p>
+                {date && (
+                  <p className="text-[10px] text-gray-400">{fmtDate(date)}</p>
+                )}
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 // ─── Open Now strip ───────────────────────────────────────────────────────────
 
 function OpenNowStrip({ tracks, lang, onApply, t }: {
@@ -692,6 +757,7 @@ export default function Home() {
   const [notices,   setNotices]   = useState<Notice[]>([])
   const [contents,  setContents]  = useState<Content[]>([])
   const [community, setCommunity] = useState<CommunitySubmission[]>([])
+  const [featured,  setFeatured]  = useState<Content[]>([])
   const [applying,  setApplying]  = useState<string | null>(null)
   const [loading,   setLoading]   = useState(true)
   const [filter,    setFilter]    = useState<FeedFilter>('all')
@@ -714,6 +780,11 @@ export default function Home() {
     // Community posts — optional; failure must not affect the main feed
     getPublishedCommunityPosts()
       .then(cp => setCommunity(cp ?? []))
+      .catch(() => {})
+
+    // Featured content for Community Moments — optional
+    getFeaturedContent()
+      .then(fc => setFeatured((fc ?? []).map(normalizeContent)))
       .catch(() => {})
   }, [])
 
@@ -782,10 +853,13 @@ export default function Home() {
       {/* 1 · Open Now */}
       <OpenNowStrip tracks={tracks} lang={lang} onApply={setApplying} t={t} />
 
-      {/* 2 · Search */}
+      {/* 2 · Community Moments */}
+      <CommunityMoments items={featured} lang={lang} />
+
+      {/* 3 · Search */}
       <FeedSearch value={query} onChange={setQuery} suggestions={suggestions} t={t} />
 
-      {/* 3 · Filter chips */}
+      {/* 4 · Filter chips */}
       <FilterChips
         active={filter}
         onChange={f => { setFilter(f); setQuery('') }}

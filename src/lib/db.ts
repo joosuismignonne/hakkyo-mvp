@@ -31,6 +31,7 @@ function contentSaveFields(c: Partial<Content>): Omit<Content, 'id' | 'created_a
     image_urls: normalizeImageUrls(c.image_urls).filter(isPublicMediaUrl),
     video_url: c.video_url?.trim() || undefined,
     published_at: c.published_at ?? new Date().toISOString().split('T')[0],
+    feature_homepage: c.feature_homepage ?? null,
   }
 }
 
@@ -241,6 +242,17 @@ export async function getContents(): Promise<Content[]> {
   if (!isConfigured) return MOCK_CONTENTS
   const { data, error } = await db()
     .from('contents').select('*').order('published_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getFeaturedContent(): Promise<Content[]> {
+  if (!isConfigured) return MOCK_CONTENTS.filter(c => (c as Content & { feature_homepage?: boolean }).feature_homepage)
+  const { data, error } = await db()
+    .from('contents')
+    .select('*')
+    .eq('feature_homepage', true)
+    .order('published_at', { ascending: false })
   if (error) throw error
   return data ?? []
 }

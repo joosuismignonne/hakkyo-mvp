@@ -1299,6 +1299,7 @@ interface UnifiedDraft {
   video_url:           string
   link:                string
   is_pinned:           boolean
+  feature_homepage:    boolean
   // news
   newsCategory:        ContentCategory
   contentType:         ContentType
@@ -1322,7 +1323,7 @@ function blankUnified(publishTo: PublishTo = 'news'): UnifiedDraft {
     publishTo,
     title_ko: '', title_en: '', title_fr: '',
     body_ko:  '', body_en:  '', body_fr:  '',
-    thumbnail_url: null, image_urls: [], video_url: '', link: '', is_pinned: false,
+    thumbnail_url: null, image_urls: [], video_url: '', link: '', is_pinned: false, feature_homepage: false,
     newsCategory: 'montreal', contentType: 'text', published_at: todayStr(),
     boardCategory: 'notice', communitySubtype: 'general',
     date: todayStr(),
@@ -1342,6 +1343,7 @@ function contentToDraft(c: Content): UnifiedDraft {
     video_url: c.video_url ?? '',
     link: c.link ?? '',
     is_pinned: !!c.is_pinned,
+    feature_homepage: !!c.feature_homepage,
     newsCategory: resolveContentCategory(c),
     contentType: normalizeContentType(c.type),
     published_at: c.published_at,
@@ -1463,6 +1465,7 @@ function UnifiedContentAdmin() {
           link: editing.link?.trim() || undefined,
           published_at: editing.published_at,
           is_pinned: editing.is_pinned || undefined,
+          feature_homepage: editing.feature_homepage || undefined,
         })
       } else {
         const noticeType: Notice['type'] =
@@ -1791,6 +1794,16 @@ function UnifiedContentAdmin() {
                 className="w-4 h-4 rounded border-gray-300 accent-gray-900" />
               <span className="text-sm text-gray-700">Pin to top of homepage feed</span>
             </label>
+
+            {/* 11 ── Community Moments (News only) */}
+            {d.publishTo === 'news' && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={d.feature_homepage}
+                  onChange={e => set('feature_homepage', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 accent-gray-900" />
+                <span className="text-sm text-gray-700">Feature on Homepage Community Moments</span>
+              </label>
+            )}
 
             <SaveRow onSave={save} onCancel={() => setEditing(null)} saving={saving} />
           </div>
