@@ -2162,13 +2162,22 @@ function ApplicationsAdmin() {
   }
 
   const statusColor = (s: ProgramApplicationStatus) =>
-    s === 'enrolled'        ? 'bg-green-100 text-green-700' :
-    s === 'accepted'        ? 'bg-blue-100 text-blue-700'   :
-    s === 'cancelled'       ? 'bg-red-100 text-red-600'     :
-    s === 'payment_pending' ? 'bg-yellow-100 text-yellow-700' :
-    s === 'waitlist'        ? 'bg-orange-100 text-orange-700' :
+    s === 'enrolled'        ? 'bg-green-100 text-green-700'   :
+    s === 'accepted'        ? 'bg-blue-100 text-blue-700'     :
+    s === 'cancelled'       ? 'bg-red-50 text-red-500'        :
+    s === 'payment_pending' ? 'bg-amber-100 text-amber-700'   :
+    s === 'waitlist'        ? 'bg-orange-100 text-orange-600' :
     s === 'reviewing'       ? 'bg-purple-100 text-purple-700' :
-    'bg-gray-100 text-gray-600'
+    'bg-gray-100 text-gray-500'
+
+  function shortKoreanLevel(raw: string): string {
+    if (raw.includes('beginner') || raw.includes('limit')) return 'Complete beginner'
+    if (raw.includes('basics'))    return 'Some basics'
+    if (raw.includes('simple'))    return 'Simple conversations'
+    if (raw.includes('struggle'))  return 'Intermediate'
+    if (raw.includes('comfortable')) return 'Fairly comfortable'
+    return raw
+  }
 
   const visible = apps
     .filter(a => statusFilter === 'all' || a.status === statusFilter)
@@ -2183,18 +2192,70 @@ function ApplicationsAdmin() {
 
   const STATUSES: ProgramApplicationStatus[] = ['new','reviewing','accepted','waitlist','payment_pending','enrolled','cancelled']
 
-  const PROFILE_SECTIONS: { label: string; rows: (app: ProgramApplication) => [string, string | null | undefined][] }[] = [
-    { label: 'Contact', rows: a => [['Email', a.email], ['Phone', a.phone], ['Contact via', a.preferred_contact], ['Instagram', a.instagram], ['Languages', a.languages_spoken]] },
-    { label: 'Montréal', rows: a => [['Time here', a.time_in_montreal], ['Stage', a.current_stage], ['Focus', a.current_focus]] },
-    { label: 'Korean', rows: a => [['Level', a.korean_level], ['Experience', a.previous_korean_exp], ['Why Korean?', a.interest_in_korean]] },
-    { label: 'Goals', rows: a => [['Why HAKKYO?', a.reason_for_joining], ['What interested', a.what_interested], ['First goal', a.first_korean_goal], ['6 months', a.six_month_goal]] },
-    { label: 'Learning', rows: a => [['Challenge', a.biggest_challenge], ['Environment', a.preferred_environment]] },
-    { label: 'Open', rows: a => [['Great class means', a.definition_great_class], ['Questions', a.questions_for_hakkyo], ['How found us', a.how_found_hakkyo]] },
+  type ProfileRow = [string, string | null | undefined, 'normal' | 'highlight']
+  const PROFILE_SECTIONS: { label: string; rows: (a: ProgramApplication) => ProfileRow[] }[] = [
+    {
+      label: 'Basic Information',
+      rows: a => [
+        ['Email',        a.email,              'normal'],
+        ['Phone',        a.phone,              'normal'],
+        ['Contact via',  a.preferred_contact,  'normal'],
+        ['Instagram',    a.instagram,          'normal'],
+        ['Languages',    a.languages_spoken,   'normal'],
+      ],
+    },
+    {
+      label: 'Montréal Journey',
+      rows: a => [
+        ['Time in Montréal', a.time_in_montreal, 'highlight'],
+        ['Stage',            a.current_stage,    'normal'],
+        ['Currently focused on', a.current_focus, 'highlight'],
+      ],
+    },
+    {
+      label: 'Korean Journey',
+      rows: a => [
+        ['Korean level',  a.korean_level ? shortKoreanLevel(a.korean_level) : null, 'highlight'],
+        ['Experience',    a.previous_korean_exp,  'normal'],
+        ['Why Korean?',   a.interest_in_korean,   'normal'],
+      ],
+    },
+    {
+      label: 'Goals',
+      rows: a => [
+        ['First thing in Korean', a.first_korean_goal,   'normal'],
+        ['In 6 months',          a.six_month_goal,      'highlight'],
+        ['Why joining',          a.reason_for_joining,  'highlight'],
+      ],
+    },
+    {
+      label: 'Learning Style',
+      rows: a => [
+        ['Biggest challenge', a.biggest_challenge,    'normal'],
+        ['Environment',       a.preferred_environment, 'normal'],
+      ],
+    },
+    {
+      label: 'About HAKKYO',
+      rows: a => [
+        ['How found us',        a.how_found_hakkyo,  'normal'],
+        ['What interested you', a.what_interested,   'normal'],
+      ],
+    },
+    {
+      label: 'One Last Question',
+      rows: a => [
+        ['A great class',    a.definition_great_class, 'normal'],
+        ['Questions for us', a.questions_for_hakkyo,   'normal'],
+      ],
+    },
   ]
 
   return (
     <div className="space-y-4">
       {err && <ErrorMsg msg={err} />}
+
+      {/* Filter bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-gray-500">{visible.length} application{visible.length !== 1 ? 's' : ''}</p>
         <div className="flex flex-wrap items-center gap-1">
@@ -2209,17 +2270,18 @@ function ApplicationsAdmin() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* List */}
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 items-start">
+
+        {/* ── Application list ── */}
         <div className="space-y-2">
           <input
             type="search"
             className="input w-full"
-            placeholder="Search name, email, program, Korean level…"
+            placeholder="Search name, email, Korean level…"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
-          <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden max-h-[640px] overflow-y-auto">
+          <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden max-h-[680px] overflow-y-auto">
             {visible.length === 0 ? (
               <div className="py-10 text-center text-gray-400 text-sm">No applications yet.</div>
             ) : (
@@ -2227,58 +2289,139 @@ function ApplicationsAdmin() {
                 <div
                   key={a.id}
                   onClick={() => setSelected(a)}
-                  className={['px-4 py-3 cursor-pointer transition-colors',
-                    selected?.id === a.id ? 'bg-gray-100' : 'hover:bg-gray-50',
+                  className={['px-4 py-3.5 cursor-pointer transition-colors border-l-2',
+                    selected?.id === a.id
+                      ? 'bg-gray-50 border-l-gray-900'
+                      : 'hover:bg-gray-50 border-l-transparent',
                   ].join(' ')}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-sm">{a.name}{a.preferred_name ? ` (${a.preferred_name})` : ''}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${statusColor(a.status)}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm text-gray-900 leading-tight">
+                        {a.name}{a.preferred_name ? ` · ${a.preferred_name}` : ''}
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-0.5 truncate">{a.email}</p>
+                    </div>
+                    <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${statusColor(a.status)}`}>
                       {a.status.replace('_',' ')}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5">{a.email}</p>
-                  {a.korean_level && <p className="text-xs text-gray-500 mt-0.5 truncate">{a.korean_level}</p>}
-                  {a.time_in_montreal && <p className="text-xs text-gray-400 mt-0.5">{a.time_in_montreal}</p>}
-                  {a.created_at && <p className="text-xs text-gray-300 mt-0.5">{a.created_at.split('T')[0]}</p>}
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {a.korean_level && (
+                      <span className="text-[11px] text-gray-500">
+                        {shortKoreanLevel(a.korean_level)}
+                      </span>
+                    )}
+                    {a.korean_level && a.time_in_montreal && (
+                      <span className="text-gray-200 text-[11px]">·</span>
+                    )}
+                    {a.time_in_montreal && (
+                      <span className="text-[11px] text-gray-400">{a.time_in_montreal}</span>
+                    )}
+                  </div>
+                  {a.created_at && (
+                    <p className="text-[10px] text-gray-300 mt-1">{a.created_at.split('T')[0]}</p>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* Detail panel */}
+        {/* ── Detail panel ── */}
         {selected ? (
-          <div className="border border-gray-200 rounded-lg overflow-hidden flex flex-col">
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-              <div>
-                <span className="font-semibold text-sm">{selected.name}</span>
-                {selected.preferred_name && <span className="text-xs text-gray-400 ml-2">({selected.preferred_name})</span>}
-                {selected.program_name && <p className="text-xs text-gray-400 mt-0.5">{selected.program_name}</p>}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+
+            {/* Profile header card */}
+            <div className="px-5 py-5 border-b border-gray-100 bg-gray-50/70">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h3 className="text-[17px] font-medium text-gray-900 leading-tight">
+                    {selected.name}
+                    {selected.preferred_name && (
+                      <span className="text-gray-400 font-normal ml-2 text-[14px]">
+                        ({selected.preferred_name})
+                      </span>
+                    )}
+                  </h3>
+                  {selected.program_name && (
+                    <p className="text-[11px] text-gray-400 mt-0.5 tracking-wide">{selected.program_name}</p>
+                  )}
+                </div>
+                <select
+                  value={selected.status}
+                  onChange={e => updateStatus(selected.id, e.target.value as ProgramApplicationStatus)}
+                  className="border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold bg-white text-gray-700 shrink-0"
+                >
+                  {STATUSES.map(s => (
+                    <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                  ))}
+                </select>
               </div>
-              <select
-                value={selected.status}
-                onChange={e => updateStatus(selected.id, e.target.value as ProgramApplicationStatus)}
-                className="border border-gray-200 rounded px-2 py-1 text-xs font-semibold bg-white"
-              >
-                {STATUSES.map(s => (
-                  <option key={s} value={s}>{s.replace('_', ' ')}</option>
-                ))}
-              </select>
+
+              {/* Snapshot row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {selected.korean_level && (
+                  <div className="bg-white rounded-lg px-3 py-2.5 border border-gray-100">
+                    <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">Korean</p>
+                    <p className="text-[12px] font-medium text-gray-700 leading-tight">{shortKoreanLevel(selected.korean_level)}</p>
+                  </div>
+                )}
+                {selected.time_in_montreal && (
+                  <div className="bg-white rounded-lg px-3 py-2.5 border border-gray-100">
+                    <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">Montréal</p>
+                    <p className="text-[12px] font-medium text-gray-700 leading-tight">{selected.time_in_montreal}</p>
+                  </div>
+                )}
+                {selected.current_focus && (
+                  <div className="bg-white rounded-lg px-3 py-2.5 border border-gray-100 sm:col-span-2">
+                    <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">Focus</p>
+                    <p className="text-[12px] font-medium text-gray-700 leading-tight line-clamp-2">{selected.current_focus}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Highlight: reason + goal */}
+              {(selected.reason_for_joining || selected.six_month_goal) && (
+                <div className="mt-3 space-y-2">
+                  {selected.reason_for_joining && (
+                    <div className="bg-white rounded-lg px-3 py-2.5 border border-gray-100">
+                      <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">Why joining</p>
+                      <p className="text-[12px] text-gray-700 leading-relaxed line-clamp-3">{selected.reason_for_joining}</p>
+                    </div>
+                  )}
+                  {selected.six_month_goal && (
+                    <div className="bg-white rounded-lg px-3 py-2.5 border border-gray-100">
+                      <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">Goal in 6 months</p>
+                      <p className="text-[12px] text-gray-700 leading-relaxed line-clamp-3">{selected.six_month_goal}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <p className="text-[10px] text-gray-300 mt-3">
+                Submitted {selected.created_at?.split('T')[0]}
+              </p>
             </div>
 
-            <div className="p-4 space-y-5 text-sm overflow-y-auto max-h-[580px]">
+            {/* Sectioned profile */}
+            <div className="p-5 space-y-6 overflow-y-auto max-h-[540px]">
               {PROFILE_SECTIONS.map(sec => {
                 const rows = sec.rows(selected).filter(([, v]) => v?.toString().trim())
                 if (rows.length === 0) return null
                 return (
                   <div key={sec.label}>
-                    <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-400 mb-2">{sec.label}</p>
-                    <div className="space-y-2">
-                      {rows.map(([k, v]) => (
-                        <div key={k} className="grid grid-cols-[110px_1fr] gap-2">
-                          <span className="text-gray-400 text-xs pt-0.5">{k}</span>
-                          <span className="text-gray-800 text-sm leading-snug whitespace-pre-wrap">{v}</span>
+                    <p className="text-[9px] font-bold tracking-[0.16em] uppercase text-gray-300 mb-3">{sec.label}</p>
+                    <div className="space-y-3">
+                      {rows.map(([k, v, weight]) => (
+                        <div key={k} className="grid grid-cols-[130px_1fr] gap-3">
+                          <span className="text-[11px] text-gray-400 pt-0.5 leading-snug shrink-0">{k}</span>
+                          <span className={[
+                            'leading-relaxed whitespace-pre-wrap',
+                            weight === 'highlight' ? 'text-[13px] text-gray-800 font-medium' : 'text-[13px] text-gray-600',
+                          ].join(' ')}>
+                            {v}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -2287,23 +2430,23 @@ function ApplicationsAdmin() {
               })}
 
               {/* Admin notes */}
-              <div className="pt-3 border-t border-gray-100">
-                <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-400 mb-2">Internal notes</p>
+              <div className="pt-4 border-t border-gray-100">
+                <p className="text-[9px] font-bold tracking-[0.16em] uppercase text-gray-300 mb-2">Internal notes</p>
                 <textarea
                   rows={4}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 resize-none focus:outline-none focus:border-gray-400 transition-colors"
-                  placeholder="Notes visible only to admins…"
+                  className="w-full border border-gray-100 rounded-lg px-3 py-2.5 text-[13px] text-gray-700 resize-none focus:outline-none focus:border-gray-300 transition-colors bg-gray-50/50 placeholder:text-gray-300"
+                  placeholder="Met at language exchange · Interested in volunteering · Conversation-focused learner…"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   onBlur={saveNotes}
                 />
-                {notesSaving && <p className="text-[11px] text-gray-400 mt-1">Saving…</p>}
+                {notesSaving && <p className="text-[10px] text-gray-300 mt-1">Saving…</p>}
               </div>
             </div>
           </div>
         ) : (
           <div className="border border-gray-200 rounded-lg flex items-center justify-center text-gray-300 text-sm h-48">
-            Select an application to view details
+            Select an applicant to view their profile
           </div>
         )}
       </div>
