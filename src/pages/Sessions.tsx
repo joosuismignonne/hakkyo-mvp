@@ -326,28 +326,37 @@ function LanguageExchangeCard({
       onClick={onApply}
       className="rounded-2xl border border-gray-100 bg-white mb-3 px-5 py-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] hover:border-gray-200"
     >
-      {/* Meta */}
-      <div className="flex items-center gap-2 mb-3">
+      {/* ── Meta row ── */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#111', display: 'inline-block', flexShrink: 0 }} />
         <TypeTag>{t('커뮤니티', 'Community', 'Communauté')}</TypeTag>
-        <Users size={11} className="text-gray-400" />
       </div>
 
-      {/* Primary type chip */}
+      {/* ── Primary type chip ── */}
       <div className="mb-3">
         <PrimaryTypeChip emoji="🌎" label="Language Exchange" />
       </div>
 
+      {/* ── Title ── */}
       <h3 className="text-sm font-medium text-gray-900 leading-snug mb-2">{leTitle}</h3>
 
-      <p className="text-[13px] text-gray-500 leading-relaxed mb-3"
-         style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-        {leDesc}
-      </p>
+      {/* ── Description ── */}
+      {leDesc && (
+        <p className="text-[13px] text-gray-500 leading-relaxed mb-3"
+           style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {leDesc}
+        </p>
+      )}
 
-      {/* Experience chips */}
+      {/* ── Experience chips ── */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         {leExpChips.map(c => <ExperienceChip key={c}>{c}</ExperienceChip>)}
+      </div>
+
+      {/* ── Metadata chips (mirrors ProgramCard row: price + type) ── */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
+        <MetaChip icon={DollarSign}>{t('무료', 'Free', 'Gratuit')}</MetaChip>
+        <MetaChip icon={Users}>{t('커뮤니티 이벤트', 'Community Event', 'Événement communautaire')}</MetaChip>
       </div>
 
       {/* ── Schedule (same grid layout as ProgramCard) ── */}
@@ -387,7 +396,7 @@ function LanguageExchangeCard({
         </div>
       )}
 
-      {/* Status + CTA */}
+      {/* ── Status + CTA ── */}
       <div className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between gap-3">
         <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-900">
           {t('상시 모집', '● OPEN', '● OUVERT')}
