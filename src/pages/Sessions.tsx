@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Clock, DollarSign, MapPin, Pin, Users, Zap } from 'lucide-react'
+import { DollarSign, MapPin, Pin, Users, Zap } from 'lucide-react'
 import { getTracks, getSiteSettings, getLeSettings, type LeSettings } from '../lib/db'
 import { trackEvent } from '../lib/analytics'
 import { useLang } from '../context/LangContext'
@@ -54,59 +54,6 @@ function resolveDuration(s: TrackView): string | null {
   return null
 }
 
-// ─── Program type resolution ──────────────────────────────────────────────────
-
-// Derive up to 3 experience chips from structured track fields.
-// Falls back to type-specific semantic defaults when fields are sparse.
-function resolveExperienceChips(track: TrackView, typeLabel: string | null): string[] {
-  const chips: string[] = []
-  const type = (typeLabel ?? '').toLowerCase()
-
-  // ── Structured chips ──────────────────────────────────────────────────────
-  // Duration
-  if (track.duration_weeks && track.duration_weeks > 0) {
-    chips.push(`${track.duration_weeks} Weeks`)
-  } else if (track.class_count > 1) {
-    chips.push(`${track.class_count} Classes`)
-  }
-
-  // Group size
-  if (track.capacity > 0 && track.capacity <= 10) {
-    chips.push('Small Group')
-  } else if (track.capacity > 10 && track.capacity <= 20) {
-    chips.push('Group')
-  }
-
-  // Audience / level hint
-  if (track.target_audience === 'korean_speaker') {
-    chips.push('Korean Speakers')
-  } else if (track.target_audience === 'montreal_local') {
-    chips.push('All Speakers')
-  }
-
-  // ── Semantic fallbacks per type ───────────────────────────────────────────
-  const need = 3 - chips.length
-  if (need <= 0) return chips.slice(0, 3)
-
-  const fallbacks: Record<string, string[]> = {
-    korean:             ['Beginner Friendly', 'Conversation', 'Cultural'],
-    french:             ['Conversation', 'Montréal Life', 'Beginner Friendly'],
-    english:            ['Conversation', 'Beginner Friendly', 'Canadian Culture'],
-    'active output':    ['Speaking', 'Real Scenarios', 'Practice'],
-    'full course':      ['Complete Package', 'All Levels', 'Immersive'],
-    'language exchange':['Meet People', 'Open Level', 'Weekly'],
-  }
-
-  const key = Object.keys(fallbacks).find(k => type.includes(k))
-  if (key) {
-    for (const c of fallbacks[key]) {
-      if (chips.length >= 3) break
-      if (!chips.includes(c)) chips.push(c)
-    }
-  }
-
-  return chips.slice(0, 3)
-}
 
 // ─── Card atoms ───────────────────────────────────────────────────────────────
 
@@ -145,15 +92,6 @@ function ExperienceChip({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Output-focused tag — slightly more prominent than ExperienceChip
-function OutputTag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center bg-gray-900 text-white rounded-md px-2 py-0.5 text-[10px] font-medium whitespace-nowrap">
-      {children}
-    </span>
-  )
-}
-
 // Primary program-type chip — the most prominent label on the card
 function PrimaryTypeChip({ emoji, label }: { emoji: string; label: string }) {
   return (
@@ -175,114 +113,118 @@ function ProgramCard({ track, lang, onApply, t }: {
   onApply: (id: string) => void
   t: (ko: string, en: string, fr: string) => string
 }) {
-  const navigate   = useNavigate()
-  const isOpen     = track.status === 'open'
-  const dotColor   = isOpen ? OPEN_COLOR : CLOSED_COLOR
-  const name       = pickText(lang, track.name_ko, track.name_en, track.name_fr)
-  const description = pickText(lang, track.description_ko, track.description_en, track.description_fr)
-  const price      = resolvePrice(track)
-  const duration   = resolveDuration(track)
-  const typeLabel  = resolveTrackTypeLabel(track)
-  const typeChip   = resolveProgramTypeChip(track, typeLabel)
-  const expChips   = resolveExperienceChips(track, typeLabel)
+  const navigate      = useNavigate()
+  const isOpen        = track.status === 'open'
+  const dotColor      = isOpen ? OPEN_COLOR : CLOSED_COLOR
+  const name          = pickText(lang, track.name_ko, track.name_en, track.name_fr)
+  const description   = pickText(lang, track.description_ko, track.description_en, track.description_fr)
+  const price         = resolvePrice(track)
+  const duration      = resolveDuration(track)
+  const typeLabel     = resolveTrackTypeLabel(track)
+  const typeChip      = resolveProgramTypeChip(track, typeLabel)
   const classSchedule = buildClassSchedule(track)
   const programDates  = formatProgramDateRange(track)
   const deadline      = resolveApplicationDeadline(track)
   const venue         = resolveVenue(track)
   const isPinned      = !!(track as TrackView & { is_pinned?: boolean }).is_pinned
+  const outputTags    = parseOutputTags(track.output_tags).slice(0, 3)
+
+  // Plain-text program info — no pill badges, just readable metadata
+  const infoTokens: string[] = []
+  if (programDates ?? track.start_date) infoTokens.push(programDates ?? fmtDate(track.start_date))
+  if (duration)                         infoTokens.push(duration)
+  infoTokens.push(price)
+  if (deadline && isOpen)               infoTokens.push(`${t('마감', 'Deadline', 'Clôture')} ${deadline}`)
+
+  const hasSecondary = classSchedule.length > 0 || (venue?.name && venue.name !== '—')
 
   return (
     <article
       onClick={() => navigate(`/programs/${track.id}`)}
       className={`rounded-2xl border mb-3 px-5 py-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${isPinned ? 'border-gray-300 hover:border-gray-400 bg-white' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
     >
-      {/* ── Meta row: source label only ── */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      {/* 1 · Category + Status — single quiet line */}
+      <div className="flex items-center gap-1.5 mb-4">
         <span style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
-        <TypeTag>{t('프로그램', 'Program', 'Programme')}</TypeTag>
+        <span className="text-[10px] text-gray-400 tracking-wide">
+          {t('프로그램', 'Program', 'Programme')}
+          {' · '}
+          {isOpen ? t('모집 중', 'Open', 'Ouvert') : t('마감', 'Closed', 'Fermé')}
+        </span>
         {isPinned && <PinIndicator />}
       </div>
 
-      {/* ── Primary type chip ── */}
+      {/* 2 · Language pill — light bordered, not filled */}
       {typeChip && (
         <div className="mb-3">
-          <PrimaryTypeChip emoji={typeChip.emoji} label={typeChip.label} />
+          <span className="inline-flex items-center gap-1.5 border border-gray-200 rounded-md px-2.5 py-1 text-[11px] text-gray-700 font-medium whitespace-nowrap">
+            <span>{typeChip.emoji}</span>
+            <span>{typeChip.label}</span>
+          </span>
         </div>
       )}
 
-      {/* ── Title ── */}
-      <h3 className="text-sm font-medium text-gray-900 leading-snug mb-2">{name}</h3>
+      {/* 3 · Title */}
+      <h3 className="text-[15px] font-medium text-gray-900 leading-snug mb-2">{name}</h3>
 
-      {/* ── Description ── */}
+      {/* 4 · Description — 2 lines max */}
       {description && (
         <p className="text-[13px] text-gray-500 leading-relaxed mb-3"
-           style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+           style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {description}
         </p>
       )}
 
-      {/* ── Output tags ── */}
-      {(() => {
-        const tags = parseOutputTags(track.output_tags)
-        return tags.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {tags.map(tag => <OutputTag key={tag}>{tag}</OutputTag>)}
-          </div>
-        ) : null
-      })()}
-
-      {/* ── Experience chips ── */}
-      {expChips.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {expChips.map(c => <ExperienceChip key={c}>{c}</ExperienceChip>)}
-        </div>
-      )}
-
-      {/* ── Metadata chips ── */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
-        {track.start_date && <MetaChip icon={Calendar}>{programDates ?? fmtDate(track.start_date)}</MetaChip>}
-        {duration          && <MetaChip icon={Clock}>{duration}</MetaChip>}
-        <MetaChip icon={DollarSign}>{price}</MetaChip>
-        {deadline && isOpen && <MetaChip icon={Calendar}>{t('마감', 'Deadline', 'Clôture')} {deadline}</MetaChip>}
-      </div>
-
-      {/* ── Class schedule ── */}
-      {classSchedule.length > 0 && (
-        <div className="mb-3 space-y-0.5">
-          {classSchedule.map(row => (
-            <div key={`${row.name}-${row.when}`} className="grid grid-cols-[1fr_auto] gap-x-3 items-baseline">
-              <span className="text-[11px] font-medium text-gray-700 truncate">{row.name}</span>
-              {row.when && (
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">{row.when}</span>
-              )}
-            </div>
+      {/* 5 · Output tags — max 3, subtle hairline style */}
+      {outputTags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {outputTags.map(tag => (
+            <span key={tag} className="text-[10px] text-gray-400 border border-gray-100 rounded px-2 py-0.5 whitespace-nowrap">
+              {tag}
+            </span>
           ))}
         </div>
       )}
 
-      {/* ── Venue ── */}
-      {venue?.name && venue.name !== '—' && (
-        <div className="mb-3">
-          <MetaChip icon={MapPin}>
-            <span className="text-gray-600 font-medium">{venue.name}</span>
-            {venue.detail && <span className="text-gray-400 ml-1">{venue.detail}</span>}
-            {venue.mapsUrl && (
-              <a
-                href={venue.mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="ml-2 underline decoration-gray-200 underline-offset-2 hover:text-gray-700 transition-colors"
-              >
-                Map →
-              </a>
-            )}
-          </MetaChip>
+      {/* 6 · Program info — plain text row, no pill badges */}
+      {infoTokens.length > 0 && (
+        <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+          {infoTokens.join(' · ')}
+        </p>
+      )}
+
+      {/* 7 · Schedule + Location — compact secondary block */}
+      {hasSecondary && (
+        <div className="border-t border-gray-50 pt-3 mb-3 space-y-1">
+          {classSchedule.map(row => (
+            <div key={`${row.name}-${row.when}`} className="grid grid-cols-[1fr_auto] gap-x-3 items-baseline">
+              <span className="text-[11px] text-gray-500 truncate">{row.name}</span>
+              {row.when && <span className="text-[11px] text-gray-400 whitespace-nowrap">{row.when}</span>}
+            </div>
+          ))}
+          {venue?.name && venue.name !== '—' && (
+            <div className="flex items-center gap-1 text-[11px] text-gray-400 pt-0.5">
+              <MapPin size={10} className="shrink-0 text-gray-300" />
+              <span className="text-gray-500">{venue.name}</span>
+              {venue.detail && <span className="text-gray-400">{venue.detail}</span>}
+              {venue.mapsUrl && (
+                <a
+                  href={venue.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="ml-1 underline decoration-gray-200 underline-offset-2 hover:text-gray-600 transition-colors"
+                >
+                  Map →
+                </a>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Status + CTA ── */}
-      <div className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between gap-3">
+      {/* 8 · Footer */}
+      <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between gap-3">
         {isOpen ? (
           <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-900">
             {t('모집 중', '● OPEN', '● OUVERT')}
