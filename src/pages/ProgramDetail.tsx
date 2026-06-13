@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { trackEvent } from '../lib/analytics'
 import { Calendar, Clock, DollarSign, MapPin, Users, ChevronLeft, CheckCircle2, HelpCircle } from 'lucide-react'
 import { getTrackById } from '../lib/db'
 import { useLang } from '../context/LangContext'
@@ -102,7 +103,10 @@ export default function ProgramDetail() {
     getTrackById(id)
       .then(data => {
         if (!data) setError('Program not found.')
-        else setTrack(data)
+        else {
+          setTrack(data)
+          trackEvent('program_detail_view', { program_id: id, program_name: data.name_en || data.name_ko })
+        }
       })
       .catch(e => setError(e?.message ?? 'Failed to load program.'))
       .finally(() => setLoading(false))

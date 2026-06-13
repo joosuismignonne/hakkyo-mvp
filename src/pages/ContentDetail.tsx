@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getContentById } from '../lib/db'
+import { trackEvent } from '../lib/analytics'
 import { useLang } from '../context/LangContext'
 import { pushRecent } from '../lib/memory'
 import { thumbnailUrl as getThumb } from '../lib/newsContent'
@@ -37,6 +38,7 @@ export default function ContentDetail() {
         if (!data) { setError('Post not found.'); return }
         const normalized = normalizeContent(data)
         setItem(normalized)
+        trackEvent('news_article_view', { article_id: id, article_title: normalized.title_en || normalized.title_ko })
         pushRecent({
           id,
           title: normalized.title_en || normalized.title_ko,

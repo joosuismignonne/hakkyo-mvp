@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import { getNoticeById } from '../lib/db'
+import { trackEvent } from '../lib/analytics'
 import { useLang } from '../context/LangContext'
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
 import ArticleBody from '../components/ArticleBody'
@@ -43,7 +44,10 @@ export default function BoardDetail() {
     getNoticeById(id)
       .then(data => {
         if (!data) setError('Post not found.')
-        else setNotice(data)
+        else {
+          setNotice(data)
+          trackEvent('board_article_view', { article_id: id, article_title: data.title_en || data.title_ko })
+        }
       })
       .catch(() => setError('Failed to load post.'))
       .finally(() => setLoading(false))

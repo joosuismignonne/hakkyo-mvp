@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { getTracks, getQuestions, submitApplication, submitLeApplication } from '../lib/db'
 import { useLang } from '../context/LangContext'
+import { trackEvent } from '../lib/analytics'
 import type { ProgramTrack, FormQuestion } from '../types'
 
 interface Props {
@@ -137,6 +138,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
           referralSource: answers['le_source']?.trim() ?? '',
           message:        answers['le_goal']?.trim()   ?? '',
         })
+        trackEvent('application_submitted', { type: 'language_exchange' })
         setDone(true)
       } catch (err: unknown) {
         console.error(err)
@@ -169,6 +171,11 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
         name: form.name, email: form.email, phone: form.phone, instagram: form.instagram,
         answers,
         questions: visibleQuestions,   // snapshot only the questions actually shown
+      })
+      trackEvent('application_submitted', {
+        type: 'program',
+        program_id: selectedTrack?.id ?? '',
+        program_name: selectedTrack?.name_en || selectedTrack?.name_ko || '',
       })
       setDone(true)
     } catch (err: unknown) {
