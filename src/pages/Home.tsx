@@ -10,8 +10,6 @@ import { normalizeContent, newsExcerpt, thumbnailUrl } from '../lib/newsContent'
 import type { ProgramTrack, Notice, Content, CommunitySubmission } from '../types'
 import ApplyModal from '../components/ApplyModal'
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
-import SeasonalHero from '../components/SeasonalHero'
-import { getSeasonTheme } from '../lib/seasonTheme'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -838,13 +836,8 @@ export default function Home() {
     )
   }
 
-  const seasonTheme = getSeasonTheme()
-
   const mainContent = (
     <>
-      {/* Seasonal hero — visible on all screen sizes */}
-      <SeasonalHero theme={seasonTheme} />
-
       {/* 1 · Open Now */}
       <OpenNowStrip tracks={tracks} lang={lang} onApply={setApplying} t={t} />
 

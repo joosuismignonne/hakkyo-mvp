@@ -10,6 +10,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { getTracks } from '../lib/db'
 import type { ProgramTrack } from '../types'
+import { GardenSidebarLeft, GardenSidebarRight } from './GardenSidebar'
 
 const ApplyModal          = lazy(() => import('./ApplyModal'))
 const CommunitySubmitModal = lazy(() => import('./CommunitySubmitModal'))
@@ -140,6 +141,11 @@ export function LeftSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
           )
         })}
       </nav>
+
+      {/* Garden illustration */}
+      <div className="pt-2">
+        <GardenSidebarLeft />
+      </div>
     </div>
   )
 }
@@ -265,6 +271,11 @@ export function SharedRightSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
           </button>
         </div>
 
+      </div>
+
+      {/* Garden illustration */}
+      <div className="pt-4">
+        <GardenSidebarRight />
       </div>
 
       {/* Modals */}
