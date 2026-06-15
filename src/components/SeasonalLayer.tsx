@@ -29,7 +29,6 @@ const COUNTS: Record<Particle, number> = {
   snow:   22,
   rain:   32,
   petals: 13,
-  leaves:  9,
   none:    0,
 }
 
@@ -95,22 +94,6 @@ export default function SeasonalLayer({ type, color, className = '' }: Props) {
           } as React.CSSProperties}>
             <svg width={p.size * 2} height={p.size * 3} viewBox="0 0 10 15">
               <ellipse cx="5" cy="7.5" rx="4.2" ry="6.8" fill={color} />
-            </svg>
-          </span>
-        )
-
-        if (type === 'leaves') return (
-          <span key={p.id} className="sn-leaf" style={{
-            ...base,
-            '--r0': `${p.r0}deg`,
-            '--dx': `${p.dx}px`,
-          } as React.CSSProperties}>
-            <svg width={p.size * 2.5} height={p.size * 3} viewBox="0 0 14 18">
-              <path
-                d="M7 1C12 3.5 13.5 9 11 13.5C9 17 4 17.5 2 15C0 12 2 5 7 1Z"
-                fill={color}
-              />
-              <line x1="7" y1="1.5" x2="6.5" y2="15" stroke={color} strokeOpacity="0.3" strokeWidth="0.7" />
             </svg>
           </span>
         )

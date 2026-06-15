@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import { getSeasonTheme } from './lib/seasonTheme'
 import { trackPageView } from './lib/analytics'
 import { LangProvider } from './context/LangContext'
 import Nav from './components/Nav'
@@ -51,11 +50,10 @@ function AuthListener() {
 }
 
 export default function App() {
-  const seasonBg = getSeasonTheme().bodyBg
   return (
     <LangProvider>
       <BrowserRouter>
-        <div className="min-h-screen flex flex-col text-gray-900 font-sans" style={{ background: seasonBg }}>
+        <div className="min-h-screen flex flex-col bg-white text-gray-900 font-sans">
           <RouteTracker />
           <AuthListener />
           <Nav />

@@ -19,9 +19,8 @@
 
 @layer base {
   * { box-sizing: border-box; }
-  /* html bg is the overscroll bleed color — neutral warm fallback */
-  html { background: #f5f5f2; color: #111; -webkit-font-smoothing: antialiased; }
-  body { background: transparent; }
+  html { background: #fff; color: #111; -webkit-font-smoothing: antialiased; }
+  body { background: #fff; }
   /* Prevent iOS zoom on input focus */
   input, select, textarea { font-size: 16px; }
 }
@@ -200,6 +199,39 @@
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+/* ── Garden hero animations ─────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: no-preference) {
+
+  /* Clouds defined at (0,0) in the SVG — translated into position here */
+  @keyframes g-cloud-a {
+    from { transform: translate(-90px,  32px); }
+    to   { transform: translate(780px,  32px); }
+  }
+  @keyframes g-cloud-b {
+    from { transform: translate(260px, 18px); }
+    to   { transform: translate(1130px, 18px); }
+  }
+
+  /* Butterfly: enters from left, drifts across open sky, exits right */
+  @keyframes g-butterfly {
+    0%          { transform: translate(-55px, 52px); opacity: 0; }
+    4%          { opacity: 1; }
+    93%         { opacity: 1; }
+    100%        { transform: translate(740px, 46px); opacity: 0; }
+  }
+
+  .g-cloud-a   { animation: g-cloud-a  82s  linear      infinite; }
+  .g-cloud-b   { animation: g-cloud-b  108s linear      infinite; animation-delay: -52s; }
+  .g-butterfly { animation: g-butterfly 38s ease-in-out infinite; animation-delay: -10s; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-cloud-a   { transform: translate(80px,  32px); }
+  .g-cloud-b   { transform: translate(400px, 18px); }
+  .g-butterfly { display: none; }
+}
 
 /* ── Seasonal particle animations ──────────────────────────────────────────── */
 
