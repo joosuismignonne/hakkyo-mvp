@@ -10,7 +10,6 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { getTracks } from '../lib/db'
 import type { ProgramTrack } from '../types'
-import { GardenSidebarLeft, GardenSidebarRight } from './GardenSidebar'
 
 const ApplyModal          = lazy(() => import('./ApplyModal'))
 const CommunitySubmitModal = lazy(() => import('./CommunitySubmitModal'))
@@ -108,11 +107,13 @@ export function LeftSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
             HAKKYO
           </p>
         </Link>
-        <p className="text-[11px] text-gray-400 leading-relaxed mb-1">
-          A small garden in Montreal.
-        </p>
-        <p className="text-[10px] text-gray-300 leading-relaxed">
-          A place to learn, meet people,<br />rest, and grow.
+        <div className="space-y-0.5 text-xs text-gray-400 leading-relaxed mb-3">
+          <p>Learn Languages.</p>
+          <p>Meet People.</p>
+          <p>Build Your Life in Montréal.</p>
+        </div>
+        <p className="text-[11px] text-gray-300 leading-relaxed">
+          Korean, English, French, and real conversations.
         </p>
       </div>
 
@@ -141,11 +142,6 @@ export function LeftSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
           )
         })}
       </nav>
-
-      {/* Garden illustration */}
-      <div className="pt-2">
-        <GardenSidebarLeft />
-      </div>
     </div>
   )
 }
@@ -271,11 +267,6 @@ export function SharedRightSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
           </button>
         </div>
 
-      </div>
-
-      {/* Garden illustration */}
-      <div className="pt-4">
-        <GardenSidebarRight />
       </div>
 
       {/* Modals */}
