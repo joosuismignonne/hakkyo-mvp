@@ -539,6 +539,35 @@ function buildSteps(pl: ProgLang): StepConfig[] {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Section atmospheres
+// Each section gets a distinct background that communicates emotional context.
+// Gradients only — no images, no illustrations. The environment, not decoration.
+// ──────────────────────────────────────────────────────────────────────────────
+
+const SECTION_BG: Record<string, string> = {
+  // S01 — A blank page. Arrival. White silence.
+  basic: '#ffffff',
+
+  // S02 — A quiet Montréal morning. Pale sky above, warm stone below.
+  montreal: 'linear-gradient(180deg, #cddde8 0%, #d8e4e8 28%, #e4e8e2 56%, #ece8de 82%, #f0ece4 100%)',
+
+  // S03 — A path into the distance. Warm dust, open air, movement.
+  language: 'linear-gradient(168deg, #f0ede8 0%, #e6e0d8 46%, #dbd4ca 100%)',
+
+  // S04 — A horizon. Cool sky, warm earth. A future not yet reached.
+  goals: 'linear-gradient(180deg, #bfcedb 0%, #cbd6e2 20%, #d3dce6 42%, #dfe3e6 62%, #e8e6de 82%, #eceadf 100%)',
+
+  // S05 — A warm interior. Amber light. A desk by a window.
+  learning: 'linear-gradient(154deg, #f4e8d2 0%, #eedfca 50%, #e8d6bc 100%)',
+
+  // S06 — A shared table. The warmest moment. Conversation.
+  hakkyo: 'linear-gradient(148deg, #f0dece 0%, #e8d0be 46%, #e0c6b0 100%)',
+
+  // S07 — Late afternoon. Long shadows. A pause before leaving.
+  last: 'linear-gradient(180deg, #ece6dc 0%, #e4ddd0 30%, #ddd5c8 64%, #d8cfc0 100%)',
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -842,7 +871,7 @@ export default function ApplyPage() {
   if (done) {
     const firstName = draft.preferred_name?.trim() || draft.name?.trim()?.split(' ')[0]
     return (
-      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center px-6 text-center">
+      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center px-6 text-center" style={{ background: 'linear-gradient(180deg, #f0ece6 0%, #ebe6de 100%)' }}>
         <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mb-7">
           <Check size={18} className="text-white" />
         </div>
@@ -1074,10 +1103,16 @@ export default function ApplyPage() {
   const secMeta = SECTIONS.find(sec => sec.id === s.section)
   const hasContent = Object.keys(draft).some(k => draft[k]?.trim())
 
+  const sectionBg = SECTION_BG[s.section] ?? '#ffffff'
+
   return (
-    <div className="min-h-[calc(100vh-64px)] flex flex-col" onKeyDown={handleKeyDown}>
+    <div
+      className="min-h-[calc(100vh-64px)] flex flex-col"
+      style={{ background: sectionBg, transition: 'background 0.7s ease' }}
+      onKeyDown={handleKeyDown}
+    >
       {/* Progress bar */}
-      <div className="h-0.5 bg-gray-100 w-full">
+      <div className="h-0.5 bg-black/10 w-full">
         <div className="h-full bg-gray-900 transition-all duration-500" style={{ width: `${progress * 100}%` }} />
       </div>
 
@@ -1196,7 +1231,7 @@ export default function ApplyPage() {
         </div>
 
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex flex-col w-56 xl:w-60 border-l border-gray-50 px-5 py-10 shrink-0 overflow-y-auto">
+        <aside className="hidden lg:flex flex-col w-56 xl:w-60 border-l border-black/5 bg-white/70 backdrop-blur-sm px-5 py-10 shrink-0 overflow-y-auto">
           <ProfileSummary draft={draft} step={step} pl={progLang} />
         </aside>
       </div>
