@@ -757,13 +757,12 @@ export async function submitProgramApplication(
   data: Omit<ProgramApplication, 'id' | 'created_at' | 'updated_at' | 'status' | 'admin_notes'>,
 ): Promise<string> {
   if (!isConfigured) return 'demo-' + Math.random().toString(36).slice(2)
-  const { data: row, error } = await db()
+  const id = crypto.randomUUID()
+  const { error } = await db()
     .from('program_applications')
-    .insert({ ...data, status: 'new' })
-    .select('id')
-    .single()
+    .insert({ id, ...data, status: 'new' })
   if (error) throw error
-  return row.id as string
+  return id
 }
 
 export async function getProgramApplications(programId?: string): Promise<ProgramApplication[]> {
