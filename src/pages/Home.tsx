@@ -10,6 +10,8 @@ import { normalizeContent, newsExcerpt, thumbnailUrl } from '../lib/newsContent'
 import type { ProgramTrack, Notice, Content, CommunitySubmission } from '../types'
 import ApplyModal from '../components/ApplyModal'
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
+import SeasonalHero from '../components/SeasonalHero'
+import { getSeasonTheme } from '../lib/seasonTheme'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -836,19 +838,12 @@ export default function Home() {
     )
   }
 
+  const seasonTheme = getSeasonTheme()
+
   const mainContent = (
     <>
-      {/* Mobile hero — hidden on lg+ where the sidebar carries this copy */}
-      <div className="lg:hidden mb-6">
-        <div className="space-y-0.5 text-xs text-gray-400 leading-relaxed mb-2">
-          <p>Learn Languages.</p>
-          <p>Meet People.</p>
-          <p>Build Your Life in Montréal.</p>
-        </div>
-        <p className="text-[11px] text-gray-300 leading-relaxed">
-          Korean, English, French, and real conversations.
-        </p>
-      </div>
+      {/* Seasonal hero — visible on all screen sizes */}
+      <SeasonalHero theme={seasonTheme} />
 
       {/* 1 · Open Now */}
       <OpenNowStrip tracks={tracks} lang={lang} onApply={setApplying} t={t} />
