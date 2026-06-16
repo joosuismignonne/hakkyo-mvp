@@ -267,7 +267,7 @@ export function PageShell({
   children: React.ReactNode
 }) {
   return (
-    <div className={`w-full px-4 py-8 ${right ? 'max-w-[1100px]' : 'max-w-[900px]'}`}>
+    <div className={`w-full px-4 py-8 mx-auto ${right ? 'max-w-[1100px]' : 'max-w-[900px]'}`}>
       <div className="flex items-start gap-8">
 
         {/* Main column — capped at 820px when no sidebar to feel like a publication feed */}
