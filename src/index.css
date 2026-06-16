@@ -25,13 +25,23 @@
   input, select, textarea { font-size: 16px; }
 }
 
+/* ── HAKKYO yellow brand tokens ── */
+:root {
+  --y:   #F0C040;   /* primary yellow              */
+  --y-h: #E8B530;   /* yellow hover / pressed      */
+  --y-l: #FDF6D8;   /* yellow tint (backgrounds)   */
+}
+
 @layer components {
   /* ── Buttons ── */
   .btn-yellow {
-    @apply inline-flex items-center justify-center bg-gray-900 text-white font-semibold
-           px-4 py-2.5 rounded-lg hover:bg-gray-800 active:scale-95
+    @apply inline-flex items-center justify-center font-bold
+           px-4 py-2.5 rounded-xl active:scale-95
            transition-all text-sm min-h-[44px] touch-manipulation;
+    background: var(--y);
+    color: #111;
   }
+  .btn-yellow:hover { background: var(--y-h); }
   .btn-black {
     @apply inline-flex items-center justify-center bg-gray-900 text-white font-semibold
            px-4 py-2.5 rounded-lg hover:bg-gray-800 active:scale-95

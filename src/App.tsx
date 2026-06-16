@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLoca
 import { useEffect } from 'react'
 import { trackPageView } from './lib/analytics'
 import { LangProvider } from './context/LangContext'
-import Nav from './components/Nav'
+import AppSidebar from './components/AppSidebar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
 import Sessions from './pages/Sessions'
@@ -53,10 +53,11 @@ export default function App() {
   return (
     <LangProvider>
       <BrowserRouter>
-        <div className="min-h-screen flex flex-col bg-white text-gray-900 font-sans">
+        <div className="min-h-screen flex bg-white text-gray-900 font-sans">
           <RouteTracker />
           <AuthListener />
-          <Nav />
+          <AppSidebar />
+          <div className="flex-1 min-w-0 flex flex-col pb-16 lg:pb-0">
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
@@ -79,6 +80,7 @@ export default function App() {
             </Routes>
           </main>
           <Footer />
+          </div>
           <BoardMemoryWidget />
         </div>
       </BrowserRouter>

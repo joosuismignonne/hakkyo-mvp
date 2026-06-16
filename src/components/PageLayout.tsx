@@ -282,54 +282,35 @@ export function SharedRightSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
 // ─── Page shell ───────────────────────────────────────────────────────────────
 
 /**
- * Renders the 3-column shell used by Home, Programs, Board, News.
- *
- * left   — LeftSidebar (hidden below lg)
- * right  — arbitrary content (hidden below xl)
- * children — main column content
+ * 2-column shell: main feed + optional right sidebar.
+ * `left` is accepted for backward compat but ignored — AppSidebar handles nav globally.
  */
 export function PageShell({
-  left,
+  left: _left,
   right,
   children,
 }: {
-  left: React.ReactNode
+  left?: React.ReactNode
   right?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
-    <>
-      <div className="max-w-[1200px] mx-auto px-4 py-8">
-        <div className="flex items-start gap-8 xl:gap-10">
+    <div className="max-w-[960px] mx-auto px-4 py-8">
+      <div className="flex items-start gap-8 xl:gap-10">
 
-          {/* Left sidebar */}
-          <aside className="hidden lg:block w-48 xl:w-52 shrink-0 sticky top-20 self-start">
-            {left}
+        {/* Main column */}
+        <main className="flex-1 min-w-0" style={{ maxWidth: 680 }}>
+          {children}
+        </main>
+
+        {/* Right sidebar */}
+        {right && (
+          <aside className="hidden xl:block w-48 xl:w-52 shrink-0 sticky top-4 self-start">
+            {right}
           </aside>
+        )}
 
-          {/* Main column */}
-          <main className="flex-1 min-w-0" style={{ maxWidth: 680 }}>
-            {children}
-          </main>
-
-          {/* Right sidebar */}
-          {right && (
-            <aside className="hidden xl:block w-48 xl:w-52 shrink-0 sticky top-20 self-start">
-              {right}
-            </aside>
-          )}
-
-        </div>
       </div>
-
-      {/* Footer */}
-      <div className="border-t border-gray-100 mt-4">
-        <div className="max-w-[1200px] mx-auto px-4 py-10">
-          <p className="text-[10px] text-gray-300 tracking-[0.14em] uppercase">
-            HAKKYO · Montréal · {new Date().getFullYear()}
-          </p>
-        </div>
-      </div>
-    </>
+    </div>
   )
 }

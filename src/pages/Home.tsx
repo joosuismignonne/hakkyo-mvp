@@ -151,7 +151,7 @@ function TypeTag({ children, color = '#9CA3AF' }: { children: React.ReactNode; c
 
 function PinIndicator() {
   return (
-    <span className="inline-flex items-center gap-1 text-gray-400">
+    <span className="inline-flex items-center gap-1" style={{ color: 'var(--y-h)' }}>
       <Pin size={10} />
       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
         Pinned
@@ -558,11 +558,10 @@ function FilterChips({ active, onChange, counts, t }: {
             key={chip.key}
             onClick={() => onChange(chip.key)}
             className={[
-              'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.06em] transition-colors',
-              on
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700',
+              'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.06em] transition-all',
+              on ? '' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700',
             ].join(' ')}
+            style={on ? { background: 'var(--y)', color: '#111' } : {}}
           >
             <Icon size={11} className="shrink-0" />
             {chip.label}
@@ -748,44 +747,40 @@ function ContentCard({ content, lang, t }: {
   )
 }
 
-// ─── Community quick-post entry ───────────────────────────────────────────────
+// ─── Post composer ────────────────────────────────────────────────────────────
 
-const QUICK_CATS = [
-  { tag: 'housing',          emoji: '🏠', ko: '주거',      en: 'Housing',      fr: 'Logement'   },
-  { tag: 'jobs',             emoji: '💼', ko: '취업',      en: 'Jobs',         fr: 'Emploi'     },
-  { tag: 'language_exchange',emoji: '🗣️', ko: '언어교환',  en: 'Language',     fr: 'Échange'    },
-  { tag: 'friends',          emoji: '🤝', ko: '친구',      en: 'Friends',      fr: 'Amis'       },
-  { tag: 'events',           emoji: '🎉', ko: '이벤트',    en: 'Events',       fr: 'Événements' },
-  { tag: 'general',          emoji: '✏️', ko: '자유게시판', en: 'General',     fr: 'Général'    },
-]
-
-function CommunityQuickEntry({
-  onPost,
+function PostComposer({
+  onOpen,
   t,
 }: {
-  onPost: (tag: string) => void
+  onOpen: () => void
   t: (ko: string, en: string, fr: string) => string
 }) {
   return (
-    <div className="mb-6">
-      <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-400 mb-3">
-        {t('필요한 것이 있나요?', 'Need something?', 'Besoin d\'aide?')}
-      </p>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-        {QUICK_CATS.map(cat => (
-          <button
-            key={cat.tag}
-            onClick={() => onPost(cat.tag)}
-            className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-gray-200 bg-white hover:border-gray-900 hover:bg-gray-900 hover:text-white transition-all duration-150 group"
-          >
-            <span className="text-lg leading-none">{cat.emoji}</span>
-            <span className="text-[10px] font-medium text-gray-600 group-hover:text-white transition-colors text-center leading-tight">
-              {t(cat.ko, cat.en, cat.fr)}
-            </span>
-          </button>
-        ))}
+    <button
+      onClick={onOpen}
+      className="w-full text-left mb-6 group"
+    >
+      <div className="flex items-center gap-3 border border-gray-200 rounded-2xl px-4 py-3.5 bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-150">
+        {/* Avatar placeholder */}
+        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </div>
+        {/* Prompt text */}
+        <span className="flex-1 text-[13px] text-gray-400 select-none">
+          {t('몬트리올에서 무슨 일이 있나요?', 'What\'s happening in Montréal?', 'Que se passe-t-il à Montréal?')}
+        </span>
+        {/* Post pill */}
+        <span
+          className="text-[11px] font-bold px-3.5 py-1.5 rounded-full shrink-0 transition-colors"
+          style={{ background: 'var(--y)', color: '#111' }}
+        >
+          {t('게시', 'Post', 'Publier')}
+        </span>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -839,6 +834,15 @@ export default function Home() {
     }
     window.addEventListener('hakkyo:community-post', onNewPost)
     return () => window.removeEventListener('hakkyo:community-post', onNewPost)
+  }, [])
+
+  useEffect(() => {
+    function onCompose(e: Event) {
+      const tag = (e as CustomEvent<{ tag: string }>).detail?.tag ?? 'general'
+      setSubmitTag(tag)
+    }
+    window.addEventListener('hakkyo:open-compose', onCompose)
+    return () => window.removeEventListener('hakkyo:open-compose', onCompose)
   }, [])
 
   const allItems = useMemo<FeedItem[]>(() => {
@@ -912,8 +916,8 @@ export default function Home() {
       {/* 3 · Search */}
       <FeedSearch value={query} onChange={setQuery} suggestions={suggestions} t={t} />
 
-      {/* 3.5 · Community quick-post entry */}
-      <CommunityQuickEntry onPost={tag => setSubmitTag(tag)} t={t} />
+      {/* 3.5 · Post composer */}
+      <PostComposer onOpen={() => setSubmitTag('general')} t={t} />
 
       {/* 4 · Filter chips */}
       <FilterChips
