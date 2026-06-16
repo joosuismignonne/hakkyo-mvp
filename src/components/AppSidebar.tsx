@@ -248,6 +248,42 @@ function DesktopSidebar() {
         </div>
       </div>
 
+      {/* Footer utilities */}
+      <div className="px-5 pb-3 space-y-1.5">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('hakkyo:open-archive'))}
+          className="flex items-center gap-2 text-[11px] text-gray-400 hover:text-gray-700 transition-colors w-full text-left"
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 2h10v12l-5-3.5L3 14V2z"/>
+          </svg>
+          {t('아카이브', 'Archive', 'Archives')}
+        </button>
+        <a
+          href="https://www.instagram.com/hakkyo.mtl"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 text-[11px] text-gray-400 hover:text-gray-700 transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+          @hakkyo.mtl
+        </a>
+        <a
+          href="mailto:hello@hakkyo.ca"
+          className="flex items-center gap-2 text-[11px] text-gray-400 hover:text-gray-700 transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          hello@hakkyo.ca
+        </a>
+      </div>
+
       {/* Language switcher */}
       <div className="px-5 pb-5">
         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden text-[11px] font-semibold">

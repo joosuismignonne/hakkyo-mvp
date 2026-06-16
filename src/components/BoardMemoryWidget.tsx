@@ -145,12 +145,16 @@ export default function BoardMemoryWidget() {
     return subscribeToMemory(refresh)
   }, [refresh])
 
+  // Listen for sidebar trigger
+  useEffect(() => {
+    function onOpen() { refresh(); setOpen(true); setVisible(true) }
+    window.addEventListener('hakkyo:open-archive', onOpen)
+    return () => window.removeEventListener('hakkyo:open-archive', onOpen)
+  }, [refresh])
+
   const hasData = recent.length > 0 || saved.length > 0
   useEffect(() => {
-    if (hasData) {
-      const timer = setTimeout(() => setVisible(true), 300)
-      return () => clearTimeout(timer)
-    } else {
+    if (!hasData) {
       setVisible(false)
       setOpen(false)
     }
@@ -173,21 +177,15 @@ export default function BoardMemoryWidget() {
   const savedCount  = saved.length
   const totalCount  = recentCount + savedCount
 
+  if (!open || !visible) return null
+
   return (
     <div
-      className={`fixed bottom-6 right-6 z-40 hidden md:flex flex-col items-end
-                  transition-[opacity,transform] duration-500 ease-out
-                  ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'}`}
+      className="fixed bottom-8 right-8 z-50 hidden lg:block"
+      style={{ animation: 'modal-up 0.18s ease-out' }}
     >
-      {/* ── Expanded panel ── */}
-      <div
-        className={`mb-2 w-[272px] bg-white/95 backdrop-blur-md border border-gray-200/80
-                    rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.1)] overflow-hidden
-                    transition-[opacity,transform,max-height] duration-[250ms] ease-out
-                    ${open
-                      ? 'opacity-100 translate-y-0 max-h-[440px] pointer-events-auto'
-                      : 'opacity-0 translate-y-2 max-h-0 pointer-events-none'}`}
-      >
+      {/* Panel — opens when triggered from sidebar Archive button */}
+      <div className="w-[272px] bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.1)] overflow-hidden">
         {/* Header */}
         <div className="px-3 pt-3 pb-2 flex items-center justify-between">
           <p className="text-[10px] font-semibold tracking-[0.18em] text-gray-400 uppercase">
@@ -251,30 +249,6 @@ export default function BoardMemoryWidget() {
           )}
         </div>
       </div>
-
-      {/* ── Collapsed pill ── */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 bg-white/95 backdrop-blur-md
-                   border border-gray-200/80 rounded-full pl-3 pr-3.5 py-2
-                   shadow-[0_4px_20px_rgba(0,0,0,0.08)]
-                   hover:shadow-[0_6px_28px_rgba(0,0,0,0.12)]
-                   hover:border-gray-300 transition-all duration-200
-                   text-gray-500 hover:text-gray-700"
-        title="Archive"
-      >
-        <span className="text-gray-400">
-          <IconBookmark filled={savedCount > 0} size={13} />
-        </span>
-        <span className="text-[11px] font-medium tracking-wide">
-          {t('아카이브', 'Archive', 'Archives')}
-        </span>
-        {totalCount > 0 && (
-          <span className="text-[10px] font-semibold text-gray-400 tabular-nums">
-            {totalCount}
-          </span>
-        )}
-      </button>
     </div>
   )
 }
