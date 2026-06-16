@@ -266,22 +266,27 @@ export function PageShell({
   right?: React.ReactNode
   children: React.ReactNode
 }) {
-  return (
-    <div className={`w-full px-4 py-8 mx-auto ${right ? 'max-w-[1100px]' : 'max-w-[900px]'}`}>
-      <div className="flex items-start gap-8">
+  if (!right) {
+    // No right sidebar: single centered column, visually centered in the space after the left nav
+    return (
+      <div className="w-full flex justify-center px-4 py-8">
+        <div className="w-full max-w-[860px]">
+          {children}
+        </div>
+      </div>
+    )
+  }
 
-        {/* Main column — capped at 820px when no sidebar to feel like a publication feed */}
-        <main className="flex-1 min-w-0" style={right ? {} : { maxWidth: 820 }}>
+  // With right sidebar: two-column flex layout
+  return (
+    <div className="w-full px-4 py-8 mx-auto max-w-[1100px]">
+      <div className="flex items-start gap-8">
+        <main className="flex-1 min-w-0">
           {children}
         </main>
-
-        {/* Right sidebar */}
-        {right && (
-          <aside className="hidden xl:block w-52 shrink-0 sticky top-4 self-start">
-            {right}
-          </aside>
-        )}
-
+        <aside className="hidden xl:block w-52 shrink-0 sticky top-4 self-start">
+          {right}
+        </aside>
       </div>
     </div>
   )
