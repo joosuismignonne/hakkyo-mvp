@@ -9,7 +9,7 @@ import { useLang } from '../context/LangContext'
 import { normalizeContent, newsExcerpt, thumbnailUrl } from '../lib/newsContent'
 import type { ProgramTrack, Notice, Content, CommunitySubmission } from '../types'
 const CommunitySubmitModal = lazy(() => import('../components/CommunitySubmitModal'))
-import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
+import { LeftSidebar, PageShell } from '../components/PageLayout'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -129,9 +129,9 @@ function PostHeader({ time }: { time?: string | null }) {
     <div className="flex items-center gap-2.5 mb-3">
       <HakkyoAvatar />
       <div>
-        <p className="text-[12px] font-semibold text-gray-900 leading-none mb-0.5">HAKKYO</p>
+        <p className="text-[13px] font-semibold text-gray-900 leading-none mb-0.5">HAKKYO</p>
         {time && (
-          <p className="text-[10px] text-gray-400 leading-none">
+          <p className="text-[11px] text-gray-400 leading-none">
             {relativeTime(time)} · {fmtDate(time)}
           </p>
         )}
@@ -265,17 +265,16 @@ function MetaChip({ icon: Icon, children }: {
   )
 }
 
-// Inline post image — inside the card flow
+// Inline post image — 16:9, max 360px tall
 function PostImage({ src, href }: { src: string; href: string }) {
   return (
-    <Link to={href} className="block mt-3 mb-0.5">
-      <div className="overflow-hidden rounded-xl bg-gray-50" style={{ maxHeight: 520 }}>
+    <Link to={href} className="block mt-4 mb-0.5">
+      <div className="overflow-hidden rounded-xl bg-gray-50" style={{ aspectRatio: '16/9', maxHeight: 360 }}>
         <img
           src={src}
           alt=""
           loading="lazy"
-          className="w-full object-cover transition-transform duration-500 hover:scale-[1.015]"
-          style={{ maxHeight: 520 }}
+          className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.015]"
         />
       </div>
     </Link>
@@ -378,14 +377,22 @@ function CommunityCard({ post, t }: {
   )
 }
 
-// ─── Pinned grid ─────────────────────────────────────────────────────────────
+// ─── Pinned list (compact) ────────────────────────────────────────────────────
 
-function PinnedGrid({ items, lang }: {
+function PinnedList({ items, lang, t }: {
   items: FeedItem[]
   lang: Lang
+  t: (ko: string, en: string, fr: string) => string
 }) {
-  const pinned = items.filter(i => i.pinned).slice(0, 3)
+  const pinned = items.filter(i => i.pinned).slice(0, 5)
   if (!pinned.length) return null
+
+  function getHref(item: FeedItem): string {
+    if (item.kind === 'program') return `/programs/${item.data.id}`
+    if (item.kind === 'content') return `/news/${item.data.id}`
+    if (item.kind === 'notice')  return `/board/${item.data.id}`
+    return `/community/${item.data.id}`
+  }
 
   function getTitle(item: FeedItem): string {
     if (item.kind === 'notice')  return nTitle(item.data, lang)
@@ -400,108 +407,75 @@ function PinnedGrid({ items, lang }: {
     return null
   }
 
-  function getExcerpt(item: FeedItem): string {
-    const raw =
-      item.kind === 'notice'  ? nBody(item.data, lang) :
-      item.kind === 'program' ? tDesc(item.data, lang) :
-      item.kind === 'content' ? cBody(item.data, lang) : ''
-    return newsExcerpt(raw, 120)
-  }
-
   function getCategory(item: FeedItem): string {
-    if (item.kind === 'program') return 'Program'
-    if (item.kind === 'notice')  return item.data.type === 'event' ? 'Event' : item.data.type === 'hiring' ? 'Hiring' : 'Notice'
+    if (item.kind === 'program') return t('프로그램', 'Program', 'Programme')
+    if (item.kind === 'notice')  return item.data.type === 'event' ? t('이벤트', 'Event', 'Événement') : item.data.type === 'hiring' ? t('채용', 'Hiring', 'Recrutement') : t('공지', 'Notice', 'Avis')
     if (item.kind === 'content') return CAT_LABEL[item.data.category ?? ''] ?? 'Montréal'
-    return 'Community'
+    return t('커뮤니티', 'Community', 'Communauté')
   }
 
-  function PinnedCard({ item }: { item: FeedItem }) {
-    const title    = getTitle(item)
-    const thumb    = getThumb(item)
-    const excerpt  = getExcerpt(item)
-    const category = getCategory(item)
-
-    // ── Shared outer wrapper — identical dimensions for every card ──
-    const card = (
-      <div className="group cursor-pointer transition-all duration-200 hover:-translate-y-0.5">
-        {/* 3:4 slot — same size always */}
-        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl mb-2 transition-shadow duration-200 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-
-          {thumb ? (
-            /* Image card */
-            <img
-              src={thumb}
-              alt=""
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            />
-          ) : (
-            /* Text-cover card — editorial, not placeholder */
-            <div className="w-full h-full bg-white border border-gray-200 rounded-xl flex flex-col justify-between p-3.5 transition-colors group-hover:border-gray-300">
-              <p className="text-[8px] font-bold tracking-[0.2em] uppercase text-gray-400">
-                {category}
-              </p>
-              <div>
-                <p className="text-[13px] font-semibold text-gray-900 leading-snug mb-2">
-                  {title}
-                </p>
-                {excerpt && (
-                  <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-3">
-                    {excerpt}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Pin indicator — top-right, monochrome, consistent across both types */}
-          <div className={[
-            'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center',
-            thumb ? 'bg-black/30 backdrop-blur-sm' : 'bg-gray-100',
-          ].join(' ')}>
-            <Pin size={9} className={thumb ? 'text-white' : 'text-gray-500'} strokeWidth={2.5} />
-          </div>
-        </div>
-
-        {/* Category + title below — shown for image cards only */}
-        {thumb && (
-          <>
-            <p className="text-[9px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-1">
-              {category}
-            </p>
-            <p className="text-[11px] font-medium text-gray-800 group-hover:text-gray-900 transition-colors leading-snug line-clamp-2">
-              {title}
-            </p>
-          </>
-        )}
-        {/* Spacer so text-cover cards have the same bottom height as image cards */}
-        {!thumb && <div className="h-[34px]" />}
-      </div>
-    )
-
+  function getMeta(item: FeedItem): string {
     if (item.kind === 'program') {
-      return <Link to={`/programs/${item.data.id}`} className="block">{card}</Link>
+      const d = item.data
+      return d.status === 'open' ? '● Open' : 'Closed'
     }
-    if (item.kind === 'content') {
-      return <Link to={`/news/${item.data.id}`} className="block">{card}</Link>
-    }
-    if (item.kind === 'notice') {
-      return <Link to={`/board/${item.data.id}`} className="block">{card}</Link>
-    }
-    return <Link to={`/community/${item.data.id}`} className="block">{card}</Link>
+    const date = item.kind === 'notice'  ? (item.data.created_at || item.data.date) :
+                 item.kind === 'content' ? (item.data.published_at ?? item.data.created_at) :
+                 item.data.created_at
+    return date ? fmtDate(date) : ''
   }
 
   return (
-    <>
-      <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300 mb-3">
-        PINNED POSTS
-      </p>
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        {pinned.map(item => (
-          <PinnedCard key={`${item.kind}-${item.data.id}`} item={item} />
-        ))}
+    <div className="mb-6">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Pin size={10} className="text-gray-300" strokeWidth={2.5} />
+        <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300">
+          {t('고정됨', 'Pinned', 'Épinglé')}
+        </span>
       </div>
-    </>
+      <div className="border border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-50">
+        {pinned.map(item => {
+          const thumb    = getThumb(item)
+          const title    = getTitle(item)
+          const category = getCategory(item)
+          const meta     = getMeta(item)
+          const href     = getHref(item)
+          const isOpen   = item.kind === 'program' && item.data.status === 'open'
+
+          return (
+            <Link
+              key={`${item.kind}-${item.data.id}`}
+              to={href}
+              className="flex items-center gap-4 px-5 py-4 bg-white hover:bg-gray-50 transition-colors group"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">
+                    {category}
+                  </span>
+                  {meta && (
+                    <span className={`text-[10px] font-semibold ${isOpen ? 'text-gray-900' : 'text-gray-300'}`}>
+                      {meta}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[14px] font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-gray-700 transition-colors">
+                  {title}
+                </p>
+              </div>
+              {thumb && (
+                <img
+                  src={thumb}
+                  alt=""
+                  loading="lazy"
+                  className="w-14 h-14 rounded-xl object-cover shrink-0 border border-gray-100"
+                />
+              )}
+            </Link>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -742,13 +716,13 @@ function NoticeCard({ notice, lang, t }: {
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-medium text-gray-900 leading-snug mb-2 hover:text-gray-500 transition-colors">
+        <h3 className="text-[15px] font-semibold text-gray-900 leading-snug mb-2 hover:text-gray-600 transition-colors">
           {title}
         </h3>
 
         {/* Preview */}
         {preview && (
-          <p className="text-[13px] text-gray-500 leading-relaxed"
+          <p className="text-[14px] text-gray-500 leading-[1.6]"
              style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {preview}
           </p>
@@ -759,8 +733,8 @@ function NoticeCard({ notice, lang, t }: {
       </Link>
 
       {/* CTA */}
-      <div className="mt-3.5">
-        <Link to={boardHref} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+      <div className="mt-4">
+        <Link to={boardHref} className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors">
           {t('보기', 'Read', 'Lire')} →
         </Link>
       </div>
@@ -805,11 +779,11 @@ function ProgramCard({ track, lang, t }: {
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-medium text-gray-900 leading-snug mb-2">{name}</h3>
+        <h3 className="text-[15px] font-semibold text-gray-900 leading-snug mb-2">{name}</h3>
 
         {/* Preview */}
         {preview && (
-          <p className="text-[13px] text-gray-500 leading-relaxed mb-3"
+          <p className="text-[14px] text-gray-500 leading-[1.6] mb-3"
              style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {preview}
           </p>
@@ -867,14 +841,14 @@ function ContentCard({ content, lang, t }: {
 
       {/* Title */}
       <Link to={href}>
-        <h3 className="text-sm font-medium text-gray-900 leading-snug mb-2 hover:text-gray-500 transition-colors">
+        <h3 className="text-[15px] font-semibold text-gray-900 leading-snug mb-2 hover:text-gray-600 transition-colors">
           {title}
         </h3>
       </Link>
 
       {/* Preview */}
       {preview && (
-        <p className="text-[13px] text-gray-500 leading-relaxed"
+        <p className="text-[14px] text-gray-500 leading-[1.6]"
            style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {preview}
         </p>
@@ -884,8 +858,8 @@ function ContentCard({ content, lang, t }: {
       {thumb && <PostImage src={thumb} href={href} />}
 
       {/* CTA */}
-      <div className="mt-3.5">
-        <Link to={href} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+      <div className="mt-4">
+        <Link to={href} className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors">
           {t('읽기', 'Read', 'Lire')} →
         </Link>
       </div>
@@ -1069,8 +1043,8 @@ export default function Home() {
         t={t}
       />
 
-      {/* 4 · Pinned grid */}
-      <PinnedGrid items={allItems} lang={lang} />
+      {/* 4 · Pinned list */}
+      <PinnedList items={allItems} lang={lang} t={t} />
 
       {/* 5 · Feed */}
       <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300 mb-4">
@@ -1100,10 +1074,7 @@ export default function Home() {
 
   return (
     <>
-      <PageShell
-        left={<LeftSidebar lang={lang} />}
-        right={<SharedRightSidebar lang={lang} />}
-      >
+      <PageShell left={<LeftSidebar lang={lang} />}>
         {mainContent}
       </PageShell>
       <FloatingCreateButton onOpen={() => setSubmitTag('general')} />
