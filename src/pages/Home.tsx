@@ -349,22 +349,8 @@ function CommunityCard({ post, t }: {
             </p>
           )}
 
-          {/* 4 · Video */}
-          {post.video_url && (
-            <div className="overflow-hidden rounded-xl bg-black mb-3" style={{ maxHeight: 360 }}>
-              <video
-                src={post.video_url}
-                controls
-                playsInline
-                className="w-full object-cover"
-                style={{ maxHeight: 360 }}
-                onClick={e => e.stopPropagation()}
-              />
-            </div>
-          )}
-
-          {/* 4b · Image */}
-          {post.image_url && !post.video_url && (
+          {/* 4 · Image */}
+          {post.image_url && (
             <div
               className="overflow-hidden rounded-xl bg-gray-50 mb-3"
               style={{ maxHeight: 'clamp(200px, 40vw, 360px)' }}

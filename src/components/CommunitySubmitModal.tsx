@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { trackEvent } from '../lib/analytics'
 import { X, Image, Video, MapPin } from 'lucide-react'
+// Video icon kept for the disabled button only — no video upload logic
 import { submitCommunityPost } from '../lib/db'
-import { uploadContentImage, uploadCommunityVideo, isImageFile, isVideoFile } from '../lib/contentStorage'
+import { uploadContentImage, isImageFile } from '../lib/contentStorage'
 import { useLang } from '../context/LangContext'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -107,8 +108,8 @@ function AutoTextarea({
       rows={minRows}
       autoFocus={autoFocus}
       className={[
-        'w-full bg-transparent resize-none border-0 outline-none leading-relaxed',
-        'placeholder-gray-300 text-gray-900',
+        'w-full bg-transparent resize-none border-0 outline-none leading-relaxed text-gray-900',
+        'placeholder:text-gray-500 placeholder:opacity-100',
         className,
       ].join(' ')}
       style={{ fontSize: 15, overflow: 'hidden' }}
@@ -118,37 +119,25 @@ function AutoTextarea({
 
 // ─── Media grid ───────────────────────────────────────────────────────────────
 
-function MediaGrid({ previews, types, onRemove }: {
+function MediaGrid({ previews, onRemove }: {
   previews: string[]
-  types: string[]
   onRemove: (i: number) => void
 }) {
   if (!previews.length) return null
   return (
     <div className={['grid gap-1.5 mt-3', previews.length === 1 ? 'grid-cols-1' : 'grid-cols-2'].join(' ')}>
-      {previews.map((src, i) => {
-        const isVideo = types[i]?.startsWith('video/')
-        return (
-          <div key={i} className="relative rounded-xl overflow-hidden bg-gray-50 aspect-video">
-            {isVideo
-              ? <video src={src} className="w-full h-full object-cover" muted playsInline />
-              : <img src={src} alt="" className="w-full h-full object-cover" />
-            }
-            <button
-              type="button"
-              onClick={() => onRemove(i)}
-              className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center transition-colors"
-            >
-              <X size={10} color="white" strokeWidth={2.5} />
-            </button>
-            {isVideo && (
-              <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">
-                VIDEO
-              </span>
-            )}
-          </div>
-        )
-      })}
+      {previews.map((src, i) => (
+        <div key={i} className="relative rounded-xl overflow-hidden bg-gray-50 aspect-video">
+          <img src={src} alt="" className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={() => onRemove(i)}
+            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center transition-colors"
+          >
+            <X size={10} color="white" strokeWidth={2.5} />
+          </button>
+        </div>
+      ))}
     </div>
   )
 }
@@ -169,15 +158,13 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
   const [location,     setLocation]     = useState('')
   const [showLocation, setShowLocation] = useState(false)
   const [honeypot,     setHoneypot]     = useState('')
-  const [mediaFiles,   setMediaFiles]   = useState<File[]>([])
+  const [mediaFiles,    setMediaFiles]    = useState<File[]>([])
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([])
-  const [mediaTypes,   setMediaTypes]   = useState<string[]>([])
   const [uploading,    setUploading]    = useState(false)
   const [uploadStep,   setUploadStep]   = useState('')   // human-readable progress label
   const [submitting,   setSubmitting]   = useState(false)
   const [error,        setError]        = useState('')
-  const fileRef  = useRef<HTMLInputElement>(null)
-  const videoRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   // Clean up blob URLs on unmount
   useEffect(() => () => mediaPreviews.forEach(p => URL.revokeObjectURL(p)), [])  // eslint-disable-line react-hooks/exhaustive-deps
@@ -185,20 +172,22 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
   // ── Media ────────────────────────────────────────────────────────────────────
 
   function addFiles(files: File[]) {
-    const valid = files.filter(f => isImageFile(f) || f.type.startsWith('video/')).slice(0, 4 - mediaFiles.length)
+    const hasVideo = files.some(f => f.type.startsWith('video/'))
+    if (hasVideo) {
+      setError('영상 업로드는 준비 중입니다.')
+      return
+    }
+    const valid = files.filter(f => isImageFile(f)).slice(0, 4 - mediaFiles.length)
     if (!valid.length) return
     const newPreviews = valid.map(f => URL.createObjectURL(f))
-    const newTypes    = valid.map(f => f.type)
     setMediaFiles(prev => [...prev, ...valid].slice(0, 4))
     setMediaPreviews(prev => [...prev, ...newPreviews].slice(0, 4))
-    setMediaTypes(prev => [...prev, ...newTypes].slice(0, 4))
   }
 
   function removeMedia(i: number) {
     URL.revokeObjectURL(mediaPreviews[i])
     setMediaFiles(prev => prev.filter((_, idx) => idx !== i))
     setMediaPreviews(prev => prev.filter((_, idx) => idx !== i))
-    setMediaTypes(prev => prev.filter((_, idx) => idx !== i))
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────────
@@ -248,12 +237,10 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
 
     try {
       let imageUrl: string | null = null
-      let videoUrl: string | null = null
 
-      const imageFiles = mediaFiles.filter(f => isImageFile(f))
-      if (imageFiles.length > 0) {
+      if (mediaFiles.length > 0) {
         setUploading(true)
-        const firstImage = imageFiles[0]
+        const firstImage = mediaFiles[0]
         console.log('UPLOAD STEP 1 — image selected:', firstImage.name, `${(firstImage.size / 1024).toFixed(0)} KB`, firstImage.type)
         setUploadStep(`이미지 업로드 중… (${(firstImage.size / 1024 / 1024).toFixed(1)} MB)`)
         try {
@@ -269,10 +256,9 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         setUploading(false)
         setUploadStep('')
       }
-      // video_url stays null — video upload temporarily disabled
 
       // ── DB insert ─────────────────────────────────────────────────────────
-      console.log('UPLOAD STEP 5 — DB insert starting', { tag, title, imageUrl, videoUrl })
+      console.log('UPLOAD STEP 5 — DB insert starting', { tag, title, imageUrl })
       setUploadStep('게시물 저장 중…')
 
       const postId = await submitCommunityPost({
@@ -283,7 +269,6 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         contact:       contact.trim() || null,
         location:      location.trim() || null,
         image_url:     imageUrl,
-        video_url:     videoUrl,
         post_password: pw,
       })
 
@@ -343,17 +328,9 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         className="hidden"
         onChange={e => { addFiles(Array.from(e.target.files ?? [])); e.target.value = '' }}
       />
-      <input
-        ref={videoRef}
-        type="file"
-        accept="video/*"
-        multiple
-        className="hidden"
-        onChange={e => { addFiles(Array.from(e.target.files ?? [])); e.target.value = '' }}
-      />
 
       <div
-        className="bg-white w-full sm:max-w-lg sm:rounded-2xl shadow-2xl flex flex-col mt-auto sm:mt-0 rounded-t-2xl"
+        className="community-submit-modal bg-white w-full sm:max-w-lg sm:rounded-2xl shadow-2xl flex flex-col mt-auto sm:mt-0 rounded-t-2xl"
         style={{ animation: 'modal-up 0.18s ease-out', maxHeight: '92vh' }}
         onClick={e => e.stopPropagation()}
       >
@@ -385,7 +362,8 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         </div>
 
         {/* ── Guideline ── */}
-        <p className="px-5 pb-2 text-[11px] text-gray-300 leading-relaxed shrink-0">
+        <p className="px-5 pb-2 text-[13px] text-gray-600 leading-relaxed shrink-0">
+          <span className="text-red-500 font-bold text-[11px] mr-2">[contrast test v2]</span>
           {t(
             '몬트리올 생활에 필요한 이야기를 남겨주세요. 광고·스팸·혐오 표현은 삭제될 수 있습니다.',
             'Share anything useful for life in Montréal. Ads, spam, or hate speech may be removed.',
@@ -412,7 +390,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
                 placeholder={t('표시될 이름 *', 'Display name *', 'Pseudo *')}
                 maxLength={50}
                 autoFocus={!!getSavedNickname()}
-                className="w-full text-[14px] font-semibold text-gray-900 placeholder-gray-300 bg-transparent border-0 outline-none leading-tight"
+                className="w-full text-[14px] font-semibold text-gray-900 placeholder:text-gray-500 placeholder:opacity-100 bg-transparent border-0 outline-none leading-tight"
               />
               <input
                 type="text"
@@ -420,15 +398,14 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
                 onChange={e => setContact(e.target.value)}
                 placeholder={t('이메일 또는 인스타그램 (선택)', 'Email or Instagram (optional)', 'Email ou Instagram (optionnel)')}
                 maxLength={100}
-                className="w-full text-[11px] text-gray-300 placeholder-gray-200 bg-transparent border-0 outline-none mt-0.5"
-                style={{ fontSize: 12 }}
+                className="w-full text-[13px] text-gray-600 placeholder:text-gray-500 placeholder:opacity-100 bg-transparent border-0 outline-none mt-0.5"
               />
             </div>
           </div>
 
           {/* Password field */}
           <div className="mb-4 border border-gray-100 rounded-xl px-3 py-2.5">
-            <label className="block text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-300 mb-1">
+            <label className="block text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-700 mb-1">
               {t('삭제/수정 비밀번호 *', 'Post password *', 'Mot de passe *')}
             </label>
             <input
@@ -437,10 +414,10 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••"
               maxLength={100}
-              className="w-full text-[14px] text-gray-900 placeholder-gray-300 bg-transparent border-0 outline-none"
+              className="w-full text-[14px] text-gray-900 placeholder:text-gray-500 placeholder:opacity-100 bg-transparent border-0 outline-none"
               autoComplete="new-password"
             />
-            <p className="text-[10px] text-gray-300 mt-1">
+            <p className="text-[13px] text-gray-600 mt-1">
               {t('글 수정 또는 삭제할 때 필요합니다.', 'Required to edit or delete your post.', 'Nécessaire pour modifier ou supprimer.')}
             </p>
           </div>
@@ -464,7 +441,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
                   key={i}
                   type="button"
                   onClick={() => { setContent(t(ex.ko, ex.en, ex.fr)); contentRef.current?.focus() }}
-                  className="flex items-center gap-2 text-[12px] text-gray-200 hover:text-gray-400 transition-colors w-full text-left py-0.5"
+                  className="flex items-center gap-2 text-[14px] text-gray-600 hover:text-gray-900 transition-colors w-full text-left py-0.5"
                 >
                   <span>{ex.emoji}</span>
                   <span>{t(ex.ko, ex.en, ex.fr)}</span>
@@ -476,7 +453,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
           {/* Location input (when open) */}
           {showLocation && (
             <div className="mt-3 flex items-center gap-2 border-b border-gray-100 pb-2">
-              <MapPin size={13} className="text-gray-300 shrink-0" />
+              <MapPin size={13} className="text-gray-500 shrink-0" />
               <input
                 type="text"
                 value={location}
@@ -484,11 +461,11 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
                 placeholder={t('위치 입력 (예: Mile End, Atwater)', 'Location (e.g. Mile End, Atwater)', 'Lieu (ex: Mile End, Atwater)')}
                 maxLength={80}
                 autoFocus
-                className="flex-1 text-[13px] text-gray-700 placeholder-gray-300 bg-transparent border-0 outline-none"
+                className="flex-1 text-[13px] text-gray-700 placeholder:text-gray-500 placeholder:opacity-100 bg-transparent border-0 outline-none"
               />
               {location && (
                 <button type="button" onClick={() => { setLocation(''); setShowLocation(false) }}
-                  className="text-gray-300 hover:text-gray-500">
+                  className="text-gray-500 hover:text-gray-700">
                   <X size={12} />
                 </button>
               )}
@@ -496,7 +473,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
           )}
 
           {/* Media preview */}
-          <MediaGrid previews={mediaPreviews} types={mediaTypes} onRemove={removeMedia} />
+          <MediaGrid previews={mediaPreviews} onRemove={removeMedia} />
         </div>
 
         {/* ── Media action row ── */}
@@ -505,26 +482,25 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors"
             title={t('사진 추가', 'Add photo', 'Ajouter une photo')}
           >
             <Image size={16} />
             <span>Photo</span>
-            {mediaFiles.filter(f => isImageFile(f)).length > 0 && (
-              <span className="text-[10px] text-gray-300 font-medium">
-                {mediaFiles.filter(f => isImageFile(f)).length}
+            {mediaFiles.length > 0 && (
+              <span className="text-[11px] text-gray-500 font-medium">
+                {mediaFiles.length}
               </span>
             )}
           </button>
 
           {/* Video — temporarily disabled */}
           <span
-            className="flex items-center gap-1.5 text-[12px] text-gray-200 cursor-not-allowed select-none"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-gray-400 cursor-not-allowed select-none"
             title="영상 업로드는 준비 중입니다."
           >
             <Video size={16} />
-            <span>Video</span>
-            <span className="text-[9px] text-gray-200">준비 중</span>
+            <span>Video 준비 중</span>
           </span>
 
           {/* Location */}
@@ -533,7 +509,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
             onClick={() => setShowLocation(v => !v)}
             className={[
               'flex items-center gap-1.5 text-[12px] transition-colors',
-              showLocation || location ? 'text-gray-700 font-medium' : 'text-gray-400 hover:text-gray-700',
+              showLocation || location ? 'text-gray-800 font-semibold' : 'text-gray-600 font-medium hover:text-gray-900',
             ].join(' ')}
             title={t('위치 추가', 'Add location', 'Ajouter un lieu')}
           >
@@ -544,7 +520,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
 
           {/* Media count */}
           {mediaFiles.length > 0 && (
-            <span className="ml-auto text-[10px] text-gray-300">{mediaFiles.length}/4</span>
+            <span className="ml-auto text-[11px] text-gray-500">{mediaFiles.length}/4</span>
           )}
         </div>
 
@@ -558,10 +534,10 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
                   key={tg.value}
                   type="button"
                   onClick={() => setTag(tg.value)}
-                  className="text-[11px] font-medium px-3 py-1.5 rounded-full border transition-all"
+                  className="text-[13px] font-medium px-3 py-1.5 rounded-full border transition-all"
                   style={active
                     ? { background: 'var(--y)', borderColor: 'var(--y)', color: '#111', fontWeight: 700 }
-                    : { background: 'transparent', borderColor: '#E5E7EB', color: '#9CA3AF' }
+                    : { background: 'transparent', borderColor: '#D1D5DB', color: '#374151' }
                   }
                 >
                   {t(tg.ko, tg.en, tg.fr)}
@@ -588,7 +564,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
             ? (uploadStep || (uploading ? 'Uploading…' : 'Posting…'))
             : 'Post'}
           </button>
-          <p className="text-center text-[11px] text-gray-300 mt-2.5">
+          <p className="text-center text-[13px] text-gray-500 mt-2.5">
             {t(
               '작성한 글은 나중에 수정하거나 삭제할 수 있습니다.',
               'You can edit or delete your post later.',

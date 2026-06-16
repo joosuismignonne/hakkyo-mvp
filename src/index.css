@@ -23,6 +23,15 @@
   body { background: #fff; }
   /* Prevent iOS zoom on input focus */
   input, select, textarea { font-size: 16px; }
+  /* Ensure placeholder text is always readable (browsers default to ~40% opacity) */
+  ::placeholder { color: #9CA3AF; opacity: 1; }
+}
+
+/* Scoped placeholder fix for community modal — overrides any Tailwind or browser default */
+.community-submit-modal input::placeholder,
+.community-submit-modal textarea::placeholder {
+  color: #6b7280;
+  opacity: 1;
 }
 
 /* ── HAKKYO yellow brand tokens ── */

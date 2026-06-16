@@ -661,10 +661,8 @@ export async function getLeSettings(): Promise<LeSettings> {
 // Status workflow: pending → approved → published  (or → rejected)
 // Only 'published' rows appear on the homepage feed.
 
-// Confirmed live DB columns + new columns added by migration:
-// post_password — plain text for MVP, named clearly; hash later
-// video_url     — URL to uploaded video file
-const COMMUNITY_COLS = 'id, type, title, description, author_name, contact, location, link, image_url, video_url, status, created_at'
+// video_url column intentionally omitted — not in DB schema for MVP
+const COMMUNITY_COLS = 'id, type, title, description, author_name, contact, location, link, image_url, status, created_at'
 
 export interface CommunitySubmitPayload {
   type:          string
@@ -675,8 +673,7 @@ export interface CommunitySubmitPayload {
   location?:     string | null
   link?:         string | null
   image_url?:    string | null
-  video_url?:    string | null
-  post_password: string        // required — used for edit/delete auth
+  post_password: string
 }
 
 export async function submitCommunityPost(payload: CommunitySubmitPayload): Promise<string> {
@@ -696,11 +693,11 @@ export async function submitCommunityPost(payload: CommunitySubmitPayload): Prom
     location:      payload.location     ?? null,
     link:          payload.link         ?? null,
     image_url:     payload.image_url    ?? null,
-    video_url:     payload.video_url    ?? null,
     post_password: payload.post_password,
     status:        'published',
   }
 
+  console.log('FINAL COMMUNITY INSERT PAYLOAD', insertPayload)
   const { error } = await db().from('community_submissions').insert(insertPayload)
 
   if (error) {

@@ -225,7 +225,6 @@ export interface CommunitySubmission {
   location?: string | null
   link?: string | null
   image_url?: string | null
-  video_url?: string | null
   // post_password intentionally omitted from reads — used only in WHERE filters
   status: 'pending' | 'approved' | 'rejected' | 'published'
   created_at?: string

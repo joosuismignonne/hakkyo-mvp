@@ -415,19 +415,6 @@ export default function CommunityDetail() {
             {post.description}
           </p>
 
-          {/* Video */}
-          {post.video_url && (
-            <div className="overflow-hidden rounded-xl bg-black mb-6" style={{ maxHeight: 480 }}>
-              <video
-                src={post.video_url}
-                controls
-                playsInline
-                className="w-full"
-                style={{ maxHeight: 480 }}
-              />
-            </div>
-          )}
-
           {/* Image */}
           {post.image_url && (
             <div className="overflow-hidden rounded-xl mb-6 bg-gray-50" style={{ maxHeight: 480 }}>
