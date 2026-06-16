@@ -106,7 +106,7 @@ function IconLanguage() {
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const NAV = [
-  { to: '/',         icon: IconHome,      ko: '홈',      en: 'Home',      fr: 'Accueil',    exact: true  },
+  { to: '/',         icon: IconHome,      ko: 'For You', en: 'For You',   fr: 'Pour vous',  exact: true  },
   { to: '/programs', icon: IconPrograms,  ko: '프로그램', en: 'Programs',  fr: 'Programmes', exact: false },
   { to: '/board',    icon: IconCommunity, ko: '커뮤니티', en: 'Community', fr: 'Communauté', exact: false },
   { to: '/news',     icon: IconNews,      ko: '뉴스',    en: 'News',      fr: 'Actualités', exact: false },
