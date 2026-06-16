@@ -220,14 +220,24 @@ export interface CommunitySubmission {
   type: string
   title: string
   description: string
-  author_name?: string | null   // DB column: author_name
+  author_name?: string | null
   contact?: string | null
   location?: string | null
   link?: string | null
   image_url?: string | null
+  video_url?: string | null
+  // post_password intentionally omitted from reads — used only in WHERE filters
   status: 'pending' | 'approved' | 'rejected' | 'published'
   created_at?: string
   updated_at?: string
+}
+
+export interface CommunityComment {
+  id: string
+  post_id: string
+  nickname: string
+  content: string
+  created_at?: string
 }
 
 export interface AdminNotification {

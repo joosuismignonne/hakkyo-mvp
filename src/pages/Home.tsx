@@ -124,6 +124,26 @@ function HakkyoAvatar() {
   )
 }
 
+const AVATAR_COLORS = ['#F0C040', '#4ADE80', '#60A5FA', '#F472B6', '#A78BFA', '#FB923C']
+function avatarBg(name: string): string {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+}
+
+function NicknameAvatar({ name }: { name: string }) {
+  const initial = name ? [...name][0].toUpperCase() : '익'
+  const bg = avatarBg(name || '익')
+  return (
+    <div
+      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[13px] font-bold"
+      style={{ background: bg, color: bg === '#F0C040' ? '#111' : '#fff' }}
+    >
+      {initial}
+    </div>
+  )
+}
+
 function PostHeader({ time }: { time?: string | null }) {
   return (
     <div className="flex items-center gap-2.5 mb-3">
@@ -161,15 +181,6 @@ function PinIndicator() {
 
 // ─── Card action icons ────────────────────────────────────────────────────────
 
-function IcoHeart({ filled }: { filled: boolean }) {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'}
-         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-    </svg>
-  )
-}
-
 function IcoChat() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -199,25 +210,27 @@ function IcoBookmark({ filled }: { filled: boolean }) {
   )
 }
 
-function CardActions({ compact = false }: { compact?: boolean }) {
-  const [liked, setLiked] = useState(false)
+function CardActions({ compact = false, commentHref }: { compact?: boolean; commentHref?: string }) {
   const [saved, setSaved] = useState(false)
-
   const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation() }
 
   return (
     <div className={`flex items-center gap-${compact ? '3' : '4'} pt-3 border-t border-gray-50 mt-3`}>
-      <button
-        onClick={e => { stop(e); setLiked(l => !l) }}
-        className={`flex items-center gap-1.5 text-[11px] transition-colors ${liked ? 'text-red-400' : 'text-gray-300 hover:text-gray-500'}`}
-      >
-        <IcoHeart filled={liked} />
-        <span>Like</span>
-      </button>
-      <button className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-500 transition-colors">
-        <IcoChat />
-        <span>Reply</span>
-      </button>
+      {commentHref ? (
+        <a
+          href={commentHref}
+          onClick={stop}
+          className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-600 transition-colors"
+        >
+          <IcoChat />
+          <span>Comment</span>
+        </a>
+      ) : (
+        <button className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-500 transition-colors">
+          <IcoChat />
+          <span>Comment</span>
+        </button>
+      )}
       <button
         onClick={stop}
         className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-500 transition-colors"
@@ -303,16 +316,7 @@ function CommunityCard({ post, t }: {
 
           {/* 1 · Author row */}
           <div className="flex items-center gap-2.5 mb-3">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-              style={{ background: 'var(--y)' }}
-            >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <line x1="4"  y1="3" x2="4"  y2="13" stroke="#111" strokeWidth="2.2" strokeLinecap="round"/>
-                <line x1="12" y1="3" x2="12" y2="13" stroke="#111" strokeWidth="2.2" strokeLinecap="round"/>
-                <line x1="4"  y1="8" x2="12" y2="8"  stroke="#111" strokeWidth="2.2" strokeLinecap="round"/>
-              </svg>
-            </div>
+            <NicknameAvatar name={author} />
             <div className="flex-1 min-w-0">
               <p className="text-[14px] font-semibold text-gray-900 leading-none">{author}</p>
               {post.created_at && (
@@ -345,8 +349,22 @@ function CommunityCard({ post, t }: {
             </p>
           )}
 
-          {/* 4 · Image — constrained, inside padding, with rounded corners */}
-          {post.image_url && (
+          {/* 4 · Video */}
+          {post.video_url && (
+            <div className="overflow-hidden rounded-xl bg-black mb-3" style={{ maxHeight: 360 }}>
+              <video
+                src={post.video_url}
+                controls
+                playsInline
+                className="w-full object-cover"
+                style={{ maxHeight: 360 }}
+                onClick={e => e.stopPropagation()}
+              />
+            </div>
+          )}
+
+          {/* 4b · Image */}
+          {post.image_url && !post.video_url && (
             <div
               className="overflow-hidden rounded-xl bg-gray-50 mb-3"
               style={{ maxHeight: 'clamp(200px, 40vw, 360px)' }}
@@ -371,7 +389,7 @@ function CommunityCard({ post, t }: {
 
       {/* 6 · Actions */}
       <div className="px-5 pb-5">
-        <CardActions />
+        <CardActions commentHref={`/community/${post.id}#comments`} />
       </div>
     </article>
   )

@@ -7,7 +7,7 @@ import { isPublicMediaUrl } from './contentStorage'
 import { normalizeImageUrls } from './newsContent'
 import type {
   Session, ProgramTrack, Notice, Content, FormQuestion, Application,
-  CommunitySubmission, AdminNotification,
+  CommunitySubmission, CommunityComment, AdminNotification,
   ProgramApplication, ProgramApplicationStatus,
 } from '../types'
 
@@ -661,18 +661,22 @@ export async function getLeSettings(): Promise<LeSettings> {
 // Status workflow: pending → approved → published  (or → rejected)
 // Only 'published' rows appear on the homepage feed.
 
-// Only columns confirmed to exist in the live DB
-const COMMUNITY_COLS = 'id, type, title, description, author_name, contact, location, link, image_url, status, created_at'
+// Confirmed live DB columns + new columns added by migration:
+// post_password — plain text for MVP, named clearly; hash later
+// video_url     — URL to uploaded video file
+const COMMUNITY_COLS = 'id, type, title, description, author_name, contact, location, link, image_url, video_url, status, created_at'
 
 export interface CommunitySubmitPayload {
-  type:         string
-  title:        string
-  description:  string
-  author_name?: string | null   // DB column: author_name — shown as author in feed
-  contact?:     string | null
-  location?:    string | null
-  link?:        string | null
-  image_url?:   string | null
+  type:          string
+  title:         string
+  description:   string
+  author_name?:  string | null
+  contact?:      string | null
+  location?:     string | null
+  link?:         string | null
+  image_url?:    string | null
+  video_url?:    string | null
+  post_password: string        // required — used for edit/delete auth
 }
 
 export async function submitCommunityPost(payload: CommunitySubmitPayload): Promise<string> {
@@ -684,15 +688,17 @@ export async function submitCommunityPost(payload: CommunitySubmitPayload): Prom
 
   const insertPayload = {
     id,
-    type:        payload.type,
-    title:       payload.title,
-    description: payload.description,
-    author_name: payload.author_name ?? null,
-    contact:     payload.contact     ?? null,
-    location:    payload.location    ?? null,
-    link:        payload.link        ?? null,
-    image_url:   payload.image_url   ?? null,
-    status:      'published',
+    type:          payload.type,
+    title:         payload.title,
+    description:   payload.description,
+    author_name:   payload.author_name  ?? null,
+    contact:       payload.contact      ?? null,
+    location:      payload.location     ?? null,
+    link:          payload.link         ?? null,
+    image_url:     payload.image_url    ?? null,
+    video_url:     payload.video_url    ?? null,
+    post_password: payload.post_password,
+    status:        'published',
   }
 
   const { error } = await db().from('community_submissions').insert(insertPayload)
@@ -706,6 +712,90 @@ export async function submitCommunityPost(payload: CommunitySubmitPayload): Prom
   }
 
   return id
+}
+
+/** Verify post password without exposing the stored password to the client. */
+export async function verifyCommunityPostPassword(id: string, password: string): Promise<boolean> {
+  if (!isConfigured) return true
+  const { data } = await db()
+    .from('community_submissions')
+    .select('id')
+    .eq('id', id)
+    .eq('post_password', password)
+    .maybeSingle()
+  return data !== null
+}
+
+export async function editCommunityPost(
+  id: string,
+  password: string,
+  updates: { title?: string; description?: string; type?: string },
+): Promise<{ success: boolean }> {
+  if (!isConfigured) return { success: true }
+  const ok = await verifyCommunityPostPassword(id, password)
+  if (!ok) return { success: false }
+  const { error } = await db().from('community_submissions').update(updates).eq('id', id)
+  if (error) throw error
+  return { success: true }
+}
+
+export async function deleteCommunityPostByPassword(
+  id: string,
+  password: string,
+): Promise<{ success: boolean }> {
+  if (!isConfigured) return { success: true }
+  const ok = await verifyCommunityPostPassword(id, password)
+  if (!ok) return { success: false }
+  const { error } = await db().from('community_submissions').delete().eq('id', id)
+  if (error) throw error
+  return { success: true }
+}
+
+// ─── Community Comments ───────────────────────────────────────────────────────
+
+const COMMENT_COLS = 'id, post_id, nickname, content, created_at'
+
+export async function getCommunityComments(postId: string): Promise<CommunityComment[]> {
+  if (!isConfigured) return []
+  const { data, error } = await db()
+    .from('community_comments')
+    .select(COMMENT_COLS)
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true })
+  if (error) { console.warn('[community] getCommunityComments:', error.message); return [] }
+  return (data ?? []) as CommunityComment[]
+}
+
+export async function submitCommunityComment(
+  postId: string,
+  nickname: string,
+  password: string,
+  content: string,
+): Promise<string> {
+  const id = crypto.randomUUID()
+  if (!isConfigured) return id
+  const { error } = await db()
+    .from('community_comments')
+    .insert({ id, post_id: postId, nickname, post_password: password, content })
+  if (error) throw error
+  return id
+}
+
+export async function deleteCommunityComment(
+  commentId: string,
+  password: string,
+): Promise<{ success: boolean }> {
+  if (!isConfigured) return { success: true }
+  const { data: check } = await db()
+    .from('community_comments')
+    .select('id')
+    .eq('id', commentId)
+    .eq('post_password', password)
+    .maybeSingle()
+  if (!check) return { success: false }
+  const { error } = await db().from('community_comments').delete().eq('id', commentId)
+  if (error) throw error
+  return { success: true }
 }
 
 export async function updateCommunityPost(

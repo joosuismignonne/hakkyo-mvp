@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { trackEvent } from '../lib/analytics'
 import { X, Image, Video, MapPin } from 'lucide-react'
 import { submitCommunityPost } from '../lib/db'
-import { uploadContentImage, isImageFile } from '../lib/contentStorage'
+import { uploadContentImage, uploadCommunityVideo, isImageFile, isVideoFile } from '../lib/contentStorage'
 import { useLang } from '../context/LangContext'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -18,10 +18,10 @@ const TAGS = [
 ]
 
 const EXAMPLES = [
-  { emoji: '🏠', ko: '룸메이트를 구하고 있어요', en: 'Looking for a roommate', fr: 'Je cherche un colocataire' },
-  { emoji: '☕', ko: '좋은 카페를 발견했어요',   en: 'Found a great café',     fr: 'J\'ai trouvé un super café' },
-  { emoji: '🎉', ko: '이벤트를 열고 싶어요',    en: 'I want to host an event', fr: 'Je veux organiser un événement' },
-  { emoji: '❓', ko: '질문이 있어요',           en: 'I have a question',       fr: 'J\'ai une question' },
+  { emoji: '🏠', ko: '집 구하는 정보가 있어요',      en: 'I have housing tips to share',     fr: 'J\'ai des infos sur le logement' },
+  { emoji: '📚', ko: '같이 공부할 사람을 찾고 있어요', en: 'Looking for a study buddy',         fr: 'Je cherche quelqu\'un pour étudier' },
+  { emoji: '🎉', ko: '이벤트를 공유하고 싶어요',      en: 'I want to share an event',          fr: 'Je veux partager un événement' },
+  { emoji: '❓', ko: '질문이 있어요',              en: 'I have a question',                fr: 'J\'ai une question' },
 ]
 
 const SPAM_WORDS = ['spam', 'scam', 'casino', 'xxx', 'porn', 'buy now', 'click here', 'free money']
@@ -162,6 +162,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
   const contentRef = useRef<HTMLTextAreaElement>(null)
 
   const [nickname,     setNickname]     = useState(getSavedNickname)
+  const [password,     setPassword]     = useState('')
   const [contact,      setContact]      = useState('')
   const [tag,          setTag]          = useState(initialTag ?? 'general')
   const [content,      setContent]      = useState('')     // unified text area (title auto-derived on submit)
@@ -205,12 +206,17 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
     if (honeypot) return
 
     const nick = nickname.trim()
+    const pw   = password.trim()
     const body = content.trim()
     const title = deriveTitle(body)
 
     // Validation
     if (!nick) {
       setError(t('이름을 입력해주세요.', 'Please enter your display name.', 'Veuillez saisir un pseudo.'))
+      return
+    }
+    if (!pw) {
+      setError(t('삭제/수정 비밀번호를 입력해주세요.', 'Please set a post password.', 'Veuillez définir un mot de passe.'))
       return
     }
     if (body.length < 10) {
@@ -230,27 +236,32 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
     setError('')
 
     try {
-      // Upload first image (non-fatal)
+      // Upload media — first image → image_url, first video → video_url (non-fatal)
       let imageUrl: string | null = null
-      const imageFiles = mediaFiles.filter(f => isImageFile(f))
-      if (imageFiles.length > 0) {
+      let videoUrl: string | null = null
+      if (mediaFiles.length > 0) {
         setUploading(true)
         try {
-          imageUrl = await uploadContentImage(imageFiles[0], 'community')
+          const firstImage = mediaFiles.find(f => isImageFile(f))
+          const firstVideo = mediaFiles.find(f => isVideoFile(f))
+          if (firstImage) imageUrl = await uploadContentImage(firstImage, 'community')
+          if (firstVideo) videoUrl = await uploadCommunityVideo(firstVideo)
         } catch (uploadErr) {
-          console.warn('[CommunitySubmitModal] image upload failed (proceeding without):', uploadErr)
+          console.warn('[CommunitySubmitModal] media upload failed (proceeding without):', uploadErr)
         }
         setUploading(false)
       }
 
       const postId = await submitCommunityPost({
-        type:        tag,
-        title:       title,
-        description: body,
-        author_name: nick,
-        contact:     contact.trim() || null,
-        location:    location.trim() || null,
-        image_url:   imageUrl,
+        type:          tag,
+        title:         title,
+        description:   body,
+        author_name:   nick,
+        contact:       contact.trim() || null,
+        location:      location.trim() || null,
+        image_url:     imageUrl,
+        video_url:     videoUrl,
+        post_password: pw,
       })
 
       recordPost()
@@ -353,7 +364,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         {/* ── Guideline ── */}
         <p className="px-5 pb-2 text-[11px] text-gray-300 leading-relaxed shrink-0">
           {t(
-            '몬트리올 생활에 필요한 이야기라면 무엇이든 남겨주세요. 광고·스팸·혐오 표현은 삭제될 수 있습니다.',
+            '몬트리올 생활에 필요한 이야기를 남겨주세요. 광고·스팸·혐오 표현은 삭제될 수 있습니다.',
             'Share anything useful for life in Montréal. Ads, spam, or hate speech may be removed.',
             'Partagez tout ce qui est utile à Montréal. Les publicités, spams ou discours haineux peuvent être supprimés.',
           )}
@@ -363,23 +374,19 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         <div className="flex-1 overflow-y-auto px-5 pb-3 min-h-0">
 
           {/* Author row */}
-          <div className="flex items-start gap-3 mb-4">
+          <div className="flex items-start gap-3 mb-3">
             <div
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-              style={{ background: 'var(--y)' }}
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[15px] font-bold"
+              style={{ background: 'var(--y)', color: '#111' }}
             >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                <line x1="4"  y1="3" x2="4"  y2="13" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="12" y1="3" x2="12" y2="13" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="4"  y1="8" x2="12" y2="8"  stroke="#111" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+              {nickname.trim() ? [...nickname.trim()][0].toUpperCase() : '?'}
             </div>
             <div className="flex-1 pt-0.5">
               <input
                 type="text"
                 value={nickname}
                 onChange={e => setNickname(e.target.value)}
-                placeholder={t('표시될 이름', 'Display name', 'Votre pseudo')}
+                placeholder={t('표시될 이름 *', 'Display name *', 'Pseudo *')}
                 maxLength={50}
                 autoFocus={!!getSavedNickname()}
                 className="w-full text-[14px] font-semibold text-gray-900 placeholder-gray-300 bg-transparent border-0 outline-none leading-tight"
@@ -396,12 +403,31 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
             </div>
           </div>
 
+          {/* Password field */}
+          <div className="mb-4 border border-gray-100 rounded-xl px-3 py-2.5">
+            <label className="block text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-300 mb-1">
+              {t('삭제/수정 비밀번호 *', 'Post password *', 'Mot de passe *')}
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••"
+              maxLength={100}
+              className="w-full text-[14px] text-gray-900 placeholder-gray-300 bg-transparent border-0 outline-none"
+              autoComplete="new-password"
+            />
+            <p className="text-[10px] text-gray-300 mt-1">
+              {t('글 수정 또는 삭제할 때 필요합니다.', 'Required to edit or delete your post.', 'Nécessaire pour modifier ou supprimer.')}
+            </p>
+          </div>
+
           {/* Main content textarea — unified (title auto-derived on submit) */}
           <AutoTextarea
             textareaRef={contentRef}
             value={content}
             onChange={setContent}
-            placeholder={t('오늘은 어떤 일이 있었나요?', "What's happening in Montréal?", 'Que se passe-t-il à Montréal?')}
+            placeholder={t('몬트리올 생활에 필요한 이야기를 남겨주세요.', "Share something useful for life in Montréal.", 'Partagez quelque chose d\'utile pour Montréal.')}
             minRows={5}
             autoFocus={!getSavedNickname()}
             className="text-[15px] text-gray-800"

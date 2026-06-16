@@ -3,6 +3,7 @@ import { supabase, isConfigured } from './supabase'
 export const CONTENT_IMAGES_BUCKET = 'content-images'
 
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp|avif|svg)$/i
+const VIDEO_EXT = /\.(mp4|webm|mov|avi|mkv|m4v)$/i
 
 function storage() {
   if (!supabase) throw new Error('Supabase is not configured.')
@@ -22,6 +23,29 @@ export function isImageFile(file: File): boolean {
 
 export function filterImageFiles(files: Iterable<File>): File[] {
   return Array.from(files).filter(isImageFile)
+}
+
+export function isVideoFile(file: File): boolean {
+  if (file.type.startsWith('video/')) return true
+  return VIDEO_EXT.test(file.name)
+}
+
+/** Upload a video to the content-images bucket under community-videos/; returns public URL. */
+export async function uploadCommunityVideo(file: File): Promise<string> {
+  if (!isConfigured || !supabase) {
+    throw new Error('Supabase is not configured.')
+  }
+  const ext = safeExt(file.name)
+  const path = `community-videos/${crypto.randomUUID()}.${ext}`
+  const { error } = await storage().upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: file.type || undefined,
+  })
+  if (error) throw error
+  const { data } = storage().getPublicUrl(path)
+  if (!data.publicUrl) throw new Error('Failed to get public URL for video.')
+  return data.publicUrl
 }
 
 /** Upload to content-images bucket; returns public URL. */
