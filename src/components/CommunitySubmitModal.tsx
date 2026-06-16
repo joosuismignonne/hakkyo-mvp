@@ -335,20 +335,17 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         onClick={e => e.stopPropagation()}
       >
         {/* ── Top bar ── */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors"
           >
             <X size={18} />
           </button>
-
-          <span className="text-[13px] font-semibold text-gray-500 tracking-tight">
-            {t('새 게시물', 'New Post', 'Nouveau message')}
+          <span className="text-[14px] font-semibold text-gray-800 tracking-tight">
+            {t('새 게시글', 'New Post', 'Nouveau message')}
           </span>
-
-          {/* Compact "∗" CTA top-right */}
           <button
             type="button"
             onClick={handleSubmit}
@@ -362,8 +359,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         </div>
 
         {/* ── Guideline ── */}
-        <p className="px-5 pb-2 text-[13px] text-gray-600 leading-relaxed shrink-0">
-          <span className="text-red-500 font-bold text-[11px] mr-2">[contrast test v2]</span>
+        <p className="px-5 pb-3 text-[13px] text-gray-600 leading-relaxed shrink-0 border-b border-gray-100">
           {t(
             '몬트리올 생활에 필요한 이야기를 남겨주세요. 광고·스팸·혐오 표현은 삭제될 수 있습니다.',
             'Share anything useful for life in Montréal. Ads, spam, or hate speech may be removed.',
@@ -372,10 +368,10 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         </p>
 
         {/* ── Scrollable body ── */}
-        <div className="flex-1 overflow-y-auto px-5 pb-3 min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0">
 
           {/* Author row */}
-          <div className="flex items-start gap-3 mb-3">
+          <div className="flex items-start gap-3 px-5 pt-4 pb-3">
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[15px] font-bold"
               style={{ background: 'var(--y)', color: '#111' }}
@@ -398,13 +394,13 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
                 onChange={e => setContact(e.target.value)}
                 placeholder={t('이메일 또는 인스타그램 (선택)', 'Email or Instagram (optional)', 'Email ou Instagram (optionnel)')}
                 maxLength={100}
-                className="w-full text-[13px] text-gray-600 placeholder:text-gray-500 placeholder:opacity-100 bg-transparent border-0 outline-none mt-0.5"
+                className="w-full text-[13px] text-gray-600 placeholder:text-gray-500 placeholder:opacity-100 bg-transparent border-0 outline-none mt-1"
               />
             </div>
           </div>
 
           {/* Password field */}
-          <div className="mb-4 border border-gray-100 rounded-xl px-3 py-2.5">
+          <div className="mx-5 mb-3 border border-gray-200 rounded-xl px-3 py-2.5">
             <label className="block text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-700 mb-1">
               {t('삭제/수정 비밀번호 *', 'Post password *', 'Mot de passe *')}
             </label>
@@ -417,42 +413,49 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
               className="w-full text-[14px] text-gray-900 placeholder:text-gray-500 placeholder:opacity-100 bg-transparent border-0 outline-none"
               autoComplete="new-password"
             />
-            <p className="text-[13px] text-gray-600 mt-1">
+            <p className="text-[12px] text-gray-500 mt-1">
               {t('글 수정 또는 삭제할 때 필요합니다.', 'Required to edit or delete your post.', 'Nécessaire pour modifier ou supprimer.')}
             </p>
           </div>
 
-          {/* Main content textarea — unified (title auto-derived on submit) */}
-          <AutoTextarea
-            textareaRef={contentRef}
-            value={content}
-            onChange={setContent}
-            placeholder={t('몬트리올 생활에 필요한 이야기를 남겨주세요.', "Share something useful for life in Montréal.", 'Partagez quelque chose d\'utile pour Montréal.')}
-            minRows={5}
-            autoFocus={!getSavedNickname()}
-            className="text-[15px] text-gray-800"
-          />
+          {/* Main textarea */}
+          <div className="px-5">
+            <AutoTextarea
+              textareaRef={contentRef}
+              value={content}
+              onChange={setContent}
+              placeholder={t('몬트리올 생활에 필요한 이야기를 남겨주세요.', "Share something useful for life in Montréal.", 'Partagez quelque chose d\'utile pour Montréal.')}
+              minRows={6}
+              autoFocus={!getSavedNickname()}
+              className="text-[15px] text-gray-800"
+            />
+          </div>
 
-          {/* Example suggestions — tap to fill */}
+          {/* Example suggestions */}
           {showExamples && (
-            <div className="mt-2 space-y-1">
-              {EXAMPLES.map((ex, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => { setContent(t(ex.ko, ex.en, ex.fr)); contentRef.current?.focus() }}
-                  className="flex items-center gap-2 text-[14px] text-gray-600 hover:text-gray-900 transition-colors w-full text-left py-0.5"
-                >
-                  <span>{ex.emoji}</span>
-                  <span>{t(ex.ko, ex.en, ex.fr)}</span>
-                </button>
-              ))}
+            <div className="px-5 mt-1 mb-2">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.14em] mb-1.5">
+                {t('예시', 'Examples', 'Exemples')}
+              </p>
+              <div className="space-y-0.5">
+                {EXAMPLES.map((ex, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => { setContent(t(ex.ko, ex.en, ex.fr)); contentRef.current?.focus() }}
+                    className="flex items-center gap-2 text-[13px] text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors w-full text-left px-2 py-1.5 rounded-lg"
+                  >
+                    <span>{ex.emoji}</span>
+                    <span>{t(ex.ko, ex.en, ex.fr)}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Location input (when open) */}
+          {/* Location input */}
           {showLocation && (
-            <div className="mt-3 flex items-center gap-2 border-b border-gray-100 pb-2">
+            <div className="mx-5 mt-2 mb-1 flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2">
               <MapPin size={13} className="text-gray-500 shrink-0" />
               <input
                 type="text"
@@ -465,7 +468,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
               />
               {location && (
                 <button type="button" onClick={() => { setLocation(''); setShowLocation(false) }}
-                  className="text-gray-500 hover:text-gray-700">
+                  className="text-gray-400 hover:text-gray-700">
                   <X size={12} />
                 </button>
               )}
@@ -473,59 +476,50 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
           )}
 
           {/* Media preview */}
-          <MediaGrid previews={mediaPreviews} onRemove={removeMedia} />
+          <div className="px-5 pb-3">
+            <MediaGrid previews={mediaPreviews} onRemove={removeMedia} />
+          </div>
         </div>
 
         {/* ── Media action row ── */}
-        <div className="px-5 py-2.5 border-t border-gray-50 flex items-center gap-5 shrink-0">
-          {/* Photo — always clickable (up to 4 total) */}
+        <div className="px-5 py-2.5 border-t border-gray-100 flex items-center gap-5 shrink-0">
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
             className="flex items-center gap-1.5 text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors"
             title={t('사진 추가', 'Add photo', 'Ajouter une photo')}
           >
-            <Image size={16} />
+            <Image size={15} />
             <span>Photo</span>
             {mediaFiles.length > 0 && (
-              <span className="text-[11px] text-gray-500 font-medium">
-                {mediaFiles.length}
-              </span>
+              <span className="text-[11px] text-gray-500 font-medium">{mediaFiles.length}/4</span>
             )}
           </button>
 
-          {/* Video — temporarily disabled */}
           <span
             className="flex items-center gap-1.5 text-[13px] font-medium text-gray-400 cursor-not-allowed select-none"
             title="영상 업로드는 준비 중입니다."
           >
-            <Video size={16} />
+            <Video size={15} />
             <span>Video 준비 중</span>
           </span>
 
-          {/* Location */}
           <button
             type="button"
             onClick={() => setShowLocation(v => !v)}
             className={[
-              'flex items-center gap-1.5 text-[12px] transition-colors',
-              showLocation || location ? 'text-gray-800 font-semibold' : 'text-gray-600 font-medium hover:text-gray-900',
+              'flex items-center gap-1.5 text-[13px] font-medium transition-colors',
+              showLocation || location ? 'text-gray-800' : 'text-gray-600 hover:text-gray-900',
             ].join(' ')}
             title={t('위치 추가', 'Add location', 'Ajouter un lieu')}
           >
-            <MapPin size={16} />
+            <MapPin size={15} />
             <span>Location</span>
-            {location && <span className="text-[10px] text-gray-500 font-medium truncate max-w-[60px]">{location}</span>}
           </button>
-
-          {/* Media count */}
-          {mediaFiles.length > 0 && (
-            <span className="ml-auto text-[11px] text-gray-500">{mediaFiles.length}/4</span>
-          )}
         </div>
 
-        {/* ── Category pills ── */}
-        <div className="px-5 py-3 border-t border-gray-50 shrink-0">
+        {/* ── Category chips ── */}
+        <div className="px-5 py-3 border-t border-gray-100 shrink-0">
           <div className="flex gap-1.5 flex-wrap">
             {TAGS.map(tg => {
               const active = tag === tg.value
@@ -534,7 +528,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
                   key={tg.value}
                   type="button"
                   onClick={() => setTag(tg.value)}
-                  className="text-[13px] font-medium px-3 py-1.5 rounded-full border transition-all"
+                  className="text-[12px] font-medium px-3 py-1.5 rounded-full border transition-all"
                   style={active
                     ? { background: 'var(--y)', borderColor: 'var(--y)', color: '#111', fontWeight: 700 }
                     : { background: 'transparent', borderColor: '#D1D5DB', color: '#374151' }
@@ -552,19 +546,19 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
           <p className="px-5 pb-1 text-[12px] text-red-500 shrink-0 leading-snug">{error}</p>
         )}
 
-        {/* ── Submit ── */}
-        <div className="px-5 pt-2 pb-6 shrink-0">
+        {/* ── Post button + footer ── */}
+        <div className="px-5 pt-2 pb-5 shrink-0">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={busy}
-            className="btn-yellow w-full rounded-2xl py-3.5 text-[15px] font-bold disabled:opacity-40 transition-opacity"
+            className="btn-yellow w-full rounded-2xl py-3 text-[15px] font-bold disabled:opacity-40 transition-opacity"
           >
             {uploading || submitting
-            ? (uploadStep || (uploading ? 'Uploading…' : 'Posting…'))
-            : 'Post'}
+              ? (uploadStep || (uploading ? 'Uploading…' : 'Posting…'))
+              : t('게시하기', 'Post', 'Publier')}
           </button>
-          <p className="text-center text-[13px] text-gray-500 mt-2.5">
+          <p className="text-center text-[12px] text-gray-500 mt-2">
             {t(
               '작성한 글은 나중에 수정하거나 삭제할 수 있습니다.',
               'You can edit or delete your post later.',
