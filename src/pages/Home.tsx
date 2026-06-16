@@ -289,7 +289,7 @@ function CommunityCard({ post, t }: {
   t: (ko: string, en: string, fr: string) => string
 }) {
   const catLabel = COMMUNITY_SUBTYPE_LABEL[post.type] ?? 'General'
-  const author   = post.nickname?.trim() || t('익명', 'Anonymous', 'Anonyme')
+  const author   = post.author_name?.trim() || t('익명', 'Anonymous', 'Anonyme')
 
   return (
     <article className="rounded-2xl border border-gray-100 bg-white mb-3 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] hover:border-gray-200">

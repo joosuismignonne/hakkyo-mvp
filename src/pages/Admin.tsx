@@ -2803,7 +2803,7 @@ const COMMUNITY_CAT_LABEL: Record<string, string> = {
   other:              'Other',
 }
 
-type EditDraft = { title: string; description: string; type: string; tags: string[] }
+type EditDraft = { title: string; description: string; type: string }
 
 function CommunityAdmin() {
   const [submissions, setSubmissions] = useState<CommunitySubmission[]>([])
@@ -2812,7 +2812,7 @@ function CommunityAdmin() {
   const [saving,      setSaving]      = useState<string | null>(null)
   const [err,         setErr]         = useState('')
   const [editingId,   setEditingId]   = useState<string | null>(null)
-  const [draft,       setDraft]       = useState<EditDraft>({ title: '', description: '', type: 'housing', tags: [] })
+  const [draft,       setDraft]       = useState<EditDraft>({ title: '', description: '', type: 'housing' })
 
   function load() {
     setLoading(true)
@@ -2827,14 +2827,14 @@ function CommunityAdmin() {
 
   function startEdit(s: CommunitySubmission) {
     setEditingId(s.id)
-    setDraft({ title: s.title, description: s.description, type: s.type, tags: s.tags ?? [] })
+    setDraft({ title: s.title, description: s.description, type: s.type })
   }
 
   async function saveEdit(id: string) {
     setSaving(id)
     setErr('')
     try {
-      await updateCommunityPost(id, { title: draft.title, description: draft.description, type: draft.type, tags: draft.tags })
+      await updateCommunityPost(id, { title: draft.title, description: draft.description, type: draft.type })
       setSubmissions(prev => prev.map(s => s.id === id ? { ...s, ...draft } : s))
       setEditingId(null)
     } catch (e: unknown) {
@@ -2869,11 +2869,6 @@ function CommunityAdmin() {
     } finally {
       setSaving(null)
     }
-  }
-
-  const ALL_TAGS = ['housing','jobs','language_exchange','friends','events','general']
-  function toggleTag(tag: string) {
-    setDraft(d => ({ ...d, tags: d.tags.includes(tag) ? d.tags.filter(t => t !== tag) : [...d.tags, tag] }))
   }
 
   const visible = submissions.filter(s => filter === 'all' || s.status === filter)
@@ -2933,11 +2928,6 @@ function CommunityAdmin() {
                     ].join(' ')}>
                       {s.status}
                     </span>
-                    {s.source === 'public_submission' && (
-                      <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded uppercase tracking-wide">
-                        Public
-                      </span>
-                    )}
                     <span className="text-[10px] text-gray-400 uppercase tracking-wide">
                       {COMMUNITY_CAT_LABEL[s.type] ?? s.type}
                     </span>
@@ -3038,38 +3028,11 @@ function CommunityAdmin() {
                           ))}
                         </select>
                       </div>
-                      <div>
-                        <label className="label">Tags</label>
-                        <div className="flex flex-wrap gap-2">
-                          {ALL_TAGS.map(tag => (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => toggleTag(tag)}
-                              className={[
-                                'text-[11px] px-2.5 py-1 rounded-full border transition-colors',
-                                draft.tags.includes(tag)
-                                  ? 'bg-gray-900 text-white border-gray-900'
-                                  : 'border-gray-300 text-gray-500 hover:border-gray-500',
-                              ].join(' ')}
-                            >
-                              {tag}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   ) : (
                     <>
                       <h3 className="font-semibold text-gray-900 text-sm">{s.title}</h3>
                       <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{s.description}</p>
-                      {s.tags && s.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {s.tags.map(tag => (
-                            <span key={tag} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tag}</span>
-                          ))}
-                        </div>
-                      )}
                       {s.location && <p className="text-[11px] text-gray-400">📍 {s.location}</p>}
                       {s.link && (
                         <a href={s.link} target="_blank" rel="noopener noreferrer"
@@ -3084,8 +3047,8 @@ function CommunityAdmin() {
                         </div>
                       )}
                       <div className="flex items-center gap-3 pt-0.5">
-                        {s.nickname && <p className="text-[11px] text-gray-500 font-medium">{s.nickname}</p>}
-                        {s.contact  && <p className="text-[11px] text-gray-400">Contact: {s.contact}</p>}
+                        {s.author_name && <p className="text-[11px] text-gray-500 font-medium">{s.author_name}</p>}
+                        {s.contact     && <p className="text-[11px] text-gray-400">Contact: {s.contact}</p>}
                       </div>
                     </>
                   )}

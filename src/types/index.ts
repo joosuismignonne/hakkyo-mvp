@@ -217,13 +217,11 @@ export type CommunityCategory =
 
 export interface CommunitySubmission {
   id: string
-  type: string           // DB column: type — stores category slug
+  type: string
   title: string
   description: string
-  nickname?: string | null  // public author display name
-  contact?: string | null   // optional, private contact info
-  source?: string | null    // 'admin' | 'public_submission'
-  tags?: string[] | null    // optional extra tags
+  author_name?: string | null   // DB column: author_name
+  contact?: string | null
   location?: string | null
   link?: string | null
   image_url?: string | null

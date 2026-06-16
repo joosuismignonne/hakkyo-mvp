@@ -247,10 +247,8 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         type:        tag,
         title:       title,
         description: body,
-        nickname:    nick,
+        author_name: nick,
         contact:     contact.trim() || null,
-        source:      'public_submission',
-        tags:        [tag],
         location:    location.trim() || null,
         image_url:   imageUrl,
       })
