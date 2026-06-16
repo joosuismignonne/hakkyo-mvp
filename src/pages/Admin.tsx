@@ -9,7 +9,7 @@ import {
   getApplications, setApplicationStatus,
   getProgramApplications, updateProgramApplicationStatus, updateProgramApplicationNotes,
   getLeSettings, saveLeSettings,
-  getAllCommunitySubmissions, setCommunitySubmissionStatus, deleteCommunitySubmission,
+  getAllCommunitySubmissions, setCommunitySubmissionStatus, deleteCommunitySubmission, updateCommunityPost,
   getAdminNotifications, markNotificationRead, markAllNotificationsRead,
 } from '../lib/db'
 import type { LeSettings } from '../lib/db'
@@ -2803,12 +2803,16 @@ const COMMUNITY_CAT_LABEL: Record<string, string> = {
   other:              'Other',
 }
 
+type EditDraft = { title: string; description: string; type: string; tags: string[] }
+
 function CommunityAdmin() {
   const [submissions, setSubmissions] = useState<CommunitySubmission[]>([])
   const [loading,     setLoading]     = useState(true)
-  const [filter,      setFilter]      = useState<'all' | 'pending' | 'approved' | 'rejected' | 'published'>('pending')
+  const [filter,      setFilter]      = useState<'all' | 'pending' | 'approved' | 'rejected' | 'published'>('all')
   const [saving,      setSaving]      = useState<string | null>(null)
   const [err,         setErr]         = useState('')
+  const [editingId,   setEditingId]   = useState<string | null>(null)
+  const [draft,       setDraft]       = useState<EditDraft>({ title: '', description: '', type: 'housing', tags: [] })
 
   function load() {
     setLoading(true)
@@ -2820,6 +2824,25 @@ function CommunityAdmin() {
   }
 
   useEffect(load, [])
+
+  function startEdit(s: CommunitySubmission) {
+    setEditingId(s.id)
+    setDraft({ title: s.title, description: s.description, type: s.type, tags: s.tags ?? [] })
+  }
+
+  async function saveEdit(id: string) {
+    setSaving(id)
+    setErr('')
+    try {
+      await updateCommunityPost(id, { title: draft.title, description: draft.description, type: draft.type, tags: draft.tags })
+      setSubmissions(prev => prev.map(s => s.id === id ? { ...s, ...draft } : s))
+      setEditingId(null)
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to save.')
+    } finally {
+      setSaving(null)
+    }
+  }
 
   async function setStatus(id: string, status: CommunitySubmission['status']) {
     setSaving(id)
@@ -2846,6 +2869,11 @@ function CommunityAdmin() {
     } finally {
       setSaving(null)
     }
+  }
+
+  const ALL_TAGS = ['housing','jobs','help','language_exchange','life_montreal','questions']
+  function toggleTag(tag: string) {
+    setDraft(d => ({ ...d, tags: d.tags.includes(tag) ? d.tags.filter(t => t !== tag) : [...d.tags, tag] }))
   }
 
   const visible = submissions.filter(s => filter === 'all' || s.status === filter)
@@ -2889,106 +2917,182 @@ function CommunityAdmin() {
         <p className="text-sm text-gray-400 py-12 text-center">No submissions in this category.</p>
       ) : (
         <div className="space-y-4">
-          {visible.map(s => (
-            <div key={s.id} className="border border-gray-200 rounded-xl overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <div className="flex items-center gap-2 flex-wrap min-w-0">
-                  <span className={[
-                    'text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded',
-                    s.status === 'pending'   ? 'bg-gray-200 text-gray-700'  :
-                    s.status === 'approved'  ? 'bg-blue-100 text-blue-700'  :
-                    s.status === 'published' ? 'bg-gray-900 text-white'     :
-                    'bg-gray-100 text-gray-400 line-through',
-                  ].join(' ')}>
-                    {s.status}
-                  </span>
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wide">
-                    {COMMUNITY_CAT_LABEL[s.type] ?? s.type}
-                  </span>
-                  <span className="text-[10px] text-gray-300">
-                    {s.created_at?.slice(0, 10) ?? ''}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* pending → approve */}
-                  {s.status === 'pending' && (
-                    <button
-                      onClick={() => setStatus(s.id, 'approved')}
-                      disabled={saving === s.id}
-                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40"
-                    >
-                      Approve
-                    </button>
-                  )}
-                  {/* approved → publish */}
-                  {s.status === 'approved' && (
-                    <button
-                      onClick={() => setStatus(s.id, 'published')}
-                      disabled={saving === s.id}
-                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors disabled:opacity-40"
-                    >
-                      Publish
-                    </button>
-                  )}
-                  {/* published → unpublish (back to approved) */}
-                  {s.status === 'published' && (
-                    <button
-                      onClick={() => setStatus(s.id, 'approved')}
-                      disabled={saving === s.id}
-                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-500 transition-colors disabled:opacity-40"
-                    >
-                      Unpublish
-                    </button>
-                  )}
-                  {/* reject (available for pending or approved) */}
-                  {(s.status === 'pending' || s.status === 'approved') && (
-                    <button
-                      onClick={() => setStatus(s.id, 'rejected')}
-                      disabled={saving === s.id}
-                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-500 transition-colors disabled:opacity-40"
-                    >
-                      Reject
-                    </button>
-                  )}
-                  <button
-                    onClick={() => remove(s.id)}
-                    disabled={saving === s.id}
-                    className="text-[11px] text-gray-300 hover:text-red-500 transition-colors px-2 py-1.5 disabled:opacity-40"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="px-4 py-4 space-y-3">
-                <h3 className="font-semibold text-gray-900 text-sm">{s.title}</h3>
-                <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{s.description}</p>
-                {s.location && (
-                  <p className="text-[11px] text-gray-400">📍 {s.location}</p>
-                )}
-                {s.link && (
-                  <a href={s.link} target="_blank" rel="noopener noreferrer"
-                     className="text-[11px] text-blue-500 hover:underline break-all block">
-                    {s.link}
-                  </a>
-                )}
-                {s.image_url && (
-                  <div className="rounded-lg overflow-hidden bg-gray-50 border border-gray-100" style={{ maxHeight: 300 }}>
-                    <img
-                      src={s.image_url}
-                      alt=""
-                      className="w-full object-cover"
-                      style={{ maxHeight: 300 }}
-                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-                    />
+          {visible.map(s => {
+            const isEditing = editingId === s.id
+            return (
+              <div key={s.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-b border-gray-100">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <span className={[
+                      'text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded',
+                      s.status === 'pending'   ? 'bg-gray-200 text-gray-700'  :
+                      s.status === 'approved'  ? 'bg-blue-100 text-blue-700'  :
+                      s.status === 'published' ? 'bg-gray-900 text-white'     :
+                      'bg-gray-100 text-gray-400 line-through',
+                    ].join(' ')}>
+                      {s.status}
+                    </span>
+                    {s.source === 'public_submission' && (
+                      <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded uppercase tracking-wide">
+                        Public
+                      </span>
+                    )}
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                      {COMMUNITY_CAT_LABEL[s.type] ?? s.type}
+                    </span>
+                    <span className="text-[10px] text-gray-300">
+                      {s.created_at?.slice(0, 10) ?? ''}
+                    </span>
                   </div>
-                )}
-                <p className="text-[11px] text-gray-400 pt-0.5">Contact: {s.contact}</p>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Edit toggle */}
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={() => saveEdit(s.id)}
+                          disabled={saving === s.id}
+                          className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors disabled:opacity-40"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="text-[11px] text-gray-400 hover:text-gray-700 transition-colors px-2 py-1.5"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => startEdit(s)}
+                        className="text-[11px] text-gray-400 hover:text-gray-700 transition-colors px-2 py-1.5"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {/* Status actions */}
+                    {!isEditing && s.status === 'pending' && (
+                      <button
+                        onClick={() => setStatus(s.id, 'approved')}
+                        disabled={saving === s.id}
+                        className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40"
+                      >
+                        Approve
+                      </button>
+                    )}
+                    {!isEditing && s.status === 'approved' && (
+                      <button
+                        onClick={() => setStatus(s.id, 'published')}
+                        disabled={saving === s.id}
+                        className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors disabled:opacity-40"
+                      >
+                        Publish
+                      </button>
+                    )}
+                    {!isEditing && s.status === 'published' && (
+                      <button
+                        onClick={() => setStatus(s.id, 'approved')}
+                        disabled={saving === s.id}
+                        className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-500 transition-colors disabled:opacity-40"
+                      >
+                        Unpublish
+                      </button>
+                    )}
+                    {!isEditing && (s.status === 'pending' || s.status === 'approved') && (
+                      <button
+                        onClick={() => setStatus(s.id, 'rejected')}
+                        disabled={saving === s.id}
+                        className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-500 transition-colors disabled:opacity-40"
+                      >
+                        Reject
+                      </button>
+                    )}
+                    <button
+                      onClick={() => remove(s.id)}
+                      disabled={saving === s.id}
+                      className="text-[11px] text-gray-300 hover:text-red-500 transition-colors px-2 py-1.5 disabled:opacity-40"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                {/* Body — view or edit */}
+                <div className="px-4 py-4 space-y-3">
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="label">Title</label>
+                        <input className="input" value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} maxLength={120} />
+                      </div>
+                      <div>
+                        <label className="label">Body</label>
+                        <textarea className="input resize-y" rows={5} value={draft.description} onChange={e => setDraft(d => ({ ...d, description: e.target.value }))} maxLength={2000} />
+                      </div>
+                      <div>
+                        <label className="label">Category</label>
+                        <select className="input" value={draft.type} onChange={e => setDraft(d => ({ ...d, type: e.target.value }))}>
+                          {Object.entries(COMMUNITY_CAT_LABEL).map(([v, l]) => (
+                            <option key={v} value={v}>{l}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label">Tags</label>
+                        <div className="flex flex-wrap gap-2">
+                          {ALL_TAGS.map(tag => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => toggleTag(tag)}
+                              className={[
+                                'text-[11px] px-2.5 py-1 rounded-full border transition-colors',
+                                draft.tags.includes(tag)
+                                  ? 'bg-gray-900 text-white border-gray-900'
+                                  : 'border-gray-300 text-gray-500 hover:border-gray-500',
+                              ].join(' ')}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="font-semibold text-gray-900 text-sm">{s.title}</h3>
+                      <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{s.description}</p>
+                      {s.tags && s.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {s.tags.map(tag => (
+                            <span key={tag} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                      {s.location && <p className="text-[11px] text-gray-400">📍 {s.location}</p>}
+                      {s.link && (
+                        <a href={s.link} target="_blank" rel="noopener noreferrer"
+                           className="text-[11px] text-blue-500 hover:underline break-all block">
+                          {s.link}
+                        </a>
+                      )}
+                      {s.image_url && (
+                        <div className="rounded-lg overflow-hidden bg-gray-50 border border-gray-100" style={{ maxHeight: 300 }}>
+                          <img src={s.image_url} alt="" className="w-full object-cover" style={{ maxHeight: 300 }}
+                               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 pt-0.5">
+                        {s.nickname && <p className="text-[11px] text-gray-500 font-medium">{s.nickname}</p>}
+                        {s.contact  && <p className="text-[11px] text-gray-400">Contact: {s.contact}</p>}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

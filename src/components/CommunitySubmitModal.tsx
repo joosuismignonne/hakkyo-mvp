@@ -4,49 +4,89 @@ import { X } from 'lucide-react'
 import { submitCommunityPost } from '../lib/db'
 import { useLang } from '../context/LangContext'
 
-const SUBTYPES: { value: string; label: string }[] = [
-  { value: 'housing',            label: 'Housing' },
-  { value: 'jobs',               label: 'Jobs' },
-  { value: 'looking_for_people', label: 'Roommates' },
-  { value: 'language_exchange',  label: 'Language Exchange' },
-  { value: 'other',              label: 'General' },
+const TAGS = [
+  { value: 'housing',          label: { ko: '주거',        en: 'Housing',          fr: 'Logement'       } },
+  { value: 'jobs',             label: { ko: '취업',        en: 'Jobs',             fr: 'Emploi'         } },
+  { value: 'help',             label: { ko: '도움',        en: 'Help',             fr: 'Aide'           } },
+  { value: 'language_exchange',label: { ko: '언어 교환',   en: 'Language Exchange',fr: 'Échange'        } },
+  { value: 'life_montreal',    label: { ko: '몬트리올 생활',en: 'Life in Montréal', fr: 'Vie à Montréal' } },
+  { value: 'questions',        label: { ko: '질문',        en: 'Questions',        fr: 'Questions'      } },
 ]
 
-interface Props {
-  onClose: () => void
+const SPAM_WORDS = ['spam', 'scam', 'casino', 'xxx', 'porn', 'buy now', 'click here', 'free money']
+
+function checkSpam(text: string): boolean {
+  const lower = text.toLowerCase()
+  return SPAM_WORDS.some(w => lower.includes(w))
 }
+
+function getRateLimitKey() { return 'hakkyo_post_times' }
+
+function canPost(): boolean {
+  try {
+    const raw = localStorage.getItem(getRateLimitKey())
+    const times: number[] = raw ? JSON.parse(raw) : []
+    const window = 10 * 60 * 1000
+    const recent = times.filter(t => Date.now() - t < window)
+    return recent.length < 3
+  } catch { return true }
+}
+
+function recordPost() {
+  try {
+    const raw = localStorage.getItem(getRateLimitKey())
+    const times: number[] = raw ? JSON.parse(raw) : []
+    const window = 10 * 60 * 1000
+    const recent = times.filter(t => Date.now() - t < window)
+    recent.push(Date.now())
+    localStorage.setItem(getRateLimitKey(), JSON.stringify(recent))
+  } catch {}
+}
+
+interface Props { onClose: () => void }
 
 export default function CommunitySubmitModal({ onClose }: Props) {
   const { t } = useLang()
 
-  const [name,        setName]        = useState('')
+  const [nickname,    setNickname]    = useState('')
   const [contact,     setContact]     = useState('')
-  const [subtype,     setSubtype]     = useState('housing')
+  const [tag,         setTag]         = useState('housing')
   const [title,       setTitle]       = useState('')
   const [description, setDescription] = useState('')
-  const [imageUrl,    setImageUrl]    = useState('')
+  const [honeypot,    setHoneypot]    = useState('')   // must stay empty
   const [submitting,  setSubmitting]  = useState(false)
   const [done,        setDone]        = useState(false)
   const [error,       setError]       = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || !contact.trim() || !title.trim() || !description.trim()) return
+    if (honeypot) return   // bot detected
+
+    const nick  = nickname.trim()
+    const ttl   = title.trim()
+    const desc  = description.trim()
+
+    if (!nick)         { setError(t('닉네임을 입력하세요.', 'Please enter a nickname.', 'Veuillez saisir un pseudonyme.')); return }
+    if (ttl.length < 5)  { setError(t('제목을 5자 이상 입력하세요.', 'Title must be at least 5 characters.', 'Le titre doit comporter au moins 5 caractères.')); return }
+    if (desc.length < 20){ setError(t('내용을 20자 이상 입력하세요.', 'Body must be at least 20 characters.', 'Le contenu doit comporter au moins 20 caractères.')); return }
+    if (checkSpam(ttl) || checkSpam(desc)) { setError(t('허용되지 않는 내용이 포함되어 있습니다.', 'Your post contains disallowed content.', 'Votre message contient du contenu interdit.')); return }
+    if (!canPost())    { setError(t('10분 내 3개까지만 게시할 수 있습니다.', 'You can post at most 3 times per 10 minutes.', 'Maximum 3 publications par 10 minutes.')); return }
+
     setSubmitting(true)
     setError('')
     try {
-      // Combine name + contact into the single DB 'contact' column
-      const contactValue = name.trim()
-        ? `${name.trim()} · ${contact.trim()}`
-        : contact.trim()
       await submitCommunityPost({
-        type:        subtype,            // DB column is 'type' — stores the subtype value
-        title:       title.trim(),
-        description: description.trim(),
-        contact:     contactValue,
-        image_url:   imageUrl.trim() || null,
+        type:        tag,
+        title:       ttl,
+        description: desc,
+        nickname:    nick,
+        contact:     contact.trim() || null,
+        source:      'public_submission',
+        tags:        [tag],
       })
-      trackEvent('community_submit_click', { subtype })
+      recordPost()
+      trackEvent('community_submit_click', { tag })
+      window.dispatchEvent(new CustomEvent('hakkyo:community-post'))
       setDone(true)
     } catch {
       setError(t(
@@ -76,7 +116,7 @@ export default function CommunitySubmitModal({ onClose }: Props) {
               Community
             </p>
             <h2 className="text-sm font-semibold text-gray-900">
-              {t('HAKKYO에 제출하기', 'Submit to HAKKYO', 'Soumettre à HAKKYO')}
+              {t('게시물 작성', 'Write a Post', 'Écrire un message')}
             </h2>
           </div>
           <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors p-1">
@@ -85,7 +125,6 @@ export default function CommunitySubmitModal({ onClose }: Props) {
         </div>
 
         {done ? (
-          /* Success state */
           <div className="flex flex-col items-center justify-center px-5 py-14 text-center">
             <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mb-5">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,20 +132,13 @@ export default function CommunitySubmitModal({ onClose }: Props) {
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">
-              {t('제출 완료', 'Submitted', 'Envoyé')}
+              {t('게시 완료', 'Published', 'Publié')}
             </h3>
-            <p className="text-[13px] text-gray-500 leading-relaxed mb-1">
+            <p className="text-[13px] text-gray-500 leading-relaxed mb-8">
               {t(
-                '제출해 주셔서 감사합니다.',
-                'Thank you for your submission.',
-                'Merci pour votre envoi.',
-              )}
-            </p>
-            <p className="text-[12px] text-gray-400 leading-relaxed mb-8">
-              {t(
-                '관리자 검토 후 피드에 게시됩니다.',
-                'It will appear in the feed after admin review.',
-                'Il apparaîtra dans le fil après révision par un administrateur.',
+                '게시물이 커뮤니티 피드에 바로 게시되었습니다.',
+                'Your post is now live in the community feed.',
+                'Votre message est maintenant publié dans le fil communautaire.',
               )}
             </p>
             <button onClick={onClose} className="btn-black px-8">
@@ -114,66 +146,74 @@ export default function CommunitySubmitModal({ onClose }: Props) {
             </button>
           </div>
         ) : (
-          /* Form */
           <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
-            <p className="text-[12px] text-gray-400 leading-relaxed">
-              {t(
-                '커뮤니티 게시물은 관리자 검토 후 피드에 게시됩니다.',
-                'Community posts are reviewed by our team before appearing in the feed.',
-                'Les publications sont vérifiées par notre équipe avant d\'apparaître dans le fil.',
-              )}
-            </p>
+            {/* Community guidelines */}
+            <div className="bg-gray-50 rounded-xl px-4 py-3 space-y-1.5">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+                {t('커뮤니티 가이드라인', 'Community Guidelines', 'Règles communautaires')}
+              </p>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                {t(
+                  '이 공간은 몬트리올에서 생활하는 한국어 커뮤니티를 위한 곳입니다. 서로 존중하고, 도움이 되는 내용을 공유해 주세요. 광고, 스팸, 혐오 표현, 개인정보 포함 게시물은 삭제될 수 있습니다.',
+                  'This space is for the Korean community in Montréal. Be respectful and share helpful content. Ads, spam, hate speech, or personal information may be removed.',
+                  'Cet espace est destiné à la communauté coréenne de Montréal. Soyez respectueux et partagez du contenu utile. Les publicités, spams, discours haineux ou informations personnelles peuvent être supprimés.',
+                )}
+              </p>
+            </div>
 
-            {/* Name */}
+            {/* Honeypot (hidden) */}
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={e => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ display: 'none' }}
+            />
+
+            {/* Nickname */}
             <div>
               <label className="label">
-                {t('이름', 'Name', 'Nom')} <span className="text-gray-400">*</span>
+                {t('닉네임', 'Nickname', 'Pseudonyme')} <span className="text-gray-400">*</span>
               </label>
               <input
                 className="input"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder={t('홍길동', 'Your name', 'Votre nom')}
+                value={nickname}
+                onChange={e => setNickname(e.target.value)}
+                placeholder={t('커뮤니티에서 표시될 이름', 'Name shown on your post', 'Nom affiché sur votre message')}
+                maxLength={50}
                 required
               />
             </div>
 
-            {/* Contact */}
+            {/* Contact (optional) */}
             <div>
               <label className="label">
-                {t('연락처', 'Contact', 'Contact')} <span className="text-gray-400">*</span>
+                {t('연락처', 'Contact', 'Contact')}{' '}
+                <span className="text-gray-300 normal-case tracking-normal font-normal">
+                  {t('(선택 · 비공개)', '(optional · private)', '(optionnel · privé)')}
+                </span>
               </label>
               <input
                 className="input"
                 value={contact}
                 onChange={e => setContact(e.target.value)}
-                placeholder={t('이메일 또는 전화번호', 'Email or phone', 'E-mail ou téléphone')}
-                required
+                placeholder={t('이메일 또는 인스타그램', 'Email or Instagram', 'E-mail ou Instagram')}
+                maxLength={100}
               />
             </div>
 
-            {/* Category — always Community */}
+            {/* Tag */}
             <div>
               <label className="label">
-                {t('카테고리', 'Category', 'Catégorie')}
+                {t('태그', 'Tag', 'Étiquette')} <span className="text-gray-400">*</span>
               </label>
-              <div className="input bg-gray-50 text-gray-400 cursor-not-allowed select-none">
-                {t('커뮤니티', 'Community', 'Communauté')}
-              </div>
-            </div>
-
-            {/* Subtype */}
-            <div>
-              <label className="label">
-                {t('유형', 'Subtype', 'Sous-type')} <span className="text-gray-400">*</span>
-              </label>
-              <select
-                className="input"
-                value={subtype}
-                onChange={e => setSubtype(e.target.value)}
-              >
-                {SUBTYPES.map(s => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
+              <select className="input" value={tag} onChange={e => setTag(e.target.value)}>
+                {TAGS.map(tg => (
+                  <option key={tg.value} value={tg.value}>
+                    {t(tg.label.ko, tg.label.en, tg.label.fr)}
+                  </option>
                 ))}
               </select>
             </div>
@@ -187,63 +227,45 @@ export default function CommunitySubmitModal({ onClose }: Props) {
                 className="input"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder={t('간단한 제목을 입력하세요', 'A short title', 'Un titre court')}
+                placeholder={t('간단한 제목 (5자 이상)', 'Short title (min 5 chars)', 'Titre court (min 5 caractères)')}
                 maxLength={120}
                 required
               />
             </div>
 
-            {/* Description */}
+            {/* Body */}
             <div>
               <label className="label">
-                {t('내용', 'Description', 'Description')} <span className="text-gray-400">*</span>
+                {t('내용', 'Body', 'Contenu')} <span className="text-gray-400">*</span>
               </label>
               <textarea
                 className="input resize-none"
-                rows={4}
+                rows={5}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder={t(
-                  '자세한 내용을 입력하세요',
-                  'Tell us more about your post',
-                  'Décrivez votre publication',
+                  '자세한 내용을 입력하세요 (20자 이상)',
+                  'Tell us more (min 20 characters)',
+                  'Décrivez votre message (min 20 caractères)',
                 )}
-                maxLength={800}
+                maxLength={2000}
                 required
               />
-              <p className="text-[10px] text-gray-300 mt-1 text-right">{description.length}/800</p>
-            </div>
-
-            {/* Image URL (optional) */}
-            <div>
-              <label className="label">
-                {t('이미지 URL', 'Image URL', 'URL de l\'image')}{' '}
-                <span className="text-gray-300 normal-case tracking-normal font-normal">
-                  {t('(선택)', '(optional)', '(optionnel)')}
-                </span>
-              </label>
-              <input
-                className="input"
-                value={imageUrl}
-                onChange={e => setImageUrl(e.target.value)}
-                placeholder="https://…"
-                type="url"
-              />
+              <p className="text-[10px] text-gray-300 mt-1 text-right">{description.length}/2000</p>
             </div>
 
             {error && (
               <p className="text-red-600 text-xs">{error}</p>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
-              disabled={submitting || !name.trim() || !contact.trim() || !title.trim() || !description.trim()}
+              disabled={submitting}
               className="btn-black w-full py-3 disabled:opacity-40"
             >
               {submitting
-                ? t('제출 중…', 'Submitting…', 'Envoi en cours…')
-                : t('제출하기', 'Submit', 'Envoyer')}
+                ? t('게시 중…', 'Publishing…', 'Publication en cours…')
+                : t('게시하기', 'Publish', 'Publier')}
             </button>
           </form>
         )}

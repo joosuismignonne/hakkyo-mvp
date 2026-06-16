@@ -660,16 +660,19 @@ export async function getLeSettings(): Promise<LeSettings> {
 // Only 'published' rows appear on the public homepage feed.
 
 // Columns that actually exist in the DB
-const COMMUNITY_COLS = 'id, type, title, description, contact, location, link, image_url, status, created_at, updated_at'
+const COMMUNITY_COLS = 'id, type, title, description, nickname, contact, source, tags, location, link, image_url, status, created_at, updated_at'
 
 export interface CommunitySubmitPayload {
-  type: string           // maps to DB 'type' column (was 'category')
-  title: string
+  type:        string          // category slug
+  title:       string
   description: string
-  contact: string        // combined submitter info
-  location?: string | null
-  link?: string | null
-  image_url?: string | null
+  nickname:    string          // required display name
+  contact?:    string | null   // optional private contact
+  source?:     string          // 'public_submission' | 'admin'
+  tags?:       string[] | null
+  location?:   string | null
+  link?:       string | null
+  image_url?:  string | null
 }
 
 export async function submitCommunityPost(payload: CommunitySubmitPayload): Promise<void> {
@@ -677,9 +680,22 @@ export async function submitCommunityPost(payload: CommunitySubmitPayload): Prom
     await new Promise(r => setTimeout(r, 600))
     return
   }
+  const id = crypto.randomUUID()
   const { error } = await db()
     .from('community_submissions')
-    .insert({ ...payload, status: 'pending' })
+    .insert({ id, ...payload, status: 'published' })
+  if (error) throw error
+}
+
+export async function updateCommunityPost(
+  id: string,
+  updates: Partial<Pick<CommunitySubmission, 'title' | 'description' | 'type' | 'tags' | 'status' | 'contact' | 'nickname'>>,
+): Promise<void> {
+  if (!isConfigured) return
+  const { error } = await db()
+    .from('community_submissions')
+    .update(updates)
+    .eq('id', id)
   if (error) throw error
 }
 

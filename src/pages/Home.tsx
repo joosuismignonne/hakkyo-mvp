@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   Search, Pin, Calendar, Clock, DollarSign,
@@ -9,6 +9,7 @@ import { useLang } from '../context/LangContext'
 import { normalizeContent, newsExcerpt, thumbnailUrl } from '../lib/newsContent'
 import type { ProgramTrack, Notice, Content, CommunitySubmission } from '../types'
 import ApplyModal from '../components/ApplyModal'
+const CommunitySubmitModal = lazy(() => import('../components/CommunitySubmitModal'))
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -758,7 +759,8 @@ export default function Home() {
   const [contents,  setContents]  = useState<Content[]>([])
   const [community, setCommunity] = useState<CommunitySubmission[]>([])
   const [featured,  setFeatured]  = useState<Content[]>([])
-  const [applying,  setApplying]  = useState<string | null>(null)
+  const [applying,    setApplying]    = useState<string | null>(null)
+  const [showSubmit,  setShowSubmit]  = useState(false)
   const [loading,   setLoading]   = useState(true)
   const [filter,    setFilter]    = useState<FeedFilter>('all')
 
@@ -786,6 +788,16 @@ export default function Home() {
     getFeaturedContent()
       .then(fc => setFeatured((fc ?? []).map(normalizeContent)))
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    function onNewPost() {
+      getPublishedCommunityPosts()
+        .then(cp => setCommunity(cp ?? []))
+        .catch(() => {})
+    }
+    window.addEventListener('hakkyo:community-post', onNewPost)
+    return () => window.removeEventListener('hakkyo:community-post', onNewPost)
   }, [])
 
   const allItems = useMemo<FeedItem[]>(() => {
@@ -867,6 +879,18 @@ export default function Home() {
         t={t}
       />
 
+      {/* Write a Post button — shown when community filter is active */}
+      {filter === 'community' && (
+        <div className="mb-4">
+          <button
+            onClick={() => setShowSubmit(true)}
+            className="text-[11px] font-semibold border border-gray-900 rounded-lg px-4 py-2 text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors"
+          >
+            {t('게시물 작성', 'Write a Post', 'Écrire un message')}
+          </button>
+        </div>
+      )}
+
       {/* 4 · Pinned grid */}
       <PinnedGrid items={allItems} lang={lang} />
 
@@ -905,6 +929,9 @@ export default function Home() {
         {mainContent}
       </PageShell>
       {applying && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
+      <Suspense fallback={null}>
+        {showSubmit && <CommunitySubmitModal onClose={() => setShowSubmit(false)} />}
+      </Suspense>
     </>
   )
 }
