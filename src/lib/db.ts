@@ -675,16 +675,17 @@ export interface CommunitySubmitPayload {
   image_url?:  string | null
 }
 
-export async function submitCommunityPost(payload: CommunitySubmitPayload): Promise<void> {
+export async function submitCommunityPost(payload: CommunitySubmitPayload): Promise<string> {
+  const id = crypto.randomUUID()
   if (!isConfigured) {
     await new Promise(r => setTimeout(r, 600))
-    return
+    return id
   }
-  const id = crypto.randomUUID()
   const { error } = await db()
     .from('community_submissions')
     .insert({ id, ...payload, status: 'published' })
   if (error) throw error
+  return id
 }
 
 export async function updateCommunityPost(

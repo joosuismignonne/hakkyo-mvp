@@ -197,41 +197,65 @@ function CommunityCard({ post, t }: {
   t: (ko: string, en: string, fr: string) => string
 }) {
   const catLabel = COMMUNITY_SUBTYPE_LABEL[post.type] ?? 'General'
+  const author   = post.nickname?.trim() || t('익명', 'Anonymous', 'Anonyme')
 
   return (
-    <article className="rounded-2xl border border-gray-100 bg-white mb-3 px-5 py-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] hover:border-gray-200">
+    <article className="rounded-2xl border border-gray-100 bg-white mb-3 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] hover:border-gray-200">
       <Link to={`/community/${post.id}`} className="block cursor-pointer">
-        <PostHeader time={post.created_at} />
-
-        {/* Type + subtype */}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <TypeTag>{t('커뮤니티', 'Community', 'Communauté')} · {catLabel}</TypeTag>
-        </div>
-
-        {/* Title */}
-        <h3 className="text-sm font-medium text-gray-900 leading-snug mb-2">{post.title}</h3>
-
-        {/* Description */}
-        <p className="text-[13px] text-gray-500 leading-relaxed"
-           style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {post.description}
-        </p>
-
-        {/* Image */}
+        {/* Image — first-class, full bleed when present */}
         {post.image_url && (
-          <div className="mt-3 overflow-hidden rounded-xl bg-gray-50" style={{ maxHeight: 520 }}>
-            <img src={post.image_url} alt="" loading="lazy" className="w-full object-cover" style={{ maxHeight: 520 }} />
+          <div className="overflow-hidden bg-gray-50" style={{ maxHeight: 440 }}>
+            <img
+              src={post.image_url}
+              alt=""
+              loading="lazy"
+              className="w-full object-cover transition-transform duration-500 hover:scale-[1.02]"
+              style={{ maxHeight: 440 }}
+            />
           </div>
         )}
 
-        {/* Byline + read more */}
-        <div className="flex items-center justify-between mt-3">
-          <p className="text-[11px] text-gray-300">
-            {t('제출자', 'Submitted by', 'Soumis par')} {post.contact}
+        <div className="px-5 py-4">
+          {/* Author + time */}
+          <div className="flex items-center gap-2 mb-2.5">
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+              style={{ background: 'var(--y)' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                <line x1="4"  y1="3" x2="4"  y2="13" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="12" y1="3" x2="12" y2="13" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="4"  y1="8" x2="12" y2="8"  stroke="#111" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <span className="text-[12px] font-semibold text-gray-900">{author}</span>
+            {post.created_at && (
+              <span className="text-[11px] text-gray-300">{relativeTime(post.created_at)}</span>
+            )}
+            {/* Category pill */}
+            <span
+              className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: 'var(--y-l)', color: '#856C00' }}
+            >
+              {catLabel}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-[14px] font-semibold text-gray-900 leading-snug mb-1.5">{post.title}</h3>
+
+          {/* Body preview */}
+          <p
+            className="text-[13px] text-gray-500 leading-relaxed"
+            style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+          >
+            {post.description}
           </p>
-          <span className="text-xs font-medium text-gray-400 hover:text-gray-900 transition-colors">
-            {t('전체 보기', 'View', 'Voir')} →
-          </span>
+
+          {/* Read more */}
+          <p className="text-[11px] font-medium mt-2.5" style={{ color: 'var(--y-h)' }}>
+            {t('더 보기', 'Read more', 'Lire plus')} →
+          </p>
         </div>
       </Link>
     </article>
