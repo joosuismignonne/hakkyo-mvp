@@ -265,8 +265,10 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
       window.dispatchEvent(new CustomEvent('hakkyo:community-post'))
       onClose()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error('[CommunitySubmitModal] submit error:', err)
+      const msg = err instanceof Error ? err.message
+        : (err && typeof err === 'object' && 'message' in err) ? String((err as { message: unknown }).message)
+        : String(err)
+      console.error('[CommunitySubmitModal] submit error:', JSON.stringify(err, null, 2))
       setError(
         t(
           `게시물을 올리지 못했어요. 잠시 후 다시 시도해주세요.`,

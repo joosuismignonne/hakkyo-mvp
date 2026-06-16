@@ -642,34 +642,37 @@ export async function getLeSettings(): Promise<LeSettings> {
 }
 
 // ─── Community Submissions ────────────────────────────────────────────────────
-// SQL migration (run once in Supabase dashboard):
 //
-// create table community_submissions (
-//   id uuid default gen_random_uuid() primary key,
-//   name text not null,
-//   contact text not null,
-//   category text not null,
-//   title text not null,
-//   description text not null,
-//   image_url text,
-//   status text not null default 'pending',
-//   created_at timestamptz default now()
-// );
+// REQUIRED MIGRATION (run once in Supabase SQL editor):
 //
-// Status workflow: pending → approved → published  (or pending → rejected)
-// Only 'published' rows appear on the public homepage feed.
+//   -- 1. Add columns that the public-submit form uses
+//   alter table community_submissions
+//     add column if not exists nickname text,
+//     add column if not exists source   text not null default 'admin',
+//     add column if not exists tags     text[];
+//
+//   -- 2. Allow anonymous users to insert (public posting form)
+//   drop policy if exists "anon can insert community_submissions" on community_submissions;
+//   create policy "anon can insert community_submissions"
+//     on community_submissions for insert to anon with check (true);
+//
+// Without step 2 every public insert returns 42501 (RLS violation).
+// Without step 1 payloads with nickname/source/tags return PGRST204 (column not found).
+//
+// Status workflow: pending → approved → published  (or → rejected)
+// Only 'published' rows appear on the homepage feed.
 
-// Columns that actually exist in the DB
-const COMMUNITY_COLS = 'id, type, title, description, nickname, contact, source, tags, location, link, image_url, status, created_at, updated_at'
+// Confirmed-existing columns (verified against live DB 2026-06-16)
+const COMMUNITY_COLS = 'id, type, title, description, nickname, contact, source, tags, location, link, image_url, status, created_at'
 
 export interface CommunitySubmitPayload {
-  type:        string          // category slug
+  type:        string
   title:       string
   description: string
-  nickname:    string          // required display name
-  contact?:    string | null   // optional private contact
+  nickname?:   string | null   // requires migration col to persist; shown as author
+  contact?:    string | null
   source?:     string          // 'public_submission' | 'admin'
-  tags?:       string[] | null
+  tags?:       string[] | null // requires migration col
   location?:   string | null
   link?:       string | null
   image_url?:  string | null
@@ -681,10 +684,45 @@ export async function submitCommunityPost(payload: CommunitySubmitPayload): Prom
     await new Promise(r => setTimeout(r, 600))
     return id
   }
-  const { error } = await db()
-    .from('community_submissions')
-    .insert({ id, ...payload, status: 'published' })
-  if (error) throw error
+
+  // Base payload — only columns confirmed to exist in the live schema.
+  // Optional extended columns (nickname, source, tags) are added when present;
+  // if the migration hasn't been applied yet the insert retries without them.
+  const base: Record<string, unknown> = {
+    id,
+    type:        payload.type,
+    title:       payload.title,
+    description: payload.description,
+    contact:     payload.contact ?? null,
+    location:    payload.location ?? null,
+    link:        payload.link    ?? null,
+    image_url:   payload.image_url ?? null,
+    status:      'published',
+  }
+
+  // Extended columns — safe to include only after the migration runs.
+  const extended: Record<string, unknown> = { ...base }
+  if (payload.nickname !== undefined) extended.nickname = payload.nickname
+  if (payload.source   !== undefined) extended.source   = payload.source
+  if (payload.tags     !== undefined) extended.tags     = payload.tags
+
+  // Try with extended columns first; fall back to base if column missing.
+  let result = await db().from('community_submissions').insert(extended)
+
+  if (result.error?.code === 'PGRST204') {
+    // Migration not yet applied — strip extended columns and retry.
+    console.warn('[db] community_submissions missing extended columns; retrying without them. Run the REQUIRED MIGRATION.')
+    result = await db().from('community_submissions').insert(base)
+  }
+
+  if (result.error) {
+    console.error('[db] submitCommunityPost error:', JSON.stringify(result.error, null, 2))
+    if (result.error.code === '42501') {
+      throw new Error('RLS policy blocks anonymous inserts. Run the REQUIRED MIGRATION to add the anon insert policy.')
+    }
+    throw result.error
+  }
+
   return id
 }
 
