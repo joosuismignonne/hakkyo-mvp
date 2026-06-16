@@ -250,48 +250,26 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
       let imageUrl: string | null = null
       let videoUrl: string | null = null
 
-      if (mediaFiles.length > 0) {
+      const imageFiles = mediaFiles.filter(f => isImageFile(f))
+      if (imageFiles.length > 0) {
         setUploading(true)
-        const firstImage = mediaFiles.find(f => isImageFile(f))
-        const firstVideo = mediaFiles.find(f => isVideoFile(f))
-
-        // ── Image upload ──────────────────────────────────────────────────────
-        if (firstImage) {
-          console.log('UPLOAD STEP 1 — image selected:', firstImage.name, `${(firstImage.size / 1024).toFixed(0)} KB`, firstImage.type)
-          setUploadStep(`이미지 업로드 중… (${(firstImage.size / 1024 / 1024).toFixed(1)} MB)`)
-          try {
-            console.log('UPLOAD STEP 2 — calling uploadContentImage')
-            imageUrl = await uploadContentImage(firstImage, 'community')
-            console.log('UPLOAD STEP 3 — image storage upload success')
-            console.log('UPLOAD STEP 4 — image public URL:', imageUrl)
-          } catch (imgErr) {
-            const msg = imgErr instanceof Error ? imgErr.message : JSON.stringify(imgErr)
-            console.error('UPLOAD IMAGE ERROR:', msg, imgErr)
-            setError(`이미지 업로드 실패: ${msg}`)
-            // non-fatal — continue without image
-          }
+        const firstImage = imageFiles[0]
+        console.log('UPLOAD STEP 1 — image selected:', firstImage.name, `${(firstImage.size / 1024).toFixed(0)} KB`, firstImage.type)
+        setUploadStep(`이미지 업로드 중… (${(firstImage.size / 1024 / 1024).toFixed(1)} MB)`)
+        try {
+          console.log('UPLOAD STEP 2 — calling uploadContentImage')
+          imageUrl = await uploadContentImage(firstImage, 'community')
+          console.log('UPLOAD STEP 3 — image storage upload success')
+          console.log('UPLOAD STEP 4 — image public URL:', imageUrl)
+        } catch (imgErr) {
+          const msg = imgErr instanceof Error ? imgErr.message : JSON.stringify(imgErr)
+          console.error('UPLOAD IMAGE ERROR:', msg, imgErr)
+          setError(`이미지 업로드 실패: ${msg}`)
         }
-
-        // ── Video upload ──────────────────────────────────────────────────────
-        if (firstVideo) {
-          console.log('UPLOAD STEP 1v — video selected:', firstVideo.name, `${(firstVideo.size / 1024 / 1024).toFixed(1)} MB`, firstVideo.type)
-          setUploadStep(`동영상 업로드 중… (${(firstVideo.size / 1024 / 1024).toFixed(1)} MB)`)
-          try {
-            console.log('UPLOAD STEP 2v — calling uploadCommunityVideo')
-            videoUrl = await uploadCommunityVideo(firstVideo)
-            console.log('UPLOAD STEP 3v — video storage upload success')
-            console.log('UPLOAD STEP 4v — video public URL:', videoUrl)
-          } catch (vidErr) {
-            const msg = vidErr instanceof Error ? vidErr.message : JSON.stringify(vidErr)
-            console.error('UPLOAD VIDEO ERROR:', msg, vidErr)
-            setError(`동영상 업로드 실패: ${msg}`)
-            // non-fatal — continue without video
-          }
-        }
-
         setUploading(false)
         setUploadStep('')
       }
+      // video_url stays null — video upload temporarily disabled
 
       // ── DB insert ─────────────────────────────────────────────────────────
       console.log('UPLOAD STEP 5 — DB insert starting', { tag, title, imageUrl, videoUrl })
@@ -539,22 +517,15 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
             )}
           </button>
 
-          {/* Video — enabled */}
-          <button
-            type="button"
-            onClick={() => videoRef.current?.click()}
-            disabled={mediaFiles.length >= 4}
-            className="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title={t('동영상 추가', 'Add video', 'Ajouter une vidéo')}
+          {/* Video — temporarily disabled */}
+          <span
+            className="flex items-center gap-1.5 text-[12px] text-gray-200 cursor-not-allowed select-none"
+            title="영상 업로드는 준비 중입니다."
           >
             <Video size={16} />
             <span>Video</span>
-            {mediaFiles.filter(f => f.type.startsWith('video/')).length > 0 && (
-              <span className="text-[10px] text-gray-300 font-medium">
-                {mediaFiles.filter(f => f.type.startsWith('video/')).length}
-              </span>
-            )}
-          </button>
+            <span className="text-[9px] text-gray-200">준비 중</span>
+          </span>
 
           {/* Location */}
           <button
