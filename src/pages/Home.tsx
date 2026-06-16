@@ -594,7 +594,7 @@ function OpenNowStrip({ tracks, lang, t }: {
   )
 }
 
-// ─── Feed search ──────────────────────────────────────────────────────────────
+// ─── Feed search (compact) ────────────────────────────────────────────────────
 
 function FeedSearch({ value, onChange, suggestions, t }: {
   value: string
@@ -608,9 +608,9 @@ function FeedSearch({ value, onChange, suggestions, t }: {
   const visible = focused && !value && suggestions.length > 0
 
   return (
-    <div className="relative mb-5">
-      <div className="flex items-center gap-3 border-2 border-gray-900 rounded-xl px-5 py-4 bg-white transition-all">
-        <Search size={17} className="text-gray-500 shrink-0" />
+    <div className="relative mb-4">
+      <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 bg-white transition-all ${focused ? 'border-gray-300' : 'border-gray-100'}`}>
+        <Search size={13} className="text-gray-300 shrink-0" />
         <input
           ref={ref}
           value={value}
@@ -618,16 +618,16 @@ function FeedSearch({ value, onChange, suggestions, t }: {
           onFocus={() => setFocused(true)}
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           placeholder={t(
-            '프로그램, 이벤트, 주거, 취업…',
+            '프로그램, 이벤트, 주거, 취업 검색',
             'Search programs, events, housing, jobs…',
             'Programmes, événements, logement, emploi…',
           )}
-          className="flex-1 text-sm text-gray-900 placeholder-gray-400 bg-transparent outline-none font-medium"
+          className="flex-1 text-[12px] text-gray-700 placeholder-gray-300 bg-transparent outline-none"
         />
         {value && (
           <button
             onClick={() => { onChange(''); ref.current?.focus() }}
-            className="text-gray-300 hover:text-gray-500 transition-colors text-base leading-none shrink-0"
+            className="text-gray-300 hover:text-gray-500 transition-colors leading-none shrink-0"
           >
             ×
           </button>
@@ -897,22 +897,21 @@ function PostComposer({
   t: (ko: string, en: string, fr: string) => string
 }) {
   return (
-    <button
-      onClick={onOpen}
-      className="w-full text-left mb-6 group"
-    >
-      <div className="flex items-center gap-3 border border-gray-200 rounded-2xl px-4 py-3.5 bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-150">
-        {/* Avatar placeholder */}
-        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
+    <button onClick={onOpen} className="w-full text-left mb-5 group">
+      <div className="flex items-center gap-3 border-2 border-gray-900 rounded-2xl px-4 py-3.5 bg-white hover:shadow-md transition-all duration-150 group-active:scale-[0.995]">
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[13px] font-black"
+          style={{ background: 'var(--y)', color: '#111' }}
+        >
+          ✏
         </div>
-        {/* Prompt text */}
-        <span className="flex-1 text-[13px] text-gray-400 select-none">
-          {t('오늘은 어떤 일이 있었나요?', "What's happening in Montréal?", 'Que se passe-t-il à Montréal?')}
+        <span className="flex-1 text-[14px] text-gray-400 select-none font-medium">
+          {t(
+            '몬트리올 생활에 필요한 이야기를 남겨주세요.',
+            'Share something for life in Montréal.',
+            'Partagez quelque chose pour Montréal.',
+          )}
         </span>
-        {/* Post pill */}
         <span
           className="text-[12px] font-black px-3.5 py-1.5 rounded-full shrink-0"
           style={{ background: 'var(--y)', color: '#111' }}
@@ -1034,23 +1033,13 @@ export default function Home() {
 
   const mainContent = (
     <>
-      {/* 1 · Search — prominent, first thing in feed */}
-      <FeedSearch value={query} onChange={setQuery} suggestions={suggestions} t={t} />
-
-      {/* 2 · Post composer */}
+      {/* 1 · Composer — primary action */}
       <PostComposer onOpen={() => setSubmitTag('general')} t={t} />
 
-      {/* Mobile hero */}
-      <div className="lg:hidden mb-4">
-        <p className="text-[11px] text-gray-300 leading-relaxed">
-          Korean · English · French · Montréal
-        </p>
-      </div>
-
-      {/* 3 · Open Now */}
+      {/* 2 · Open Now strip */}
       <OpenNowStrip tracks={tracks} lang={lang} t={t} />
 
-      {/* 4 · Community Moments */}
+      {/* 3 · Community Moments */}
       <CommunityMoments items={featured} lang={lang} />
 
       {/* 4 · Filter chips */}
@@ -1061,7 +1050,10 @@ export default function Home() {
         t={t}
       />
 
-      {/* 4 · Pinned list */}
+      {/* 5 · Compact search — secondary */}
+      <FeedSearch value={query} onChange={setQuery} suggestions={suggestions} t={t} />
+
+      {/* 6 · Pinned list */}
       <PinnedList items={allItems} lang={lang} t={t} />
 
       {/* 5 · Feed */}
