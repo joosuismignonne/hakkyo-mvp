@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import {
   Search, Pin, Calendar, Clock, DollarSign,
   Newspaper, MessageSquare, BookOpen, Zap, Users,
@@ -8,7 +8,6 @@ import { getTracks, getNotices, getContents, getPublishedCommunityPosts, getFeat
 import { useLang } from '../context/LangContext'
 import { normalizeContent, newsExcerpt, thumbnailUrl } from '../lib/newsContent'
 import type { ProgramTrack, Notice, Content, CommunitySubmission } from '../types'
-import ApplyModal from '../components/ApplyModal'
 const CommunitySubmitModal = lazy(() => import('../components/CommunitySubmitModal'))
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
 
@@ -553,10 +552,9 @@ function CommunityMoments({ items, lang }: { items: Content[]; lang: Lang }) {
 
 // ─── Open Now strip ───────────────────────────────────────────────────────────
 
-function OpenNowStrip({ tracks, lang, onApply, t }: {
+function OpenNowStrip({ tracks, lang, t }: {
   tracks: ProgramTrack[]
   lang: Lang
-  onApply: (id: string) => void
   t: (ko: string, en: string, fr: string) => string
 }) {
   const open = tracks.filter(s => s.status === 'open' && (s.name_ko?.trim() || s.name_en?.trim()))
@@ -570,14 +568,14 @@ function OpenNowStrip({ tracks, lang, onApply, t }: {
           {t('모집 중', 'Open now', 'Ouvert')}
         </span>
         {open.map(s => (
-          <button
+          <Link
             key={s.id}
-            onClick={() => onApply(s.id)}
+            to={`/programs/${s.id}`}
             className="flex items-center gap-1.5 text-[12px] text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-300 rounded-full px-3.5 py-1.5 transition-colors whitespace-nowrap"
           >
             <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-900" />
             {tName(s, lang)}
-          </button>
+          </Link>
         ))}
       </div>
     </div>
@@ -754,11 +752,11 @@ function NoticeCard({ notice, lang, t }: {
 
 // ─── Program card ─────────────────────────────────────────────────────────────
 
-function ProgramCard({ track, lang, onApply, t }: {
+function ProgramCard({ track, lang, t }: {
   track: ProgramTrack; lang: Lang
-  onApply: (id: string) => void
   t: (ko: string, en: string, fr: string) => string
 }) {
+  const navigate = useNavigate()
   const name     = tName(track, lang)
   const preview  = newsExcerpt(tDesc(track, lang), 300)
   const price    = tPrice(track)
@@ -808,7 +806,10 @@ function ProgramCard({ track, lang, onApply, t }: {
       {/* CTA */}
       <div className="mt-4">
         {isOpen
-          ? <button onClick={() => onApply(track.id)} className="text-xs text-gray-900 hover:text-gray-500 transition-colors font-medium">
+          ? <button
+              onClick={e => { e.preventDefault(); navigate(`/apply/${track.id}`) }}
+              className="text-xs text-gray-900 hover:text-gray-500 transition-colors font-medium"
+            >
               {t('신청', 'Apply', "S'inscrire")} →
             </button>
           : <span className="text-[11px] text-gray-300 tracking-wide uppercase">{t('마감', 'Closed', 'Fermé')}</span>
@@ -922,8 +923,7 @@ export default function Home() {
   const [contents,  setContents]  = useState<Content[]>([])
   const [community, setCommunity] = useState<CommunitySubmission[]>([])
   const [featured,  setFeatured]  = useState<Content[]>([])
-  const [applying,    setApplying]    = useState<string | null>(null)
-  const [submitTag,   setSubmitTag]   = useState<string | null>(null)
+  const [submitTag, setSubmitTag] = useState<string | null>(null)
   const [loading,   setLoading]   = useState(true)
   const [filter,    setFilter]    = useState<FeedFilter>('all')
 
@@ -1036,7 +1036,7 @@ export default function Home() {
       </div>
 
       {/* 3 · Open Now */}
-      <OpenNowStrip tracks={tracks} lang={lang} onApply={setApplying} t={t} />
+      <OpenNowStrip tracks={tracks} lang={lang} t={t} />
 
       {/* 4 · Community Moments */}
       <CommunityMoments items={featured} lang={lang} />
@@ -1069,7 +1069,7 @@ export default function Home() {
         <div>
           {feed.map(item => {
             if (item.kind === 'notice')    return <NoticeCard    key={`n-${item.data.id}`}  notice={item.data}  lang={lang} t={t} />
-            if (item.kind === 'program')   return <ProgramCard   key={`p-${item.data.id}`}  track={item.data}   lang={lang} onApply={setApplying} t={t} />
+            if (item.kind === 'program')   return <ProgramCard   key={`p-${item.data.id}`}  track={item.data}   lang={lang} t={t} />
             if (item.kind === 'community') return <CommunityCard key={`cp-${item.data.id}`} post={item.data}    t={t} />
             return                                <ContentCard   key={`c-${item.data.id}`}  content={item.data} lang={lang} t={t} />
           })}
@@ -1087,7 +1087,6 @@ export default function Home() {
         {mainContent}
       </PageShell>
       <FloatingCreateButton onOpen={() => setSubmitTag('general')} />
-      {applying && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
       <Suspense fallback={null}>
         {submitTag !== null && (
           <CommunitySubmitModal initialTag={submitTag} onClose={() => setSubmitTag(null)} />

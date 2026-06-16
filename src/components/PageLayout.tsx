@@ -7,7 +7,7 @@
  * SharedRightSidebar — consistent right sidebar used on all major pages
  */
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getTracks } from '../lib/db'
 import type { ProgramTrack } from '../types'
 
@@ -166,8 +166,8 @@ export function SharedRightSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
   const t = (ko: string, en: string, fr: string) => pickText(lang, ko, en, fr)
 
   const [openTracks, setOpenTracks] = useState<ProgramTrack[]>([])
-  const [applying,   setApplying]   = useState<string | null>(null)
   const [applyingLE, setApplyingLE] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     getTracks('program')
@@ -210,7 +210,7 @@ export function SharedRightSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
                 {openTracks.map(s => (
                   <button
                     key={s.id}
-                    onClick={() => setApplying(s.id)}
+                    onClick={() => navigate(`/programs/${s.id}`)}
                     className="block text-left text-[11px] text-gray-600 hover:text-gray-900 transition-colors leading-snug w-full"
                   >
                     {name(s)}
@@ -245,7 +245,6 @@ export function SharedRightSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
 
       {/* Modals */}
       <Suspense fallback={null}>
-        {applying   && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
         {applyingLE && <ApplyModal languageExchange onClose={() => setApplyingLE(false)} />}
       </Suspense>
     </>
