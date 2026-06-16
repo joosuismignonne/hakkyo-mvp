@@ -794,14 +794,14 @@ function PostComposer({
         </div>
         {/* Prompt text */}
         <span className="flex-1 text-[13px] text-gray-400 select-none">
-          {t('몬트리올에서 무슨 일이 있나요?', 'What\'s happening in Montréal?', 'Que se passe-t-il à Montréal?')}
+          {t('오늘은 어떤 일이 있었나요?', "What's happening in Montréal?", 'Que se passe-t-il à Montréal?')}
         </span>
         {/* Post pill */}
         <span
-          className="text-[11px] font-bold px-3.5 py-1.5 rounded-full shrink-0 transition-colors"
+          className="text-[12px] font-black px-3.5 py-1.5 rounded-full shrink-0"
           style={{ background: 'var(--y)', color: '#111' }}
         >
-          {t('게시', 'Post', 'Publier')}
+          Post
         </span>
       </div>
     </button>

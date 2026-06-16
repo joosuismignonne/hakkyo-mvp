@@ -5,7 +5,7 @@ import { submitCommunityPost } from '../lib/db'
 import { uploadContentImage, isImageFile } from '../lib/contentStorage'
 import { useLang } from '../context/LangContext'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const TAGS = [
   { value: 'housing',           ko: '주거',      en: 'Housing',          fr: 'Logement'   },
@@ -19,9 +19,9 @@ const TAGS = [
 
 const EXAMPLES = [
   { emoji: '🏠', ko: '룸메이트를 구하고 있어요', en: 'Looking for a roommate', fr: 'Je cherche un colocataire' },
-  { emoji: '☕', ko: '좋은 카페를 발견했어요',   en: 'Found a great café',      fr: 'J\'ai trouvé un super café'  },
-  { emoji: '🎉', ko: '이벤트를 열고 싶어요',    en: 'I want to host an event',  fr: 'Je veux organiser un événement' },
-  { emoji: '❓', ko: '질문이 있어요',           en: 'I have a question',        fr: 'J\'ai une question'         },
+  { emoji: '☕', ko: '좋은 카페를 발견했어요',   en: 'Found a great café',     fr: 'J\'ai trouvé un super café' },
+  { emoji: '🎉', ko: '이벤트를 열고 싶어요',    en: 'I want to host an event', fr: 'Je veux organiser un événement' },
+  { emoji: '❓', ko: '질문이 있어요',           en: 'I have a question',       fr: 'J\'ai une question' },
 ]
 
 const SPAM_WORDS = ['spam', 'scam', 'casino', 'xxx', 'porn', 'buy now', 'click here', 'free money']
@@ -30,7 +30,7 @@ const POSTS_KEY    = 'hakkyo_authored_posts'
 const RATE_KEY     = 'hakkyo_post_times'
 const NICKNAME_KEY = 'hakkyo_last_nickname'
 
-// ─── Auth / rate-limit helpers ────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getAuthorId(): string {
   try {
@@ -68,10 +68,17 @@ function getSavedNickname(): string {
   try { return localStorage.getItem(NICKNAME_KEY) ?? '' } catch { return '' }
 }
 
+/** Derive a title from free-form content. */
+function deriveTitle(content: string): string {
+  const first = content.split('\n')[0].trim()
+  if (first.length >= 5) return first.slice(0, 120)
+  return content.trim().slice(0, 120)
+}
+
 // ─── Auto-grow textarea ───────────────────────────────────────────────────────
 
 function AutoTextarea({
-  value, onChange, placeholder, minRows = 4, className = '', autoFocus,
+  value, onChange, placeholder, minRows = 4, className = '', autoFocus, textareaRef,
 }: {
   value: string
   onChange: (v: string) => void
@@ -79,15 +86,17 @@ function AutoTextarea({
   minRows?: number
   className?: string
   autoFocus?: boolean
+  textareaRef?: React.RefObject<HTMLTextAreaElement>
 }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
+  const internal = useRef<HTMLTextAreaElement>(null)
+  const ref = textareaRef ?? internal
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [value])
+    el.style.height = `${Math.max(el.scrollHeight, minRows * 24)}px`
+  }, [value, minRows, ref])
 
   return (
     <textarea
@@ -107,32 +116,39 @@ function AutoTextarea({
   )
 }
 
-// ─── Media preview ────────────────────────────────────────────────────────────
+// ─── Media grid ───────────────────────────────────────────────────────────────
 
-function MediaGrid({
-  previews, onRemove,
-}: {
+function MediaGrid({ previews, types, onRemove }: {
   previews: string[]
+  types: string[]
   onRemove: (i: number) => void
 }) {
   if (!previews.length) return null
   return (
-    <div className={[
-      'grid gap-1.5 mt-4 mb-1',
-      previews.length === 1 ? 'grid-cols-1' : 'grid-cols-2',
-    ].join(' ')}>
-      {previews.map((src, i) => (
-        <div key={i} className="relative rounded-xl overflow-hidden bg-gray-50 aspect-video">
-          <img src={src} alt="" className="w-full h-full object-cover" />
-          <button
-            type="button"
-            onClick={() => onRemove(i)}
-            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80 transition-colors"
-          >
-            <X size={11} color="white" />
-          </button>
-        </div>
-      ))}
+    <div className={['grid gap-1.5 mt-3', previews.length === 1 ? 'grid-cols-1' : 'grid-cols-2'].join(' ')}>
+      {previews.map((src, i) => {
+        const isVideo = types[i]?.startsWith('video/')
+        return (
+          <div key={i} className="relative rounded-xl overflow-hidden bg-gray-50 aspect-video">
+            {isVideo
+              ? <video src={src} className="w-full h-full object-cover" muted playsInline />
+              : <img src={src} alt="" className="w-full h-full object-cover" />
+            }
+            <button
+              type="button"
+              onClick={() => onRemove(i)}
+              className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center transition-colors"
+            >
+              <X size={10} color="white" strokeWidth={2.5} />
+            </button>
+            {isVideo && (
+              <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">
+                VIDEO
+              </span>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -143,54 +159,70 @@ interface Props { onClose: () => void; initialTag?: string }
 
 export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
   const { t } = useLang()
+  const contentRef = useRef<HTMLTextAreaElement>(null)
 
-  const [nickname,    setNickname]    = useState(getSavedNickname)
-  const [contact,     setContact]     = useState('')
-  const [tag,         setTag]         = useState(initialTag ?? 'general')
-  const [title,       setTitle]       = useState('')
-  const [body,        setBody]        = useState('')
-  const [honeypot,    setHoneypot]    = useState('')
-  const [mediaFiles,  setMediaFiles]  = useState<File[]>([])
-  const [previews,    setPreviews]    = useState<string[]>([])
-  const [uploading,   setUploading]   = useState(false)
-  const [submitting,  setSubmitting]  = useState(false)
-  const [done,        setDone]        = useState(false)
-  const [error,       setError]       = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [nickname,     setNickname]     = useState(getSavedNickname)
+  const [contact,      setContact]      = useState('')
+  const [tag,          setTag]          = useState(initialTag ?? 'general')
+  const [content,      setContent]      = useState('')     // unified text area (title auto-derived on submit)
+  const [location,     setLocation]     = useState('')
+  const [showLocation, setShowLocation] = useState(false)
+  const [honeypot,     setHoneypot]     = useState('')
+  const [mediaFiles,   setMediaFiles]   = useState<File[]>([])
+  const [mediaPreviews, setMediaPreviews] = useState<string[]>([])
+  const [mediaTypes,   setMediaTypes]   = useState<string[]>([])
+  const [uploading,    setUploading]    = useState(false)
+  const [submitting,   setSubmitting]   = useState(false)
+  const [error,        setError]        = useState('')
+  const fileRef  = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLInputElement>(null)
 
   // Clean up blob URLs on unmount
-  useEffect(() => () => previews.forEach(p => URL.revokeObjectURL(p)), [])
+  useEffect(() => () => mediaPreviews.forEach(p => URL.revokeObjectURL(p)), [])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleFiles(files: File[]) {
-    const images = files.filter(isImageFile).slice(0, 4 - mediaFiles.length)
-    if (!images.length) return
-    const newPreviews = images.map(f => URL.createObjectURL(f))
-    setMediaFiles(prev => [...prev, ...images].slice(0, 4))
-    setPreviews(prev => [...prev, ...newPreviews].slice(0, 4))
+  // ── Media ────────────────────────────────────────────────────────────────────
+
+  function addFiles(files: File[]) {
+    const valid = files.filter(f => isImageFile(f) || f.type.startsWith('video/')).slice(0, 4 - mediaFiles.length)
+    if (!valid.length) return
+    const newPreviews = valid.map(f => URL.createObjectURL(f))
+    const newTypes    = valid.map(f => f.type)
+    setMediaFiles(prev => [...prev, ...valid].slice(0, 4))
+    setMediaPreviews(prev => [...prev, ...newPreviews].slice(0, 4))
+    setMediaTypes(prev => [...prev, ...newTypes].slice(0, 4))
   }
 
   function removeMedia(i: number) {
-    URL.revokeObjectURL(previews[i])
+    URL.revokeObjectURL(mediaPreviews[i])
     setMediaFiles(prev => prev.filter((_, idx) => idx !== i))
-    setPreviews(prev => prev.filter((_, idx) => idx !== i))
+    setMediaPreviews(prev => prev.filter((_, idx) => idx !== i))
+    setMediaTypes(prev => prev.filter((_, idx) => idx !== i))
   }
+
+  // ── Submit ────────────────────────────────────────────────────────────────────
 
   async function handleSubmit() {
     if (honeypot) return
 
     const nick = nickname.trim()
-    const ttl  = title.trim() || body.split('\n')[0].trim().slice(0, 120)
-    const desc = body.trim()
+    const body = content.trim()
+    const title = deriveTitle(body)
 
-    if (!nick)         { setError(t('닉네임을 입력하세요.', 'Please enter a display name.', 'Veuillez saisir un pseudo.')); return }
-    if (ttl.length < 5){ setError(t('제목을 5자 이상 입력하세요.', 'Title must be at least 5 characters.', 'Le titre doit comporter au moins 5 caractères.')); return }
-    if (desc.length < 10){ setError(t('내용을 더 입력해 주세요.', 'Please write a bit more.', 'Veuillez écrire un peu plus.')); return }
-    if ([ttl, desc].some(s => SPAM_WORDS.some(w => s.toLowerCase().includes(w)))) {
+    // Validation
+    if (!nick) {
+      setError(t('이름을 입력해주세요.', 'Please enter your display name.', 'Veuillez saisir un pseudo.'))
+      return
+    }
+    if (body.length < 10) {
+      setError(t('내용을 조금 더 작성해주세요.', 'Please write a bit more.', 'Veuillez écrire un peu plus.'))
+      return
+    }
+    if ([title, body].some(s => SPAM_WORDS.some(w => s.toLowerCase().includes(w)))) {
       setError(t('허용되지 않는 내용이 포함되어 있습니다.', 'Your post contains disallowed content.', 'Votre message contient du contenu interdit.'))
       return
     }
     if (!canPost()) {
-      setError(t('잠시 후 다시 시도해 주세요. (10분에 3개 제한)', 'Please wait — max 3 posts per 10 minutes.', 'Maximum 3 publications par 10 minutes.'))
+      setError(t('잠시 후 다시 시도해주세요. (10분에 3개 제한)', 'Too many posts. Please wait a moment.', 'Maximum 3 publications par 10 minutes.'))
       return
     }
 
@@ -198,57 +230,66 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
     setError('')
 
     try {
-      // Upload image if any (non-fatal)
+      // Upload first image (non-fatal)
       let imageUrl: string | null = null
-      if (mediaFiles.length > 0) {
+      const imageFiles = mediaFiles.filter(f => isImageFile(f))
+      if (imageFiles.length > 0) {
         setUploading(true)
         try {
-          imageUrl = await uploadContentImage(mediaFiles[0], 'community')
-        } catch {
-          // proceed without image
+          imageUrl = await uploadContentImage(imageFiles[0], 'community')
+        } catch (uploadErr) {
+          console.warn('[CommunitySubmitModal] image upload failed (proceeding without):', uploadErr)
         }
         setUploading(false)
       }
 
       const postId = await submitCommunityPost({
         type:        tag,
-        title:       ttl,
-        description: desc,
+        title:       title,
+        description: body,
         nickname:    nick,
         contact:     contact.trim() || null,
         source:      'public_submission',
         tags:        [tag],
+        location:    location.trim() || null,
         image_url:   imageUrl,
       })
 
       recordPost()
       recordAuthored(postId)
-      getAuthorId() // ensure author ID is seeded
+      getAuthorId()
       try { localStorage.setItem(NICKNAME_KEY, nick) } catch {}
       trackEvent('community_submit_click', { tag })
+
+      // Refresh feed then close
       window.dispatchEvent(new CustomEvent('hakkyo:community-post'))
-      setDone(true)
-    } catch {
-      setError(t('제출 중 오류가 발생했습니다. 다시 시도해 주세요.', 'Something went wrong. Please try again.', 'Une erreur est survenue. Veuillez réessayer.'))
+      onClose()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[CommunitySubmitModal] submit error:', err)
+      setError(
+        t(
+          `게시물을 올리지 못했어요. 잠시 후 다시 시도해주세요.`,
+          `Could not post. Please try again.`,
+          `Impossible de publier. Veuillez réessayer.`,
+        ) + (msg ? ` (${msg})` : ''),
+      )
     } finally {
       setSubmitting(false)
       setUploading(false)
     }
   }
 
-  function fillExample(ex: typeof EXAMPLES[0]) {
-    setBody(t(ex.ko, ex.en, ex.fr))
-  }
-
-  const showExamples = body.trim().length === 0
+  const busy = submitting || uploading
+  const showExamples = content.trim().length === 0
 
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col items-stretch sm:items-center sm:justify-center"
-      style={{ background: 'rgba(0,0,0,0.45)' }}
+      style={{ background: 'rgba(0,0,0,0.42)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      {/* Hidden honeypot */}
+      {/* Honeypot */}
       <input
         type="text"
         name="website"
@@ -259,252 +300,260 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         style={{ display: 'none' }}
       />
 
-      {/* Hidden file input */}
+      {/* Hidden file inputs */}
       <input
         ref={fileRef}
         type="file"
         accept="image/*"
         multiple
         className="hidden"
-        onChange={e => { handleFiles(Array.from(e.target.files ?? [])); e.target.value = '' }}
+        onChange={e => { addFiles(Array.from(e.target.files ?? [])); e.target.value = '' }}
+      />
+      <input
+        ref={videoRef}
+        type="file"
+        accept="video/*"
+        multiple
+        className="hidden"
+        onChange={e => { addFiles(Array.from(e.target.files ?? [])); e.target.value = '' }}
       />
 
       <div
         className="bg-white w-full sm:max-w-lg sm:rounded-2xl shadow-2xl flex flex-col mt-auto sm:mt-0 rounded-t-2xl"
-        style={{
-          animation: 'modal-up 0.18s ease-out',
-          maxHeight: '92vh',
-        }}
+        style={{ animation: 'modal-up 0.18s ease-out', maxHeight: '92vh' }}
         onClick={e => e.stopPropagation()}
       >
-        {done ? (
-          /* ── Success ── */
-          <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
+        {/* ── Top bar ── */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <X size={18} />
+          </button>
+
+          <span className="text-[13px] font-semibold text-gray-500 tracking-tight">
+            {t('새 게시물', 'New Post', 'Nouveau message')}
+          </span>
+
+          {/* Compact "∗" CTA top-right */}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={busy}
+            className="text-[15px] font-black w-9 h-9 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+            style={{ background: 'var(--y)', color: '#111' }}
+            title="Post"
+          >
+            {busy ? '…' : '∗'}
+          </button>
+        </div>
+
+        {/* ── Guideline ── */}
+        <p className="px-5 pb-2 text-[11px] text-gray-300 leading-relaxed shrink-0">
+          {t(
+            '몬트리올 생활에 필요한 이야기라면 무엇이든 남겨주세요. 광고·스팸·혐오 표현은 삭제될 수 있습니다.',
+            'Share anything useful for life in Montréal. Ads, spam, or hate speech may be removed.',
+            'Partagez tout ce qui est utile à Montréal. Les publicités, spams ou discours haineux peuvent être supprimés.',
+          )}
+        </p>
+
+        {/* ── Scrollable body ── */}
+        <div className="flex-1 overflow-y-auto px-5 pb-3 min-h-0">
+
+          {/* Author row */}
+          <div className="flex items-start gap-3 mb-4">
             <div
-              className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5"
               style={{ background: 'var(--y)' }}
             >
-              <svg width="24" height="24" fill="none" stroke="#111" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <line x1="4"  y1="3" x2="4"  y2="13" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="12" y1="3" x2="12" y2="13" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="4"  y1="8" x2="12" y2="8"  stroke="#111" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
-            <h3 className="text-[16px] font-semibold text-gray-900 mb-2">
-              {t('게시되었습니다 🎉', 'Post published 🎉', 'Publié 🎉')}
-            </h3>
-            <p className="text-[13px] text-gray-400 leading-relaxed mb-8 max-w-xs">
-              {t(
-                '피드에 바로 게시되었습니다. 나중에 수정하거나 삭제할 수 있습니다.',
-                'Your post is live. You can edit or delete it later.',
-                'Votre message est en ligne. Vous pouvez le modifier ou le supprimer plus tard.',
-              )}
-            </p>
-            <button
-              onClick={onClose}
-              className="btn-yellow px-10 rounded-xl text-[14px] font-bold"
-            >
-              {t('확인', 'Done', 'Fermer')}
-            </button>
+            <div className="flex-1 pt-0.5">
+              <input
+                type="text"
+                value={nickname}
+                onChange={e => setNickname(e.target.value)}
+                placeholder={t('표시될 이름', 'Display name', 'Votre pseudo')}
+                maxLength={50}
+                autoFocus={!!getSavedNickname()}
+                className="w-full text-[14px] font-semibold text-gray-900 placeholder-gray-300 bg-transparent border-0 outline-none leading-tight"
+              />
+              <input
+                type="text"
+                value={contact}
+                onChange={e => setContact(e.target.value)}
+                placeholder={t('이메일 또는 인스타그램 (선택)', 'Email or Instagram (optional)', 'Email ou Instagram (optionnel)')}
+                maxLength={100}
+                className="w-full text-[11px] text-gray-300 placeholder-gray-200 bg-transparent border-0 outline-none mt-0.5"
+                style={{ fontSize: 12 }}
+              />
+            </div>
           </div>
-        ) : (
-          /* ── Composer ── */
-          <>
-            {/* Top bar */}
-            <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <X size={18} />
-              </button>
-              <h2 className="text-[14px] font-semibold text-gray-800">
-                {t('게시물 작성', 'Create Post', 'Créer un message')}
-              </h2>
-              {/* Quick post shortcut on desktop */}
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting || uploading}
-                className="text-[12px] font-bold px-4 py-1.5 rounded-full transition-all disabled:opacity-30"
-                style={{ background: 'var(--y)', color: '#111' }}
-              >
-                {uploading ? '↑' : submitting ? '…' : t('게시', 'Post', 'Publier')}
-              </button>
-            </div>
 
-            {/* Guideline */}
-            <p className="px-5 pb-3 text-[11px] text-gray-300 leading-relaxed shrink-0">
-              {t(
-                '몬트리올 생활에 필요한 이야기라면 무엇이든 남겨주세요. 광고·스팸·혐오 표현은 삭제될 수 있습니다.',
-                'Share anything useful for life in Montréal. Ads, spam, or hate speech may be removed.',
-                'Partagez tout ce qui est utile à Montréal. Les publicités, spams ou discours haineux peuvent être supprimés.',
-              )}
-            </p>
+          {/* Main content textarea — unified (title auto-derived on submit) */}
+          <AutoTextarea
+            textareaRef={contentRef}
+            value={content}
+            onChange={setContent}
+            placeholder={t('오늘은 어떤 일이 있었나요?', "What's happening in Montréal?", 'Que se passe-t-il à Montréal?')}
+            minRows={5}
+            autoFocus={!getSavedNickname()}
+            className="text-[15px] text-gray-800"
+          />
 
-            {/* Scrollable composer body */}
-            <div className="flex-1 overflow-y-auto px-5 pb-4">
-              {/* Author row */}
-              <div className="flex items-start gap-3 mb-4">
-                {/* HAKKYO avatar */}
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                  style={{ background: 'var(--y)' }}
+          {/* Example suggestions — tap to fill */}
+          {showExamples && (
+            <div className="mt-2 space-y-1">
+              {EXAMPLES.map((ex, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => { setContent(t(ex.ko, ex.en, ex.fr)); contentRef.current?.focus() }}
+                  className="flex items-center gap-2 text-[12px] text-gray-200 hover:text-gray-400 transition-colors w-full text-left py-0.5"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <line x1="4"  y1="3" x2="4"  y2="13" stroke="#111" strokeWidth="1.8" strokeLinecap="round"/>
-                    <line x1="12" y1="3" x2="12" y2="13" stroke="#111" strokeWidth="1.8" strokeLinecap="round"/>
-                    <line x1="4"  y1="8" x2="12" y2="8"  stroke="#111" strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={nickname}
-                    onChange={e => setNickname(e.target.value)}
-                    placeholder={t('표시될 이름', 'Your display name', 'Votre pseudo')}
-                    maxLength={50}
-                    className="w-full text-[13px] font-semibold text-gray-900 placeholder-gray-300 bg-transparent border-0 outline-none mb-0.5"
-                    style={{ fontSize: 14 }}
-                  />
-                  <input
-                    type="text"
-                    value={contact}
-                    onChange={e => setContact(e.target.value)}
-                    placeholder={t('이메일 또는 인스타그램 (선택)', 'Email or Instagram (optional)', 'Email ou Instagram (optionnel)')}
-                    maxLength={100}
-                    className="w-full text-[11px] text-gray-400 placeholder-gray-200 bg-transparent border-0 outline-none"
-                    style={{ fontSize: 12 }}
-                  />
-                </div>
-              </div>
+                  <span>{ex.emoji}</span>
+                  <span>{t(ex.ko, ex.en, ex.fr)}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
-              {/* Title */}
-              <AutoTextarea
-                value={title}
-                onChange={setTitle}
-                placeholder={t('무엇에 대한 글인가요?', 'What is this post about?', 'De quoi parle ce message?')}
-                minRows={1}
+          {/* Location input (when open) */}
+          {showLocation && (
+            <div className="mt-3 flex items-center gap-2 border-b border-gray-100 pb-2">
+              <MapPin size={13} className="text-gray-300 shrink-0" />
+              <input
+                type="text"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder={t('위치 입력 (예: Mile End, Atwater)', 'Location (e.g. Mile End, Atwater)', 'Lieu (ex: Mile End, Atwater)')}
+                maxLength={80}
                 autoFocus
-                className="text-[17px] font-medium text-gray-900 mb-1"
+                className="flex-1 text-[13px] text-gray-700 placeholder-gray-300 bg-transparent border-0 outline-none"
               />
-
-              {/* Body */}
-              <AutoTextarea
-                value={body}
-                onChange={setBody}
-                placeholder={t('오늘은 어떤 일이 있었나요?', 'What\'s happening in Montréal?', 'Que se passe-t-il à Montréal?')}
-                minRows={4}
-                className="text-[15px] text-gray-700 mt-1"
-              />
-
-              {/* Example suggestions */}
-              {showExamples && (
-                <div className="mt-3 space-y-1.5">
-                  {EXAMPLES.map((ex, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => fillExample(ex)}
-                      className="flex items-center gap-2 text-[12px] text-gray-300 hover:text-gray-500 transition-colors w-full text-left"
-                    >
-                      <span>{ex.emoji}</span>
-                      <span>{t(ex.ko, ex.en, ex.fr)}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Media preview */}
-              <MediaGrid previews={previews} onRemove={removeMedia} />
-            </div>
-
-            {/* Media toolbar */}
-            <div className="px-5 py-3 border-t border-gray-50 flex items-center gap-4 shrink-0">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={mediaFiles.length >= 4}
-                className="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-30"
-                title={t('사진 추가', 'Add photo', 'Ajouter une photo')}
-              >
-                <Image size={16} />
-                <span className="hidden sm:inline">{t('사진', 'Photo', 'Photo')}</span>
-              </button>
-              <button
-                type="button"
-                disabled
-                className="flex items-center gap-1.5 text-[12px] text-gray-200 cursor-not-allowed"
-                title={t('동영상 (준비 중)', 'Video (coming soon)', 'Vidéo (bientôt)')}
-              >
-                <Video size={16} />
-                <span className="hidden sm:inline">{t('동영상', 'Video', 'Vidéo')}</span>
-              </button>
-              <button
-                type="button"
-                disabled
-                className="flex items-center gap-1.5 text-[12px] text-gray-200 cursor-not-allowed"
-                title={t('위치 (준비 중)', 'Location (coming soon)', 'Lieu (bientôt)')}
-              >
-                <MapPin size={16} />
-                <span className="hidden sm:inline">{t('위치', 'Location', 'Lieu')}</span>
-              </button>
-              {mediaFiles.length > 0 && (
-                <span className="ml-auto text-[10px] text-gray-300">{mediaFiles.length}/4</span>
+              {location && (
+                <button type="button" onClick={() => { setLocation(''); setShowLocation(false) }}
+                  className="text-gray-300 hover:text-gray-500">
+                  <X size={12} />
+                </button>
               )}
             </div>
+          )}
 
-            {/* Category pills */}
-            <div className="px-5 py-3 border-t border-gray-50 shrink-0">
-              <div className="flex gap-1.5 flex-wrap">
-                {TAGS.map(tg => {
-                  const active = tag === tg.value
-                  return (
-                    <button
-                      key={tg.value}
-                      type="button"
-                      onClick={() => setTag(tg.value)}
-                      className="text-[11px] font-medium px-3 py-1.5 rounded-full border transition-all"
-                      style={active
-                        ? { background: 'var(--y)', borderColor: 'var(--y)', color: '#111', fontWeight: 700 }
-                        : { background: 'transparent', borderColor: '#E5E7EB', color: '#9CA3AF' }
-                      }
-                    >
-                      {t(tg.ko, tg.en, tg.fr)}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+          {/* Media preview */}
+          <MediaGrid previews={mediaPreviews} types={mediaTypes} onRemove={removeMedia} />
+        </div>
 
-            {/* Error */}
-            {error && (
-              <p className="px-5 text-[12px] text-red-500 shrink-0">{error}</p>
+        {/* ── Media action row ── */}
+        <div className="px-5 py-2.5 border-t border-gray-50 flex items-center gap-5 shrink-0">
+          {/* Photo — always clickable (up to 4 total) */}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-gray-700 transition-colors"
+            title={t('사진 추가', 'Add photo', 'Ajouter une photo')}
+          >
+            <Image size={16} />
+            <span>Photo</span>
+            {mediaFiles.filter(f => isImageFile(f)).length > 0 && (
+              <span className="text-[10px] text-gray-300 font-medium">
+                {mediaFiles.filter(f => isImageFile(f)).length}
+              </span>
             )}
+          </button>
 
-            {/* Submit */}
-            <div className="px-5 pt-3 pb-6 shrink-0">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting || uploading}
-                className="btn-yellow w-full rounded-2xl py-3.5 text-[15px] font-bold disabled:opacity-40 transition-opacity"
-              >
-                {uploading
-                  ? t('사진 업로드 중…', 'Uploading…', 'Téléversement…')
-                  : submitting
-                  ? t('게시 중…', 'Publishing…', 'Publication…')
-                  : t('게시하기', 'Publish', 'Publier')}
-              </button>
-              <p className="text-center text-[11px] text-gray-300 mt-2.5">
-                {t(
-                  '작성한 글은 나중에 수정하거나 삭제할 수 있습니다.',
-                  'You can edit or delete your post later.',
-                  'Vous pouvez modifier ou supprimer votre message plus tard.',
-                )}
-              </p>
-            </div>
-          </>
+          {/* Video — enabled */}
+          <button
+            type="button"
+            onClick={() => videoRef.current?.click()}
+            disabled={mediaFiles.length >= 4}
+            className="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title={t('동영상 추가', 'Add video', 'Ajouter une vidéo')}
+          >
+            <Video size={16} />
+            <span>Video</span>
+            {mediaFiles.filter(f => f.type.startsWith('video/')).length > 0 && (
+              <span className="text-[10px] text-gray-300 font-medium">
+                {mediaFiles.filter(f => f.type.startsWith('video/')).length}
+              </span>
+            )}
+          </button>
+
+          {/* Location */}
+          <button
+            type="button"
+            onClick={() => setShowLocation(v => !v)}
+            className={[
+              'flex items-center gap-1.5 text-[12px] transition-colors',
+              showLocation || location ? 'text-gray-700 font-medium' : 'text-gray-400 hover:text-gray-700',
+            ].join(' ')}
+            title={t('위치 추가', 'Add location', 'Ajouter un lieu')}
+          >
+            <MapPin size={16} />
+            <span>Location</span>
+            {location && <span className="text-[10px] text-gray-500 font-medium truncate max-w-[60px]">{location}</span>}
+          </button>
+
+          {/* Media count */}
+          {mediaFiles.length > 0 && (
+            <span className="ml-auto text-[10px] text-gray-300">{mediaFiles.length}/4</span>
+          )}
+        </div>
+
+        {/* ── Category pills ── */}
+        <div className="px-5 py-3 border-t border-gray-50 shrink-0">
+          <div className="flex gap-1.5 flex-wrap">
+            {TAGS.map(tg => {
+              const active = tag === tg.value
+              return (
+                <button
+                  key={tg.value}
+                  type="button"
+                  onClick={() => setTag(tg.value)}
+                  className="text-[11px] font-medium px-3 py-1.5 rounded-full border transition-all"
+                  style={active
+                    ? { background: 'var(--y)', borderColor: 'var(--y)', color: '#111', fontWeight: 700 }
+                    : { background: 'transparent', borderColor: '#E5E7EB', color: '#9CA3AF' }
+                  }
+                >
+                  {t(tg.ko, tg.en, tg.fr)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── Error ── */}
+        {error && (
+          <p className="px-5 pb-1 text-[12px] text-red-500 shrink-0 leading-snug">{error}</p>
         )}
+
+        {/* ── Submit ── */}
+        <div className="px-5 pt-2 pb-6 shrink-0">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={busy}
+            className="btn-yellow w-full rounded-2xl py-3.5 text-[15px] font-bold disabled:opacity-40 transition-opacity"
+          >
+            {uploading ? t('사진 올리는 중…', 'Uploading…', 'Téléversement…')
+              : submitting ? t('게시 중…', 'Posting…', 'Publication…')
+              : 'Post'}
+          </button>
+          <p className="text-center text-[11px] text-gray-300 mt-2.5">
+            {t(
+              '작성한 글은 나중에 수정하거나 삭제할 수 있습니다.',
+              'You can edit or delete your post later.',
+              'Vous pouvez modifier ou supprimer votre message plus tard.',
+            )}
+          </p>
+        </div>
       </div>
     </div>
   )

@@ -208,7 +208,7 @@ function DesktopSidebar() {
           className="btn-yellow w-full flex items-center justify-center gap-2 text-[13px] rounded-xl py-2.5"
         >
           <IconPlus />
-          {t('게시물 작성', 'Create Post', 'Créer')}
+          Post
         </button>
       </div>
 
