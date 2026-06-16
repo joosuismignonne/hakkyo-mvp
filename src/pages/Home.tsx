@@ -291,67 +291,87 @@ function CommunityCard({ post, t }: {
   const catLabel = COMMUNITY_SUBTYPE_LABEL[post.type] ?? 'General'
   const author   = post.author_name?.trim() || t('익명', 'Anonymous', 'Anonyme')
 
-  return (
-    <article className="rounded-2xl border border-gray-100 bg-white mb-3 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)] hover:border-gray-200">
-      <Link to={`/community/${post.id}`} className="block cursor-pointer">
-        {/* Image — first-class, full bleed when present */}
-        {post.image_url && (
-          <div className="overflow-hidden bg-gray-50" style={{ maxHeight: 440 }}>
-            <img
-              src={post.image_url}
-              alt=""
-              loading="lazy"
-              className="w-full object-cover transition-transform duration-500 hover:scale-[1.02]"
-              style={{ maxHeight: 440 }}
-            />
-          </div>
-        )}
+  // Don't repeat body when it's identical to (or starts with) the title
+  const titleNorm = post.title?.trim() ?? ''
+  const bodyNorm  = post.description?.trim() ?? ''
+  const showBody  = bodyNorm && bodyNorm !== titleNorm
 
-        <div className="px-5 py-4">
-          {/* Author + time */}
-          <div className="flex items-center gap-2 mb-2.5">
+  return (
+    <article className="rounded-2xl border border-gray-100 bg-white mb-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_18px_rgba(0,0,0,0.07)] hover:border-gray-200">
+      <Link to={`/community/${post.id}`} className="block">
+
+        <div className="px-5 pt-5 pb-4">
+
+          {/* 1 · Author row */}
+          <div className="flex items-center gap-2.5 mb-3">
             <div
-              className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--y)' }}
             >
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                <line x1="4"  y1="3" x2="4"  y2="13" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="12" y1="3" x2="12" y2="13" stroke="#111" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="4"  y1="8" x2="12" y2="8"  stroke="#111" strokeWidth="2" strokeLinecap="round"/>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <line x1="4"  y1="3" x2="4"  y2="13" stroke="#111" strokeWidth="2.2" strokeLinecap="round"/>
+                <line x1="12" y1="3" x2="12" y2="13" stroke="#111" strokeWidth="2.2" strokeLinecap="round"/>
+                <line x1="4"  y1="8" x2="12" y2="8"  stroke="#111" strokeWidth="2.2" strokeLinecap="round"/>
               </svg>
             </div>
-            <span className="text-[12px] font-semibold text-gray-900">{author}</span>
-            {post.created_at && (
-              <span className="text-[11px] text-gray-300">{relativeTime(post.created_at)}</span>
-            )}
-            {/* Category pill */}
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-semibold text-gray-900 leading-none">{author}</p>
+              {post.created_at && (
+                <p className="text-[12px] text-gray-400 leading-none mt-0.5">{relativeTime(post.created_at)}</p>
+              )}
+            </div>
+            {/* Category badge */}
             <span
-              className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              className="shrink-0 text-[12px] font-semibold px-2.5 py-1 rounded-full"
               style={{ background: 'var(--y-l)', color: '#856C00' }}
             >
               {catLabel}
             </span>
           </div>
 
-          {/* Title */}
-          <h3 className="text-[14px] font-semibold text-gray-900 leading-snug mb-1.5">{post.title}</h3>
+          {/* 2 · Title */}
+          {titleNorm && (
+            <h3 className="text-[16px] sm:text-[18px] font-semibold text-gray-900 leading-snug mb-2">
+              {titleNorm}
+            </h3>
+          )}
 
-          {/* Body preview */}
-          <p
-            className="text-[13px] text-gray-500 leading-relaxed"
-            style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-          >
-            {post.description}
-          </p>
+          {/* 3 · Body preview (skip if same as title) */}
+          {showBody && (
+            <p
+              className="text-[14px] sm:text-[15px] text-gray-500 leading-[1.6] mb-3"
+              style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+            >
+              {bodyNorm}
+            </p>
+          )}
 
-          {/* Read more */}
-          <p className="text-[11px] font-medium mt-2.5" style={{ color: 'var(--y-h)' }}>
+          {/* 4 · Image — constrained, inside padding, with rounded corners */}
+          {post.image_url && (
+            <div
+              className="overflow-hidden rounded-xl bg-gray-50 mb-3"
+              style={{ maxHeight: 'clamp(200px, 40vw, 360px)' }}
+            >
+              <img
+                src={post.image_url}
+                alt=""
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.015]"
+                style={{ maxHeight: 'clamp(200px, 40vw, 360px)' }}
+              />
+            </div>
+          )}
+
+          {/* 5 · Read more */}
+          <p className="text-[13px] font-medium" style={{ color: 'var(--y-h)' }}>
             {t('더 보기', 'Read more', 'Lire plus')} →
           </p>
+
         </div>
       </Link>
 
-      <div className="px-5 pb-4">
+      {/* 6 · Actions */}
+      <div className="px-5 pb-5">
         <CardActions />
       </div>
     </article>
