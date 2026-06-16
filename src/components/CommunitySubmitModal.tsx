@@ -7,10 +7,10 @@ import { useLang } from '../context/LangContext'
 const TAGS = [
   { value: 'housing',          label: { ko: '주거',        en: 'Housing',          fr: 'Logement'       } },
   { value: 'jobs',             label: { ko: '취업',        en: 'Jobs',             fr: 'Emploi'         } },
-  { value: 'help',             label: { ko: '도움',        en: 'Help',             fr: 'Aide'           } },
   { value: 'language_exchange',label: { ko: '언어 교환',   en: 'Language Exchange',fr: 'Échange'        } },
-  { value: 'life_montreal',    label: { ko: '몬트리올 생활',en: 'Life in Montréal', fr: 'Vie à Montréal' } },
-  { value: 'questions',        label: { ko: '질문',        en: 'Questions',        fr: 'Questions'      } },
+  { value: 'friends',          label: { ko: '친구',        en: 'Friends',          fr: 'Amis'           } },
+  { value: 'events',           label: { ko: '이벤트',      en: 'Events',           fr: 'Événements'     } },
+  { value: 'general',          label: { ko: '자유게시판',  en: 'General',          fr: 'Général'        } },
 ]
 
 const SPAM_WORDS = ['spam', 'scam', 'casino', 'xxx', 'porn', 'buy now', 'click here', 'free money']
@@ -43,14 +43,14 @@ function recordPost() {
   } catch {}
 }
 
-interface Props { onClose: () => void }
+interface Props { onClose: () => void; initialTag?: string }
 
-export default function CommunitySubmitModal({ onClose }: Props) {
+export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
   const { t } = useLang()
 
   const [nickname,    setNickname]    = useState('')
   const [contact,     setContact]     = useState('')
-  const [tag,         setTag]         = useState('housing')
+  const [tag,         setTag]         = useState(initialTag ?? 'housing')
   const [title,       setTitle]       = useState('')
   const [description, setDescription] = useState('')
   const [honeypot,    setHoneypot]    = useState('')   // must stay empty

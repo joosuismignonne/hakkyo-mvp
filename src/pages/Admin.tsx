@@ -2871,7 +2871,7 @@ function CommunityAdmin() {
     }
   }
 
-  const ALL_TAGS = ['housing','jobs','help','language_exchange','life_montreal','questions']
+  const ALL_TAGS = ['housing','jobs','language_exchange','friends','events','general']
   function toggleTag(tag: string) {
     setDraft(d => ({ ...d, tags: d.tags.includes(tag) ? d.tags.filter(t => t !== tag) : [...d.tags, tag] }))
   }

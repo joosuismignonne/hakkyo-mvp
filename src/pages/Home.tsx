@@ -748,6 +748,47 @@ function ContentCard({ content, lang, t }: {
   )
 }
 
+// ─── Community quick-post entry ───────────────────────────────────────────────
+
+const QUICK_CATS = [
+  { tag: 'housing',          emoji: '🏠', ko: '주거',      en: 'Housing',      fr: 'Logement'   },
+  { tag: 'jobs',             emoji: '💼', ko: '취업',      en: 'Jobs',         fr: 'Emploi'     },
+  { tag: 'language_exchange',emoji: '🗣️', ko: '언어교환',  en: 'Language',     fr: 'Échange'    },
+  { tag: 'friends',          emoji: '🤝', ko: '친구',      en: 'Friends',      fr: 'Amis'       },
+  { tag: 'events',           emoji: '🎉', ko: '이벤트',    en: 'Events',       fr: 'Événements' },
+  { tag: 'general',          emoji: '✏️', ko: '자유게시판', en: 'General',     fr: 'Général'    },
+]
+
+function CommunityQuickEntry({
+  onPost,
+  t,
+}: {
+  onPost: (tag: string) => void
+  t: (ko: string, en: string, fr: string) => string
+}) {
+  return (
+    <div className="mb-6">
+      <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-400 mb-3">
+        {t('필요한 것이 있나요?', 'Need something?', 'Besoin d\'aide?')}
+      </p>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {QUICK_CATS.map(cat => (
+          <button
+            key={cat.tag}
+            onClick={() => onPost(cat.tag)}
+            className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-gray-200 bg-white hover:border-gray-900 hover:bg-gray-900 hover:text-white transition-all duration-150 group"
+          >
+            <span className="text-lg leading-none">{cat.emoji}</span>
+            <span className="text-[10px] font-medium text-gray-600 group-hover:text-white transition-colors text-center leading-tight">
+              {t(cat.ko, cat.en, cat.fr)}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Home ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -760,7 +801,7 @@ export default function Home() {
   const [community, setCommunity] = useState<CommunitySubmission[]>([])
   const [featured,  setFeatured]  = useState<Content[]>([])
   const [applying,    setApplying]    = useState<string | null>(null)
-  const [showSubmit,  setShowSubmit]  = useState(false)
+  const [submitTag,   setSubmitTag]   = useState<string | null>(null)
   const [loading,   setLoading]   = useState(true)
   const [filter,    setFilter]    = useState<FeedFilter>('all')
 
@@ -871,6 +912,9 @@ export default function Home() {
       {/* 3 · Search */}
       <FeedSearch value={query} onChange={setQuery} suggestions={suggestions} t={t} />
 
+      {/* 3.5 · Community quick-post entry */}
+      <CommunityQuickEntry onPost={tag => setSubmitTag(tag)} t={t} />
+
       {/* 4 · Filter chips */}
       <FilterChips
         active={filter}
@@ -878,18 +922,6 @@ export default function Home() {
         counts={counts}
         t={t}
       />
-
-      {/* Write a Post button — shown when community filter is active */}
-      {filter === 'community' && (
-        <div className="mb-4">
-          <button
-            onClick={() => setShowSubmit(true)}
-            className="text-[11px] font-semibold border border-gray-900 rounded-lg px-4 py-2 text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors"
-          >
-            {t('게시물 작성', 'Write a Post', 'Écrire un message')}
-          </button>
-        </div>
-      )}
 
       {/* 4 · Pinned grid */}
       <PinnedGrid items={allItems} lang={lang} />
@@ -930,7 +962,9 @@ export default function Home() {
       </PageShell>
       {applying && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
       <Suspense fallback={null}>
-        {showSubmit && <CommunitySubmitModal onClose={() => setShowSubmit(false)} />}
+        {submitTag !== null && (
+          <CommunitySubmitModal initialTag={submitTag} onClose={() => setSubmitTag(null)} />
+        )}
       </Suspense>
     </>
   )
