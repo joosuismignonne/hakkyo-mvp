@@ -160,6 +160,99 @@ function PinIndicator() {
   )
 }
 
+// ─── Card action icons ────────────────────────────────────────────────────────
+
+function IcoHeart({ filled }: { filled: boolean }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'}
+         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+    </svg>
+  )
+}
+
+function IcoChat() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+  )
+}
+
+function IcoShare() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+      <polyline points="16 6 12 2 8 6"/>
+      <line x1="12" y1="2" x2="12" y2="15"/>
+    </svg>
+  )
+}
+
+function IcoBookmark({ filled }: { filled: boolean }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'}
+         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+    </svg>
+  )
+}
+
+function CardActions({ compact = false }: { compact?: boolean }) {
+  const [liked, setLiked] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation() }
+
+  return (
+    <div className={`flex items-center gap-${compact ? '3' : '4'} pt-3 border-t border-gray-50 mt-3`}>
+      <button
+        onClick={e => { stop(e); setLiked(l => !l) }}
+        className={`flex items-center gap-1.5 text-[11px] transition-colors ${liked ? 'text-red-400' : 'text-gray-300 hover:text-gray-500'}`}
+      >
+        <IcoHeart filled={liked} />
+        <span>Like</span>
+      </button>
+      <button className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-500 transition-colors">
+        <IcoChat />
+        <span>Reply</span>
+      </button>
+      <button
+        onClick={stop}
+        className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-500 transition-colors"
+      >
+        <IcoShare />
+        <span>Share</span>
+      </button>
+      <button
+        onClick={e => { stop(e); setSaved(s => !s) }}
+        className={`flex items-center gap-1.5 text-[11px] ml-auto transition-colors ${saved ? '' : 'text-gray-300 hover:text-gray-500'}`}
+        style={saved ? { color: 'var(--y-h)' } : {}}
+      >
+        <IcoBookmark filled={saved} />
+        <span>Save</span>
+      </button>
+    </div>
+  )
+}
+
+// ─── Floating create button ───────────────────────────────────────────────────
+
+function FloatingCreateButton({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      onClick={onOpen}
+      title="Create post"
+      className="fixed bottom-24 right-5 lg:bottom-8 lg:right-8 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-xl font-black transition-all active:scale-95 hover:shadow-xl"
+      style={{ background: 'var(--y)', color: '#111' }}
+    >
+      ✏
+    </button>
+  )
+}
+
 // Pill chip for program metadata
 function MetaChip({ icon: Icon, children }: {
   icon: React.ElementType
@@ -258,6 +351,10 @@ function CommunityCard({ post, t }: {
           </p>
         </div>
       </Link>
+
+      <div className="px-5 pb-4">
+        <CardActions />
+      </div>
     </article>
   )
 }
@@ -649,6 +746,8 @@ function NoticeCard({ notice, lang, t }: {
           {t('보기', 'Read', 'Lire')} →
         </Link>
       </div>
+
+      <CardActions compact />
     </article>
   )
 }
@@ -715,6 +814,8 @@ function ProgramCard({ track, lang, onApply, t }: {
           : <span className="text-[11px] text-gray-300 tracking-wide uppercase">{t('마감', 'Closed', 'Fermé')}</span>
         }
       </div>
+
+      <CardActions compact />
     </article>
   )
 }
@@ -767,6 +868,8 @@ function ContentCard({ content, lang, t }: {
           {t('읽기', 'Read', 'Lire')} →
         </Link>
       </div>
+
+      <CardActions compact />
     </article>
   )
 }
@@ -919,29 +1022,24 @@ export default function Home() {
 
   const mainContent = (
     <>
-      {/* Mobile hero — hidden on lg+ where the sidebar carries this copy */}
-      <div className="lg:hidden mb-6">
-        <div className="space-y-0.5 text-xs text-gray-400 leading-relaxed mb-2">
-          <p>Learn Languages.</p>
-          <p>Meet People.</p>
-          <p>Build Your Life in Montréal.</p>
-        </div>
+      {/* 1 · Search — prominent, first thing in feed */}
+      <FeedSearch value={query} onChange={setQuery} suggestions={suggestions} t={t} />
+
+      {/* 2 · Post composer */}
+      <PostComposer onOpen={() => setSubmitTag('general')} t={t} />
+
+      {/* Mobile hero */}
+      <div className="lg:hidden mb-4">
         <p className="text-[11px] text-gray-300 leading-relaxed">
-          Korean, English, French, and real conversations.
+          Korean · English · French · Montréal
         </p>
       </div>
 
-      {/* 1 · Open Now */}
+      {/* 3 · Open Now */}
       <OpenNowStrip tracks={tracks} lang={lang} onApply={setApplying} t={t} />
 
-      {/* 2 · Community Moments */}
+      {/* 4 · Community Moments */}
       <CommunityMoments items={featured} lang={lang} />
-
-      {/* 3 · Search */}
-      <FeedSearch value={query} onChange={setQuery} suggestions={suggestions} t={t} />
-
-      {/* 3.5 · Post composer */}
-      <PostComposer onOpen={() => setSubmitTag('general')} t={t} />
 
       {/* 4 · Filter chips */}
       <FilterChips
@@ -988,6 +1086,7 @@ export default function Home() {
       >
         {mainContent}
       </PageShell>
+      <FloatingCreateButton onOpen={() => setSubmitTag('general')} />
       {applying && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
       <Suspense fallback={null}>
         {submitTag !== null && (

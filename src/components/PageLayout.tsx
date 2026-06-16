@@ -11,8 +11,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { getTracks } from '../lib/db'
 import type { ProgramTrack } from '../types'
 
-const ApplyModal          = lazy(() => import('./ApplyModal'))
-const CommunitySubmitModal = lazy(() => import('./CommunitySubmitModal'))
+const ApplyModal = lazy(() => import('./ApplyModal'))
 
 // ─── City panel ───────────────────────────────────────────────────────────────
 
@@ -166,10 +165,9 @@ function pickText(lang: 'ko' | 'en' | 'fr', ko: string, en: string, fr: string):
 export function SharedRightSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
   const t = (ko: string, en: string, fr: string) => pickText(lang, ko, en, fr)
 
-  const [openTracks, setOpenTracks]   = useState<ProgramTrack[]>([])
-  const [applying,   setApplying]     = useState<string | null>(null)
-  const [applyingLE, setApplyingLE]   = useState(false)
-  const [showSubmit, setShowSubmit]   = useState(false)
+  const [openTracks, setOpenTracks] = useState<ProgramTrack[]>([])
+  const [applying,   setApplying]   = useState<string | null>(null)
+  const [applyingLE, setApplyingLE] = useState(false)
 
   useEffect(() => {
     getTracks('program')
@@ -243,37 +241,12 @@ export function SharedRightSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {
           </button>
         </div>
 
-        <div className="border-t border-gray-100" />
-
-        {/* 4 · Community Submission */}
-        <div>
-          <p className="text-[9px] font-semibold tracking-[0.22em] text-gray-400 uppercase mb-2.5">
-            {t('커뮤니티 제출', 'Community Submission', 'Soumission')}
-          </p>
-          <p className="text-[11px] text-gray-500 mb-2">
-            {t('도움이 필요하신가요?', 'Need help?', 'Besoin d\'aide?')}
-          </p>
-          <div className="space-y-0.5 mb-3">
-            <p className="text-[10px] text-gray-400">{t('주거', 'Housing', 'Logement')}</p>
-            <p className="text-[10px] text-gray-400">{t('취업', 'Jobs', 'Emploi')}</p>
-            <p className="text-[10px] text-gray-400">{t('룸메이트', 'Roommates', 'Colocataires')}</p>
-            <p className="text-[10px] text-gray-400">{t('이벤트', 'Events', 'Événements')}</p>
-          </div>
-          <button
-            onClick={() => setShowSubmit(true)}
-            className="w-full border border-gray-900 rounded-lg px-3 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors text-center"
-          >
-            {t('HAKKYO에 제출하기', 'Submit to HAKKYO', 'Soumettre')}
-          </button>
-        </div>
-
       </div>
 
       {/* Modals */}
       <Suspense fallback={null}>
         {applying   && <ApplyModal preselectedTrackId={applying} onClose={() => setApplying(null)} />}
         {applyingLE && <ApplyModal languageExchange onClose={() => setApplyingLE(false)} />}
-        {showSubmit && <CommunitySubmitModal onClose={() => setShowSubmit(false)} />}
       </Suspense>
     </>
   )
@@ -295,17 +268,17 @@ export function PageShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="max-w-[960px] mx-auto px-4 py-8">
-      <div className="flex items-start gap-8 xl:gap-10">
+    <div className="w-full max-w-[1100px] px-4 py-8">
+      <div className="flex items-start gap-8">
 
         {/* Main column */}
-        <main className="flex-1 min-w-0" style={{ maxWidth: 680 }}>
+        <main className="flex-1 min-w-0">
           {children}
         </main>
 
         {/* Right sidebar */}
         {right && (
-          <aside className="hidden xl:block w-48 xl:w-52 shrink-0 sticky top-4 self-start">
+          <aside className="hidden xl:block w-52 shrink-0 sticky top-4 self-start">
             {right}
           </aside>
         )}
