@@ -173,6 +173,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([])
   const [mediaTypes,   setMediaTypes]   = useState<string[]>([])
   const [uploading,    setUploading]    = useState(false)
+  const [uploadStep,   setUploadStep]   = useState('')   // human-readable progress label
   const [submitting,   setSubmitting]   = useState(false)
   const [error,        setError]        = useState('')
   const fileRef  = useRef<HTMLInputElement>(null)
@@ -205,9 +206,9 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
   async function handleSubmit() {
     if (honeypot) return
 
-    const nick = nickname.trim()
-    const pw   = password.trim()
-    const body = content.trim()
+    const nick  = nickname.trim()
+    const pw    = password.trim()
+    const body  = content.trim()
     const title = deriveTitle(body)
 
     // Validation
@@ -234,23 +235,67 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
 
     setSubmitting(true)
     setError('')
+    setUploadStep('')
+
+    // Safety net: forcibly unlock UI after 30 s so user is never stuck
+    const safetyTimer = setTimeout(() => {
+      console.error('UPLOAD TIMEOUT — releasing UI after 30 s')
+      setSubmitting(false)
+      setUploading(false)
+      setUploadStep('')
+      setError('업로드 시간이 초과되었습니다. 파일 크기를 줄이거나 다시 시도해주세요. (Upload timed out after 30 s)')
+    }, 30_000)
 
     try {
-      // Upload media — first image → image_url, first video → video_url (non-fatal)
       let imageUrl: string | null = null
       let videoUrl: string | null = null
+
       if (mediaFiles.length > 0) {
         setUploading(true)
-        try {
-          const firstImage = mediaFiles.find(f => isImageFile(f))
-          const firstVideo = mediaFiles.find(f => isVideoFile(f))
-          if (firstImage) imageUrl = await uploadContentImage(firstImage, 'community')
-          if (firstVideo) videoUrl = await uploadCommunityVideo(firstVideo)
-        } catch (uploadErr) {
-          console.warn('[CommunitySubmitModal] media upload failed (proceeding without):', uploadErr)
+        const firstImage = mediaFiles.find(f => isImageFile(f))
+        const firstVideo = mediaFiles.find(f => isVideoFile(f))
+
+        // ── Image upload ──────────────────────────────────────────────────────
+        if (firstImage) {
+          console.log('UPLOAD STEP 1 — image selected:', firstImage.name, `${(firstImage.size / 1024).toFixed(0)} KB`, firstImage.type)
+          setUploadStep(`이미지 업로드 중… (${(firstImage.size / 1024 / 1024).toFixed(1)} MB)`)
+          try {
+            console.log('UPLOAD STEP 2 — calling uploadContentImage')
+            imageUrl = await uploadContentImage(firstImage, 'community')
+            console.log('UPLOAD STEP 3 — image storage upload success')
+            console.log('UPLOAD STEP 4 — image public URL:', imageUrl)
+          } catch (imgErr) {
+            const msg = imgErr instanceof Error ? imgErr.message : JSON.stringify(imgErr)
+            console.error('UPLOAD IMAGE ERROR:', msg, imgErr)
+            setError(`이미지 업로드 실패: ${msg}`)
+            // non-fatal — continue without image
+          }
         }
+
+        // ── Video upload ──────────────────────────────────────────────────────
+        if (firstVideo) {
+          console.log('UPLOAD STEP 1v — video selected:', firstVideo.name, `${(firstVideo.size / 1024 / 1024).toFixed(1)} MB`, firstVideo.type)
+          setUploadStep(`동영상 업로드 중… (${(firstVideo.size / 1024 / 1024).toFixed(1)} MB)`)
+          try {
+            console.log('UPLOAD STEP 2v — calling uploadCommunityVideo')
+            videoUrl = await uploadCommunityVideo(firstVideo)
+            console.log('UPLOAD STEP 3v — video storage upload success')
+            console.log('UPLOAD STEP 4v — video public URL:', videoUrl)
+          } catch (vidErr) {
+            const msg = vidErr instanceof Error ? vidErr.message : JSON.stringify(vidErr)
+            console.error('UPLOAD VIDEO ERROR:', msg, vidErr)
+            setError(`동영상 업로드 실패: ${msg}`)
+            // non-fatal — continue without video
+          }
+        }
+
         setUploading(false)
+        setUploadStep('')
       }
+
+      // ── DB insert ─────────────────────────────────────────────────────────
+      console.log('UPLOAD STEP 5 — DB insert starting', { tag, title, imageUrl, videoUrl })
+      setUploadStep('게시물 저장 중…')
 
       const postId = await submitCommunityPost({
         type:          tag,
@@ -264,30 +309,30 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         post_password: pw,
       })
 
+      console.log('UPLOAD STEP 6 — DB insert success, postId:', postId)
+
       recordPost()
       recordAuthored(postId)
       getAuthorId()
       try { localStorage.setItem(NICKNAME_KEY, nick) } catch {}
       trackEvent('community_submit_click', { tag })
 
-      // Refresh feed then close
+      console.log('UPLOAD STEP 7 — post complete, closing modal')
       window.dispatchEvent(new CustomEvent('hakkyo:community-post'))
       onClose()
+
     } catch (err) {
+      const raw = JSON.stringify(err, null, 2)
       const msg = err instanceof Error ? err.message
         : (err && typeof err === 'object' && 'message' in err) ? String((err as { message: unknown }).message)
         : String(err)
-      console.error('[CommunitySubmitModal] submit error:', JSON.stringify(err, null, 2))
-      setError(
-        t(
-          `게시물을 올리지 못했어요. 잠시 후 다시 시도해주세요.`,
-          `Could not post. Please try again.`,
-          `Impossible de publier. Veuillez réessayer.`,
-        ) + (msg ? ` (${msg})` : ''),
-      )
+      console.error('UPLOAD FINAL ERROR — full object:', raw)
+      setError(`게시 실패: ${msg}`)
     } finally {
+      clearTimeout(safetyTimer)
       setSubmitting(false)
       setUploading(false)
+      setUploadStep('')
     }
   }
 
@@ -568,9 +613,9 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
             disabled={busy}
             className="btn-yellow w-full rounded-2xl py-3.5 text-[15px] font-bold disabled:opacity-40 transition-opacity"
           >
-            {uploading ? t('사진 올리는 중…', 'Uploading…', 'Téléversement…')
-              : submitting ? t('게시 중…', 'Posting…', 'Publication…')
-              : 'Post'}
+            {uploading || submitting
+            ? (uploadStep || (uploading ? 'Uploading…' : 'Posting…'))
+            : 'Post'}
           </button>
           <p className="text-center text-[11px] text-gray-300 mt-2.5">
             {t(
