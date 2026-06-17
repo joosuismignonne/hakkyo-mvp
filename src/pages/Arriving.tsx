@@ -560,8 +560,8 @@ const LICENCE_DATA = {
 interface CommunityTip { author: string; text: string }
 const COMMUNITY_TIPS: Record<string, CommunityTip[]> = {
   flights: [
-    { author: 'Sora',    text: 'Google Flights on Tuesday morning gave me the cheapest fares. I compared 3 weeks of dates at once.' },
-    { author: 'Min',     text: 'Book direct Seoul → Montréal through Air Canada or Korean Air. Layover in Toronto adds stress on move-in day.' },
+    { author: 'Sora',    text: '항공권 예약 버튼을 누르고 10분 동안 화면만 바라봤어요. 정말 가는 건가 싶더라고요.' },
+    { author: 'Min',     text: '경유 시간이 길어도 괜찮았어요. 도착한 순간 모든 게 시작됐으니까요.' },
   ],
   sim: [
     { author: 'Jiyeon',  text: 'Fizz eSIM activated before I even landed. By the time I was on the 747 bus I already had data.' },
@@ -671,53 +671,60 @@ function CommunityExperience({ section }: { section: string }) {
 
 function FlightsPanel() {
   const { lang, t } = useLang()
-  const [from, setFrom] = useState('')
-  const [depart, setDepart] = useState('')
-
-  function openSearch(site: 'google' | 'skyscanner' | 'kayak') {
-    const city = from || (lang === 'ko' ? '서울' : 'Seoul')
-    const urls: Record<string, string> = {
-      google:     `https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights from ${city} to Montreal${depart ? ` on ${depart}` : ''}`)}`,
-      skyscanner: `https://www.skyscanner.ca/transport/flights/${encodeURIComponent(city)}/mtl/${depart?.replace(/-/g, '') || ''}`,
-      kayak:      `https://www.kayak.ca/flights/${encodeURIComponent(city)}-YUL/${depart || 'anytime'}`,
-    }
-    window.open(urls[site], '_blank')
-  }
-
-  const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-300 transition-colors bg-white'
 
   return (
-    <div className="space-y-4">
-      <HakkyoNote text={t(
-        '구글 플라이트에서 먼저 비교하세요 — 2~3주의 날짜 범위에서 가장 저렴한 날을 한눈에 볼 수 있습니다. Kayak과 Skyscanner로 이중 확인하세요.',
-        'Compare on Google Flights first — it shows the cheapest dates across 2–3 weeks at once. Kayak and Skyscanner are useful for double-checking.',
-        "Comparez d'abord sur Google Flights — il affiche les tarifs les moins chers sur 2–3 semaines. Kayak et Skyscanner sont utiles pour vérifier.",
-      )} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{t('출발지', 'From', 'Départ de')}</label>
-          <input className={inputCls} placeholder={lang === 'ko' ? '서울, ICN' : lang === 'fr' ? 'Séoul, ICN' : 'Seoul, ICN'} value={from} onChange={e => setFrom(e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{t('도착지', 'To', 'Arrivée à')}</label>
-          <input className={inputCls} value="Montréal, YUL" readOnly style={{ background: '#FAFAFA', color: '#9CA3AF' }} />
-        </div>
-        <div>
-          <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{t('출발일', 'Departure', 'Date de départ')}</label>
-          <input type="date" className={inputCls} value={depart} onChange={e => setDepart(e.target.value)} />
+    <div className="space-y-5">
+      {/* Emotional introduction */}
+      <div>
+        <p className="text-[15px] font-bold text-gray-900 mb-3">
+          {t('몬트리올로 가는 첫 번째 티켓', 'Your first ticket to Montréal', 'Votre premier billet pour Montréal')}
+        </p>
+        <p className="text-[13px] text-gray-600 leading-[1.9]">
+          {t(
+            '많은 사람들이 항공권을 예약하는 순간,\n비로소 이 도시가 현실로 느껴졌다고 말합니다.\n\n설레기도 하고,\n무섭기도 하고,\n조금은 믿기지 않을 수도 있습니다.\n\n그래도 괜찮습니다.\n\n우리도 같은 길을 걸어왔으니까요.',
+            'Many people say it was the moment they booked the flight\nthat Montréal finally felt real.\n\nExcited.\nA little scared.\nMaybe not quite believing it yet.\n\nThat\'s okay.\n\nWe all walked the same road.',
+            'Beaucoup de personnes disent que c\'est en réservant leur billet\nque Montréal est devenu réel.\n\nEnthousiastes.\nUn peu effrayées.\nPas encore tout à fait convaincues.\n\nC\'est normal.\n\nNous sommes tous passés par là.',
+          ).split('\n').map((line, i) => (
+            <span key={i}>{line || <>&nbsp;</>}<br /></span>
+          ))}
+        </p>
+      </div>
+
+      {/* Flight tools */}
+      <div>
+        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">
+          {t('항공권 검색', 'Search Flights', 'Rechercher des vols')}
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <a
+            href="https://www.google.com/travel/flights"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center rounded-xl py-2.5 text-[13px] font-bold transition-colors"
+            style={{ background: 'var(--y)', color: '#111' }}
+          >
+            Google Flights
+          </a>
+          <a
+            href="https://www.skyscanner.ca"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center rounded-xl py-2.5 text-[13px] font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            Skyscanner
+          </a>
+          <a
+            href="https://www.kayak.ca"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center rounded-xl py-2.5 text-[13px] font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            Kayak
+          </a>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <button onClick={() => openSearch('google')} className="btn-yellow rounded-xl py-2.5 text-[13px] font-bold">
-          Google Flights
-        </button>
-        <button onClick={() => openSearch('skyscanner')} className="rounded-xl py-2.5 text-[13px] font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors">
-          Skyscanner
-        </button>
-        <button onClick={() => openSearch('kayak')} className="rounded-xl py-2.5 text-[13px] font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors">
-          Kayak
-        </button>
-      </div>
+
+      {/* Community stories */}
       <CommunityExperience section="flights" />
     </div>
   )
@@ -1340,7 +1347,7 @@ export default function Arriving() {
         {/* ── CTA ── */}
         <div className="border border-gray-200 rounded-2xl px-6 py-6 text-center">
           <p className="text-[16px] font-bold text-gray-900 mb-1">
-            {t('아직 모르겠나요?', 'Still not sure?', 'Pas encore sûr ?')}
+            {t('비슷한 고민을 했던 사람들에게 물어보세요.', 'Ask people who went through the same thing.', 'Demandez à ceux qui sont passés par là.')}
           </p>
           <p className="text-[13px] text-gray-500 mb-4">
             {t(
