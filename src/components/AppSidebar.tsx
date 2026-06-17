@@ -163,9 +163,9 @@ const JOURNEY: JourneyItem[] = [
     activePaths: ['/radar', '/resume-map'],
     icon: IconWorking,
     emoji: '💼',
-    ko: '다음 기회',
-    en: 'Your Next Opportunity',
-    fr: 'Votre prochaine chance',
+    ko: '기회 찾기',
+    en: 'Opportunities',
+    fr: 'Opportunités',
   },
   {
     to: '/phrases',
@@ -173,17 +173,17 @@ const JOURNEY: JourneyItem[] = [
     icon: IconLanguage,
     emoji: '🗣',
     ko: '일상 표현',
-    en: 'Everyday Words',
-    fr: 'Mots du quotidien',
+    en: 'Everyday Expressions',
+    fr: 'Expressions du quotidien',
   },
   {
     to: '/news',
     activePaths: ['/news'],
     icon: IconLiving,
     emoji: '🌱',
-    ko: '몬트리올 생활',
-    en: 'Life in Montréal',
-    fr: 'Vivre à Montréal',
+    ko: '몬트리올 라이프',
+    en: 'Montréal Life',
+    fr: 'Vie à Montréal',
   },
 ]
 
@@ -254,7 +254,7 @@ function DesktopSidebar() {
 
         {/* Logo */}
         <div
-          className="flex items-center pt-6 pb-5 shrink-0 overflow-hidden"
+          className="flex items-center pt-6 pb-4 shrink-0 overflow-hidden"
           style={{ paddingLeft: collapsed ? 14 : 20, paddingRight: collapsed ? 14 : 20 }}
         >
           <Link to="/" className="flex items-center gap-2.5 group shrink-0">
@@ -266,6 +266,78 @@ function DesktopSidebar() {
             )}
           </Link>
         </div>
+
+        {/* ── Account area — directly below logo ── */}
+        <div className="px-2 pb-3 shrink-0">
+          {user ? (
+            collapsed ? (
+              <Link
+                to="/account"
+                title={user.email ?? 'My Journey'}
+                className="flex items-center justify-center py-2 hover:bg-gray-50 rounded-xl transition-colors"
+              >
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold"
+                  style={{ background: 'var(--y)', color: '#111' }}
+                >
+                  {user.email?.[0]?.toUpperCase() ?? '?'}
+                </div>
+              </Link>
+            ) : (
+              <div className="space-y-1">
+                <Link
+                  to="/account"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
+                >
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
+                    style={{ background: 'var(--y)', color: '#111' }}
+                  >
+                    {user.email?.[0]?.toUpperCase() ?? '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-bold text-gray-900 leading-tight">My Journey</p>
+                    <p className="text-[11px] text-gray-400 leading-tight truncate">{user.email}</p>
+                  </div>
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-400 shrink-0">
+                    <polyline points="6,3 11,8 6,13"/>
+                  </svg>
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  Sign out
+                </button>
+              </div>
+            )
+          ) : (
+            collapsed ? (
+              <Link
+                to="/login"
+                title="Montréal In"
+                className="flex items-center justify-center py-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              >
+                <IconUser />
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center justify-center w-full py-2.5 rounded-xl text-[13px] font-bold transition-colors"
+                style={{ background: 'var(--y)', color: '#111' }}
+              >
+                Montréal In
+              </Link>
+            )
+          )}
+        </div>
+
+        <div className="mx-3 mb-2 border-t border-gray-100 shrink-0" />
 
         {/* Home */}
         <div className="px-2 mb-1 shrink-0">
@@ -412,84 +484,8 @@ function DesktopSidebar() {
         )}
       </div>
 
-      {/* ── Pinned bottom — auth + times + collapse ── */}
-      <div className="shrink-0 border-t-2 border-gray-100">
-
-        {/* Auth section */}
-        {user ? (
-          collapsed ? (
-            <Link
-              to="/account"
-              title={user.email ?? 'My Journey'}
-              className="flex items-center justify-center py-3 hover:bg-gray-50 transition-colors"
-            >
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold"
-                style={{ background: 'var(--y)', color: '#111' }}
-              >
-                {user.email?.[0]?.toUpperCase() ?? '?'}
-              </div>
-            </Link>
-          ) : (
-            <div className="px-3 py-3 space-y-1.5">
-              <Link
-                to="/account"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-              >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
-                  style={{ background: 'var(--y)', color: '#111' }}
-                >
-                  {user.email?.[0]?.toUpperCase() ?? '?'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-bold text-gray-900 leading-tight">My Journey</p>
-                  <p className="text-[11px] text-gray-400 leading-tight truncate mt-0.5">{user.email}</p>
-                </div>
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-400 shrink-0">
-                  <polyline points="6,3 11,8 6,13"/>
-                </svg>
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/>
-                  <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                로그아웃
-              </button>
-            </div>
-          )
-        ) : (
-          collapsed ? (
-            <Link
-              to="/login"
-              title="Start Your Journey"
-              className="flex items-center justify-center py-3 text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-            >
-              <IconUser />
-            </Link>
-          ) : (
-            <div className="px-3 py-3 space-y-1.5">
-              <Link
-                to="/login"
-                className="flex items-center justify-center w-full py-2.5 rounded-xl text-[13px] font-bold transition-colors"
-                style={{ background: 'var(--y)', color: '#111' }}
-              >
-                {t('여정 시작하기', 'Start Your Journey', 'Commencer votre parcours')}
-              </Link>
-              <Link
-                to="/signup"
-                className="flex items-center justify-center w-full py-2 rounded-xl border border-gray-200 text-[12px] font-medium text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-all"
-              >
-                {t('여정 만들기', 'Create Journey', 'Créer un parcours')}
-              </Link>
-            </div>
-          )
-        )}
+      {/* ── Pinned bottom — times + collapse ── */}
+      <div className="shrink-0 border-t border-gray-100">
 
         {/* City times */}
         <div
