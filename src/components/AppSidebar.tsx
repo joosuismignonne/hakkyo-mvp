@@ -125,6 +125,14 @@ type JourneyItem = {
 
 const JOURNEY: JourneyItem[] = [
   {
+    to: '/',
+    icon: IconHome,
+    emoji: '🏠',
+    ko: '홈',
+    en: 'Home',
+    fr: 'Accueil',
+  },
+  {
     to: '/arriving',
     icon: IconArriving,
     emoji: '✈️',
@@ -240,10 +248,10 @@ function DesktopSidebar() {
 
         {/* Logo */}
         <div
-          className="flex items-center pt-6 pb-4 shrink-0 overflow-hidden"
+          className="flex items-center pt-7 pb-5 shrink-0 overflow-hidden"
           style={{ paddingLeft: collapsed ? 14 : 20, paddingRight: collapsed ? 14 : 20 }}
         >
-          <Link to="/arriving" className="flex items-center gap-2.5 group shrink-0">
+          <Link to="/" className="flex items-center gap-2.5 group shrink-0">
             <img src="/logo.png" alt="HAKKYO" className="h-7 w-7 shrink-0 object-contain" />
             {!collapsed && (
               <span className="font-bold text-[15px] tracking-tight text-gray-900 group-hover:text-gray-600 transition-colors whitespace-nowrap">
@@ -323,9 +331,9 @@ function DesktopSidebar() {
           )}
         </div>
 
-        <div className="mx-3 mb-2 border-t border-gray-100 shrink-0" />
+        <div className="mx-3 mb-3 border-t border-gray-100 shrink-0" />
 
-        <nav className="px-2 space-y-0.5 shrink-0">
+        <nav className="px-2 space-y-1 shrink-0">
           {JOURNEY.map(j => {
             const active = isJourneyActive(j, pathname)
             const Icon = j.icon
@@ -338,7 +346,7 @@ function DesktopSidebar() {
                 onClick={() => trackEvent({ eventName: 'sidebar_click', targetType: 'nav', targetLabel: lbl, targetId: j.to })}
                 className={[
                   'flex items-center rounded-xl transition-all',
-                  collapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3 py-2.5',
+                  collapsed ? 'justify-center px-0 py-3.5' : 'gap-3 px-3 py-3',
                   active
                     ? 'text-gray-900 font-semibold'
                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50',
@@ -348,7 +356,7 @@ function DesktopSidebar() {
                 <span style={active ? { color: 'var(--y-h)' } : {}}><Icon active={active} /></span>
                 {!collapsed && (
                   <>
-                    <span className="text-[13px] font-medium">{lbl}</span>
+                    <span className="text-[14px] font-medium">{lbl}</span>
                     {active && (
                       <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--y)' }} />
                     )}
@@ -361,7 +369,7 @@ function DesktopSidebar() {
 
         {/* Language switcher — expanded only */}
         {!collapsed && (
-          <div className="px-4 pt-4 pb-2">
+          <div className="px-4 pt-5 pb-2">
             <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden text-[12px] font-semibold">
               {LANGS.map(({ code, label: lbl }) => (
                 <button
