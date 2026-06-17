@@ -1162,7 +1162,7 @@ export default function Settling() {
               <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
             </svg>
             <h1 className="text-[24px] font-bold text-gray-900">
-              {t('나만의 공간 찾기', 'Finding Your Place', 'Trouver un Logement')}
+              {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
             </h1>
           </div>
           <p className="text-[14px] text-gray-500 leading-relaxed">
@@ -1173,6 +1173,15 @@ export default function Settling() {
             )}
           </p>
         </section>
+
+        {/* ── Narrative Anchor ── */}
+        <p className="text-[13px] text-gray-400 leading-relaxed italic">
+          {t(
+            '동네를 고른다는 건 생활 방식을 고른다는 것과 같아요.',
+            'Choosing a neighbourhood is often choosing a way of life.',
+            'Choisir un quartier, c’est souvent choisir un mode de vie.',
+          )}
+        </p>
 
         {/* ── CHECKLIST ── */}
         <section>

@@ -497,6 +497,15 @@ export default function Phrases() {
           )}
         </div>
 
+        {/* ── Narrative Anchor ── */}
+        <p className="text-[13px] text-gray-400 leading-relaxed mb-5 italic">
+          {t(
+            '가끔은 한 문장이 하루 전체를 바꾸기도 해요.',
+            'Sometimes one sentence can change an entire day.',
+            'Parfois, une seule phrase peut changer toute une journée.',
+          )}
+        </p>
+
         {/* ── Emergency button ── */}
         <button
           onClick={() => setShowEmergency(true)}
@@ -624,6 +633,24 @@ export default function Phrases() {
         )}
 
         {/* Footer note */}
+        {/* ── Community Voice ── */}
+        <div className="mt-10 border-t border-gray-100 pt-6 space-y-3">
+          {[
+            { author: 'Jiyeon',  text: '카페에서 처음으로 프랑스어로 주문했어요. 엉망이었는데도 점원이 같이 웃어줬어요. 그때부터 덜 무서워졌어요.' },
+            { author: 'Minjun',  text: '집주인한테 히터 고장났다고 프랑스어로 문자 보냈는데 그게 진짜 터닝포인트였어요. 말이 되면 사람이 달라지거든요.' },
+          ].map((v, i) => (
+            <div key={i} className="flex gap-2.5">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5" style={{ background: 'var(--y)', color: '#111' }}>
+                {v.author[0]}
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-gray-500 mb-0.5">{v.author}</p>
+                <p className="text-[12px] text-gray-400 leading-[1.7]">{v.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <p className="text-center text-[11px] text-gray-400 mt-10">
           {t(
             '표현은 퀘벡 일상 상황을 기준으로 합니다.',

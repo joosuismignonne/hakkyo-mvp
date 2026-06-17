@@ -681,8 +681,6 @@ function CommunityCTA({ to = '/board' }: { to?: string }) {
   )
 }
 
-// ─── Tool panels ──────────────────────────────────────────────────────────────
-
 // ─── Action link helpers ──────────────────────────────────────────────────────
 
 function ActionLinks({ label, items }: {
@@ -715,21 +713,56 @@ function ActionLinks({ label, items }: {
   )
 }
 
+function ExpandToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+  const { t } = useLang()
+  return (
+    <button
+      onClick={onToggle}
+      className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-400 hover:text-gray-700 transition-colors"
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+           style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+      {expanded ? t('접기', 'Collapse', 'Réduire') : t('더 보기', 'More info', 'En savoir plus')}
+    </button>
+  )
+}
+
 // ─── Tool panels ──────────────────────────────────────────────────────────────
 
 function FlightsPanel() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div className="space-y-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed">
+      <p className="text-[15px] text-gray-600 leading-[1.8]">
         {t(
           '항공권을 예약하는 순간, 많은 사람들이 처음으로 몬트리올이 현실처럼 느껴졌다고 말합니다. 가격을 비교하는 것도 중요하지만, 언제 떠날 준비가 되었는지도 중요합니다.',
-          'Many people say it was the moment they booked the flight that Montréal finally felt real. Comparing prices matters, but so does knowing when you\'re ready to go.',
+          'Many people say the moment they booked the flight was when Montréal finally felt real. Comparing prices matters — but so does knowing when you\'re ready to go.',
           "Beaucoup disent que c'est en réservant leur billet que Montréal est devenu réel. Comparer les prix compte, mais savoir quand vous êtes prêt aussi.",
         )}
       </p>
+
+      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+      {expanded && (
+        <div className="space-y-3 pt-1">
+          <HakkyoNote text={t(
+            '출발 6–8주 전에 예약하면 가격이 가장 안정적인 경우가 많습니다.',
+            'Booking 6–8 weeks before departure often gives the most stable prices.',
+            'Réserver 6–8 semaines avant le départ donne souvent les prix les plus stables.',
+          )} />
+          <PrepareList lang={lang} items={[
+            { ko: '인천 → 몬트리올 직항: 약 14시간 (대한항공, 에어캐나다)', en: 'ICN → YUL direct: ~14 hours (Korean Air, Air Canada)', fr: 'ICN → YUL direct : ~14 heures (Korean Air, Air Canada)' },
+            { ko: '토론토·밴쿠버 경유 시 2–4시간 추가', en: 'Routing via Toronto or Vancouver adds 2–4 hours', fr: 'Transit via Toronto ou Vancouver ajoute 2–4 heures' },
+            { ko: '편도 티켓도 괜찮습니다 — 돌아오는 비행기 먼저 예약할 필요 없어요', en: 'One-way is fine — no need to book a return ticket first', fr: 'L\'aller simple est acceptable — pas besoin de réserver un retour' },
+            { ko: '짐 규정은 항공사마다 다릅니다 — 예약 전에 꼭 확인하세요', en: 'Baggage rules vary by airline — check before booking', fr: 'Les règles de bagages varient selon les compagnies — vérifiez avant de réserver' },
+          ]} />
+        </div>
+      )}
+
       <ActionLinks
-        label={t('추천 검색 도구', 'Flight Search Tools', 'Outils de recherche de vols')}
+        label={t('항공권 검색', 'Flight Search', 'Recherche de vols')}
         items={[
           { name: 'Google Flights', href: 'https://www.google.com/travel/flights', primary: true },
           { name: 'Skyscanner', href: 'https://www.skyscanner.ca' },
@@ -737,24 +770,42 @@ function FlightsPanel() {
         ]}
       />
       <CommunityExperience section="flights" />
-      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function SIMPanel() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div className="space-y-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed">
+      <p className="text-[15px] text-gray-600 leading-[1.8]">
         {t(
-          '출발 전에 SIM을 준비해두면 공항에서 내리는 순간부터 데이터를 쓸 수 있습니다. 특히 Fizz eSIM은 비행기 안에서 설치할 수 있어요.',
-          'Setting up a SIM before you leave means you have data the moment you land. Fizz eSIM can be installed on the plane.',
+          '출발 전에 SIM을 준비해두면 공항에서 내리는 순간부터 데이터를 쓸 수 있습니다. 특히 Fizz eSIM은 비행기 안에서 미리 설치할 수 있어요.',
+          'Setting up a SIM before you leave means you have data the moment you land. Fizz eSIM can be installed on the plane before you arrive.',
           "Préparer une SIM avant de partir signifie avoir des données dès l'atterrissage. La eSIM Fizz peut être installée dans l'avion.",
         )}
       </p>
+
+      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+      {expanded && (
+        <div className="space-y-3 pt-1">
+          <HakkyoNote text={t(
+            'eSIM을 사용하려면 기기가 eSIM을 지원하고 언락(unlocked)되어 있어야 합니다.',
+            'To use an eSIM, your phone must support eSIM and be unlocked.',
+            'Pour utiliser une eSIM, votre téléphone doit la prendre en charge et être déverrouillé.',
+          )} />
+          <PrepareList lang={lang} items={[
+            { ko: 'Fizz: 월 $30–45, 20GB+ 데이터, eSIM 지원', en: 'Fizz: ~$30–45/month, 20GB+ data, eSIM supported', fr: 'Fizz : ~30–45 $/mois, 20 Go+, eSIM disponible' },
+            { ko: 'Public Mobile: 조금 더 저렴하지만 로밍 옵션 제한적', en: 'Public Mobile: slightly cheaper, fewer roaming options', fr: 'Public Mobile : légèrement moins cher, moins de roaming' },
+            { ko: 'Koodo: 대형 통신사 품질, 가격은 중간', en: 'Koodo: major carrier quality, mid-range pricing', fr: 'Koodo : qualité grande marque, prix intermédiaire' },
+            { ko: '가입 시 캐나다 카드가 필요합니다 — 먼저 은행 계좌 개설 권장', en: 'You need a Canadian card to sign up — open a bank account first', fr: 'Un compte bancaire canadien est nécessaire pour s\'inscrire' },
+          ]} />
+        </div>
+      )}
+
       <ActionLinks
-        label={t('추천 통신사', 'Recommended Carriers', 'Opérateurs recommandés')}
+        label={t('통신사 비교', 'Compare Carriers', 'Comparer les opérateurs')}
         items={[
           { name: 'Fizz', href: 'https://fizz.ca', primary: true },
           { name: 'Public Mobile', href: 'https://www.publicmobile.ca' },
@@ -762,75 +813,131 @@ function SIMPanel() {
         ]}
       />
       <CommunityExperience section="sim" />
-      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function BankingPanel() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div className="space-y-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed">
+      <p className="text-[15px] text-gray-600 leading-[1.8]">
         {t(
           '도착 후 2주 안에 계좌를 만드세요. 임대료 납부, 이체 수령, 신용 기록 시작 — 캐나다 은행 계좌 없이는 할 수 없는 일들이 많습니다.',
-          'Open an account within two weeks of arriving. Paying rent, receiving transfers, and building credit — many things require a Canadian bank account.',
-          "Ouvrez un compte dans les deux premières semaines. Loyer, virements et historique de crédit nécessitent tous un compte bancaire canadien.",
+          'Open an account within two weeks of arriving. Paying rent, receiving transfers, building credit — many essentials require a Canadian bank account.',
+          "Ouvrez un compte dans les deux premières semaines. Loyer, virements et historique de crédit nécessitent un compte bancaire canadien.",
         )}
       </p>
+
+      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+      {expanded && (
+        <div className="space-y-3 pt-1">
+          <HakkyoNote text={t(
+            'TD StartRight와 Scotiabank StartRight는 신규 이민자 전용 프로그램입니다 — 캐나다 신용 기록이 없어도 계좌를 만들 수 있어요.',
+            'TD StartRight and Scotiabank StartRight are built for newcomers — no Canadian credit history needed.',
+            'TD StartRight et Scotiabank StartRight sont conçus pour les nouveaux arrivants — sans historique de crédit canadien.',
+          )} />
+          <PrepareList lang={lang} items={[
+            { ko: '필요 서류: 여권, 비자/스터디 퍼밋, 주소 증빙', en: 'Required: passport, visa/study permit, proof of address', fr: 'Documents : passeport, visa/permis d\'études, justificatif de domicile' },
+            { ko: '도착 직후 보안 신용카드(secured card) 신청 가능', en: 'You can apply for a secured credit card immediately — starts building credit', fr: 'Vous pouvez demander une carte sécurisée immédiatement pour construire votre crédit' },
+            { ko: 'Desjardins: 퀘벡 기반 신협, 프랑스어 서비스 강점', en: 'Desjardins: Québec-based credit union, strong in French', fr: 'Desjardins : coopérative québécoise, forte en service français' },
+            { ko: '은행 앱으로 Interac e-Transfer 송금 — 가장 많이 쓰는 방법', en: 'Interac e-Transfer via the bank app is the most common way to send money', fr: 'Interac e-Transfer via l\'appli bancaire est la méthode la plus courante' },
+          ]} />
+        </div>
+      )}
+
       <ActionLinks
-        label={t('추천 은행', 'Recommended Banks', 'Banques recommandées')}
+        label={t('은행 선택', 'Choose a Bank', 'Choisir une banque')}
         items={[
-          { name: 'TD Bank', href: 'https://www.td.com/ca/en/personal-banking', primary: true },
-          { name: 'Scotiabank', href: 'https://www.scotiabank.com' },
+          { name: 'TD StartRight', href: 'https://www.td.com/ca/en/personal-banking/solutions/new-to-canada', primary: true },
+          { name: 'Scotiabank StartRight', href: 'https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html' },
           { name: 'Desjardins', href: 'https://www.desjardins.com' },
           { name: 'RBC', href: 'https://www.rbcroyalbank.com' },
         ]}
       />
       <CommunityExperience section="banking" />
-      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function TransportPanel() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div className="space-y-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed">
+      <p className="text-[15px] text-gray-600 leading-[1.8]">
         {t(
-          '몬트리올에서 자동차는 필요 없습니다. 지하철과 버스로 도시 대부분을 이동할 수 있어요. 첫 주에 OPUS 카드를 만들어두면 됩니다.',
-          'You do not need a car in Montréal. Metro and bus cover most of the city. Get your OPUS card in the first week.',
-          "Vous n'avez pas besoin de voiture à Montréal. Le métro et le bus couvrent la majeure partie de la ville. Obtenez votre carte OPUS la première semaine.",
+          '몬트리올에서 자동차는 없어도 됩니다. 지하철과 버스로 도시 대부분을 이동할 수 있어요. BIXI 자전거와 카셰어링까지 활용하면 차 없이도 편하게 살 수 있습니다.',
+          'You do not need a car in Montréal. Metro and bus cover most of the city — and with BIXI bikes and car-sharing, you can live very comfortably without owning one.',
+          "Vous n'avez pas besoin de voiture à Montréal. Le métro, le bus, les vélos BIXI et l'autopartage couvrent tous vos besoins.",
         )}
       </p>
+
+      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+      {expanded && (
+        <div className="space-y-3 pt-1">
+          <HakkyoNote text={t(
+            'OPUS 카드는 지하철역이나 Pharmaprix에서 구매할 수 있습니다. 월 정기권은 약 $100입니다.',
+            'The OPUS card is available at metro stations and Pharmaprix. A monthly pass is ~$100.',
+            'La carte OPUS est disponible dans les stations de métro et chez Pharmaprix. Un abonnement mensuel coûte ~100 $.',
+          )} />
+          <PrepareList lang={lang} items={[
+            { ko: '747 버스: 공항(YUL) ↔ 베리-UQAM 24시간 운행, 편도 약 $11', en: '747 bus: YUL airport ↔ Berri-UQAM, runs 24/7, ~$11 single', fr: 'Bus 747 : YUL ↔ Berri-UQAM, 24h/24, ~11 $ le trajet' },
+            { ko: 'BIXI: 5월–11월 운영. 연회원권 $15 + 45분 무제한 이용', en: 'BIXI: May–November season. $15/year membership + unlimited 45-min rides', fr: 'BIXI : saison mai–novembre. Abonnement 15 $/an + trajets illimités de 45 min' },
+            { ko: 'Communauto: 시간 단위 카셰어링 — IKEA, 코스트코, 장거리에 유용', en: 'Communauto: hourly car-sharing — great for IKEA, Costco, or out-of-city trips', fr: 'Communauto : autopartage à l\'heure — idéal pour IKEA, Costco ou les sorties' },
+            { ko: 'Turo: 개인 간 자동차 렌트 — 전통 렌터카보다 저렴하고 유연', en: 'Turo: peer-to-peer car rental — more flexible and often cheaper than traditional rentals', fr: 'Turo : location entre particuliers — plus flexible et souvent moins cher' },
+          ]} />
+        </div>
+      )}
+
       <ActionLinks
-        label={t('교통 정보', 'Transit Info', 'Informations de transport')}
+        label={t('교통 및 이동 수단', 'Transit & Getting Around', 'Transport & mobilité')}
         items={[
           { name: 'STM (Métro & Bus)', href: 'https://www.stm.info', primary: true },
-          { name: 'BIXI (자전거)', href: 'https://bixi.com' },
-          { name: '747 공항 버스', href: 'https://www.stm.info/en/info/networks/bus/shuttle/more-about-747-YUL-Aeroport-P-E-Trudeau-Montreal-shuttle' },
+          { name: '747 Airport Bus', href: 'https://www.stm.info/en/info/networks/bus/shuttle/more-about-747-YUL-Aeroport-P-E-Trudeau-Montreal-shuttle' },
+          { name: 'BIXI', href: 'https://bixi.com' },
+          { name: 'Communauto', href: 'https://www.communauto.com' },
+          { name: 'Turo', href: 'https://turo.com/ca/en' },
         ]}
       />
       <CommunityExperience section="transport" />
-      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function StayPanel() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div className="space-y-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed">
+      <p className="text-[15px] text-gray-600 leading-[1.8]">
         {t(
-          '처음엔 2~3주 임시 숙소부터 잡으세요. 동네를 직접 걸어보고 나서 아파트를 구하는 게 훨씬 낫습니다.',
-          'Start with 2–3 weeks of temporary housing. It is much better to find an apartment after you have walked the neighbourhoods in person.',
+          '처음엔 2–3주 임시 숙소부터 잡으세요. 동네를 직접 걸어보고 나서 아파트를 구하는 게 훨씬 낫습니다. 서류에 서명하기 전에 꼭 몸으로 느껴보세요.',
+          'Start with 2–3 weeks of temporary housing. It is much better to find an apartment after walking the neighbourhoods yourself. Feel the place before you sign anything.',
           "Commencez par 2–3 semaines de logement temporaire. Il vaut mieux trouver un appartement après avoir exploré les quartiers en personne.",
         )}
       </p>
+
+      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+      {expanded && (
+        <div className="space-y-3 pt-1">
+          <HakkyoNote text={t(
+            'Facebook Marketplace의 단기 서블렛(sublet)은 Airbnb보다 훨씬 저렴한 경우가 많습니다. 프랑스어로 메시지를 보내면 응답률이 올라갑니다.',
+            'Short-term sublets on Facebook Marketplace are often much cheaper than Airbnb. Messaging in French improves response rates.',
+            'Les sous-locations à court terme sur Facebook Marketplace sont souvent bien moins chères qu\'Airbnb. Écrire en français augmente les réponses.',
+          )} />
+          <PrepareList lang={lang} items={[
+            { ko: 'Airbnb 몬트리올: 1박 $80–150 수준', en: 'Airbnb Montréal: $80–150/night on average', fr: 'Airbnb Montréal : 80–150 $/nuit en moyenne' },
+            { ko: 'Facebook 단기 서블렛: 월 $800–1400 (가구 포함)', en: 'Facebook short-term sublets: $800–1,400/month furnished', fr: 'Sous-locations Facebook : 800–1 400 $/mois meublé' },
+            { ko: '플라토, 마일엔드, NDG은 신규 이민자에게 인기 있는 동네', en: 'Plateau, Mile End, and NDG are popular landing spots for newcomers', fr: 'Plateau, Mile End et NDG sont populaires parmi les nouveaux arrivants' },
+            { ko: '지하철역 걸어서 10분 이내 숙소를 우선 추천', en: 'Prioritize accommodation within 10 minutes walk of a metro station', fr: 'Privilégiez un logement à moins de 10 min à pied d\'une station de métro' },
+          ]} />
+        </div>
+      )}
+
       <ActionLinks
-        label={t('임시 숙소 검색', 'Temporary Housing', 'Hébergement temporaire')}
+        label={t('임시 숙소 찾기', 'Find Temporary Housing', 'Trouver un hébergement temporaire')}
         items={[
           { name: 'Airbnb', href: 'https://www.airbnb.ca', primary: true },
           { name: 'Facebook Marketplace', href: 'https://www.facebook.com/marketplace' },
@@ -838,69 +945,123 @@ function StayPanel() {
         ]}
       />
       <CommunityExperience section="stay" />
-      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function SINPanel() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div className="space-y-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed">
+      <p className="text-[15px] text-gray-600 leading-[1.8]">
         {t(
-          'SIN(Social Insurance Number)은 캐나다에서 일하거나 정부 서비스를 받기 위해 필요한 9자리 번호입니다. 도착 후 되도록 빨리 신청하세요.',
-          'The SIN (Social Insurance Number) is a 9-digit number needed to work or access government services in Canada. Apply as soon as possible after arriving.',
-          "Le NAS (Numéro d'assurance sociale) est un numéro à 9 chiffres requis pour travailler ou accéder aux services gouvernementaux au Canada. Faites votre demande dès que possible.",
+          'SIN(사회보험번호)은 캐나다에서 일하거나 정부 서비스를 받기 위해 꼭 필요한 9자리 번호입니다. 도착 후 최대한 빨리 신청하세요.',
+          'The SIN (Social Insurance Number) is a 9-digit number required to work or access government services in Canada. Apply as soon as possible after arriving.',
+          "Le NAS (Numéro d'assurance sociale) est un numéro à 9 chiffres requis pour travailler ou accéder aux services gouvernementaux. Faites votre demande dès l'arrivée.",
         )}
       </p>
+
+      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+      {expanded && (
+        <div className="space-y-3 pt-1">
+          <HakkyoNote text={t(
+            '임시 체류 신분으로 발급받은 SIN은 9로 시작합니다. 이건 정상입니다.',
+            'A SIN starting with 9 is issued to people on temporary permits — this is completely normal.',
+            'Un NAS commençant par 9 est délivré aux personnes sous permis temporaire — c\'est tout à fait normal.',
+          )} />
+          <PrepareList lang={lang} items={[
+            { ko: '필요 서류: 여권 + 유효한 스터디/워크 퍼밋', en: 'Required: passport + valid study or work permit', fr: 'Documents : passeport + permis d\'études ou de travail valide' },
+            { ko: '온라인 신청: 우편으로 2주 내 수령', en: 'Online application: card arrives by mail in ~2 weeks', fr: 'Demande en ligne : carte reçue par courrier en ~2 semaines' },
+            { ko: 'Service Canada 직접 방문: 당일 확인서 수령 (카드는 우편)', en: 'In-person at Service Canada: same-day confirmation letter, card by mail', fr: 'En personne à Service Canada : lettre de confirmation le jour même, carte par courrier' },
+            { ko: '취업, 세금 신고, 은행 개설, 정부 혜택 수령 모두 SIN 필요', en: 'Needed for: employment, taxes, banking, and government benefits', fr: 'Nécessaire pour : emploi, impôts, banque et prestations gouvernementales' },
+          ]} />
+        </div>
+      )}
+
       <ActionLinks
-        label={t('신청 방법', 'How to Apply', 'Comment faire la demande')}
+        label={t('SIN 신청', 'Apply for a SIN', 'Demander un NAS')}
         items={[
-          { name: 'Service Canada (온라인)', href: 'https://www.canada.ca/en/employment-social-development/services/sin/apply.html', primary: true },
-          { name: 'Service Canada (방문)', href: 'https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng' },
+          { name: t('온라인 신청', 'Apply Online', 'Demande en ligne'), href: 'https://www.canada.ca/en/employment-social-development/services/sin/apply.html', primary: true },
+          { name: t('Service Canada 방문', 'Service Canada (In Person)', 'Service Canada (en personne)'), href: 'https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng' },
         ]}
       />
       <CommunityExperience section="sin" />
-      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function DriverLicencePanel() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div className="space-y-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed">
+      <p className="text-[15px] text-gray-600 leading-[1.8]">
         {t(
           '퀘벡 운전 면허증은 신분증으로도 쓰입니다. 한국 면허증이 있으면 필기시험 없이 전환할 수 있어요. SAAQ에 예약 후 방문하세요.',
-          'A Québec driver\'s licence doubles as ID. If you have a Korean licence, you can convert it without a written test. Book an appointment at SAAQ first.',
-          "Le permis de conduire québécois sert aussi de pièce d'identité. Si vous avez un permis coréen, vous pouvez le convertir sans examen écrit. Prenez rendez-vous à la SAAQ.",
+          "A Québec driver's licence doubles as ID. With a Korean licence, you can convert without a written test. Book a SAAQ appointment before you go.",
+          "Le permis québécois sert aussi de pièce d'identité. Avec un permis coréen, la conversion ne nécessite pas d'examen écrit. Prenez rendez-vous à la SAAQ.",
         )}
       </p>
+
+      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+      {expanded && (
+        <div className="space-y-3 pt-1">
+          <HakkyoNote text={t(
+            '워크인으로 가면 2–3시간 대기할 수 있어요. 온라인 예약이 훨씬 낫습니다.',
+            'Walk-ins can wait 2–3 hours. Online booking is strongly recommended.',
+            'Les présentations sans rendez-vous peuvent attendre 2–3 heures. La réservation en ligne est fortement recommandée.',
+          )} />
+          <PrepareList lang={lang} items={[
+            { ko: '한국 면허증: 공증 번역 필요 (SAAQ 공인 번역가)', en: 'Korean licence requires a certified translation (SAAQ-approved translator)', fr: 'Le permis coréen nécessite une traduction certifiée (traducteur agréé SAAQ)' },
+            { ko: '도착 후 6개월간 한국 면허증으로 운전 가능', en: 'You can drive on your Korean licence for 6 months after arriving', fr: 'Vous pouvez conduire avec votre permis coréen pendant 6 mois après l\'arrivée' },
+            { ko: '운전 시험 없이 전환 가능 (한국↔캐나다 협약)', en: 'No driving test required — Korea and Canada have a licence exchange agreement', fr: 'Pas d\'examen de conduite requis — accord d\'échange entre la Corée et le Canada' },
+            { ko: '전환 비용: 약 $100–150', en: 'Conversion cost: ~$100–150', fr: 'Coût de conversion : ~100–150 $' },
+          ]} />
+        </div>
+      )}
+
       <ActionLinks
-        label={t('신청 정보', 'Apply', 'Faire une demande')}
+        label={t('면허 전환 신청', 'Convert Your Licence', 'Convertir votre permis')}
         items={[
           { name: 'SAAQ', href: 'https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence', primary: true },
         ]}
       />
       <CommunityExperience section="licence" />
-      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function LanguagePanel() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div className="space-y-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed">
+      <p className="text-[15px] text-gray-600 leading-[1.8]">
         {t(
           '완벽한 문법은 필요 없습니다. 말을 시작할 이유만 있으면 됩니다. 언어 교환 모임, 수업, 카페 대화 — 어디서든 시작할 수 있어요.',
-          'You do not need perfect grammar. You only need a reason to start talking. Language exchange, classes, café conversations — you can start anywhere.',
-          "Vous n'avez pas besoin d'une grammaire parfaite. Il vous suffit d'une raison de commencer à parler. Échange linguistique, cours, conversations au café — vous pouvez commencer partout.",
+          'You do not need perfect grammar. You only need a reason to start talking. Language exchange, classes, café conversations — you can begin anywhere.',
+          "Vous n'avez pas besoin d'une grammaire parfaite. Il vous suffit d'une raison de commencer. Échange, cours, café — vous pouvez débuter partout.",
         )}
       </p>
+
+      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+      {expanded && (
+        <div className="space-y-3 pt-1">
+          <HakkyoNote text={t(
+            '준비가 될 때까지 기다리지 마세요. 엉망인 채로 시작하는 것이 유일한 방법입니다.',
+            "Don't wait until you're ready. Starting imperfect is the only way.",
+            "N'attendez pas d'être prêt. Commencer imparfaitement est la seule méthode.",
+          )} />
+          <PrepareList lang={lang} items={[
+            { ko: 'Alliance Française 몬트리올: 레벨별 정규 프랑스어 수업', en: 'Alliance Française Montréal: structured French classes at all levels', fr: 'Alliance Française Montréal : cours de français structurés à tous les niveaux' },
+            { ko: 'McGill 평생교육: 저렴한 저녁 수업, 다양한 언어', en: 'McGill Continuing Education: affordable evening classes, many languages', fr: 'Formation continue McGill : cours du soir abordables, plusieurs langues' },
+            { ko: '언어 교환 앱: Tandem, HelloTalk — 실제 대화 파트너 연결', en: 'Language exchange apps: Tandem, HelloTalk — real conversation partners', fr: 'Applications d\'échange : Tandem, HelloTalk — partenaires de conversation réels' },
+            { ko: '플라토·마일엔드 카페: 주문 한 마디부터 시작하세요', en: 'Plateau and Mile End cafés: start with one order, one sentence', fr: 'Cafés du Plateau et de Mile End : commencez par une commande, une phrase' },
+          ]} />
+        </div>
+      )}
+
       <ActionLinks
         label={t('HAKKYO 언어 프로그램', 'HAKKYO Language Programs', 'Programmes linguistiques HAKKYO')}
         items={[
@@ -911,7 +1072,6 @@ function LanguagePanel() {
         ]}
       />
       <CommunityExperience section="language" />
-      <CommunityCTA to="/board" />
     </div>
   )
 }
@@ -1003,6 +1163,15 @@ export default function Arriving() {
             )}
           </p>
         </div>
+
+        {/* ── Narrative Anchor ── */}
+        <p className="text-[13px] text-gray-400 leading-relaxed mb-8 italic">
+          {t(
+            '아직도 그 날을 기억하는 사람들이 있어요. 처음 항공권을 예약한 날.',
+            'Many people still remember the day they booked their flight.',
+            'Beaucoup se souviennent encore du jour où ils ont réservé leur vol.',
+          )}
+        </p>
 
         {/* ── Progress Tracker ── */}
         <div className="border border-gray-200 rounded-2xl px-5 py-5 mb-4 bg-white">
@@ -1132,6 +1301,7 @@ export default function Arriving() {
         )}
 
         {/* ── Essential Tools ── */}
+        <div className="border-t border-gray-100 mt-10 mb-10" />
         <div className="mb-6" ref={toolsRef}>
           <h2 className="text-[15px] font-bold text-gray-900 mb-1">
             {t('필수 도구', 'Essential Tools', 'Outils Essentiels')}

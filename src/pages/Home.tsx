@@ -1,579 +1,159 @@
-import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import {
-  Search, Pin, Calendar, Clock, DollarSign,
-  Newspaper, MessageSquare, BookOpen, Zap, Users,
-} from 'lucide-react'
-import { getTracks, getNotices, getContents, getPublishedCommunityPosts, getFeaturedContent } from '../lib/db'
+import { useState, useEffect, lazy, Suspense } from 'react'
+import { Link } from 'react-router-dom'
+import { getTracks, getContents, getPublishedCommunityPosts, getFeaturedContent } from '../lib/db'
 import { useLang } from '../context/LangContext'
 import { normalizeContent, newsExcerpt, thumbnailUrl } from '../lib/newsContent'
-import type { ProgramTrack, Notice, Content, CommunitySubmission } from '../types'
+import type { ProgramTrack, Content, CommunitySubmission } from '../types'
 import { trackEvent } from '../lib/analytics'
 const CommunitySubmitModal = lazy(() => import('../components/CommunitySubmitModal'))
 import { LeftSidebar, PageShell } from '../components/PageLayout'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Lang       = 'ko' | 'en' | 'fr'
-type FeedFilter = 'all' | 'program' | 'notice' | 'content' | 'community'
-
-type FeedItem =
-  | { kind: 'notice';    data: Notice;              sortKey: string; pinned: boolean }
-  | { kind: 'program';   data: ProgramTrack;        sortKey: string; pinned: boolean }
-  | { kind: 'content';   data: Content;             sortKey: string; pinned: boolean }
-  | { kind: 'community'; data: CommunitySubmission; sortKey: string; pinned: boolean }
-
-// ─── Language fallback ────────────────────────────────────────────────────────
+type Lang = 'ko' | 'en' | 'fr'
 
 function pickText(lang: Lang, ko: string, en: string, fr: string): string {
   const order = lang === 'ko' ? [ko, en, fr] : lang === 'fr' ? [fr, ko, en] : [en, ko, fr]
   return order.find(s => s?.trim()) ?? ''
 }
 
-const nTitle = (n: Notice, l: Lang)       => pickText(l, n.title_ko,       n.title_en,       n.title_fr)
-const nBody  = (n: Notice, l: Lang)       => pickText(l, n.body_ko,        n.body_en,        n.body_fr)
-const tName  = (s: ProgramTrack, l: Lang) => pickText(l, s.name_ko,        s.name_en,        s.name_fr)
-const tDesc  = (s: ProgramTrack, l: Lang) => pickText(l, s.description_ko, s.description_en, s.description_fr)
-const cTitle = (c: Content, l: Lang)      => pickText(l, c.title_ko,       c.title_en,       c.title_fr)
-const cBody  = (c: Content, l: Lang)      => pickText(l, c.body_ko,        c.body_en,        c.body_fr)
+const tName  = (s: ProgramTrack, l: Lang) => pickText(l, s.name_ko,  s.name_en,  s.name_fr)
+const cTitle = (c: Content, l: Lang)      => pickText(l, c.title_ko, c.title_en, c.title_fr)
+const cBody  = (c: Content, l: Lang)      => pickText(l, c.body_ko,  c.body_en,  c.body_fr)
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Daily date display ───────────────────────────────────────────────────────
 
-function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return ''
-  try { return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(iso)) }
-  catch { return iso }
-}
-
-function relativeTime(iso: string | null | undefined): string {
-  if (!iso) return ''
-  try {
-    const diff = Date.now() - new Date(iso).getTime()
-    const mins  = Math.floor(diff / 60_000)
-    const hours = Math.floor(diff / 3_600_000)
-    const days  = Math.floor(diff / 86_400_000)
-    const weeks = Math.floor(days / 7)
-    if (mins  <  1)  return 'just now'
-    if (mins  < 60)  return `${mins}m ago`
-    if (hours < 24)  return `${hours}h ago`
-    if (days  === 1) return 'Yesterday'
-    if (days  <  7)  return `${days}d ago`
-    if (days  < 30)  return `${weeks}w ago`
-    return fmtDate(iso)
-  } catch { return '' }
-}
-
-function tPrice(s: ProgramTrack): string {
-  if (s.is_free) return 'Free'
-  if (s.total_price && s.total_price > 0) return `$${s.total_price} ${s.currency}`
-  if (s.class_count > 0 && s.price_per_class > 0) return `$${s.price_per_class * s.class_count} ${s.currency}`
-  if (s.price_per_class > 0) return `$${s.price_per_class} ${s.currency}`
-  return 'Free'
-}
-
-function tDuration(s: ProgramTrack): string | null {
-  const dur = (s as ProgramTrack & { duration?: string }).duration
-  if (dur) return dur
-  if (s.duration_weeks) return `${s.duration_weeks} weeks`
-  if (s.class_count > 1) return `${s.class_count} classes`
-  return null
-}
-
-function hasTitle(item: FeedItem): boolean {
-  if (item.kind === 'community') return !!item.data.title?.trim()
-  if (item.kind === 'notice')    return !!(item.data.title_ko?.trim() || item.data.title_en?.trim() || item.data.title_fr?.trim())
-  if (item.kind === 'program')   return !!(item.data.name_ko?.trim()  || item.data.name_en?.trim()  || item.data.name_fr?.trim())
-  return !!(item.data.title_ko?.trim() || item.data.title_en?.trim() || item.data.title_fr?.trim())
-}
-
-function itemMatches(item: FeedItem, q: string): boolean {
-  const lq = q.toLowerCase()
-  if (item.kind === 'community') {
-    return [item.data.title, item.data.description, item.data.type].some(s => s?.toLowerCase().includes(lq))
+function todayLabel(lang: Lang): string {
+  const now = new Date()
+  if (lang === 'ko') {
+    return now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
   }
-  const fields =
-    item.kind === 'notice'  ? [item.data.title_ko, item.data.title_en, item.data.title_fr, item.data.body_ko, item.data.body_en, item.data.body_fr] :
-    item.kind === 'program' ? [item.data.name_ko, item.data.name_en, item.data.name_fr, item.data.description_ko, item.data.description_en, item.data.description_fr] :
-                              [item.data.title_ko, item.data.title_en, item.data.title_fr, item.data.body_ko, item.data.body_en, item.data.body_fr]
-  return fields.some(s => s?.toLowerCase().includes(lq))
+  if (lang === 'fr') {
+    return now.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  }
+  return now.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 }
 
-const NOTICE_COLOR: Record<string, string> = { event: '#111111', hiring: '#4B5563', notice: '#9CA3AF' }
-const CAT_LABEL:    Record<string, string> = { archive: 'Archive', montreal: 'Montréal', language: 'Language', culture: 'Culture' }
-const COMMUNITY_SUBTYPE_LABEL: Record<string, string> = {
-  housing:            'Housing',
-  jobs:               'Jobs',
-  looking_for_people: 'Roommates',
-  language_exchange:  'Language Exchange',
-  general:            'General',
-  other:              'General',
-  events:             'Events',
-  help_needed:        'Help',
+// ─── Daily phrase (rotates by day of week) ───────────────────────────────────
+
+const DAILY_WORDS: Array<{ ko: string; en: string; fr: string; context: string }> = [
+  { ko: '천천히 가도 괜찮아요.',          en: "It's okay to go slowly.",         fr: "C'est bien d'y aller doucement.", context: 'Settling in' },
+  { ko: '오늘 어떠세요?',                 en: "How are you today?",               fr: "Comment allez-vous aujourd'hui ?", context: 'Daily greeting' },
+  { ko: '몬트리올에 온 걸 환영해요.',      en: 'Welcome to Montréal.',             fr: 'Bienvenue à Montréal.',           context: 'First arrival' },
+  { ko: '지하철 타는 법을 알아요?',        en: 'Do you know how to take the metro?', fr: 'Savez-vous prendre le métro ?',  context: 'Transit' },
+  { ko: '어디서 왔어요?',                  en: 'Where are you from?',              fr: "D'où venez-vous ?",               context: 'Getting to know each other' },
+  { ko: '이 근처에 좋은 카페가 있어요?',   en: 'Is there a good café nearby?',     fr: 'Y a-t-il un bon café par ici ?',  context: 'Neighbourhood life' },
+  { ko: '같이 공부할 사람 있어요?',        en: 'Anyone want to study together?',   fr: "Quelqu'un veut étudier ensemble ?", context: 'Community' },
+]
+
+function getDailyWord() {
+  const day = new Date().getDay()
+  return DAILY_WORDS[day]
 }
 
-// ─── Shared card atoms ────────────────────────────────────────────────────────
+// ─── Section label ────────────────────────────────────────────────────────────
 
-function HakkyoAvatar() {
+function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center shrink-0">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <line x1="4"  y1="3" x2="4"  y2="13" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="12" y1="3" x2="12" y2="13" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="4"  y1="8" x2="12" y2="8"  stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
-      </svg>
-    </div>
-  )
-}
-
-const AVATAR_COLORS = ['#F0C040', '#4ADE80', '#60A5FA', '#F472B6', '#A78BFA', '#FB923C']
-function avatarBg(name: string): string {
-  let h = 0
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
-  return AVATAR_COLORS[h % AVATAR_COLORS.length]
-}
-
-function NicknameAvatar({ name }: { name: string }) {
-  const initial = name ? [...name][0].toUpperCase() : '익'
-  const bg = avatarBg(name || '익')
-  return (
-    <div
-      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[13px] font-bold"
-      style={{ background: bg, color: bg === '#F0C040' ? '#111' : '#fff' }}
-    >
-      {initial}
-    </div>
-  )
-}
-
-function PostHeader({ time }: { time?: string | null }) {
-  return (
-    <div className="flex items-center gap-2.5 mb-3">
-      <HakkyoAvatar />
-      <div>
-        <p className="text-[13px] font-semibold text-gray-900 leading-none mb-0.5">HAKKYO</p>
-        {time && (
-          <p className="text-[11px] text-gray-400 leading-none">
-            {relativeTime(time)} · {fmtDate(time)}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function TypeTag({ children, color = '#9CA3AF' }: { children: React.ReactNode; color?: string }) {
-  return (
-    <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color }}>
+    <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-300 mb-4">
       {children}
-    </span>
+    </p>
   )
 }
 
-function PinIndicator() {
-  return (
-    <span className="inline-flex items-center gap-1" style={{ color: 'var(--y-h)' }}>
-      <Pin size={10} />
-      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-        Pinned
-      </span>
-    </span>
-  )
+// ─── Divider ─────────────────────────────────────────────────────────────────
+
+function Divider() {
+  return <div className="border-t border-gray-100 my-8" />
 }
 
-// ─── Card action icons ────────────────────────────────────────────────────────
+// ─── Section 1: TODAY ────────────────────────────────────────────────────────
 
-function IcoChat() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-    </svg>
-  )
-}
-
-function IcoShare() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
-      <polyline points="16 6 12 2 8 6"/>
-      <line x1="12" y1="2" x2="12" y2="15"/>
-    </svg>
-  )
-}
-
-function IcoBookmark({ filled }: { filled: boolean }) {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'}
-         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-    </svg>
-  )
-}
-
-function CardActions({ compact = false, commentHref }: { compact?: boolean; commentHref?: string }) {
-  const [saved, setSaved] = useState(false)
-  const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation() }
-
-  return (
-    <div className={`flex items-center gap-${compact ? '3' : '4'} pt-3 border-t border-gray-50 mt-3`}>
-      {commentHref ? (
-        <a
-          href={commentHref}
-          onClick={stop}
-          className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-600 transition-colors"
-        >
-          <IcoChat />
-          <span>Comment</span>
-        </a>
-      ) : (
-        <button className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-500 transition-colors">
-          <IcoChat />
-          <span>Comment</span>
-        </button>
-      )}
-      <button
-        onClick={stop}
-        className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-gray-500 transition-colors"
-      >
-        <IcoShare />
-        <span>Share</span>
-      </button>
-      <button
-        onClick={e => { stop(e); setSaved(s => !s) }}
-        className={`flex items-center gap-1.5 text-[11px] ml-auto transition-colors ${saved ? '' : 'text-gray-300 hover:text-gray-500'}`}
-        style={saved ? { color: 'var(--y-h)' } : {}}
-      >
-        <IcoBookmark filled={saved} />
-        <span>Save</span>
-      </button>
-    </div>
-  )
-}
-
-// ─── Floating create button ───────────────────────────────────────────────────
-
-function FloatingCreateButton({ onOpen }: { onOpen: () => void }) {
-  return (
-    <button
-      onClick={onOpen}
-      title="Create post"
-      className="fixed bottom-24 right-5 lg:bottom-8 lg:right-8 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-xl font-black transition-all active:scale-95 hover:shadow-xl"
-      style={{ background: 'var(--y)', color: '#111' }}
-    >
-      ✏
-    </button>
-  )
-}
-
-// Pill chip for program metadata
-function MetaChip({ icon: Icon, children }: {
-  icon: React.ElementType
-  children: React.ReactNode
-}) {
-  return (
-    <span className="inline-flex items-center gap-1 bg-white border border-gray-200 rounded-full px-2.5 py-1 text-[10px] text-gray-600 whitespace-nowrap">
-      <Icon size={10} className="text-gray-400 shrink-0" />
-      {children}
-    </span>
-  )
-}
-
-// Inline post image — 16:9, max 360px tall
-function PostImage({ src, href }: { src: string; href: string }) {
-  return (
-    <Link to={href} className="block mt-4 mb-0.5">
-      <div className="overflow-hidden rounded-xl bg-gray-50" style={{ aspectRatio: '16/9', maxHeight: 360 }}>
-        <img
-          src={src}
-          alt=""
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.015]"
-        />
-      </div>
-    </Link>
-  )
-}
-
-// ─── Community card ───────────────────────────────────────────────────────────
-
-function CommunityCard({ post, t }: {
-  post: CommunitySubmission
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  const catLabel = COMMUNITY_SUBTYPE_LABEL[post.type] ?? 'General'
-  const author   = post.author_name?.trim() || t('익명', 'Anonymous', 'Anonyme')
-
-  // Don't repeat body when it's identical to (or starts with) the title
-  const titleNorm = post.title?.trim() ?? ''
-  const bodyNorm  = post.description?.trim() ?? ''
-  const showBody  = bodyNorm && bodyNorm !== titleNorm
-
-  return (
-    <article className="rounded-2xl border border-gray-100 bg-white mb-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_18px_rgba(0,0,0,0.07)] hover:border-gray-200">
-      <Link to={`/community/${post.id}`} className="block">
-
-        <div className="px-5 pt-5 pb-4">
-
-          {/* 1 · Author row */}
-          <div className="flex items-center gap-2.5 mb-3">
-            <NicknameAvatar name={author} />
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-semibold text-gray-900 leading-none">{author}</p>
-              {post.created_at && (
-                <p className="text-[12px] text-gray-400 leading-none mt-0.5">{relativeTime(post.created_at)}</p>
-              )}
-            </div>
-            {/* Category badge */}
-            <span
-              className="shrink-0 text-[12px] font-semibold px-2.5 py-1 rounded-full"
-              style={{ background: 'var(--y-l)', color: '#856C00' }}
-            >
-              {catLabel}
-            </span>
-          </div>
-
-          {/* 2 · Title */}
-          {titleNorm && (
-            <h3 className="text-[16px] sm:text-[18px] font-semibold text-gray-900 leading-snug mb-2">
-              {titleNorm}
-            </h3>
-          )}
-
-          {/* 3 · Body preview (skip if same as title) */}
-          {showBody && (
-            <p
-              className="text-[14px] sm:text-[15px] text-gray-500 leading-[1.6] mb-3"
-              style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-            >
-              {bodyNorm}
-            </p>
-          )}
-
-          {/* 4 · Image */}
-          {post.image_url && (
-            <div
-              className="overflow-hidden rounded-xl bg-gray-50 mb-3"
-              style={{ maxHeight: 'clamp(200px, 40vw, 360px)' }}
-            >
-              <img
-                src={post.image_url}
-                alt=""
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.015]"
-                style={{ maxHeight: 'clamp(200px, 40vw, 360px)' }}
-              />
-            </div>
-          )}
-
-          {/* 5 · Read more */}
-          <p className="text-[13px] font-medium" style={{ color: 'var(--y-h)' }}>
-            {t('더 보기', 'Read more', 'Lire plus')} →
-          </p>
-
-        </div>
-      </Link>
-
-      {/* 6 · Actions */}
-      <div className="px-5 pb-5">
-        <CardActions commentHref={`/community/${post.id}#comments`} />
-      </div>
-    </article>
-  )
-}
-
-// ─── Pinned list (compact) ────────────────────────────────────────────────────
-
-function PinnedList({ items, lang, t }: {
-  items: FeedItem[]
+function TodayHeader({ lang, programCount, communityCount }: {
   lang: Lang
-  t: (ko: string, en: string, fr: string) => string
+  programCount: number
+  communityCount: number
 }) {
-  const pinned = items.filter(i => i.pinned).slice(0, 5)
-  if (!pinned.length) return null
-
-  function getHref(item: FeedItem): string {
-    if (item.kind === 'program') return `/programs/${item.data.id}`
-    if (item.kind === 'content') return `/news/${item.data.id}`
-    if (item.kind === 'notice')  return `/board/${item.data.id}`
-    return `/community/${item.data.id}`
-  }
-
-  function getTitle(item: FeedItem): string {
-    if (item.kind === 'notice')  return nTitle(item.data, lang)
-    if (item.kind === 'program') return tName(item.data, lang)
-    if (item.kind === 'content') return cTitle(item.data, lang)
-    return item.data.title
-  }
-
-  function getThumb(item: FeedItem): string | null {
-    if (item.kind === 'content') return thumbnailUrl(item.data)
-    if (item.kind === 'notice')  return item.data.image_url ?? null
-    return null
-  }
-
-  function getCategory(item: FeedItem): string {
-    if (item.kind === 'program') return t('프로그램', 'Program', 'Programme')
-    if (item.kind === 'notice')  return item.data.type === 'event' ? t('이벤트', 'Event', 'Événement') : item.data.type === 'hiring' ? t('채용', 'Hiring', 'Recrutement') : t('공지', 'Notice', 'Avis')
-    if (item.kind === 'content') return CAT_LABEL[item.data.category ?? ''] ?? 'Montréal'
-    return t('커뮤니티', 'Community', 'Communauté')
-  }
-
-  function getMeta(item: FeedItem): string {
-    if (item.kind === 'program') {
-      const d = item.data
-      return d.status === 'open' ? '● Open' : 'Closed'
-    }
-    const date = item.kind === 'notice'  ? (item.data.created_at || item.data.date) :
-                 item.kind === 'content' ? (item.data.published_at ?? item.data.created_at) :
-                 item.data.created_at
-    return date ? fmtDate(date) : ''
-  }
+  const { t } = useLang()
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-1.5 mb-2">
-        <Pin size={10} className="text-gray-300" strokeWidth={2.5} />
-        <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300">
-          {t('고정됨', 'Pinned', 'Épinglé')}
-        </span>
-      </div>
-      <div className="border border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-50">
-        {pinned.map(item => {
-          const thumb    = getThumb(item)
-          const title    = getTitle(item)
-          const category = getCategory(item)
-          const meta     = getMeta(item)
-          const href     = getHref(item)
-          const isOpen   = item.kind === 'program' && item.data.status === 'open'
-
-          return (
-            <Link
-              key={`${item.kind}-${item.data.id}`}
-              to={href}
-              className="flex items-center gap-4 px-5 py-4 bg-white hover:bg-gray-50 transition-colors group"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">
-                    {category}
-                  </span>
-                  {meta && (
-                    <span className={`text-[10px] font-semibold ${isOpen ? 'text-gray-900' : 'text-gray-300'}`}>
-                      {meta}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[14px] font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-gray-700 transition-colors">
-                  {title}
-                </p>
-              </div>
-              {thumb && (
-                <img
-                  src={thumb}
-                  alt=""
-                  loading="lazy"
-                  className="w-14 h-14 rounded-xl object-cover shrink-0 border border-gray-100"
-                />
-              )}
-            </Link>
-          )
-        })}
+    <div className="mb-2">
+      <p className="text-[11px] text-gray-400 font-medium mb-1">{todayLabel(lang)}</p>
+      <h1 className="text-[22px] font-black text-gray-900 tracking-tight leading-tight mb-5">
+        {t('몬트리올, 오늘', 'Montréal, Today', "Montréal, aujourd'hui")}
+      </h1>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="border border-gray-100 rounded-xl px-4 py-3 bg-white">
+          <p className="text-[10px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+            {t('열린 프로그램', 'Programs Open', 'Programmes ouverts')}
+          </p>
+          <p className="text-[18px] font-black text-gray-900">{programCount}</p>
+        </div>
+        <div className="border border-gray-100 rounded-xl px-4 py-3 bg-white">
+          <p className="text-[10px] font-bold text-gray-300 uppercase tracking-wide mb-1">
+            {t('커뮤니티 글', 'Community Posts', 'Posts communauté')}
+          </p>
+          <p className="text-[18px] font-black text-gray-900">{communityCount}</p>
+        </div>
       </div>
     </div>
   )
 }
 
-// ─── Community Moments ────────────────────────────────────────────────────────
+// ─── Section 2: TODAY AT HAKKYO ───────────────────────────────────────────────
 
-const MOMENT_BADGE: Record<string, string> = {
-  archive:  'Archive',
-  montreal: 'Community',
-  language: 'Language Exchange',
-  culture:  'Workshop',
-}
+function TodayAtHakkyo({ contents, tracks, lang }: {
+  contents: Content[]
+  tracks: ProgramTrack[]
+  lang: Lang
+}) {
+  const { t } = useLang()
 
-function CommunityMoments({ items, lang }: { items: Content[]; lang: Lang }) {
+  type UpdateItem = { label: string; title: string; href: string; time: string }
+  const items: UpdateItem[] = []
+
+  contents.slice(0, 3).forEach(c => {
+    const title = cTitle(c, lang)
+    if (title) items.push({
+      label: t('새 가이드', 'New guide', 'Nouveau guide'),
+      title,
+      href: `/news/${c.id}`,
+      time: c.published_at?.slice(0, 10) ?? '',
+    })
+  })
+
+  tracks.slice(0, 2).forEach(s => {
+    const name = tName(s, lang)
+    if (name) items.push({
+      label: t('프로그램', 'Program', 'Programme'),
+      title: name,
+      href: `/programs/${s.id}`,
+      time: s.start_date?.slice(0, 10) ?? '',
+    })
+  })
+
+  items.sort((a, b) => (b.time > a.time ? 1 : -1))
+
   if (items.length === 0) return null
 
   return (
-    <section className="mb-8">
-      <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300 mb-1">
-        Community Moments
-      </p>
-      <p className="text-[11px] text-gray-400 mb-4">
-        Recent moments from classes, exchanges, workshops, and community events.
-      </p>
-
-      {/* 3-col grid on md+; horizontal scroll on mobile */}
-      <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible">
-        {items.map(item => {
-          const title = pickText(lang, item.title_ko, item.title_en, item.title_fr)
-          const thumb = thumbnailUrl(item)
-          const badge = MOMENT_BADGE[item.category ?? ''] ?? 'Community'
-          const date  = item.published_at ?? item.created_at
-
-          return (
-            <Link
-              key={item.id}
-              to={`/news/${item.id}`}
-              className="shrink-0 w-52 md:w-auto rounded-xl border border-gray-100 bg-white overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] hover:border-gray-200"
+    <div>
+      <SectionLabel>{t('오늘의 HAKKYO', 'Today at HAKKYO', "Aujourd'hui chez HAKKYO")}</SectionLabel>
+      <div className="space-y-0 divide-y divide-gray-50">
+        {items.slice(0, 5).map((item, i) => (
+          <Link key={i} to={item.href} className="flex items-start gap-3 py-3 group">
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5"
+              style={{ background: 'var(--y-l)', color: '#555' }}
             >
-              {/* Cover image */}
-              <div className="aspect-[4/3] bg-gray-50 overflow-hidden">
-                {thumb
-                  ? <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-2xl opacity-20">🌎</span>
-                    </div>
-                }
-              </div>
-
-              {/* Card body */}
-              <div className="p-3">
-                <span className="inline-block text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1.5">
-                  {badge}
-                </span>
-                <p className="text-[12px] font-medium text-gray-900 leading-snug line-clamp-2 mb-1">
-                  {title}
-                </p>
-                {date && (
-                  <p className="text-[10px] text-gray-400">{fmtDate(date)}</p>
-                )}
-              </div>
-            </Link>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-// ─── Open Now strip ───────────────────────────────────────────────────────────
-
-function OpenNowStrip({ tracks, lang, t }: {
-  tracks: ProgramTrack[]
-  lang: Lang
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  const open = tracks.filter(s => s.status === 'open' && (s.name_ko?.trim() || s.name_en?.trim()))
-  if (!open.length) return null
-
-  return (
-    <div className="overflow-x-auto mb-4">
-      <div className="flex items-center gap-2 min-w-max">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.18em] uppercase shrink-0 text-gray-900">
-          <Zap size={11} />
-          {t('모집 중', 'Open now', 'Ouvert')}
-        </span>
-        {open.map(s => (
-          <Link
-            key={s.id}
-            to={`/programs/${s.id}`}
-            className="flex items-center gap-1.5 text-[12px] text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-300 rounded-full px-3.5 py-1.5 transition-colors whitespace-nowrap"
-          >
-            <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-900" />
-            {tName(s, lang)}
+              {item.label}
+            </span>
+            <span className="text-[13px] text-gray-700 group-hover:text-gray-900 transition-colors leading-snug flex-1">
+              {item.title}
+            </span>
+            {item.time && (
+              <span className="text-[10px] text-gray-300 shrink-0 mt-0.5">{item.time}</span>
+            )}
           </Link>
         ))}
       </div>
@@ -581,371 +161,326 @@ function OpenNowStrip({ tracks, lang, t }: {
   )
 }
 
-// ─── Feed search (compact) ────────────────────────────────────────────────────
+// ─── Section 3: TODAY'S STORY ─────────────────────────────────────────────────
 
-function FeedSearch({ value, onChange, suggestions, t }: {
-  value: string
-  onChange: (v: string) => void
-  suggestions: string[]
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  const ref = useRef<HTMLInputElement>(null)
-  const [focused, setFocused] = useState(false)
+function TodaysStory({ featured, lang }: { featured: Content[]; lang: Lang }) {
+  const { t } = useLang()
+  const story = featured[0]
+  if (!story) return null
 
-  const visible = focused && !value && suggestions.length > 0
+  const title   = cTitle(story, lang)
+  const excerpt = newsExcerpt(cBody(story, lang), 180)
+  const thumb   = thumbnailUrl(story)
+  const href    = `/news/${story.id}`
 
   return (
-    <div className="relative mb-4">
-      <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 bg-white transition-all ${focused ? 'border-gray-300' : 'border-gray-100'}`}>
-        <Search size={13} className="text-gray-300 shrink-0" />
-        <input
-          ref={ref}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setTimeout(() => setFocused(false), 150)}
-          placeholder={t(
-            '프로그램, 이벤트, 주거, 취업 검색',
-            'Search programs, events, housing, jobs…',
-            'Programmes, événements, logement, emploi…',
+    <div>
+      <SectionLabel>{t("오늘의 이야기", "Today's Story", "L'histoire du jour")}</SectionLabel>
+      <Link to={href} className="block group">
+        <article className="border border-gray-200 rounded-2xl overflow-hidden hover:border-gray-300 transition-colors">
+          {thumb && (
+            <div className="w-full h-36 overflow-hidden">
+              <img
+                src={thumb}
+                alt=""
+                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+              />
+            </div>
           )}
-          className="flex-1 text-[12px] text-gray-700 placeholder-gray-300 bg-transparent outline-none"
-        />
-        {value && (
-          <button
-            onClick={() => { onChange(''); ref.current?.focus() }}
-            className="text-gray-300 hover:text-gray-500 transition-colors leading-none shrink-0"
-          >
-            ×
-          </button>
-        )}
-      </div>
-
-      {visible && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-20 overflow-hidden">
-          <p className="text-[9px] font-semibold tracking-[0.18em] uppercase text-gray-300 px-4 pt-3 pb-1.5">
-            {t('추천 검색어', 'Suggestions', 'Suggestions')}
-          </p>
-          {suggestions.map((s, i) => (
-            <button
-              key={i}
-              onMouseDown={() => onChange(s)}
-              className="w-full text-left px-4 py-2.5 text-[12px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Filter chips ─────────────────────────────────────────────────────────────
-
-const FILTER_ICONS: Record<FeedFilter, React.ElementType> = {
-  all:       Zap,
-  program:   BookOpen,
-  notice:    MessageSquare,
-  content:   Newspaper,
-  community: Users,
-}
-
-function FilterChips({ active, onChange, counts, t }: {
-  active: FeedFilter
-  onChange: (f: FeedFilter) => void
-  counts: Record<FeedFilter, number>
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  const chips: { key: FeedFilter; label: string }[] = [
-    { key: 'all',       label: t('전체',    'All',       'Tout')         },
-    { key: 'program',   label: t('프로그램', 'Programs',  'Programmes')   },
-    { key: 'notice',    label: t('게시판',  'Board',     'Forum')        },
-    { key: 'content',   label: t('뉴스',    'News',      'Actualités')   },
-    { key: 'community', label: t('커뮤니티', 'Community', 'Communauté')  },
-  ]
-
-  return (
-    <div className="flex items-center gap-2 mb-4 flex-wrap">
-      {chips.map(chip => {
-        const n = chip.key === 'all' ? 0 : counts[chip.key]
-        const on = active === chip.key
-        const Icon = FILTER_ICONS[chip.key]
-        return (
-          <button
-            key={chip.key}
-            onClick={() => onChange(chip.key)}
-            className={[
-              'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.06em] transition-all',
-              on ? '' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700',
-            ].join(' ')}
-            style={on ? { background: 'var(--y)', color: '#111' } : {}}
-          >
-            <Icon size={11} className="shrink-0" />
-            {chip.label}
-            {n > 0 && (
-              <span className={`text-[9px] ${on ? 'text-gray-400' : 'text-gray-400'}`}>{n}</span>
+          <div className="px-5 py-4">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">
+              {t('HAKKYO 시티', 'HAKKYO City', 'HAKKYO City')}
+            </p>
+            <h2 className="text-[15px] font-bold text-gray-900 leading-snug mb-2 group-hover:text-gray-600 transition-colors">
+              {title}
+            </h2>
+            {excerpt && (
+              <p className="text-[12px] text-gray-500 leading-[1.7]"
+                 style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {excerpt}
+              </p>
             )}
-          </button>
-        )
-      })}
+            <p className="text-[12px] text-gray-400 mt-3">{t('읽기', 'Read', 'Lire')} →</p>
+          </div>
+        </article>
+      </Link>
     </div>
   )
 }
 
-// ─── Notice card ──────────────────────────────────────────────────────────────
+// ─── Section 4: TODAY'S WORDS ─────────────────────────────────────────────────
 
-function NoticeCard({ notice, lang, t }: {
-  notice: Notice; lang: Lang
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  const title   = nTitle(notice, lang)
-  const preview = newsExcerpt(nBody(notice, lang), 300)
-  const color   = NOTICE_COLOR[notice.type] ?? NOTICE_COLOR.notice
-  const typeLabel =
-    notice.type === 'event'  ? t('이벤트', 'Event',   'Événement')  :
-    notice.type === 'hiring' ? t('채용',   'Hiring',  'Recrutement') :
-                               t('공지',   'Notice',  'Avis')
-
-  const boardHref = `/board/${notice.id}`
+function TodaysWords() {
+  const { t } = useLang()
+  const word = getDailyWord()
 
   return (
-    <article className={`rounded-2xl border mb-3 px-5 py-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${notice.is_pinned ? 'border-gray-300 hover:border-gray-400 bg-white' : 'border-gray-100 hover:border-gray-200 bg-white'}`}>
-      <Link to={boardHref} className="block cursor-pointer">
-        <PostHeader time={notice.created_at || notice.date} />
-
-        {/* Type + pin */}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <TypeTag color={color}>{typeLabel}</TypeTag>
-          {notice.is_pinned && <PinIndicator />}
+    <div>
+      <SectionLabel>{t("오늘의 표현", "Today's Words", "Les mots du jour")}</SectionLabel>
+      <div className="border border-gray-100 rounded-2xl px-5 py-4 bg-white">
+        <p className="text-[10px] font-bold text-gray-300 uppercase tracking-wide mb-3">{word.context}</p>
+        <div className="space-y-2">
+          <p className="text-[15px] font-bold text-gray-900">{word.ko}</p>
+          <p className="text-[13px] text-gray-500">{word.en}</p>
+          <p className="text-[13px] text-gray-400 italic">{word.fr}</p>
         </div>
-
-        {/* Title */}
-        <h3 className="text-[15px] font-semibold text-gray-900 leading-snug mb-2 hover:text-gray-600 transition-colors">
-          {title}
-        </h3>
-
-        {/* Preview */}
-        {preview && (
-          <p className="text-[14px] text-gray-500 leading-[1.6]"
-             style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {preview}
-          </p>
-        )}
-
-        {/* Inline image */}
-        {notice.image_url && <PostImage src={notice.image_url} href={boardHref} />}
-      </Link>
-
-      {/* CTA */}
-      <div className="mt-4">
-        <Link to={boardHref} className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors">
-          {t('보기', 'Read', 'Lire')} →
+        <Link
+          to="/everyday-words"
+          className="inline-block mt-4 text-[11px] text-gray-400 hover:text-gray-700 transition-colors"
+        >
+          {t('더 많은 표현 보기', 'More everyday words', "Plus d'expressions")} →
         </Link>
       </div>
-
-      <CardActions compact />
-    </article>
+    </div>
   )
 }
 
-// ─── Program card ─────────────────────────────────────────────────────────────
+// ─── Section 5: COMMUNITY CHECK-IN ───────────────────────────────────────────
 
-function ProgramCard({ track, lang, t }: {
-  track: ProgramTrack; lang: Lang
-  t: (ko: string, en: string, fr: string) => string
+function CommunityCheckin({ posts, onCompose }: {
+  posts: CommunitySubmission[]
+  onCompose: () => void
 }) {
-  const navigate = useNavigate()
-  const name     = tName(track, lang)
-  const preview  = newsExcerpt(tDesc(track, lang), 300)
-  const price    = tPrice(track)
-  const duration = tDuration(track)
-  const isOpen   = track.status === 'open'
-  const dotColor = isOpen ? '#111111' : '#D1D5DB'
-  const isPinned = !!track.is_pinned
+  const { t } = useLang()
+  const post = posts[0]
 
   return (
-    <article className={`rounded-2xl border mb-3 px-5 py-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${isPinned ? 'border-gray-300 hover:border-gray-400 bg-white' : 'border-gray-100 hover:border-gray-200 bg-white'}`}>
-      <Link to={`/programs/${track.id}`} className="block cursor-pointer">
-        <PostHeader time={track.created_at} />
-
-        {/* Type + status + pin */}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <TypeTag>{t('프로그램', 'Program', 'Programme')}</TypeTag>
-          {isPinned && <PinIndicator />}
-          {isOpen
-            ? <span className="text-[10px] font-bold tracking-[0.12em] uppercase text-gray-900">
-                {t('모집 중', '● OPEN', '● OUVERT')}
-              </span>
-            : <span className="text-[10px] text-gray-300 uppercase tracking-wide">
-                {t('마감', 'Closed', 'Fermé')}
-              </span>
-          }
-        </div>
-
-        {/* Title */}
-        <h3 className="text-[15px] font-semibold text-gray-900 leading-snug mb-2">{name}</h3>
-
-        {/* Preview */}
-        {preview && (
-          <p className="text-[14px] text-gray-500 leading-[1.6] mb-3"
-             style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {preview}
-          </p>
-        )}
-
-        {/* Metadata chips */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          {track.start_date && <MetaChip icon={Calendar}>{fmtDate(track.start_date)}</MetaChip>}
-          {duration          && <MetaChip icon={Clock}>{duration}</MetaChip>}
-          <MetaChip icon={DollarSign}>{price}</MetaChip>
-        </div>
-      </Link>
-
-      {/* CTA */}
-      <div className="mt-4">
-        {isOpen
-          ? <button
-              onClick={e => { e.preventDefault(); navigate(`/apply/${track.id}`) }}
-              className="text-xs text-gray-900 hover:text-gray-500 transition-colors font-medium"
+    <div>
+      <SectionLabel>{t('커뮤니티 체크인', 'Community Check-in', 'Coup de pouce communautaire')}</SectionLabel>
+      {post ? (
+        <div className="border border-gray-100 rounded-2xl px-5 py-4 bg-white mb-3">
+          <div className="flex items-center gap-2 mb-3">
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+              style={{ background: 'var(--y)', color: '#111' }}
             >
-              {t('신청', 'Apply', "S'inscrire")} →
-            </button>
-          : <span className="text-[11px] text-gray-300 tracking-wide uppercase">{t('마감', 'Closed', 'Fermé')}</span>
-        }
-      </div>
-
-      <CardActions compact />
-    </article>
-  )
-}
-
-// ─── Content card ─────────────────────────────────────────────────────────────
-
-function ContentCard({ content, lang, t }: {
-  content: Content; lang: Lang
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  const title    = cTitle(content, lang)
-  const preview  = newsExcerpt(cBody(content, lang), 300)
-  const thumb    = thumbnailUrl(content)
-  const label    = CAT_LABEL[content.category ?? ''] ?? 'Montréal'
-  const dateStr  = content.published_at?.slice(0, 10) ?? ''
-  const href     = `/news/${content.id}`
-  const isPinned = !!content.is_pinned
-
-  return (
-    <article className={`rounded-2xl border mb-3 px-5 py-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${isPinned ? 'border-gray-300 hover:border-gray-400 bg-white' : 'border-gray-100 hover:border-gray-200 bg-white'}`}>
-      <PostHeader time={content.published_at ?? content.created_at} />
-
-      {/* Type + pin */}
-      <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <TypeTag>{label}</TypeTag>
-        {isPinned && <PinIndicator />}
-      </div>
-
-      {/* Title */}
-      <Link to={href}>
-        <h3 className="text-[15px] font-semibold text-gray-900 leading-snug mb-2 hover:text-gray-600 transition-colors">
-          {title}
-        </h3>
-      </Link>
-
-      {/* Preview */}
-      {preview && (
-        <p className="text-[14px] text-gray-500 leading-[1.6]"
-           style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {preview}
-        </p>
-      )}
-
-      {/* Inline image */}
-      {thumb && <PostImage src={thumb} href={href} />}
-
-      {/* CTA */}
-      <div className="mt-4">
-        <Link to={href} className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors">
-          {t('읽기', 'Read', 'Lire')} →
-        </Link>
-      </div>
-
-      <CardActions compact />
-    </article>
-  )
-}
-
-// ─── Post composer ────────────────────────────────────────────────────────────
-
-function PostComposer({
-  onOpen,
-  t,
-}: {
-  onOpen: () => void
-  t: (ko: string, en: string, fr: string) => string
-}) {
-  return (
-    <button onClick={onOpen} className="w-full text-left mb-5 group">
-      <div className="flex items-center gap-3 border-2 border-gray-900 rounded-2xl px-4 py-3.5 bg-white hover:shadow-md transition-all duration-150 group-active:scale-[0.995]">
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[13px] font-black"
-          style={{ background: 'var(--y)', color: '#111' }}
-        >
-          ✏
-        </div>
-        <span className="flex-1 text-[14px] text-gray-400 select-none font-medium">
-          {t(
-            '몬트리올 생활에 필요한 이야기를 남겨주세요.',
-            'Share something for life in Montréal.',
-            'Partagez quelque chose pour Montréal.',
+              {(post.author_name ?? '?')[0].toUpperCase()}
+            </div>
+            <p className="text-[12px] font-semibold text-gray-700">
+              {post.author_name ?? t('익명', 'Anonymous', 'Anonyme')}
+            </p>
+            <p className="text-[11px] text-gray-300 ml-auto">
+              {post.created_at?.slice(0, 10) ?? ''}
+            </p>
+          </div>
+          {post.title && (
+            <p className="text-[14px] font-semibold text-gray-900 leading-snug mb-1">{post.title}</p>
           )}
-        </span>
-        <span
-          className="text-[12px] font-black px-3.5 py-1.5 rounded-full shrink-0"
-          style={{ background: 'var(--y)', color: '#111' }}
-        >
-          Post
-        </span>
+          {post.description && (
+            <p className="text-[12px] text-gray-500 leading-[1.7]"
+               style={{ display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              {post.description}
+            </p>
+          )}
+        </div>
+      ) : null}
+      <button
+        onClick={onCompose}
+        className="w-full text-left border border-dashed border-gray-200 rounded-xl px-4 py-3 text-[12px] text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
+      >
+        {t('오늘 몬트리올 생활에서 있었던 일을 나눠보세요.', 'Share something from your life in Montréal today.', "Partagez quelque chose de votre vie à Montréal aujourd'hui.")} +
+      </button>
+    </div>
+  )
+}
+
+// ─── Section 6: WHAT PEOPLE ARE ASKING ───────────────────────────────────────
+
+function WhatPeopleAreAsking({ posts, onCompose }: {
+  posts: CommunitySubmission[]
+  onCompose: () => void
+}) {
+  const { t } = useLang()
+  const questions = posts.filter(p => p.type === 'question' || p.type === 'help').slice(0, 4)
+  const show = questions.length > 0 ? questions : posts.slice(1, 5)
+
+  if (show.length === 0) return null
+
+  return (
+    <div>
+      <SectionLabel>{t('요즘 사람들이 묻는 것', 'What People Are Asking', 'Ce que les gens demandent')}</SectionLabel>
+      <div className="space-y-0 divide-y divide-gray-50">
+        {show.map((post, i) => (
+          <div key={i} className="py-3">
+            <p className="text-[13px] text-gray-700 leading-snug mb-0.5">
+              {post.title ?? post.description?.slice(0, 80)}
+            </p>
+            <p className="text-[11px] text-gray-300">
+              {post.author_name ?? t('익명', 'Anonymous', 'Anonyme')}
+            </p>
+          </div>
+        ))}
       </div>
-    </button>
+      <button
+        onClick={onCompose}
+        className="mt-3 text-[11px] text-gray-400 hover:text-gray-700 transition-colors"
+      >
+        {t('질문 남기기', 'Ask a question', 'Poser une question')} →
+      </button>
+    </div>
+  )
+}
+
+// ─── Section 7: THIS WEEK ─────────────────────────────────────────────────────
+
+function ThisWeek({ tracks, lang }: { tracks: ProgramTrack[]; lang: Lang }) {
+  const { t } = useLang()
+
+  const upcoming = tracks
+    .filter(s => {
+      if (!s.start_date) return false
+      const start = new Date(s.start_date)
+      const now   = new Date()
+      const diff  = (start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      return diff >= -1 && diff <= 14
+    })
+    .slice(0, 4)
+
+  if (upcoming.length === 0) return null
+
+  return (
+    <div>
+      <SectionLabel>{t('이번 주', 'This Week', 'Cette semaine')}</SectionLabel>
+      <div className="space-y-2">
+        {upcoming.map(s => {
+          const name      = tName(s, lang)
+          const dateStr   = s.start_date?.slice(0, 10) ?? ''
+          const isOpen    = s.status === 'open'
+          return (
+            <Link key={s.id} to={`/programs/${s.id}`} className="flex items-start gap-3 group">
+              <div className="shrink-0 mt-0.5">
+                <div className="w-8 h-8 border border-gray-100 rounded-lg flex flex-col items-center justify-center">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase leading-none">
+                    {dateStr ? new Date(dateStr).toLocaleDateString('en-CA', { month: 'short' }) : ''}
+                  </p>
+                  <p className="text-[13px] font-black text-gray-900 leading-none">
+                    {dateStr ? new Date(dateStr).getDate() : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-gray-800 group-hover:text-gray-600 transition-colors leading-snug truncate">
+                  {name}
+                </p>
+                <p className="text-[11px] text-gray-300 mt-0.5">
+                  {isOpen
+                    ? t('신청 가능', 'Open for registration', 'Inscriptions ouvertes')
+                    : t('마감', 'Closed', 'Fermé')}
+                </p>
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+      <Link
+        to="/programs"
+        className="inline-block mt-4 text-[11px] text-gray-400 hover:text-gray-700 transition-colors"
+      >
+        {t('모든 프로그램', 'All programs', 'Tous les programmes')} →
+      </Link>
+    </div>
+  )
+}
+
+// ─── Section 8: EXPLORE THE CITY ─────────────────────────────────────────────
+
+const EXPLORE_CARDS: Array<{ ko: string; en: string; fr: string; desc_ko: string; desc_en: string; desc_fr: string; href: string }> = [
+  {
+    ko: '첫 번째 발걸음',    en: 'First Steps',          fr: 'Premiers pas',
+    desc_ko: '도착 전 준비부터 첫 주까지',
+    desc_en: 'From prep to your first week',
+    desc_fr: 'De la préparation à votre première semaine',
+    href: '/arriving',
+  },
+  {
+    ko: '자리 잡기',          en: 'Finding My Place',   fr: 'Trouver ma place',
+    desc_ko: '집 구하기, 동네 고르기',
+    desc_en: 'Finding housing and a neighbourhood',
+    desc_fr: 'Logement et quartier',
+    href: '/settling',
+  },
+  {
+    ko: '주변 사람들',        en: 'People Around You',    fr: 'Les gens autour de vous',
+    desc_ko: '커뮤니티와 연결되기',
+    desc_en: 'Connecting with the community',
+    desc_fr: 'Se connecter à la communauté',
+    href: '/people',
+  },
+  {
+    ko: '새로운 기회',        en: 'New Opportunities',    fr: 'Nouvelles opportunités',
+    desc_ko: '일, 공부, 성장',
+    desc_en: 'Work, study, growth',
+    desc_fr: 'Travail, études, croissance',
+    href: '/opportunities',
+  },
+  {
+    ko: '일상 언어',          en: 'Everyday Words',       fr: 'Mots du quotidien',
+    desc_ko: '매일 쓰는 표현들',
+    desc_en: 'Expressions for daily life',
+    desc_fr: "Expressions pour la vie de tous les jours",
+    href: '/everyday-words',
+  },
+  {
+    ko: '몬트리올에서 살기', en: 'Life in Montréal',      fr: 'Vivre à Montréal',
+    desc_ko: '문화, 계절, 일상',
+    desc_en: 'Culture, seasons, daily life',
+    desc_fr: 'Culture, saisons, vie quotidienne',
+    href: '/life',
+  },
+]
+
+function ExploreTheCity({ lang }: { lang: Lang }) {
+  const { t } = useLang()
+
+  return (
+    <div>
+      <SectionLabel>{t('도시 탐색', 'Explore the City', 'Explorer la ville')}</SectionLabel>
+      <div className="grid grid-cols-2 gap-2">
+        {EXPLORE_CARDS.map(card => (
+          <Link
+            key={card.href}
+            to={card.href}
+            className="border border-gray-100 rounded-xl px-4 py-3 bg-white hover:border-gray-300 transition-colors group"
+          >
+            <p className="text-[13px] font-bold text-gray-900 group-hover:text-gray-600 transition-colors leading-snug mb-1">
+              {lang === 'ko' ? card.ko : lang === 'fr' ? card.fr : card.en}
+            </p>
+            <p className="text-[11px] text-gray-400 leading-snug">
+              {lang === 'ko' ? card.desc_ko : lang === 'fr' ? card.desc_fr : card.desc_en}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </div>
   )
 }
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const { lang: rawLang, t } = useLang()
+  const { lang: rawLang } = useLang()
   const lang = rawLang as Lang
 
   const [tracks,    setTracks]    = useState<ProgramTrack[]>([])
-  const [notices,   setNotices]   = useState<Notice[]>([])
   const [contents,  setContents]  = useState<Content[]>([])
   const [community, setCommunity] = useState<CommunitySubmission[]>([])
   const [featured,  setFeatured]  = useState<Content[]>([])
   const [submitTag, setSubmitTag] = useState<string | null>(null)
   const [loading,   setLoading]   = useState(true)
-  const [filter,    setFilter]    = useState<FeedFilter>('all')
-
-  const [searchParams] = useSearchParams()
-  const [query, setQuery] = useState(() => searchParams.get('q')?.trim() ?? '')
-  useEffect(() => { setQuery(searchParams.get('q')?.trim() ?? '') }, [searchParams])
 
   useEffect(() => {
-    // Core feed — must succeed for anything to show
-    Promise.all([getTracks('program'), getNotices(), getContents()])
-      .then(([tr, n, c]) => {
+    Promise.all([getTracks('program'), getContents()])
+      .then(([tr, c]) => {
         setTracks(tr ?? [])
-        setNotices(n ?? [])
         setContents((c ?? []).map(normalizeContent))
       })
       .catch(() => {})
       .finally(() => setLoading(false))
 
-    // Community posts — optional; failure must not affect the main feed
     getPublishedCommunityPosts()
       .then(cp => setCommunity(cp ?? []))
       .catch(() => {})
 
-    // Featured content for Community Moments — optional
     getFeaturedContent()
       .then(fc => setFeatured((fc ?? []).map(normalizeContent)))
       .catch(() => {})
@@ -953,9 +488,7 @@ export default function Home() {
 
   useEffect(() => {
     function onNewPost() {
-      getPublishedCommunityPosts()
-        .then(cp => setCommunity(cp ?? []))
-        .catch(() => {})
+      getPublishedCommunityPosts().then(cp => setCommunity(cp ?? [])).catch(() => {})
     }
     window.addEventListener('hakkyo:community-post', onNewPost)
     return () => window.removeEventListener('hakkyo:community-post', onNewPost)
@@ -970,45 +503,10 @@ export default function Home() {
     return () => window.removeEventListener('hakkyo:open-compose', onCompose)
   }, [])
 
-  const allItems = useMemo<FeedItem[]>(() => {
-    const raw: FeedItem[] = [
-      ...notices.map(n   => ({ kind: 'notice'    as const, data: n,  sortKey: n.created_at   ?? n.date         ?? '', pinned: !!n.is_pinned })),
-      ...tracks.map(s    => ({ kind: 'program'   as const, data: s,  sortKey: s.created_at   ?? s.start_date   ?? '', pinned: !!s.is_pinned })),
-      ...contents.map(c  => ({ kind: 'content'   as const, data: c,  sortKey: c.published_at ?? c.created_at   ?? '', pinned: !!c.is_pinned })),
-      ...community.map(p => ({ kind: 'community' as const, data: p,  sortKey: p.created_at   ?? '',                  pinned: false          })),
-    ]
-    return raw.filter(hasTitle).sort((a, b) => {
-      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-      return b.sortKey > a.sortKey ? 1 : b.sortKey < a.sortKey ? -1 : 0
-    })
-  }, [notices, tracks, contents, community])
-
-  const counts = useMemo<Record<FeedFilter, number>>(() => ({
-    all:       allItems.length,
-    program:   allItems.filter(i => i.kind === 'program').length,
-    notice:    allItems.filter(i => i.kind === 'notice').length,
-    content:   allItems.filter(i => i.kind === 'content').length,
-    community: allItems.filter(i => i.kind === 'community').length,
-  }), [allItems])
-
-  const suggestions = useMemo(() => {
-    return allItems
-      .filter(i => i.pinned || i.kind === 'content' || i.kind === 'notice')
-      .slice(0, 5)
-      .map(i => {
-        if (i.kind === 'notice')  return nTitle(i.data, lang)
-        if (i.kind === 'program') return tName(i.data, lang)
-        if (i.kind === 'content') return cTitle(i.data, lang)
-        return i.data.title
-      })
-      .filter(Boolean)
-  }, [allItems, lang])
-
-  const feed = useMemo(() => {
-    let items = filter === 'all' ? allItems : allItems.filter(i => i.kind === filter)
-    if (query.trim()) items = items.filter(i => itemMatches(i, query))
-    return items
-  }, [allItems, filter, query])
+  function openCompose() {
+    trackEvent({ eventName: 'post_create_clicked', targetType: 'home', targetLabel: 'general' })
+    setSubmitTag('general')
+  }
 
   if (loading) {
     return (
@@ -1018,63 +516,52 @@ export default function Home() {
     )
   }
 
-  const mainContent = (
-    <>
-      {/* 1 · Composer — primary action */}
-      <PostComposer onOpen={() => { trackEvent({ eventName: 'post_create_clicked', targetType: 'composer', targetLabel: 'general' }); setSubmitTag('general') }} t={t} />
-
-      {/* 2 · Open Now strip */}
-      <OpenNowStrip tracks={tracks} lang={lang} t={t} />
-
-      {/* 3 · Community Moments */}
-      <CommunityMoments items={featured} lang={lang} />
-
-      {/* 4 · Filter chips */}
-      <FilterChips
-        active={filter}
-        onChange={f => { setFilter(f); setQuery('') }}
-        counts={counts}
-        t={t}
-      />
-
-      {/* 5 · Compact search — secondary */}
-      <FeedSearch value={query} onChange={setQuery} suggestions={suggestions} t={t} />
-
-      {/* 6 · Pinned list */}
-      <PinnedList items={allItems} lang={lang} t={t} />
-
-      {/* 5 · Feed */}
-      <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300 mb-4">
-        RECENT POSTS
-      </p>
-
-      {feed.length === 0 ? (
-        <div className="py-24 text-center">
-          <p className="text-sm text-gray-300 tracking-wide">
-            {query.trim()
-              ? t('검색 결과가 없습니다.', 'No results found.', 'Aucun résultat.')
-              : t('곧 업데이트됩니다.', 'Coming soon.', 'Bientôt disponible.')}
-          </p>
-        </div>
-      ) : (
-        <div>
-          {feed.map(item => {
-            if (item.kind === 'notice')    return <NoticeCard    key={`n-${item.data.id}`}  notice={item.data}  lang={lang} t={t} />
-            if (item.kind === 'program')   return <ProgramCard   key={`p-${item.data.id}`}  track={item.data}   lang={lang} t={t} />
-            if (item.kind === 'community') return <CommunityCard key={`cp-${item.data.id}`} post={item.data}    t={t} />
-            return                                <ContentCard   key={`c-${item.data.id}`}  content={item.data} lang={lang} t={t} />
-          })}
-        </div>
-      )}
-    </>
-  )
+  const openTracks = tracks.filter(s => s.status === 'open')
 
   return (
     <>
       <PageShell left={<LeftSidebar lang={lang} />}>
-        {mainContent}
+        {/* Section 1: TODAY */}
+        <TodayHeader lang={lang} programCount={openTracks.length} communityCount={community.length} />
+
+        <Divider />
+
+        {/* Section 2: TODAY AT HAKKYO */}
+        <TodayAtHakkyo contents={contents} tracks={tracks} lang={lang} />
+
+        <Divider />
+
+        {/* Section 3: TODAY'S STORY */}
+        <TodaysStory featured={featured.length > 0 ? featured : contents} lang={lang} />
+
+        <Divider />
+
+        {/* Section 4: TODAY'S WORDS */}
+        <TodaysWords />
+
+        <Divider />
+
+        {/* Section 5: COMMUNITY CHECK-IN */}
+        <CommunityCheckin posts={community} onCompose={openCompose} />
+
+        <Divider />
+
+        {/* Section 6: WHAT PEOPLE ARE ASKING */}
+        <WhatPeopleAreAsking posts={community} onCompose={openCompose} />
+
+        <Divider />
+
+        {/* Section 7: THIS WEEK */}
+        <ThisWeek tracks={tracks} lang={lang} />
+
+        <Divider />
+
+        {/* Section 8: EXPLORE THE CITY */}
+        <ExploreTheCity lang={lang} />
+
+        <div className="h-8" />
       </PageShell>
-      <FloatingCreateButton onOpen={() => { trackEvent({ eventName: 'post_create_clicked', targetType: 'fab', targetLabel: 'general' }); setSubmitTag('general') }} />
+
       <Suspense fallback={null}>
         {submitTag !== null && (
           <CommunitySubmitModal initialTag={submitTag} onClose={() => setSubmitTag(null)} />

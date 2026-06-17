@@ -137,7 +137,7 @@ const JOURNEY: JourneyItem[] = [
     icon: IconSettling,
     emoji: '🏡',
     ko: '나만의 공간 찾기',
-    en: 'Finding Your Place',
+    en: 'Finding My Place',
     fr: 'Trouver Son Chez-Soi',
   },
   {

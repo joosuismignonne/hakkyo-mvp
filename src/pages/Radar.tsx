@@ -484,6 +484,15 @@ export default function Radar() {
           </button>
         </div>
 
+        {/* ── Narrative Anchor ── */}
+        <p className="text-[13px] text-gray-400 leading-relaxed mb-6 italic">
+          {t(
+            '새 도시에서 사람을 찾는 건 집을 찾는 것보다 오래 걸려요.',
+            'In a new city, finding people often takes longer than finding a place to live.',
+            'Dans une nouvelle ville, trouver des gens prend souvent plus de temps que trouver un logement.',
+          )}
+        </p>
+
         {/* ── Category tabs ───────────────────────────────────────────────── */}
         <div className="flex gap-1.5 overflow-x-auto pb-1 mb-5 hide-scrollbar">
           {/* All tab */}

@@ -217,7 +217,7 @@ export default function SettlingArticle() {
       <div className="w-full min-h-screen bg-white pb-24">
         <div className="max-w-[720px] mx-auto px-4 py-8">
           <Link to="/settling" className="inline-flex items-center gap-1 text-[12px] text-gray-400 hover:text-gray-600 transition-colors mb-8">
-            ← {t('나만의 공간 찾기', 'Finding Home', 'Trouver un Logement')}
+            ← {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
           </Link>
           <p className="text-[14px] text-gray-400">
             {t('아직 등록되지 않은 가이드입니다.', 'This guide has not been published yet.', "Ce guide n'a pas encore été publié.")}
@@ -242,7 +242,7 @@ export default function SettlingArticle() {
           to="/settling"
           className="inline-flex items-center gap-1 text-[12px] text-gray-400 hover:text-gray-600 transition-colors mb-8"
         >
-          ← {t('나만의 공간 찾기로 돌아가기', 'Back to Finding Home', 'Retour à Trouver un Logement')}
+          ← {t('나만의 공간 찾기로 돌아가기', 'Back to Finding My Place', 'Retour à Trouver mon logement')}
         </Link>
 
         {/* Meta */}
@@ -296,7 +296,7 @@ export default function SettlingArticle() {
           to="/settling"
           className="inline-flex items-center gap-1 text-[12px] text-gray-400 hover:text-gray-600 transition-colors"
         >
-          ← {t('나만의 공간 찾기로 돌아가기', 'Back to Finding Home', 'Retour à Trouver un Logement')}
+          ← {t('나만의 공간 찾기로 돌아가기', 'Back to Finding My Place', 'Retour à Trouver mon logement')}
         </Link>
 
       </div>
