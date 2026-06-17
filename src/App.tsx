@@ -26,6 +26,7 @@ import ResumeMap from './pages/ResumeMap'
 import Phrases from './pages/Phrases'
 import Arriving from './pages/Arriving'
 import Settling from './pages/Settling'
+import SettlingArticle from './pages/SettlingArticle'
 import { supabase } from './lib/supabase'
 
 function RedirectContentId() {
@@ -85,6 +86,7 @@ export default function App() {
               <Route path="/content/:id" element={<RedirectContentId />} />
               <Route path="/arriving" element={<Arriving />} />
               <Route path="/settling" element={<Settling />} />
+              <Route path="/settling/:slug" element={<SettlingArticle />} />
               <Route path="/radar" element={<Radar />} />
               <Route path="/resume-map" element={<ResumeMap />} />
               <Route path="/phrases" element={<Phrases />} />
