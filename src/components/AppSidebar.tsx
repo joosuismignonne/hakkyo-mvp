@@ -315,7 +315,7 @@ function DesktopSidebar() {
                 className="flex items-center justify-center w-full py-2.5 rounded-xl text-[13px] font-bold transition-colors"
                 style={{ background: 'var(--y)', color: '#111' }}
               >
-                Montreal In
+                Into Montréal
               </Link>
             )
           )}
