@@ -188,7 +188,7 @@ const LANGS: { code: Lang; label: string }[] = [
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function journeyLabel(j: JourneyItem, _lang: string) {
+function journeyLabel(j: JourneyItem) {
   return j.en
 }
 
@@ -200,7 +200,7 @@ function isJourneyActive(j: JourneyItem, pathname: string) {
 // ─── Desktop sidebar ─────────────────────────────────────────────────────────
 
 function DesktopSidebar() {
-  const { lang, setLang, t } = useLang()
+  const { lang, setLang } = useLang()
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -280,7 +280,7 @@ function DesktopSidebar() {
                     {user.email?.[0]?.toUpperCase() ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold text-gray-900 leading-tight">{t('나의 여정', 'My Journey', 'Mon Parcours')}</p>
+                    <p className="text-[12px] font-bold text-gray-900 leading-tight">My Journey</p>
                     <p className="text-[11px] text-gray-400 leading-tight truncate">{user.email}</p>
                   </div>
                   <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-400 shrink-0">
@@ -296,7 +296,7 @@ function DesktopSidebar() {
                     <polyline points="16 17 21 12 16 7"/>
                     <line x1="21" y1="12" x2="9" y2="12"/>
                   </svg>
-                  {t('로그아웃', 'Sign out', 'Se déconnecter')}
+                  Sign out
                 </button>
               </div>
             )
@@ -315,7 +315,7 @@ function DesktopSidebar() {
                 className="flex items-center justify-center w-full py-2.5 rounded-xl text-[13px] font-bold transition-colors"
                 style={{ background: 'var(--y)', color: '#111' }}
               >
-                {t('몬트리올 시작하기', 'Montréal In', 'Commencer')}
+                Montreal In
               </Link>
             )
           )}
@@ -327,7 +327,7 @@ function DesktopSidebar() {
           {JOURNEY.map(j => {
             const active = isJourneyActive(j, pathname)
             const Icon = j.icon
-            const lbl = journeyLabel(j, lang)
+            const lbl = journeyLabel(j)
             return (
               <Link
                 key={j.to}
@@ -402,11 +402,11 @@ function DesktopSidebar() {
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(v => !v)}
-          title={collapsed ? t('펼치기', 'Expand', 'Agrandir') : t('접기', 'Collapse', 'Réduire')}
+          title={collapsed ? 'Expand' : 'Collapse'}
           className="flex items-center justify-center gap-2 w-full py-3 border-t border-gray-100 text-[12px] text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
         >
           <IconChevron collapsed={collapsed} />
-          {!collapsed && <span>{t('접기', 'Collapse', 'Réduire')}</span>}
+          {!collapsed && <span>Collapse</span>}
         </button>
       </div>
     </aside>
@@ -416,7 +416,6 @@ function DesktopSidebar() {
 // ─── Mobile bottom tab bar ────────────────────────────────────────────────────
 
 function MobileBottomNav() {
-  const { lang } = useLang()
   const { pathname } = useLocation()
 
   return (
@@ -424,7 +423,7 @@ function MobileBottomNav() {
       {JOURNEY_MOBILE.map(j => {
         const active = isJourneyActive(j, pathname)
         const Icon = j.icon
-        const lbl = journeyLabel(j, lang)
+        const lbl = journeyLabel(j)
         return (
           <Link
             key={j.to}
