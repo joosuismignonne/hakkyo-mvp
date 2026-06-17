@@ -143,7 +143,7 @@ function ProgramCard({ track, lang, t }: {
         trackEvent({ eventName: 'program_card_clicked', targetType: 'card', targetId: track.id, targetLabel: track.name_en || track.name_ko })
         navigate(`/programs/${track.id}`)
       }}
-      className={`rounded-2xl border mb-3 px-5 py-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${isPinned ? 'border-gray-300 hover:border-gray-400 bg-white' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
+      className={`rounded-2xl border mb-4 px-6 py-6 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] ${isPinned ? 'border-gray-300 hover:border-gray-400 bg-white' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
     >
       {/* 1 · Category + Status — single quiet line */}
       <div className="flex items-center gap-1.5 mb-4">
@@ -167,11 +167,11 @@ function ProgramCard({ track, lang, t }: {
       )}
 
       {/* 3 · Title */}
-      <h3 className="text-[15px] font-medium text-gray-900 leading-snug mb-2">{name}</h3>
+      <h3 style={{ fontSize: "17px" }} className="font-semibold text-gray-900 leading-snug mb-2.5">{name}</h3>
 
       {/* 4 · Description — 2 lines max */}
       {description && (
-        <p className="text-[13px] text-gray-500 leading-relaxed mb-3"
+        <p className="text-[14px] text-gray-500 leading-relaxed mb-3"
            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {description}
         </p>
@@ -256,7 +256,7 @@ function ProgramCard({ track, lang, t }: {
                 trackEvent({ eventName: 'program_apply_clicked', targetType: 'button', targetId: track.id, targetLabel: track.name_en || track.name_ko })
                 navigate(`/apply/${track.id}`)
               }}
-              className="border border-gray-900 rounded-lg px-4 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
+              className="border border-gray-900 rounded-xl px-5 py-2.5 text-[12px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
             >
               {t('신청하기', 'Apply Now', "S'inscrire")}
             </button>

@@ -348,19 +348,13 @@ function DesktopSidebar() {
                   'flex items-center rounded-xl transition-all',
                   collapsed ? 'justify-center px-0 py-3.5' : 'gap-3 px-3 py-3',
                   active
-                    ? 'text-gray-900 font-semibold'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50',
+                    ? 'text-gray-900 bg-gray-100/70'
+                    : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50',
                 ].join(' ')}
-                style={active ? { background: 'var(--y-l)', color: '#111' } : {}}
               >
-                <span style={active ? { color: 'var(--y-h)' } : {}}><Icon active={active} /></span>
+                <span className={active ? 'text-gray-700' : ''}><Icon active={active} /></span>
                 {!collapsed && (
-                  <>
-                    <span className="text-[14px] font-medium">{lbl}</span>
-                    {active && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--y)' }} />
-                    )}
-                  </>
+                  <span className={`text-[13px] ${active ? 'font-semibold' : 'font-medium'}`}>{lbl}</span>
                 )}
               </Link>
             )

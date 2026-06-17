@@ -1153,7 +1153,7 @@ export default function Settling() {
 
   return (
     <div className="w-full min-h-screen bg-white pb-24">
-      <div className="max-w-[720px] mx-auto px-4 py-8 space-y-10">
+      <div className="max-w-[720px] mx-auto px-4 space-y-10">
 
         {/* ── HEADER ── */}
         <section>
@@ -1161,11 +1161,11 @@ export default function Settling() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
             </svg>
-            <h1 className="text-[24px] font-bold text-gray-900">
+            <h1 className="h-page text-gray-900">
               {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
             </h1>
           </div>
-          <p className="text-[14px] text-gray-500 leading-relaxed">
+          <p style={{ fontSize: '17px', lineHeight: '1.7' }} className="text-gray-500 max-w-[500px]">
             {t(
               '예산 설정부터 계약, 입주 후 생활까지. 몬트리올에서 집을 구하는 과정을 단계별로 안내합니다.',
               'From setting a budget to signing a lease and settling in. A step-by-step guide to finding a home in Montréal.',
@@ -1175,7 +1175,7 @@ export default function Settling() {
         </section>
 
         {/* ── Narrative Anchor ── */}
-        <p className="text-[13px] text-gray-400 leading-relaxed italic">
+        <p style={{ fontSize: '15px', lineHeight: '1.8' }} className="text-gray-400 italic">
           {t(
             '동네를 고른다는 건 생활 방식을 고른다는 것과 같아요.',
             'Choosing a neighbourhood is often choosing a way of life.',
@@ -1190,7 +1190,7 @@ export default function Settling() {
               <>
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div>
-                    <h2 className="text-[15px] font-bold text-gray-900">
+                    <h2 style={{ fontSize: "17px" }} className="font-bold text-gray-900">
                       {t('나의 몬트리올 정착 준비', 'My Settling Checklist', 'Ma liste d\'installation')}
                     </h2>
                     <p className="text-[12px] text-gray-400 mt-0.5">

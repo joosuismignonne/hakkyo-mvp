@@ -469,12 +469,12 @@ export default function Phrases() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 pb-28">
-      <div className="max-w-[680px] mx-auto px-4 py-7">
+      <div className="max-w-[680px] mx-auto px-4 py-8 md:py-12">
 
         {/* ── Header ── */}
         <div className="flex items-start justify-between mb-5 gap-3">
           <div>
-            <h1 className="text-[22px] font-bold text-gray-900">{t('일상 표현', 'Everyday Words', 'Mots du quotidien')}</h1>
+            <h1 className="h-section text-gray-900">{t('일상 표현', 'Everyday Words', 'Mots du quotidien')}</h1>
             <p className="text-[13px] text-gray-500 mt-0.5 leading-relaxed">
               {t(
                 '카페, 집주인, 병원, 면접 — 실제 상황에서 바로 쓸 수 있는 표현',

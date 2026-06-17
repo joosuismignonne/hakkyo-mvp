@@ -458,14 +458,14 @@ export default function Radar() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 pb-24">
-      <div className="max-w-[760px] mx-auto px-4 py-8">
+      <div className="max-w-[760px] mx-auto px-4 py-8 md:py-12">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Radio size={20} className="text-amber-400 shrink-0" />
-              <h1 className="text-[22px] font-bold text-gray-900">HAKKYO Radar</h1>
+              <h1 className="h-section text-gray-900">HAKKYO Radar</h1>
             </div>
             <p className="text-[13px] text-gray-500">
               {t(

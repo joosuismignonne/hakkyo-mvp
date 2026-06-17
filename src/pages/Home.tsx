@@ -6,7 +6,6 @@ import { normalizeContent } from '../lib/newsContent'
 import type { ProgramTrack, Content, CommunitySubmission } from '../types'
 import { trackEvent } from '../lib/analytics'
 const CommunitySubmitModal = lazy(() => import('../components/CommunitySubmitModal'))
-import { LeftSidebar, PageShell } from '../components/PageLayout'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,23 +46,9 @@ const DAILY_WORDS: Array<{ ko: string; en: string; fr: string; context: string }
   { ko: '같이 공부할 사람 있어요?',       en: 'Anyone want to study together?',    fr: "Quelqu'un veut étudier ensemble ?", context: 'Community' },
 ]
 
-// ─── Layout helpers ───────────────────────────────────────────────────────────
+// ─── Section 1: HERO ─────────────────────────────────────────────────────────
 
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-300 mb-4">
-      {children}
-    </p>
-  )
-}
-
-function Divider() {
-  return <div className="border-t border-gray-100 my-9" />
-}
-
-// ─── Section 1: MONTRÉAL TODAY ────────────────────────────────────────────────
-
-function MontrealToday({ lang }: { lang: Lang }) {
+function Hero({ lang }: { lang: Lang }) {
   const { t } = useLang()
   const [times, setTimes] = useState({ mtl: '', seo: '' })
 
@@ -77,35 +62,53 @@ function MontrealToday({ lang }: { lang: Lang }) {
   }, [])
 
   return (
-    <div className="mb-2">
-      <p className="text-[11px] text-gray-400 font-medium mb-1 tracking-wide">
+    <section className="pt-8 pb-16 md:pt-12 md:pb-24 animate-fade-up">
+      {/* Date eyebrow */}
+      <p className="eyebrow mb-7 text-gray-400">
         {todayFull(lang)}
       </p>
-      <h1 className="text-[26px] font-black text-gray-900 tracking-tight leading-tight mb-4">
-        {t('몬트리올, 오늘', 'Montréal, Today', "Montréal, aujourd'hui")}
+
+      {/* Hero title */}
+      <h1 className="h-hero text-gray-900 mb-6">
+        {t('몬트리올,\n오늘.', 'Montréal,\ntoday.', "Montréal,\naujourd'hui.")}
       </h1>
-      <div className="flex items-center gap-4 text-[12px] text-gray-400">
-        <span>
-          <span className="font-semibold text-gray-600">MTL</span>
-          {' '}
-          <span className="font-mono">{times.mtl}</span>
-        </span>
-        <span className="text-gray-200">|</span>
-        <span>
-          <span className="font-semibold text-gray-600">SEO</span>
-          {' '}
-          <span className="font-mono">{times.seo}</span>
-        </span>
+
+      {/* Subtitle */}
+      <p style={{ fontSize: '17px', lineHeight: '1.7' }} className="text-gray-500 max-w-[440px] mb-12">
+        {t(
+          '언어를 찾고, 사람을 만나고,\n이 도시에서 나만의 자리를 찾는 하루 가이드.',
+          'A daily guide for finding language, people,\nand your place in the city.',
+          "Un guide quotidien pour trouver\nvotre langue, vos gens, et votre place en ville.",
+        )}
+      </p>
+
+      {/* Live clocks */}
+      <div className="flex items-end gap-10">
+        <div>
+          <p className="eyebrow text-gray-300 mb-2">Montréal</p>
+          <p style={{ fontSize: '32px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
+             className="text-gray-900 leading-none">
+            {times.mtl}
+          </p>
+        </div>
+        <div className="w-px h-10 bg-gray-100 mb-1" />
+        <div>
+          <p className="eyebrow text-gray-300 mb-2">Seoul</p>
+          <p style={{ fontSize: '32px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
+             className="text-gray-900 leading-none">
+            {times.seo}
+          </p>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 
-// ─── Section 2: WHAT'S HAPPENING ─────────────────────────────────────────────
+// ─── Section 2: TODAY IN HAKKYO ───────────────────────────────────────────────
 
 type HappeningItem = { label: string; title: string; href: string; time?: string }
 
-function WhatsHappening({ tracks, contents, community, lang }: {
+function TodayInHakkyo({ tracks, contents, community, lang }: {
   tracks: ProgramTrack[]
   contents: Content[]
   community: CommunitySubmission[]
@@ -114,17 +117,15 @@ function WhatsHappening({ tracks, contents, community, lang }: {
   const { t } = useLang()
   const items: HappeningItem[] = []
 
-  // Open programs
   const openCount = tracks.filter(s => s.status === 'open').length
   if (openCount > 0) {
     items.push({
       label: t('프로그램', 'Programs', 'Programmes'),
-      title: t(`${openCount}개 프로그램 신청 가능`, `${openCount} programs open for registration`, `${openCount} programmes ouverts`),
+      title: t(`${openCount}개 프로그램 신청 가능`, `${openCount} programs open`, `${openCount} programmes ouverts`),
       href: '/programs',
     })
   }
 
-  // Upcoming language exchange (within 14 days)
   const exchanges = tracks.filter(s => {
     const name = tName(s, 'en').toLowerCase()
     const isExchange = name.includes('exchange') || name.includes('교환') || name.includes('échange')
@@ -141,7 +142,6 @@ function WhatsHappening({ tracks, contents, community, lang }: {
     })
   })
 
-  // New guides
   contents.slice(0, 2).forEach(c => {
     const title = cTitle(c, lang)
     if (title) items.push({
@@ -152,7 +152,6 @@ function WhatsHappening({ tracks, contents, community, lang }: {
     })
   })
 
-  // New community posts
   community.slice(0, 2).forEach(p => {
     if (p.title) items.push({
       label: t('커뮤니티', 'Community', 'Communauté'),
@@ -165,45 +164,54 @@ function WhatsHappening({ tracks, contents, community, lang }: {
   if (items.length === 0) return null
 
   return (
-    <div>
-      <SectionLabel>{t('지금 무슨 일이 있나요', "What's Happening", 'Ce qui se passe')}</SectionLabel>
-      <div className="divide-y divide-gray-50">
-        {items.slice(0, 7).map((item, i) => (
-          <Link key={i} to={item.href} className="flex items-center gap-3 py-3 group">
+    <section className="editorial-section">
+      <p className="eyebrow text-gray-400 mb-8">
+        {t('지금 HAKKYO에서', 'Today in HAKKYO', "Aujourd'hui chez HAKKYO")}
+      </p>
+
+      {/* Feature strip */}
+      <div className="rounded-3xl overflow-hidden border border-gray-100 bg-gray-50/60">
+        {items.slice(0, 6).map((item, i) => (
+          <Link
+            key={i}
+            to={item.href}
+            className="flex items-center gap-5 px-6 py-5 border-b border-gray-100 last:border-0 hover:bg-white transition-colors group"
+          >
             <span
-              className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap"
+              className="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap"
               style={{ background: 'var(--y-l)', color: '#7c5c00' }}
             >
               {item.label}
             </span>
-            <span className="text-[13px] text-gray-700 group-hover:text-gray-900 transition-colors leading-snug flex-1 min-w-0 truncate">
+            <span style={{ fontSize: '15px' }} className="text-gray-700 group-hover:text-gray-900 transition-colors leading-snug flex-1 min-w-0 truncate font-medium">
               {item.title}
             </span>
             {item.time && (
-              <span className="text-[10px] text-gray-300 shrink-0">{item.time}</span>
+              <span className="text-[12px] text-gray-300 shrink-0 font-mono">{item.time}</span>
             )}
-            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-200 group-hover:text-gray-400 shrink-0 transition-colors">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                 className="text-gray-200 group-hover:text-gray-500 shrink-0 transition-colors">
               <polyline points="6,3 11,8 6,13"/>
             </svg>
           </Link>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
 
-// ─── Section 3: QUICK PATHS ───────────────────────────────────────────────────
+// ─── Section 3: START FROM WHERE YOU ARE ─────────────────────────────────────
 
 function IcoArrive() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 16.5H2"/><path d="M2 10l4.5 1.5L9 5l2 2-2 5 4.5 1.5L17 7l2.5 1-3 7H22"/>
     </svg>
   )
 }
 function IcoHome() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
       <path d="M9 21V12h6v9"/>
     </svg>
@@ -211,7 +219,7 @@ function IcoHome() {
 }
 function IcoPeople() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="9" cy="7" r="4"/><circle cx="17" cy="9" r="3"/>
       <path d="M2 20c0-3.314 3.134-6 7-6s7 2.686 7 6"/>
       <path d="M20 20c0-2.21-1.343-4-3-4"/>
@@ -219,95 +227,156 @@ function IcoPeople() {
   )
 }
 
-const QUICK_PATHS = [
+const PATHS = [
   {
     href: '/arriving',
     icon: <IcoArrive />,
+    tag_ko: '첫 걸음', tag_en: 'First Steps', tag_fr: 'Premiers Pas',
     ko: '몬트리올로', en: 'Into Montréal', fr: 'Vers Montréal',
-    desc_ko: '도착 전부터 첫 주까지 필요한 모든 것',
-    desc_en: 'Everything you need from before arrival to your first week',
-    desc_fr: "Tout ce qu'il faut, de l'arrivée à la première semaine",
+    desc_ko: '도착 전부터 첫 주까지 — 항공편, 유심, 은행, 교통까지',
+    desc_en: 'From your flight to your first week — flights, SIM, banking, transit and more',
+    desc_fr: "De votre vol à votre première semaine — vols, SIM, banque, transport",
   },
   {
     href: '/settling',
     icon: <IcoHome />,
+    tag_ko: '나만의 공간', tag_en: 'Finding My Place', tag_fr: 'Mon espace',
     ko: '나만의 공간 찾기', en: 'Finding My Place', fr: 'Trouver ma place',
-    desc_ko: '예산부터 계약, 이사까지 단계별 가이드',
-    desc_en: 'From budget to lease to moving in',
-    desc_fr: 'Du budget au bail, jusqu\'à l\'emménagement',
+    desc_ko: '예산, 동네, 계약, 이사까지 단계별 가이드',
+    desc_en: 'Budget, neighbourhood, lease, and moving in — step by step',
+    desc_fr: 'Budget, quartier, bail, emménagement — étape par étape',
   },
   {
     href: '/board',
     icon: <IcoPeople />,
+    tag_ko: '주변 사람들', tag_en: 'People', tag_fr: 'Les gens',
     ko: '주변 사람들', en: 'People Around You', fr: 'Les gens autour de vous',
     desc_ko: '몬트리올에 사는 사람들과 연결되기',
-    desc_en: 'Connect with people living in Montréal',
+    desc_en: 'Connect with people living in Montréal right now',
     desc_fr: 'Se connecter avec les gens qui vivent à Montréal',
   },
 ]
 
-function QuickPaths({ lang }: { lang: Lang }) {
+function StartFromHere({ lang }: { lang: Lang }) {
   const { t } = useLang()
 
   return (
-    <div>
-      <SectionLabel>{t('바로 가기', 'Quick Paths', 'Accès rapide')}</SectionLabel>
-      <div className="space-y-2.5">
-        {QUICK_PATHS.map(card => (
+    <section className="editorial-section">
+      <p className="eyebrow text-gray-400 mb-8">
+        {t('여기서 시작하세요', 'Start from where you are', 'Commencez là où vous êtes')}
+      </p>
+
+      <div className="space-y-px">
+        {PATHS.map(card => (
           <Link
             key={card.href}
             to={card.href}
-            className="flex items-center gap-4 border border-gray-150 rounded-2xl px-5 py-4 bg-white hover:border-gray-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all group"
+            className="group flex items-center gap-6 md:gap-8 py-7 px-1 border-b border-gray-100 last:border-0 hover:pl-2 transition-all duration-200"
           >
-            <span className="text-gray-400 group-hover:text-gray-700 transition-colors shrink-0">
-              {card.icon}
-            </span>
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors group-hover:bg-gray-100"
+              style={{ background: '#F4F4F4' }}
+            >
+              <span className="text-gray-500 group-hover:text-gray-800 transition-colors">{card.icon}</span>
+            </div>
+
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-bold text-gray-900 group-hover:text-gray-600 transition-colors leading-snug">
-                {lang === 'ko' ? card.ko : lang === 'fr' ? card.fr : card.en}
+              <p className="eyebrow text-gray-300 mb-1.5">
+                {lang === 'ko' ? card.tag_ko : lang === 'fr' ? card.tag_fr : card.tag_en}
               </p>
-              <p className="text-[12px] text-gray-400 leading-snug mt-0.5 truncate">
+              <h3 className="h-section text-gray-900 mb-1.5 group-hover:text-gray-600 transition-colors">
+                {lang === 'ko' ? card.ko : lang === 'fr' ? card.fr : card.en}
+              </h3>
+              <p style={{ fontSize: '15px', lineHeight: '1.6' }} className="text-gray-400">
                 {lang === 'ko' ? card.desc_ko : lang === 'fr' ? card.desc_fr : card.desc_en}
               </p>
             </div>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-300 group-hover:text-gray-500 shrink-0 transition-colors">
+
+            <svg
+              width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+              strokeWidth="1.5" strokeLinecap="round"
+              className="text-gray-200 group-hover:text-gray-500 shrink-0 transition-colors"
+            >
               <polyline points="6,3 11,8 6,13"/>
             </svg>
           </Link>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
 
-// ─── Section 4: COMMUNITY PULSE ───────────────────────────────────────────────
+// ─── Section 4: TODAY'S EXPRESSION ───────────────────────────────────────────
+
+function TodaysExpression() {
+  const { t } = useLang()
+  const word = DAILY_WORDS[new Date().getDay()]
+
+  return (
+    <section className="editorial-section">
+      <p className="eyebrow text-gray-400 mb-8">
+        {t('오늘의 표현', "Today's Expression", "Expression du jour")}
+      </p>
+
+      <div className="rounded-3xl border border-gray-100 bg-gray-50/50 px-8 py-9 md:px-10 md:py-11">
+        <p className="eyebrow text-gray-300 mb-6">{word.context}</p>
+
+        <div className="space-y-4">
+          <p style={{ fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.25 }}
+             className="text-gray-900">
+            {word.ko}
+          </p>
+          <p style={{ fontSize: '17px' }} className="text-gray-600 leading-relaxed">
+            {word.en}
+          </p>
+          <p style={{ fontSize: '15px' }} className="text-gray-400 italic leading-relaxed">
+            {word.fr}
+          </p>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <Link to="/phrases" className="inline-flex items-center gap-2 text-[13px] font-semibold text-gray-600 hover:text-gray-900 transition-colors">
+            {t('더 많은 표현 보기', 'More everyday expressions', "Plus d'expressions")}
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="6,3 11,8 6,13"/>
+            </svg>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── Section 5: COMMUNITY PULSE ───────────────────────────────────────────────
 
 function CommunityPulse({ posts, onCompose }: {
   posts: CommunitySubmission[]
   onCompose: () => void
 }) {
   const { t } = useLang()
-  const show = posts.slice(0, 4)
+  const show = posts.slice(0, 3)
 
   return (
-    <div>
-      <SectionLabel>{t('커뮤니티 펄스', 'Community Pulse', 'Pouls de la communauté')}</SectionLabel>
+    <section className="editorial-section">
+      <p className="eyebrow text-gray-400 mb-8">
+        {t('커뮤니티', 'Community Pulse', 'Communauté')}
+      </p>
 
-      {show.length > 0 ? (
-        <div className="divide-y divide-gray-50 mb-4">
+      {show.length > 0 && (
+        <div className="space-y-5 mb-8">
           {show.map((post, i) => (
-            <div key={i} className="flex items-start gap-3 py-3">
+            <div key={i} className="flex items-start gap-4">
               <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5"
                 style={{ background: 'var(--y)', color: '#111' }}
               >
                 {(post.author_name ?? '?')[0].toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] text-gray-700 leading-snug truncate">
-                  {post.title ?? post.description?.slice(0, 70)}
+              <div className="flex-1 min-w-0 pt-1">
+                <p style={{ fontSize: '15px', lineHeight: '1.6' }} className="text-gray-700">
+                  {post.title ?? post.description?.slice(0, 90)}
                 </p>
-                <p className="text-[11px] text-gray-300 mt-0.5">
+                <p className="text-[12px] text-gray-300 mt-1.5">
                   {post.author_name ?? t('익명', 'Anonymous', 'Anonyme')}
                   {post.created_at && <span> · {post.created_at.slice(0, 10)}</span>}
                 </p>
@@ -315,50 +384,28 @@ function CommunityPulse({ posts, onCompose }: {
             </div>
           ))}
         </div>
-      ) : null}
+      )}
 
       <button
         onClick={onCompose}
-        className="w-full text-left border border-dashed border-gray-200 rounded-xl px-4 py-3 text-[12px] text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
+        className="w-full text-left border border-dashed border-gray-200 rounded-2xl px-6 py-4 text-[14px] text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-all hover:bg-gray-50/50"
       >
         {t(
           '몬트리올 생활에서 있었던 일을 나눠보세요.',
           'Share something from your life in Montréal.',
           'Partagez quelque chose de votre vie à Montréal.',
-        )} +
+        )} <span className="text-gray-300 ml-1">+</span>
       </button>
 
-      <Link to="/board" className="inline-block mt-3 text-[11px] text-gray-400 hover:text-gray-700 transition-colors">
-        {t('커뮤니티 전체 보기', 'See all community posts', 'Voir tous les posts')} →
-      </Link>
-    </div>
-  )
-}
-
-// ─── Section 5: EVERYDAY EXPRESSION ──────────────────────────────────────────
-
-function EverydayExpression() {
-  const { t } = useLang()
-  const word = DAILY_WORDS[new Date().getDay()]
-
-  return (
-    <div>
-      <SectionLabel>{t('오늘의 표현', "Today's Expression", "Expression du jour")}</SectionLabel>
-      <div className="border border-gray-100 rounded-2xl px-5 py-5 bg-white">
-        <p className="text-[10px] font-bold text-gray-300 uppercase tracking-wide mb-3">{word.context}</p>
-        <div className="space-y-2.5">
-          <p className="text-[17px] font-bold text-gray-900 leading-snug">{word.ko}</p>
-          <p className="text-[14px] text-gray-500">{word.en}</p>
-          <p className="text-[13px] text-gray-400 italic">{word.fr}</p>
-        </div>
-        <Link
-          to="/phrases"
-          className="inline-block mt-4 text-[11px] text-gray-400 hover:text-gray-700 transition-colors"
-        >
-          {t('더 많은 표현 보기', 'More everyday expressions', "Plus d'expressions")} →
+      <div className="mt-5">
+        <Link to="/board" className="inline-flex items-center gap-2 text-[13px] font-semibold text-gray-500 hover:text-gray-900 transition-colors">
+          {t('커뮤니티 전체 보기', 'See all community posts', 'Voir tous les posts')}
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <polyline points="6,3 11,8 6,13"/>
+          </svg>
         </Link>
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -373,48 +420,63 @@ function Programs({ tracks, lang }: { tracks: ProgramTrack[]; lang: Lang }) {
       const diff = (new Date(s.start_date).getTime() - Date.now()) / 86_400_000
       return diff >= -1 && diff <= 21
     })
-    .slice(0, 5)
+    .slice(0, 4)
 
   if (upcoming.length === 0) return null
 
   return (
-    <div>
-      <SectionLabel>{t('이번 주 프로그램', 'Programs This Week', 'Programmes cette semaine')}</SectionLabel>
-      <div className="space-y-1">
+    <section className="editorial-section">
+      <p className="eyebrow text-gray-400 mb-8">
+        {t('이번 달 프로그램', 'Upcoming Programs', 'Programmes à venir')}
+      </p>
+
+      <div className="space-y-4">
         {upcoming.map(s => {
           const name    = tName(s, lang)
           const dateStr = s.start_date?.slice(0, 10) ?? ''
           const isOpen  = s.status === 'open'
           const d       = dateStr ? new Date(dateStr) : null
           return (
-            <Link key={s.id} to={`/programs/${s.id}`} className="flex items-center gap-3 py-2.5 group">
-              <div className="w-9 h-9 border border-gray-100 rounded-xl flex flex-col items-center justify-center shrink-0">
-                <p className="text-[8px] font-bold text-gray-300 uppercase leading-none">
+            <Link key={s.id} to={`/programs/${s.id}`}
+                  className="group flex items-center gap-5 rounded-2xl border border-gray-100 px-6 py-5 hover:border-gray-200 hover:bg-gray-50/50 transition-all">
+              {/* Date block */}
+              <div className="w-12 h-12 border border-gray-100 rounded-2xl flex flex-col items-center justify-center shrink-0 group-hover:border-gray-200 transition-colors">
+                <p className="text-[9px] font-bold text-gray-300 uppercase leading-none">
                   {d ? d.toLocaleDateString('en-CA', { month: 'short' }) : ''}
                 </p>
-                <p className="text-[14px] font-black text-gray-800 leading-none mt-0.5">
+                <p style={{ fontSize: '20px', fontWeight: 700 }} className="text-gray-800 leading-none mt-0.5">
                   {d ? d.getDate() : ''}
                 </p>
               </div>
+
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-gray-800 group-hover:text-gray-600 transition-colors leading-snug truncate">
+                <p style={{ fontSize: '16px', fontWeight: 600 }}
+                   className="text-gray-800 group-hover:text-gray-600 transition-colors leading-snug truncate mb-1">
                   {name}
                 </p>
-                <p className="text-[11px] mt-0.5" style={{ color: isOpen ? 'var(--y-h)' : '#D1D5DB' }}>
+                <p className="text-[12px] font-semibold" style={{ color: isOpen ? 'var(--y-h)' : '#D1D5DB' }}>
                   {isOpen ? t('신청 가능', 'Open', 'Ouvert') : t('마감', 'Closed', 'Fermé')}
                 </p>
               </div>
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-200 group-hover:text-gray-400 shrink-0 transition-colors">
+
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                   className="text-gray-200 group-hover:text-gray-400 shrink-0 transition-colors">
                 <polyline points="6,3 11,8 6,13"/>
               </svg>
             </Link>
           )
         })}
       </div>
-      <Link to="/programs" className="inline-block mt-3 text-[11px] text-gray-400 hover:text-gray-700 transition-colors">
-        {t('모든 프로그램 보기', 'All programs', 'Tous les programmes')} →
-      </Link>
-    </div>
+
+      <div className="mt-6">
+        <Link to="/programs" className="inline-flex items-center gap-2 text-[13px] font-semibold text-gray-500 hover:text-gray-900 transition-colors">
+          {t('모든 프로그램 보기', 'All programs', 'Tous les programmes')}
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <polyline points="6,3 11,8 6,13"/>
+          </svg>
+        </Link>
+      </div>
+    </section>
   )
 }
 
@@ -469,45 +531,37 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-4 h-4 border border-gray-300 border-t-transparent rounded-full animate-spin" />
+        <div className="w-4 h-4 border border-gray-200 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
     <>
-      <PageShell left={<LeftSidebar lang={lang} />}>
+      <div className="w-full flex justify-center px-6">
+        <div className="w-full max-w-[880px]">
 
-        {/* 1 · Montréal Today */}
-        <MontrealToday lang={lang} />
+          {/* 1 · Hero */}
+          <Hero lang={lang} />
 
-        <Divider />
+          {/* 2 · Today in HAKKYO */}
+          <TodayInHakkyo tracks={tracks} contents={contents} community={community} lang={lang} />
 
-        {/* 2 · What's Happening */}
-        <WhatsHappening tracks={tracks} contents={contents} community={community} lang={lang} />
+          {/* 3 · Start from where you are */}
+          <StartFromHere lang={lang} />
 
-        <Divider />
+          {/* 4 · Today's Expression */}
+          <TodaysExpression />
 
-        {/* 3 · Quick Paths */}
-        <QuickPaths lang={lang} />
+          {/* 5 · Community Pulse */}
+          <CommunityPulse posts={community} onCompose={openCompose} />
 
-        <Divider />
+          {/* 6 · Programs */}
+          <Programs tracks={tracks} lang={lang} />
 
-        {/* 4 · Community Pulse */}
-        <CommunityPulse posts={community} onCompose={openCompose} />
-
-        <Divider />
-
-        {/* 5 · Everyday Expression */}
-        <EverydayExpression />
-
-        <Divider />
-
-        {/* 6 · Programs */}
-        <Programs tracks={tracks} lang={lang} />
-
-        <div className="h-10" />
-      </PageShell>
+          <div className="h-20" />
+        </div>
+      </div>
 
       <Suspense fallback={null}>
         {submitTag !== null && (
