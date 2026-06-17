@@ -74,7 +74,7 @@ function Hero({ lang }: { lang: Lang }) {
       </h1>
 
       {/* Subtitle */}
-      <p style={{ fontSize: '17px', lineHeight: '1.7' }} className="text-gray-500 max-w-[440px] mb-12">
+      <p style={{ fontSize: '14px', lineHeight: '1.65' }} className="text-gray-500 max-w-[440px] mb-12">
         {t(
           '언어를 찾고, 사람을 만나고,\n이 도시에서 나만의 자리를 찾는 하루 가이드.',
           'A daily guide for finding language, people,\nand your place in the city.',
@@ -86,7 +86,7 @@ function Hero({ lang }: { lang: Lang }) {
       <div className="flex items-end gap-10">
         <div>
           <p className="t-eyebrow text-gray-300 mb-2">Montréal</p>
-          <p style={{ fontSize: '32px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
+          <p style={{ fontSize: '28px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
              className="text-gray-900 leading-none">
             {times.mtl}
           </p>
@@ -94,7 +94,7 @@ function Hero({ lang }: { lang: Lang }) {
         <div className="w-px h-10 bg-gray-100 mb-1" />
         <div>
           <p className="t-eyebrow text-gray-300 mb-2">Seoul</p>
-          <p style={{ fontSize: '32px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
+          <p style={{ fontSize: '28px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
              className="text-gray-900 leading-none">
             {times.seo}
           </p>
@@ -183,7 +183,7 @@ function TodayInHakkyo({ tracks, contents, community, lang }: {
             >
               {item.label}
             </span>
-            <span style={{ fontSize: '15px' }} className="text-gray-700 group-hover:text-gray-900 transition-colors leading-snug flex-1 min-w-0 truncate font-medium">
+            <span style={{ fontSize: '13px' }} className="text-gray-700 group-hover:text-gray-900 transition-colors leading-snug flex-1 min-w-0 truncate font-medium">
               {item.title}
             </span>
             {item.time && (
@@ -287,7 +287,7 @@ function StartFromHere({ lang }: { lang: Lang }) {
               <h3 className="t-section text-gray-900 mb-1.5 group-hover:text-gray-600 transition-colors">
                 {lang === 'ko' ? card.ko : lang === 'fr' ? card.fr : card.en}
               </h3>
-              <p style={{ fontSize: '15px', lineHeight: '1.6' }} className="text-gray-400">
+              <p style={{ fontSize: '13px', lineHeight: '1.55' }} className="text-gray-400">
                 {lang === 'ko' ? card.desc_ko : lang === 'fr' ? card.desc_fr : card.desc_en}
               </p>
             </div>
@@ -322,14 +322,14 @@ function TodaysExpression() {
         <p className="t-eyebrow text-gray-300 mb-6">{word.context}</p>
 
         <div className="space-y-4">
-          <p style={{ fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.25 }}
+          <p style={{ fontSize: 'clamp(18px, 2.5vw, 24px)', fontWeight: 600, letterSpacing: '-0.015em', lineHeight: 1.3 }}
              className="text-gray-900">
             {word.ko}
           </p>
-          <p style={{ fontSize: '17px' }} className="text-gray-600 leading-relaxed">
+          <p style={{ fontSize: '14px' }} className="text-gray-600 leading-relaxed">
             {word.en}
           </p>
-          <p style={{ fontSize: '15px' }} className="text-gray-400 italic leading-relaxed">
+          <p style={{ fontSize: '13px' }} className="text-gray-400 italic leading-relaxed">
             {word.fr}
           </p>
         </div>
@@ -373,7 +373,7 @@ function CommunityPulse({ posts, onCompose }: {
                 {(post.author_name ?? '?')[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0 pt-1">
-                <p style={{ fontSize: '15px', lineHeight: '1.6' }} className="text-gray-700">
+                <p style={{ fontSize: '13px', lineHeight: '1.55' }} className="text-gray-700">
                   {post.title ?? post.description?.slice(0, 90)}
                 </p>
                 <p className="text-[12px] text-gray-300 mt-1.5">
@@ -444,13 +444,13 @@ function Programs({ tracks, lang }: { tracks: ProgramTrack[]; lang: Lang }) {
                 <p className="text-[9px] font-bold text-gray-300 uppercase leading-none">
                   {d ? d.toLocaleDateString('en-CA', { month: 'short' }) : ''}
                 </p>
-                <p style={{ fontSize: '20px', fontWeight: 700 }} className="text-gray-800 leading-none mt-0.5">
+                <p style={{ fontSize: '17px', fontWeight: 600 }} className="text-gray-800 leading-none mt-0.5">
                   {d ? d.getDate() : ''}
                 </p>
               </div>
 
               <div className="flex-1 min-w-0">
-                <p style={{ fontSize: '16px', fontWeight: 600 }}
+                <p style={{ fontSize: '14px', fontWeight: 600 }}
                    className="text-gray-800 group-hover:text-gray-600 transition-colors leading-snug truncate mb-1">
                   {name}
                 </p>

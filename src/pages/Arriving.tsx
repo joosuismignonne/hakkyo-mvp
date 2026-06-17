@@ -785,9 +785,9 @@ function FlightsPanel() {
         )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        <a href="https://www.google.com/travel/flights" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:40,padding:'0 16px',fontSize:14}}>Google Flights ↗</a>
-        <a href="https://www.skyscanner.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Skyscanner ↗</a>
-        <a href="https://www.kayak.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Kayak ↗</a>
+        <a href="https://www.google.com/travel/flights" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>Google Flights ↗</a>
+        <a href="https://www.skyscanner.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Skyscanner ↗</a>
+        <a href="https://www.kayak.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Kayak ↗</a>
       </div>
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
       {expanded && (
@@ -849,9 +849,9 @@ function SIMPanel() {
         )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        <a href="https://fizz.ca" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:40,padding:'0 16px',fontSize:14}}>Fizz ↗</a>
-        <a href="https://www.publicmobile.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Public Mobile ↗</a>
-        <a href="https://www.freedommobile.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Freedom ↗</a>
+        <a href="https://fizz.ca" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>Fizz ↗</a>
+        <a href="https://www.publicmobile.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Public Mobile ↗</a>
+        <a href="https://www.freedommobile.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Freedom ↗</a>
       </div>
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
       {expanded && (
@@ -908,9 +908,9 @@ function BankingPanel() {
         )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        <a href="https://www.td.com/ca/en/personal-banking/solutions/new-to-canada" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:40,padding:'0 16px',fontSize:14}}>TD StartRight ↗</a>
-        <a href="https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Scotiabank ↗</a>
-        <a href="https://www.desjardins.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Desjardins ↗</a>
+        <a href="https://www.td.com/ca/en/personal-banking/solutions/new-to-canada" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>TD StartRight ↗</a>
+        <a href="https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Scotiabank ↗</a>
+        <a href="https://www.desjardins.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Desjardins ↗</a>
       </div>
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
       {expanded && (
@@ -967,9 +967,9 @@ function TransportPanel() {
         )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        <a href="https://www.stm.info" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:40,padding:'0 16px',fontSize:14}}>STM ↗</a>
-        <a href="https://bixi.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>BIXI ↗</a>
-        <a href="https://www.communauto.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Communauto ↗</a>
+        <a href="https://www.stm.info" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>STM ↗</a>
+        <a href="https://bixi.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>BIXI ↗</a>
+        <a href="https://www.communauto.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Communauto ↗</a>
       </div>
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
       {expanded && (
@@ -1020,9 +1020,9 @@ function StayPanel() {
         )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        <a href="https://www.airbnb.ca" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:40,padding:'0 16px',fontSize:14}}>Airbnb ↗</a>
-        <a href="https://www.facebook.com/marketplace" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>FB Marketplace ↗</a>
-        <a href="https://www.kijiji.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Kijiji ↗</a>
+        <a href="https://www.airbnb.ca" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>Airbnb ↗</a>
+        <a href="https://www.facebook.com/marketplace" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>FB Marketplace ↗</a>
+        <a href="https://www.kijiji.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Kijiji ↗</a>
       </div>
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
       {expanded && (
@@ -1069,8 +1069,8 @@ function SINPanel() {
         )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        <a href="https://www.canada.ca/en/employment-social-development/services/sin/apply.html" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:40,padding:'0 16px',fontSize:14}}>Apply Online ↗</a>
-        <a href="https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>Find Office ↗</a>
+        <a href="https://www.canada.ca/en/employment-social-development/services/sin/apply.html" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>Apply Online ↗</a>
+        <a href="https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Find Office ↗</a>
       </div>
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
       {expanded && (
@@ -1112,7 +1112,7 @@ function DriverLicencePanel() {
         )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        <a href="https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:40,padding:'0 16px',fontSize:14}}>SAAQ ↗</a>
+        <a href="https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>SAAQ ↗</a>
       </div>
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
       {expanded && (
@@ -1159,9 +1159,9 @@ function LanguagePanel() {
         )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        <a href="/programs?type=language-exchange" className="btn-primary" style={{height:40,padding:'0 16px',fontSize:14}}>{t('HAKKYO 언어 교환', 'HAKKYO Exchange', 'Échange HAKKYO')}</a>
-        <a href="/programs?language=french" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>{t('프랑스어 수업', 'French Classes', 'Cours de français')}</a>
-        <a href="/programs?language=english" className="btn-secondary" style={{height:40,padding:'0 16px',fontSize:14}}>{t('영어 수업', 'English Classes', "Cours d'anglais")}</a>
+        <a href="/programs?type=language-exchange" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>{t('HAKKYO 언어 교환', 'HAKKYO Exchange', 'Échange HAKKYO')}</a>
+        <a href="/programs?language=french" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>{t('프랑스어 수업', 'French Classes', 'Cours de français')}</a>
+        <a href="/programs?language=english" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>{t('영어 수업', 'English Classes', "Cours d'anglais")}</a>
       </div>
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
       {expanded && (
@@ -1269,7 +1269,7 @@ export default function Arriving() {
           <h1 className="t-page text-gray-900 mb-5">
             {t('첫 걸음', 'First Steps', 'Premiers Pas')}
           </h1>
-          <p style={{ fontSize: '17px', lineHeight: '1.7' }} className="text-gray-500 max-w-[500px]">
+          <p style={{ fontSize: '14px', lineHeight: '1.65' }} className="text-gray-500 max-w-[500px]">
             {t(
               '몬트리올 도착 전후로 필요한 모든 것을 한 곳에서.',
               'Everything you need to move to Montréal — without opening 20 other tabs.',
