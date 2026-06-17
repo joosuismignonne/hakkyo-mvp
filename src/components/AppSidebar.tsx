@@ -238,8 +238,6 @@ function DesktopSidebar() {
     return () => clearInterval(id)
   }, [])
 
-  const homeActive = pathname === '/'
-
   return (
     <aside
       className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen border-r border-gray-100 bg-white z-30 overflow-hidden"
@@ -257,7 +255,7 @@ function DesktopSidebar() {
           className="flex items-center pt-6 pb-4 shrink-0 overflow-hidden"
           style={{ paddingLeft: collapsed ? 14 : 20, paddingRight: collapsed ? 14 : 20 }}
         >
-          <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+          <Link to="/arriving" className="flex items-center gap-2.5 group shrink-0">
             <img src="/logo.png" alt="HAKKYO" className="h-7 w-7 shrink-0 object-contain" />
             {!collapsed && (
               <span className="font-bold text-[15px] tracking-tight text-gray-900 group-hover:text-gray-600 transition-colors whitespace-nowrap">
@@ -338,32 +336,6 @@ function DesktopSidebar() {
         </div>
 
         <div className="mx-3 mb-2 border-t border-gray-100 shrink-0" />
-
-        {/* Home */}
-        <div className="px-2 mb-1 shrink-0">
-          <Link
-            to="/"
-            title={collapsed ? (lang === 'ko' ? '홈' : 'Home') : undefined}
-            className={[
-              'flex items-center rounded-xl transition-all',
-              collapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3 py-2',
-              homeActive
-                ? 'text-gray-900 font-semibold'
-                : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50',
-            ].join(' ')}
-            style={homeActive ? { background: 'var(--y-l)', color: '#111' } : {}}
-          >
-            <span style={homeActive ? { color: 'var(--y-h)' } : {}}><IconHome active={homeActive} /></span>
-            {!collapsed && <span className="text-[13px] font-medium">{t('홈', 'Home', 'Accueil')}</span>}
-          </Link>
-        </div>
-
-        {/* Journey nav */}
-        {!collapsed && (
-          <p className="px-5 mb-1 text-[10px] font-semibold tracking-[0.18em] text-gray-400 uppercase shrink-0">
-            {t('여정', 'Journey', 'Parcours')}
-          </p>
-        )}
 
         <nav className="px-2 space-y-0.5 shrink-0">
           {JOURNEY.map(j => {
