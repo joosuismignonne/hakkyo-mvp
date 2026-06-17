@@ -1157,15 +1157,12 @@ export default function Settling() {
 
         {/* ── HEADER ── */}
         <section>
-          <div className="flex items-center gap-2 mb-1">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
-            </svg>
+          <div className="mb-1">
             <h1 className="t-page text-gray-900">
               {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
             </h1>
           </div>
-          <p style={{ fontSize: '17px', lineHeight: '1.7' }} className="text-gray-500 max-w-[500px]">
+          <p style={{ fontSize: '14px', lineHeight: '1.65' }} className="text-gray-500 max-w-[500px]">
             {t(
               '예산 설정부터 계약, 입주 후 생활까지. 몬트리올에서 집을 구하는 과정을 단계별로 안내합니다.',
               'From setting a budget to signing a lease and settling in. A step-by-step guide to finding a home in Montréal.',
