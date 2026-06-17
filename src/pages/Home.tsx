@@ -64,12 +64,12 @@ function Hero({ lang }: { lang: Lang }) {
   return (
     <section className="pt-8 pb-16 md:pt-12 md:pb-24 animate-fade-up">
       {/* Date eyebrow */}
-      <p className="eyebrow mb-7 text-gray-400">
+      <p className="t-eyebrow mb-7 text-gray-400">
         {todayFull(lang)}
       </p>
 
       {/* Hero title */}
-      <h1 className="h-hero text-gray-900 mb-6">
+      <h1 className="t-hero text-gray-900 mb-6">
         {t('몬트리올,\n오늘.', 'Montréal,\ntoday.', "Montréal,\naujourd'hui.")}
       </h1>
 
@@ -85,7 +85,7 @@ function Hero({ lang }: { lang: Lang }) {
       {/* Live clocks */}
       <div className="flex items-end gap-10">
         <div>
-          <p className="eyebrow text-gray-300 mb-2">Montréal</p>
+          <p className="t-eyebrow text-gray-300 mb-2">Montréal</p>
           <p style={{ fontSize: '32px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
              className="text-gray-900 leading-none">
             {times.mtl}
@@ -93,7 +93,7 @@ function Hero({ lang }: { lang: Lang }) {
         </div>
         <div className="w-px h-10 bg-gray-100 mb-1" />
         <div>
-          <p className="eyebrow text-gray-300 mb-2">Seoul</p>
+          <p className="t-eyebrow text-gray-300 mb-2">Seoul</p>
           <p style={{ fontSize: '32px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
              className="text-gray-900 leading-none">
             {times.seo}
@@ -165,7 +165,7 @@ function TodayInHakkyo({ tracks, contents, community, lang }: {
 
   return (
     <section className="editorial-section">
-      <p className="eyebrow text-gray-400 mb-8">
+      <p className="t-eyebrow text-gray-400 mb-8">
         {t('지금 HAKKYO에서', 'Today in HAKKYO', "Aujourd'hui chez HAKKYO")}
       </p>
 
@@ -262,7 +262,7 @@ function StartFromHere({ lang }: { lang: Lang }) {
 
   return (
     <section className="editorial-section">
-      <p className="eyebrow text-gray-400 mb-8">
+      <p className="t-eyebrow text-gray-400 mb-8">
         {t('여기서 시작하세요', 'Start from where you are', 'Commencez là où vous êtes')}
       </p>
 
@@ -281,10 +281,10 @@ function StartFromHere({ lang }: { lang: Lang }) {
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="eyebrow text-gray-300 mb-1.5">
+              <p className="t-eyebrow text-gray-300 mb-1.5">
                 {lang === 'ko' ? card.tag_ko : lang === 'fr' ? card.tag_fr : card.tag_en}
               </p>
-              <h3 className="h-section text-gray-900 mb-1.5 group-hover:text-gray-600 transition-colors">
+              <h3 className="t-section text-gray-900 mb-1.5 group-hover:text-gray-600 transition-colors">
                 {lang === 'ko' ? card.ko : lang === 'fr' ? card.fr : card.en}
               </h3>
               <p style={{ fontSize: '15px', lineHeight: '1.6' }} className="text-gray-400">
@@ -314,12 +314,12 @@ function TodaysExpression() {
 
   return (
     <section className="editorial-section">
-      <p className="eyebrow text-gray-400 mb-8">
+      <p className="t-eyebrow text-gray-400 mb-8">
         {t('오늘의 표현', "Today's Expression", "Expression du jour")}
       </p>
 
       <div className="rounded-3xl border border-gray-100 bg-gray-50/50 px-8 py-9 md:px-10 md:py-11">
-        <p className="eyebrow text-gray-300 mb-6">{word.context}</p>
+        <p className="t-eyebrow text-gray-300 mb-6">{word.context}</p>
 
         <div className="space-y-4">
           <p style={{ fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.25 }}
@@ -358,7 +358,7 @@ function CommunityPulse({ posts, onCompose }: {
 
   return (
     <section className="editorial-section">
-      <p className="eyebrow text-gray-400 mb-8">
+      <p className="t-eyebrow text-gray-400 mb-8">
         {t('커뮤니티', 'Community Pulse', 'Communauté')}
       </p>
 
@@ -426,7 +426,7 @@ function Programs({ tracks, lang }: { tracks: ProgramTrack[]; lang: Lang }) {
 
   return (
     <section className="editorial-section">
-      <p className="eyebrow text-gray-400 mb-8">
+      <p className="t-eyebrow text-gray-400 mb-8">
         {t('이번 달 프로그램', 'Upcoming Programs', 'Programmes à venir')}
       </p>
 

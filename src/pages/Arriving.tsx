@@ -1409,8 +1409,8 @@ export default function Arriving() {
 
         {/* ── Header ── */}
         <div className="pt-6 pb-10 md:pt-8 md:pb-14">
-          <p className="eyebrow text-gray-400 mb-5">{t('나의 여정', 'My Journey', 'Mon parcours')}</p>
-          <h1 className="h-page text-gray-900 mb-5">
+          <p className="t-eyebrow text-gray-400 mb-5">{t('나의 여정', 'My Journey', 'Mon parcours')}</p>
+          <h1 className="t-page text-gray-900 mb-5">
             {t('첫 걸음', 'First Steps', 'Premiers Pas')}
           </h1>
           <p style={{ fontSize: '17px', lineHeight: '1.7' }} className="text-gray-500 max-w-[500px]">
@@ -1561,8 +1561,8 @@ export default function Arriving() {
         {/* ── Essential Tools ── */}
         <div className="border-t border-gray-100 mt-14 mb-14" />
         <div className="mb-8" ref={toolsRef}>
-          <p className="eyebrow text-gray-400 mb-4">{t('필수 가이드', 'Essential Guides', 'Guides essentiels')}</p>
-          <h2 className="h-section text-gray-900 mb-3">
+          <p className="t-eyebrow text-gray-400 mb-4">{t('필수 가이드', 'Essential Guides', 'Guides essentiels')}</p>
+          <h2 className="t-section text-gray-900 mb-3">
             {t('필수 도구', 'Essential Tools', 'Outils Essentiels')}
           </h2>
           <p style={{ fontSize: '16px', lineHeight: '1.7' }} className="text-gray-500 mb-8 max-w-[480px]">

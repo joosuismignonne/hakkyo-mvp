@@ -267,19 +267,12 @@ export function PageShell({
   children: React.ReactNode
 }) {
   if (!right) {
-    // No right sidebar: single centered column, visually centered in the space after the left nav
-    return (
-      <div className="w-full flex justify-center px-6 py-12 md:py-16">
-        <div className="w-full max-w-[960px]">
-          {children}
-        </div>
-      </div>
-    )
+    return <div className="page-column">{children}</div>
   }
 
-  // With right sidebar: two-column flex layout
+  // With right sidebar: wide two-column flex layout
   return (
-    <div className="w-full px-6 py-12 md:py-16 mx-auto max-w-[1200px]">
+    <div style={{ maxWidth: 'var(--w-wide)', margin: '0 auto', padding: '48px 24px 96px' }}>
       <div className="flex items-start gap-10">
         <main className="flex-1 min-w-0">
           {children}

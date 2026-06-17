@@ -465,7 +465,7 @@ export default function Radar() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Radio size={20} className="text-amber-400 shrink-0" />
-              <h1 className="h-section text-gray-900">HAKKYO Radar</h1>
+              <h1 className="t-section text-gray-900">HAKKYO Radar</h1>
             </div>
             <p className="text-[13px] text-gray-500">
               {t(

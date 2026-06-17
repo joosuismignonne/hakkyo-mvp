@@ -474,7 +474,7 @@ export default function Phrases() {
         {/* ── Header ── */}
         <div className="flex items-start justify-between mb-5 gap-3">
           <div>
-            <h1 className="h-section text-gray-900">{t('일상 표현', 'Everyday Words', 'Mots du quotidien')}</h1>
+            <h1 className="t-section text-gray-900">{t('일상 표현', 'Everyday Words', 'Mots du quotidien')}</h1>
             <p className="text-[13px] text-gray-500 mt-0.5 leading-relaxed">
               {t(
                 '카페, 집주인, 병원, 면접 — 실제 상황에서 바로 쓸 수 있는 표현',

@@ -1161,7 +1161,7 @@ export default function Settling() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
             </svg>
-            <h1 className="h-page text-gray-900">
+            <h1 className="t-page text-gray-900">
               {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
             </h1>
           </div>
