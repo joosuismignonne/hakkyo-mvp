@@ -931,6 +931,55 @@ export async function updateProgramApplicationNotes(
   if (error) throw error
 }
 
+// ─── Neighbourhood Comments ───────────────────────────────────────────────────
+
+export interface NeighbourhoodComment {
+  id: string
+  neighbourhood_id: string
+  user_id: string
+  display_name: string
+  content: string
+  created_at: string
+}
+
+const HOOD_COMMENT_COLS = 'id, neighbourhood_id, user_id, display_name, content, created_at'
+
+export async function getNeighbourhoodComments(neighbourhoodId: string): Promise<NeighbourhoodComment[]> {
+  if (!isConfigured) return []
+  const { data, error } = await db()
+    .from('neighbourhood_comments')
+    .select(HOOD_COMMENT_COLS)
+    .eq('neighbourhood_id', neighbourhoodId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+  if (error) { console.warn('[neighbourhood] getComments:', error.message); return [] }
+  return (data ?? []) as NeighbourhoodComment[]
+}
+
+export async function addNeighbourhoodComment(
+  neighbourhoodId: string,
+  userId: string,
+  displayName: string,
+  content: string,
+): Promise<NeighbourhoodComment> {
+  const { data, error } = await db()
+    .from('neighbourhood_comments')
+    .insert({ neighbourhood_id: neighbourhoodId, user_id: userId, display_name: displayName, content })
+    .select(HOOD_COMMENT_COLS)
+    .single()
+  if (error) throw error
+  return data as NeighbourhoodComment
+}
+
+export async function deleteNeighbourhoodComment(commentId: string, userId: string): Promise<void> {
+  const { error } = await db()
+    .from('neighbourhood_comments')
+    .delete()
+    .eq('id', commentId)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
 export async function saveLeSettings(settings: LeSettings): Promise<void> {
   if (!isConfigured) return
   const { id, ...fields } = settings
