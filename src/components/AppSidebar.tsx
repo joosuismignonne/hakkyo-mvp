@@ -89,16 +89,6 @@ function IconLiving({ active }: { active?: boolean }) {
   )
 }
 
-function IconPlus() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth="2.2" strokeLinecap="round">
-      <line x1="12" y1="5" x2="12" y2="19"/>
-      <line x1="5"  y1="12" x2="19" y2="12"/>
-    </svg>
-  )
-}
-
 function IconChevron({ collapsed }: { collapsed: boolean }) {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
@@ -195,10 +185,6 @@ const LANGS: { code: Lang; label: string }[] = [
   { code: 'en', label: 'EN' },
   { code: 'fr', label: 'FR' },
 ]
-
-function openCompose(tag = 'general') {
-  window.dispatchEvent(new CustomEvent('hakkyo:open-compose', { detail: { tag } }))
-}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -370,89 +356,24 @@ function DesktopSidebar() {
           })}
         </nav>
 
-        <div className="mx-3 my-3 border-t border-gray-100 shrink-0" />
-
-        {/* Post / Radar signal button */}
-        <div className="px-2 shrink-0">
-          {collapsed ? (
-            <button
-              onClick={() => openCompose('general')}
-              title="Post"
-              className="w-full flex items-center justify-center rounded-xl py-2.5 transition-all"
-              style={{ background: 'var(--y)' }}
-            >
-              <IconPlus />
-            </button>
-          ) : (
-            <button
-              onClick={() => openCompose('general')}
-              className="btn-yellow w-full flex items-center justify-center gap-2 text-[13px] rounded-xl py-2.5"
-            >
-              <IconPlus />
-              {t('공유하기', 'Share Something', 'Partager')}
-            </button>
-          )}
-        </div>
-
-        {/* Footer links — expanded only */}
+        {/* Language switcher — expanded only */}
         {!collapsed && (
-          <>
-            <div className="mx-5 mt-4 mb-0 border-t border-gray-100" />
-            <div className="px-3 pt-3 space-y-0.5">
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('hakkyo:open-archive'))}
-                className="flex items-center gap-3 w-full px-2 py-2 rounded-xl text-[13px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all text-left"
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 2h10v12l-5-3.5L3 14V2z"/>
-                </svg>
-                {t('아카이브', 'Archive', 'Archives')}
-              </button>
-              <a
-                href="https://www.instagram.com/hakkyo.mtl"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-2 py-2 rounded-xl text-[13px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                  <circle cx="12" cy="12" r="4"/>
-                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-                </svg>
-                @hakkyo.mtl
-              </a>
-              <a
-                href="mailto:hello@hakkyo.ca"
-                className="flex items-center gap-3 px-2 py-2 rounded-xl text-[13px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                  <polyline points="22,6 12,13 2,6"/>
-                </svg>
-                hello@hakkyo.ca
-              </a>
+          <div className="px-4 pt-4 pb-2">
+            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden text-[12px] font-semibold">
+              {LANGS.map(({ code, label: lbl }) => (
+                <button
+                  key={code}
+                  onClick={() => setLang(code)}
+                  className={[
+                    'flex-1 py-2 transition-colors',
+                    lang === code ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50',
+                  ].join(' ')}
+                >
+                  {lbl}
+                </button>
+              ))}
             </div>
-
-            <div className="mx-5 my-3 border-t border-gray-100" />
-
-            {/* Language switcher */}
-            <div className="px-4 pb-4">
-              <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden text-[12px] font-semibold">
-                {LANGS.map(({ code, label: lbl }) => (
-                  <button
-                    key={code}
-                    onClick={() => setLang(code)}
-                    className={[
-                      'flex-1 py-2 transition-colors',
-                      lang === code ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50',
-                    ].join(' ')}
-                  >
-                    {lbl}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
+          </div>
         )}
       </div>
 
@@ -461,7 +382,7 @@ function DesktopSidebar() {
 
         {/* City times */}
         <div
-          className="py-2.5 border-t border-gray-100"
+          className="py-2.5"
           style={{ paddingLeft: collapsed ? 0 : 20, paddingRight: collapsed ? 0 : 20 }}
         >
           {collapsed ? (
@@ -495,7 +416,7 @@ function DesktopSidebar() {
 // ─── Mobile bottom tab bar ────────────────────────────────────────────────────
 
 function MobileBottomNav() {
-  const { lang, t } = useLang()
+  const { lang } = useLang()
   const { pathname } = useLocation()
 
   return (
@@ -516,16 +437,6 @@ function MobileBottomNav() {
           </Link>
         )
       })}
-      <button
-        onClick={() => openCompose('general')}
-        className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
-        style={{ color: 'var(--y-h)' }}
-      >
-        <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'var(--y)' }}>
-          <IconPlus />
-        </span>
-        <span className="text-[9px] font-medium text-gray-400">{t('공유', 'Share', 'Partager')}</span>
-      </button>
     </nav>
   )
 }
