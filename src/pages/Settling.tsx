@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useAuth } from '../context/AuthContext'
+import { trackEvent } from '../lib/analytics'
 import {
   getNeighbourhoodComments,
   getAllNeighbourhoodCommentCounts,
@@ -28,15 +29,15 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── Checklist ────────────────────────────────────────────────────────────────
 
 const SETTLING_KEY = 'hakkyo_settling'
-const CHECKLIST_ITEMS: Array<{ id: string } & Tri> = [
-  { id: 'budget',    ko: '예산 설정',              en: 'Set budget',                  fr: 'Définir le budget'             },
-  { id: 'hood',      ko: '동네 선택',              en: 'Choose neighbourhood',         fr: 'Choisir le quartier'           },
-  { id: 'visits',    ko: '아파트 방문 일정 잡기',   en: 'Schedule apartment visits',   fr: 'Planifier les visites'         },
-  { id: 'lease',     ko: '임대차 계약 내용 확인',   en: 'Verify lease details',        fr: 'Vérifier les détails du bail'  },
-  { id: 'hydro',     ko: 'Hydro-Québec 계좌 개설', en: 'Open Hydro-Québec account',   fr: 'Ouvrir un compte Hydro-Québec' },
-  { id: 'internet',  ko: '인터넷 설치',             en: 'Set up internet',             fr: 'Installer internet'            },
-  { id: 'insurance', ko: '세입자 보험 가입',        en: 'Get tenant insurance',        fr: 'Souscrire une assurance locataire' },
-  { id: 'transit',   ko: '현지 교통 익히기',        en: 'Learn local transportation',  fr: 'Apprendre les transports locaux' },
+const CHECKLIST_ITEMS: Array<{ id: string; emoji: string } & Tri> = [
+  { id: 'budget',    emoji: '💰', ko: '예산 설정',              en: 'Set budget',                  fr: 'Définir le budget'             },
+  { id: 'hood',      emoji: '🗺️', ko: '동네 선택',              en: 'Choose neighbourhood',         fr: 'Choisir le quartier'           },
+  { id: 'visits',    emoji: '🚪', ko: '아파트 방문 일정 잡기',   en: 'Schedule apartment visits',   fr: 'Planifier les visites'         },
+  { id: 'lease',     emoji: '📋', ko: '임대차 계약 내용 확인',   en: 'Verify lease details',        fr: 'Vérifier les détails du bail'  },
+  { id: 'hydro',     emoji: '💡', ko: 'Hydro-Québec 계좌 개설', en: 'Open Hydro-Québec account',   fr: 'Ouvrir un compte Hydro-Québec' },
+  { id: 'internet',  emoji: '📡', ko: '인터넷 설치',             en: 'Set up internet',             fr: 'Installer internet'            },
+  { id: 'insurance', emoji: '🛡️', ko: '세입자 보험 가입',        en: 'Get tenant insurance',        fr: 'Souscrire une assurance locataire' },
+  { id: 'transit',   emoji: '🚇', ko: '현지 교통 익히기',        en: 'Learn local transportation',  fr: 'Apprendre les transports locaux' },
 ]
 
 // ─── Neighbourhood data ───────────────────────────────────────────────────────
@@ -341,6 +342,7 @@ function CommentSection({
     try {
       // Never save email — display_name null, ownership tracked via user_id only
       const newComment = await addNeighbourhoodComment(hoodId, user.id, null, text.trim())
+      trackEvent({ eventName: 'neighbourhood_comment_submitted', targetType: 'comment', targetId: hoodId })
       // Append to end (newest = highest index)
       setComments(prev => [...prev, newComment])
       setText('')
@@ -373,7 +375,10 @@ function CommentSection({
     if (!user) {
       navigate('/login')
     } else {
-      setShowForm(prev => !prev)
+      setShowForm(prev => {
+        if (!prev) trackEvent({ eventName: 'neighbourhood_comment_opened', targetType: 'comment', targetId: hoodId })
+        return !prev
+      })
     }
   }
 
@@ -649,6 +654,8 @@ function NeighbourhoodMapSection({ lang, t }: {
   function handleSelectHood(id: string) {
     if (hasDraggedRef.current) return
     setSelectedId(id)
+    const hood = HOODS.find(h => h.id === id)
+    trackEvent({ eventName: 'neighbourhood_selected', targetType: 'map', targetId: id, targetLabel: hood?.name ?? id })
   }
 
   const cursor = mapScale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
@@ -887,44 +894,134 @@ export default function Settling() {
         {/* ── CHECKLIST ── */}
         <section>
           <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
-            <div className="flex items-start justify-between gap-3 mb-1">
-              <div>
-                <h2 className="text-[15px] font-bold text-gray-900">
-                  {t('몬트리올 정착 체크리스트', 'Settlement Checklist', 'Liste de règlement')}
+            {pct < 100 ? (
+              <>
+                <div className="flex items-start justify-between gap-3 mb-1">
+                  <div>
+                    <h2 className="text-[15px] font-bold text-gray-900">
+                      {t('몬트리올 정착 체크리스트', 'Settlement Checklist', 'Liste de règlement')}
+                    </h2>
+                    <p className="text-[12px] text-gray-400 mt-0.5">
+                      {t(
+                        '집을 구하기 전부터 이사 후 생활 준비까지, 하나씩 확인해보세요.',
+                        'From apartment hunting to settling in — check each one off.',
+                        "De la recherche de logement à l'installation — cochez au fur et à mesure.",
+                      )}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-[20px] font-bold text-gray-900">{pct}%</span>
+                    <p className="text-[11px] text-gray-400">{t('완료', 'done', 'fait')}</p>
+                  </div>
+                </div>
+                <div className="h-1 bg-gray-100 rounded-full mt-3 mb-4 overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: 'var(--y)' }} />
+                </div>
+                <div className="space-y-0.5">
+                  {CHECKLIST_ITEMS.map(item => {
+                    const done = checked.has(item.id)
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => toggle(item.id)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
+                        style={done ? { background: 'var(--y-l)' } : undefined}
+                        onMouseEnter={e => { if (!done) (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB' }}
+                        onMouseLeave={e => { if (!done) (e.currentTarget as HTMLButtonElement).style.background = '' }}
+                      >
+                        <span className="text-base leading-none shrink-0 w-5 text-center">
+                          {done ? '✅' : item.emoji}
+                        </span>
+                        <span className={`text-[13px] font-medium transition-colors ${done ? 'text-gray-500' : 'text-gray-700'}`}>
+                          {tri(item, lang)}
+                        </span>
+                        {done && (
+                          <span className="ml-auto text-[10px] font-semibold text-amber-700 shrink-0">
+                            {t('완료', 'Done', 'Fait')}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            ) : (
+              /* ── 100% completion state ── */
+              <div className="text-center py-2">
+                <div className="text-3xl mb-3">🎉</div>
+                <h2 className="text-[18px] font-bold text-gray-900 mb-3">
+                  {t('몬트리올 입성 완료!', 'Welcome to Montréal!', 'Bienvenue à Montréal !')}
                 </h2>
-                <p className="text-[12px] text-gray-400 mt-0.5">
+                <p className="text-[14px] text-gray-500 leading-relaxed mb-5">
                   {t(
-                    '집을 구하기 전부터 이사 후 생활 준비까지, 하나씩 확인해보세요.',
-                    'From apartment hunting to settling in — check each one off.',
-                    "De la recherche de logement à l'installation — cochez au fur et à mesure.",
-                  )}
+                    '항공권도 예약했고,\n집도 구했고,\n첫 친구도 만났네요.\n\n이제 진짜 몬트리올 이야기가 시작됩니다.',
+                    "You've booked the flight,\nfound a place,\nand met your first people.\n\nYour Montréal story starts now.",
+                    "Le vol est réservé,\nle logement est trouvé,\nles premières rencontres sont faites.\n\nVotre histoire montréalaise commence.",
+                  ).split('\n').map((line, i) => (
+                    <span key={i}>{line}<br /></span>
+                  ))}
+                </p>
+                {/* Completed items — subtle yellow rows */}
+                <div className="space-y-1 mb-5 text-left">
+                  {CHECKLIST_ITEMS.map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => toggle(item.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all"
+                      style={{ background: 'var(--y-l)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--y)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--y-l)' }}
+                    >
+                      <span className="text-base leading-none shrink-0 w-5 text-center">✅</span>
+                      <span className="text-[13px] font-medium text-gray-700">{tri(item, lang)}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-300 mb-1">
+                  {t('항목을 클릭하면 체크를 해제할 수 있어요.', 'Click any item to uncheck it.', 'Cliquez sur un élément pour le décocher.')}
                 </p>
               </div>
-              <div className="text-right shrink-0">
-                <span className="text-[20px] font-bold text-gray-900">{pct}%</span>
-                <p className="text-[11px] text-gray-400">{t('완료', 'done', 'fait')}</p>
-              </div>
-            </div>
-            <div className="h-1 bg-gray-100 rounded-full mt-3 mb-4 overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: 'var(--y)' }} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5">
-              {CHECKLIST_ITEMS.map(item => {
-                const done = checked.has(item.id)
-                return (
-                  <button key={item.id} onClick={() => toggle(item.id)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${done ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
-                  >
-                    <span className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all"
-                      style={done ? { background: 'var(--y)', borderColor: 'var(--y)' } : { borderColor: '#D1D5DB' }}>
-                      {done && <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round"><polyline points="2,6 5,9 10,3"/></svg>}
-                    </span>
-                    <span className={`text-[13px] font-medium ${done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{tri(item, lang)}</span>
-                  </button>
-                )
-              })}
-            </div>
+            )}
           </div>
+
+          {/* ── Community CTA — shown only at 100% ── */}
+          {pct === 100 && (
+            <div className="mt-4 border border-gray-200 rounded-2xl px-5 py-5 bg-white">
+              <p className="text-[13px] font-bold text-gray-900 mb-1">
+                {t('학교 친구들아, 모여라!', 'Ready to meet people?', 'Prêt·e à rencontrer des gens ?')}
+              </p>
+              <p className="text-[13px] text-gray-500 mb-4">
+                {t(
+                  '몬트리올에서 새로운 사람들을 만나고 싶다면',
+                  'If you want to meet new people in Montréal,',
+                  'Si vous souhaitez rencontrer de nouvelles personnes à Montréal,',
+                )}
+              </p>
+              <div className="space-y-2 mb-5">
+                {[
+                  { emoji: '🇰🇷', ko: '한국어 클래스', en: 'Korean class', fr: 'Cours de coréen' },
+                  { emoji: '🇨🇦', ko: '영어 클래스',   en: 'English class', fr: "Cours d'anglais" },
+                  { emoji: '🇫🇷', ko: '프랑스어 클래스', en: 'French class', fr: 'Cours de français' },
+                  { emoji: '🤝', ko: '언어 교환',      en: 'Language exchange', fr: 'Échange linguistique' },
+                ].map(item => (
+                  <div key={item.emoji} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: 'var(--y-l)' }}>
+                    <span className="text-base leading-none">{item.emoji}</span>
+                    <span className="text-[13px] font-medium text-gray-800">{t(item.ko, item.en, item.fr)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[12px] text-gray-400 mb-4">
+                {t('이 기다리고 있어요.', 'are waiting for you.', 'vous attendent.')}
+              </p>
+              <Link
+                to="/programs"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors"
+                style={{ background: 'var(--y)', color: '#111' }}
+              >
+                {t('프로그램 둘러보기 →', 'Browse Programs →', 'Voir les programmes →')}
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* ── START HERE ── */}
@@ -939,7 +1036,7 @@ export default function Settling() {
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{tri(card.category, lang)}</span>
                 <p className="text-[14px] font-bold text-gray-900 leading-snug">{tri(card.title, lang)}</p>
                 <p className="text-[12px] text-gray-500 leading-snug flex-1">{tri(card.desc, lang)}</p>
-                <Link to={`/settling/${card.slug}`} className={ctaCls}>{t('읽어보기 →', 'Read more →', 'Lire →')}</Link>
+                <Link to={`/settling/${card.slug}`} className={ctaCls} onClick={() => trackEvent({ eventName: 'settling_guide_clicked', targetType: 'card', targetId: card.slug, targetLabel: card.slug })}>{t('읽어보기 →', 'Read more →', 'Lire →')}</Link>
               </div>
             ))}
           </div>
@@ -964,7 +1061,7 @@ export default function Settling() {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{tri(story.category, lang)}</p>
                   <p className="text-[14px] font-bold text-gray-900 leading-snug mb-1">{tri(story.title, lang)}</p>
                   <p className="text-[12px] text-gray-500 leading-snug mb-2">{tri(story.desc, lang)}</p>
-                  <Link to={`/settling/${story.slug}`} className={ctaCls}>{t('읽어보기 →', 'Read more →', 'Lire →')}</Link>
+                  <Link to={`/settling/${story.slug}`} className={ctaCls} onClick={() => trackEvent({ eventName: 'settling_guide_clicked', targetType: 'story', targetId: story.slug, targetLabel: story.slug })}>{t('읽어보기 →', 'Read more →', 'Lire →')}</Link>
                 </div>
               </div>
             ))}

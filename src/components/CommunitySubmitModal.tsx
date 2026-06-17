@@ -278,7 +278,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
       recordAuthored(postId)
       getAuthorId()
       try { localStorage.setItem(NICKNAME_KEY, nick) } catch {}
-      trackEvent('community_submit_click', { tag })
+      trackEvent({ eventName: 'post_submit_success', targetType: 'modal', targetLabel: tag, metadata: { tag } })
 
       console.log('UPLOAD STEP 7 — post complete, closing modal')
       window.dispatchEvent(new CustomEvent('hakkyo:community-post'))
@@ -290,6 +290,7 @@ export default function CommunitySubmitModal({ onClose, initialTag }: Props) {
         : (err && typeof err === 'object' && 'message' in err) ? String((err as { message: unknown }).message)
         : String(err)
       console.error('UPLOAD FINAL ERROR — full object:', raw)
+      trackEvent({ eventName: 'post_submit_failed', targetType: 'modal', targetLabel: tag, metadata: { error: msg } })
       setError(`게시 실패: ${msg}`)
     } finally {
       clearTimeout(safetyTimer)

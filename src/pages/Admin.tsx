@@ -3158,6 +3158,154 @@ function NotificationsAdmin() {
   )
 }
 
+// ─── Analytics admin ─────────────────────────────────────────────────────────
+
+function AnalyticsAdmin() {
+  const [loading, setLoading] = useState(true)
+  const [todayCount, setTodayCount]   = useState(0)
+  const [weekCount, setWeekCount]     = useState(0)
+  const [applyCount, setApplyCount]   = useState(0)
+  const [postCount, setPostCount]     = useState(0)
+  const [hoodCount, setHoodCount]     = useState(0)
+  const [topButtons, setTopButtons]   = useState<{ label: string; count: number }[]>([])
+  const [topPages, setTopPages]       = useState<{ page: string; count: number }[]>([])
+  const [recent, setRecent]           = useState<Array<{ created_at: string; event_name: string; page_path: string; target_label: string; user_id: string | null }>>([])
+  const [error, setError]             = useState('')
+
+  useEffect(() => {
+    if (!supabase || !isConfigured) { setLoading(false); return }
+
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+    const weekStart  = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+    async function load() {
+      try {
+        const [todayRes, weekRes, applyRes, postRes, hoodRes, recentRes] = await Promise.all([
+          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
+          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).gte('created_at', weekStart),
+          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).eq('event_name', 'program_apply_clicked'),
+          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).eq('event_name', 'post_submit_success'),
+          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).eq('event_name', 'neighbourhood_comment_submitted'),
+          supabase!.from('event_logs').select('created_at, event_name, page_path, target_label, user_id').order('created_at', { ascending: false }).limit(50),
+        ])
+
+        setTodayCount(todayRes.count ?? 0)
+        setWeekCount(weekRes.count ?? 0)
+        setApplyCount(applyRes.count ?? 0)
+        setPostCount(postRes.count ?? 0)
+        setHoodCount(hoodRes.count ?? 0)
+        setRecent(recentRes.data ?? [])
+
+        // Top buttons from recent data — aggregate target_label frequency
+        const labelMap: Record<string, number> = {}
+        const pageMap: Record<string, number> = {}
+        for (const row of (recentRes.data ?? [])) {
+          if (row.target_label) labelMap[row.target_label] = (labelMap[row.target_label] ?? 0) + 1
+          if (row.page_path)    pageMap[row.page_path]     = (pageMap[row.page_path]     ?? 0) + 1
+        }
+        setTopButtons(Object.entries(labelMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([label, count]) => ({ label, count })))
+        setTopPages(Object.entries(pageMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([page, count]) => ({ page, count })))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load analytics.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
+  }, [])
+
+  if (loading) return <Spinner />
+  if (!isConfigured) return <ErrorMsg msg="Supabase is not configured — analytics unavailable in demo mode." />
+  if (error) return <ErrorMsg msg={error} />
+
+  const statCards = [
+    { label: 'Today Events',           value: todayCount },
+    { label: 'This Week Events',        value: weekCount  },
+    { label: 'Program Apply Clicks',    value: applyCount },
+    { label: 'Post Submissions',        value: postCount  },
+    { label: 'Neighbourhood Comments',  value: hoodCount  },
+  ]
+
+  function fmtTime(iso: string) {
+    try { return new Intl.DateTimeFormat('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)) }
+    catch { return iso }
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {statCards.map(c => (
+          <div key={c.label} className="border border-gray-100 rounded-2xl px-4 py-4 bg-white">
+            <p className="text-[11px] font-semibold text-gray-400 mb-1">{c.label}</p>
+            <p className="text-2xl font-bold text-gray-900">{c.value.toLocaleString()}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Top buttons + pages */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Clicked Labels</h3>
+          <div className="space-y-1">
+            {topButtons.length === 0 ? <p className="text-xs text-gray-400">No data yet.</p> : topButtons.map(b => (
+              <div key={b.label} className="flex items-center justify-between text-[12px] py-1 border-b border-gray-50">
+                <span className="text-gray-700 truncate max-w-[180px]">{b.label}</span>
+                <span className="font-semibold text-gray-900 shrink-0">{b.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Pages</h3>
+          <div className="space-y-1">
+            {topPages.length === 0 ? <p className="text-xs text-gray-400">No data yet.</p> : topPages.map(p => (
+              <div key={p.page} className="flex items-center justify-between text-[12px] py-1 border-b border-gray-50">
+                <span className="text-gray-700 truncate max-w-[180px]">{p.page}</span>
+                <span className="font-semibold text-gray-900 shrink-0">{p.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent events table */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Recent Events</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="border-b border-gray-100 text-left text-gray-400">
+                <Th>Time</Th>
+                <Th>Event</Th>
+                <Th>Page</Th>
+                <Th>Label</Th>
+                <Th>User ID</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {recent.map((row, i) => (
+                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="py-2 pr-3 whitespace-nowrap text-gray-400">{fmtTime(row.created_at)}</td>
+                  <td className="py-2 pr-3 font-medium text-gray-800">{row.event_name}</td>
+                  <td className="py-2 pr-3 text-gray-500">{row.page_path}</td>
+                  <td className="py-2 pr-3 text-gray-600">{row.target_label ?? '—'}</td>
+                  <td className="py-2 text-gray-400 font-mono">{row.user_id ? row.user_id.slice(0, 8) + '…' : '—'}</td>
+                </tr>
+              ))}
+              {recent.length === 0 && (
+                <tr><td colSpan={5} className="py-8 text-center text-gray-300">No events yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Root Admin page ───────────────────────────────────────────────────────────
 const TABS = [
   { id: 'notifications', label: 'Notifications',   Component: NotificationsAdmin },
@@ -3168,6 +3316,7 @@ const TABS = [
   { id: 'applications',  label: 'Applications',      Component: ApplicationsAdmin  },
   { id: 'le',            label: 'Lang. Exchange',    Component: LeSettingsAdmin    },
   { id: 'settings',      label: 'Site Settings',     Component: SiteSettingsAdmin  },
+  { id: 'analytics',     label: 'Analytics',         Component: AnalyticsAdmin     },
 ]
 
 export default function Admin() {

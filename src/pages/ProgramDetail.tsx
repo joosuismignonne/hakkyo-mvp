@@ -104,7 +104,7 @@ export default function ProgramDetail() {
         if (!data) setError('Program not found.')
         else {
           setTrack(data)
-          trackEvent('program_detail_view', { program_id: id, program_name: data.name_en || data.name_ko })
+          trackEvent({ eventName: 'program_detail_viewed', targetType: 'page', targetId: id, targetLabel: data.name_en || data.name_ko })
         }
       })
       .catch(e => setError(e?.message ?? 'Failed to load program.'))

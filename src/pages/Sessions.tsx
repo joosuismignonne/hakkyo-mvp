@@ -139,7 +139,10 @@ function ProgramCard({ track, lang, t }: {
 
   return (
     <article
-      onClick={() => navigate(`/programs/${track.id}`)}
+      onClick={() => {
+        trackEvent({ eventName: 'program_card_clicked', targetType: 'card', targetId: track.id, targetLabel: track.name_en || track.name_ko })
+        navigate(`/programs/${track.id}`)
+      }}
       className={`rounded-2xl border mb-3 px-5 py-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${isPinned ? 'border-gray-300 hover:border-gray-400 bg-white' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
     >
       {/* 1 · Category + Status — single quiet line */}
@@ -250,7 +253,7 @@ function ProgramCard({ track, lang, t }: {
             <button
               onClick={e => {
                 e.stopPropagation()
-                trackEvent('program_apply_click', { program_id: track.id, program_name: track.name_en || track.name_ko })
+                trackEvent({ eventName: 'program_apply_clicked', targetType: 'button', targetId: track.id, targetLabel: track.name_en || track.name_ko })
                 navigate(`/apply/${track.id}`)
               }}
               className="border border-gray-900 rounded-lg px-4 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
@@ -363,7 +366,7 @@ function LanguageExchangeCard({
           {t('상시 모집', '● OPEN', '● OUVERT')}
         </span>
         <button
-          onClick={e => { e.stopPropagation(); trackEvent('le_apply_click'); onApply() }}
+          onClick={e => { e.stopPropagation(); trackEvent({ eventName: 'program_apply_clicked', targetType: 'button', targetLabel: 'Language Exchange' }); onApply() }}
           className="border border-gray-900 rounded-lg px-4 py-2 text-[11px] font-semibold text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
         >
           {leButtonText}
@@ -511,7 +514,7 @@ export default function Sessions() {
           return (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => { setFilter(f); trackEvent({ eventName: 'program_filter_clicked', targetLabel: f }) }}
               className={[
                 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.06em] transition-colors',
                 on ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700',

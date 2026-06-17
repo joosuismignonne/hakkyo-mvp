@@ -848,7 +848,7 @@ export default function ApplyPage() {
         definition_great_class: draft.definition_great_class?.trim() || null,
         questions_for_hakkyo:   draft.questions_for_hakkyo?.trim() || null,
       })
-      trackEvent('application_submitted', { type: 'program', program_id: id ?? '' })
+      trackEvent({ eventName: 'program_apply_clicked', targetType: 'form', targetId: id ?? undefined })
       if (id) { try { localStorage.removeItem(DRAFT_KEY(id)) } catch {} }
       setDone(true)
     } catch (e: unknown) {

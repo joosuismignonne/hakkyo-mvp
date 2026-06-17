@@ -38,7 +38,7 @@ export default function ContentDetail() {
         if (!data) { setError('Post not found.'); return }
         const normalized = normalizeContent(data)
         setItem(normalized)
-        trackEvent('news_article_view', { article_id: id, article_title: normalized.title_en || normalized.title_ko })
+        trackEvent({ eventName: 'post_clicked', targetType: 'news', targetId: id, targetLabel: normalized.title_en || normalized.title_ko })
         pushRecent({
           id,
           title: normalized.title_en || normalized.title_ko,

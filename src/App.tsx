@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { trackPageView } from './lib/analytics'
 import { LangProvider } from './context/LangContext'
 import { AuthProvider } from './context/AuthContext'
@@ -101,6 +102,7 @@ export default function App() {
           </div>
           <BoardMemoryWidget />
         </div>
+        <Analytics />
       </BrowserRouter>
     </LangProvider>
     </AuthProvider>

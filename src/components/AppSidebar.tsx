@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useAuth } from '../context/AuthContext'
+import { trackEvent } from '../lib/analytics'
 import type { Lang } from '../types'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -208,6 +209,7 @@ function DesktopSidebar() {
   const [times, setTimes] = useState({ mtl: '', seo: '' })
 
   async function handleSignOut() {
+    trackEvent({ eventName: 'logout_clicked', targetType: 'button', targetLabel: 'Sign out' })
     await signOut()
     navigate('/')
   }
@@ -333,6 +335,7 @@ function DesktopSidebar() {
                 key={j.to}
                 to={j.to}
                 title={collapsed ? lbl : undefined}
+                onClick={() => trackEvent({ eventName: 'sidebar_click', targetType: 'nav', targetLabel: lbl, targetId: j.to })}
                 className={[
                   'flex items-center rounded-xl transition-all',
                   collapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3 py-2.5',
@@ -363,7 +366,7 @@ function DesktopSidebar() {
               {LANGS.map(({ code, label: lbl }) => (
                 <button
                   key={code}
-                  onClick={() => setLang(code)}
+                  onClick={() => { setLang(code); trackEvent({ eventName: 'language_switch', targetLabel: code }) }}
                   className={[
                     'flex-1 py-2 transition-colors',
                     lang === code ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50',

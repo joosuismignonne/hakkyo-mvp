@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Pin, MessageSquare, Users, Zap, CalendarDays } from 'lucide-react'
 import { getNotices, getPublishedCommunityPosts } from '../lib/db'
 import { useLang } from '../context/LangContext'
+import { trackEvent } from '../lib/analytics'
 import CardActions from '../components/CardActions'
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
 import type { Notice, CommunitySubmission } from '../types'
@@ -149,7 +150,7 @@ function NoticeCard({ notice, lang }: { notice: Notice; lang: Lang }) {
       'hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)]',
       notice.is_pinned ? 'border-gray-300 hover:border-gray-400' : 'border-gray-100 hover:border-gray-200',
     ].join(' ')}>
-      <Link to={href} className="block px-5 pt-5 pb-0 cursor-pointer">
+      <Link to={href} className="block px-5 pt-5 pb-0 cursor-pointer" onClick={() => trackEvent({ eventName: 'post_clicked', targetType: 'notice', targetId: notice.id, targetLabel: title })}>
         <PostHeader time={notice.created_at || notice.date} label={typeLabel} />
 
         {/* Pin + date */}
@@ -212,7 +213,7 @@ function CommunityCard({ post, lang }: { post: CommunitySubmission; lang: Lang }
 
   return (
     <article className="rounded-2xl border border-gray-100 bg-white mb-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] hover:border-gray-200">
-      <Link to={href} className="block px-5 pt-5 pb-0 cursor-pointer">
+      <Link to={href} className="block px-5 pt-5 pb-0 cursor-pointer" onClick={() => trackEvent({ eventName: 'post_clicked', targetType: 'community', targetId: post.id, targetLabel: post.title })}>
         <PostHeader time={post.created_at} label={`Community · ${subtype}`} />
 
         {/* Title */}
@@ -285,7 +286,7 @@ function FilterChips({ active, onChange, counts, lang }: {
         return (
           <button
             key={key}
-            onClick={() => onChange(key)}
+            onClick={() => { onChange(key); trackEvent({ eventName: 'filter_clicked', targetType: 'board_filter', targetLabel: key }) }}
             className={[
               'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.06em] transition-colors',
               on

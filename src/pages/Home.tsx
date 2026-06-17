@@ -8,6 +8,7 @@ import { getTracks, getNotices, getContents, getPublishedCommunityPosts, getFeat
 import { useLang } from '../context/LangContext'
 import { normalizeContent, newsExcerpt, thumbnailUrl } from '../lib/newsContent'
 import type { ProgramTrack, Notice, Content, CommunitySubmission } from '../types'
+import { trackEvent } from '../lib/analytics'
 const CommunitySubmitModal = lazy(() => import('../components/CommunitySubmitModal'))
 import { LeftSidebar, PageShell } from '../components/PageLayout'
 
@@ -1020,7 +1021,7 @@ export default function Home() {
   const mainContent = (
     <>
       {/* 1 · Composer — primary action */}
-      <PostComposer onOpen={() => setSubmitTag('general')} t={t} />
+      <PostComposer onOpen={() => { trackEvent({ eventName: 'post_create_clicked', targetType: 'composer', targetLabel: 'general' }); setSubmitTag('general') }} t={t} />
 
       {/* 2 · Open Now strip */}
       <OpenNowStrip tracks={tracks} lang={lang} t={t} />
@@ -1073,7 +1074,7 @@ export default function Home() {
       <PageShell left={<LeftSidebar lang={lang} />}>
         {mainContent}
       </PageShell>
-      <FloatingCreateButton onOpen={() => setSubmitTag('general')} />
+      <FloatingCreateButton onOpen={() => { trackEvent({ eventName: 'post_create_clicked', targetType: 'fab', targetLabel: 'general' }); setSubmitTag('general') }} />
       <Suspense fallback={null}>
         {submitTag !== null && (
           <CommunitySubmitModal initialTag={submitTag} onClose={() => setSubmitTag(null)} />

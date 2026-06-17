@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { trackEvent } from '../lib/analytics'
 
 type Mode = 'signin' | 'forgot' | 'forgot-sent'
 
@@ -17,8 +18,10 @@ export default function Login() {
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
     setError(''); setLoading(true)
+    trackEvent({ eventName: 'login_clicked', targetType: 'button', targetLabel: 'Sign in' })
     try {
       await signIn(email, password)
+      trackEvent({ eventName: 'login_success', targetType: 'auth' })
       navigate('/', { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign in failed.')

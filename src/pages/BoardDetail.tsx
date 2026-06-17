@@ -46,7 +46,7 @@ export default function BoardDetail() {
         if (!data) setError('Post not found.')
         else {
           setNotice(data)
-          trackEvent('board_article_view', { article_id: id, article_title: data.title_en || data.title_ko })
+          trackEvent({ eventName: 'post_clicked', targetType: 'notice', targetId: id, targetLabel: data.title_en || data.title_ko })
         }
       })
       .catch(() => setError('Failed to load post.'))

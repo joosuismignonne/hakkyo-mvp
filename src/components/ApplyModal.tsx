@@ -138,7 +138,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
           referralSource: answers['le_source']?.trim() ?? '',
           message:        answers['le_goal']?.trim()   ?? '',
         })
-        trackEvent('application_submitted', { type: 'language_exchange' })
+        trackEvent({ eventName: 'program_apply_clicked', targetType: 'modal', targetLabel: 'Language Exchange' })
         setDone(true)
       } catch (err: unknown) {
         console.error(err)
@@ -172,11 +172,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
         answers,
         questions: visibleQuestions,   // snapshot only the questions actually shown
       })
-      trackEvent('application_submitted', {
-        type: 'program',
-        program_id: selectedTrack?.id ?? '',
-        program_name: selectedTrack?.name_en || selectedTrack?.name_ko || '',
-      })
+      trackEvent({ eventName: 'program_apply_clicked', targetType: 'modal', targetId: selectedTrack?.id, targetLabel: selectedTrack?.name_en || selectedTrack?.name_ko })
       setDone(true)
     } catch (err: unknown) {
       console.error(err)
