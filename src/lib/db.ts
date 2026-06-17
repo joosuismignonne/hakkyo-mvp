@@ -931,6 +931,37 @@ export async function updateProgramApplicationNotes(
   if (error) throw error
 }
 
+// ─── Settling Guides ──────────────────────────────────────────────────────────
+
+export interface SettlingGuide {
+  id: string
+  slug: string
+  category: string
+  title_ko: string
+  title_en: string | null
+  title_fr: string | null
+  summary_ko: string | null
+  summary_en: string | null
+  summary_fr: string | null
+  content_ko: string
+  content_en: string | null
+  content_fr: string | null
+  status: string
+  created_at: string
+}
+
+export async function getSettlingGuide(slug: string): Promise<SettlingGuide | null> {
+  if (!isConfigured) return null
+  const { data, error } = await db()
+    .from('settling_guides')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .maybeSingle()
+  if (error) { console.warn('[settling] getGuide:', error.message); return null }
+  return data as SettlingGuide | null
+}
+
 // ─── Neighbourhood Comments ───────────────────────────────────────────────────
 
 export interface NeighbourhoodComment {
@@ -956,18 +987,36 @@ export async function getNeighbourhoodComments(neighbourhoodId: string): Promise
   return (data ?? []) as NeighbourhoodComment[]
 }
 
+export async function getAllNeighbourhoodCommentCounts(): Promise<Record<string, number>> {
+  if (!isConfigured) return {}
+  const { data, error } = await db()
+    .from('neighbourhood_comments')
+    .select('neighbourhood_id')
+  if (error) { console.warn('[neighbourhood] getCounts:', error.message); return {} }
+  const counts: Record<string, number> = {}
+  for (const row of (data ?? [])) {
+    const id = (row as { neighbourhood_id: string }).neighbourhood_id
+    counts[id] = (counts[id] ?? 0) + 1
+  }
+  return counts
+}
+
 export async function addNeighbourhoodComment(
   neighbourhoodId: string,
   userId: string,
-  displayName: string,
+  displayName: string | null,
   content: string,
 ): Promise<NeighbourhoodComment> {
+  if (!isConfigured) throw new Error('Supabase is not configured.')
   const { data, error } = await db()
     .from('neighbourhood_comments')
     .insert({ neighbourhood_id: neighbourhoodId, user_id: userId, display_name: displayName, content })
     .select(HOOD_COMMENT_COLS)
     .single()
-  if (error) throw error
+  if (error) {
+    console.error('[neighbourhood] addComment error:', JSON.stringify(error, null, 2))
+    throw error
+  }
   return data as NeighbourhoodComment
 }
 

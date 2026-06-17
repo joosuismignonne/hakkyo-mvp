@@ -159,8 +159,8 @@ const JOURNEY: JourneyItem[] = [
     fr: 'Autour de Vous',
   },
   {
-    to: '/radar',
-    activePaths: ['/radar', '/resume-map'],
+    to: '/programs',
+    activePaths: ['/programs', '/sessions', '/radar', '/resume-map'],
     icon: IconWorking,
     emoji: '💼',
     ko: '새로운 기회',
@@ -169,7 +169,7 @@ const JOURNEY: JourneyItem[] = [
   },
   {
     to: '/phrases',
-    activePaths: ['/phrases', '/programs', '/sessions'],
+    activePaths: ['/phrases'],
     icon: IconLanguage,
     emoji: '🗣',
     ko: '일상 표현',
@@ -202,8 +202,8 @@ function openCompose(tag = 'general') {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function journeyLabel(j: JourneyItem, lang: string) {
-  return lang === 'ko' ? j.ko : lang === 'fr' ? j.fr : j.en
+function journeyLabel(j: JourneyItem, _lang: string) {
+  return j.en
 }
 
 function isJourneyActive(j: JourneyItem, pathname: string) {

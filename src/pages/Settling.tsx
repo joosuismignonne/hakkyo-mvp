@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useAuth } from '../context/AuthContext'
 import {
   getNeighbourhoodComments,
+  getAllNeighbourhoodCommentCounts,
   addNeighbourhoodComment,
   deleteNeighbourhoodComment,
   type NeighbourhoodComment,
@@ -44,7 +45,6 @@ interface Hood {
   id: string; name: string; label: string
   summary: Tri; tags: string[]
   goodFor: Tri[]; note: Tri
-  // SVG pin position (viewBox 0 0 400 300)
   x: number; y: number
 }
 
@@ -171,12 +171,17 @@ const HOODS: Hood[] = [
   },
 ]
 
-// ─── Simplified Montréal SVG map ──────────────────────────────────────────────
-// ViewBox 0 0 400 300 — island outline is schematic, not a real GIS projection
+// ─── Montréal SVG map ─────────────────────────────────────────────────────────
 
 function MontrealMap({
-  selected, onSelect,
-}: { selected: string; onSelect: (id: string) => void }) {
+  selected,
+  onSelect,
+  commentCounts,
+}: {
+  selected: string
+  onSelect: (id: string) => void
+  commentCounts: Record<string, number>
+}) {
   return (
     <svg
       viewBox="0 0 400 300"
@@ -184,7 +189,7 @@ function MontrealMap({
       className="w-full h-full"
       aria-label="Montréal neighbourhood map"
     >
-      {/* Island silhouette — simplified ellipse-ish polygon */}
+      {/* Island silhouette */}
       <path
         d="M 80 195 C 70 170 75 130 90 105 C 110 75 145 58 185 52
            C 225 46 270 55 300 72 C 330 90 345 118 348 148
@@ -195,14 +200,14 @@ function MontrealMap({
         strokeWidth="1.5"
       />
 
-      {/* River label */}
       <text x="188" y="278" textAnchor="middle" fontSize="8" fill="#BDBDBD" fontFamily="sans-serif" letterSpacing="1">
         ST. LAWRENCE RIVER
       </text>
 
-      {/* Neighbourhood pins */}
       {HOODS.map(hood => {
         const isActive = selected === hood.id
+        const count = commentCounts[hood.id] ?? 0
+
         return (
           <g
             key={hood.id}
@@ -213,9 +218,9 @@ function MontrealMap({
             aria-pressed={isActive}
           >
             {/* Hit area */}
-            <circle cx={hood.x} cy={hood.y} r="14" fill="transparent" />
+            <circle cx={hood.x} cy={hood.y} r="16" fill="transparent" />
 
-            {/* Pin circle */}
+            {/* Pin */}
             <circle
               cx={hood.x}
               cy={hood.y}
@@ -226,22 +231,34 @@ function MontrealMap({
               style={{ transition: 'all 0.15s ease' }}
             />
 
-            {/* Yellow ring for selected */}
+            {/* Yellow ring when selected */}
             {isActive && (
-              <circle
-                cx={hood.x}
-                cy={hood.y}
-                r="11"
-                fill="none"
-                stroke="var(--y)"
-                strokeWidth="2"
-              />
+              <circle cx={hood.x} cy={hood.y} r="11" fill="none" stroke="var(--y)" strokeWidth="2" />
+            )}
+
+            {/* Comment count badge */}
+            {count > 0 && (
+              <g>
+                <circle cx={hood.x + 9} cy={hood.y - 9} r="6.5" fill="#111111" />
+                <text
+                  x={hood.x + 9}
+                  y={hood.y - 6}
+                  textAnchor="middle"
+                  fontSize="6"
+                  fontWeight="700"
+                  fill="#ffffff"
+                  fontFamily="sans-serif"
+                  style={{ userSelect: 'none' }}
+                >
+                  {count > 9 ? '9+' : count}
+                </text>
+              </g>
             )}
 
             {/* Label */}
             <text
               x={hood.x}
-              y={hood.y - 14}
+              y={hood.y - 16}
               textAnchor="middle"
               fontSize={isActive ? '7.5' : '6.5'}
               fontWeight={isActive ? '700' : '500'}
@@ -258,7 +275,6 @@ function MontrealMap({
         )
       })}
 
-      {/* Scale hint */}
       <text x="320" y="288" textAnchor="end" fontSize="7" fill="#D1D5DB" fontFamily="sans-serif">
         Montréal Island
       </text>
@@ -266,13 +282,40 @@ function MontrealMap({
   )
 }
 
+// ─── Anonymous display name helpers ──────────────────────────────────────────
+
+// Short label used in "NDG 주민 1" style names
+const HOOD_SHORT: Record<string, string> = {
+  downtown:       'Downtown',
+  griffintown:    'Griffintown',
+  'saint-henri':  'Saint-Henri',
+  ndg:            'NDG',
+  cdn:            'CDN',
+  plateau:        'Plateau',
+  'mile-end':     'Mile End',
+  villeray:       'Villeray',
+  rosemont:       'Rosemont',
+  verdun:         'Verdun',
+}
+
+function anonName(hoodId: string, index: number): string {
+  const label = HOOD_SHORT[hoodId] ?? hoodId
+  return `${label} 주민 ${index + 1}`
+}
+
 // ─── Neighbourhood comments ───────────────────────────────────────────────────
 
 function CommentSection({
-  hoodId, lang, t,
-}: { hoodId: string; lang: string; t: (ko: string, en: string, fr: string) => string }) {
+  hoodId, lang, t, onCountChange,
+}: {
+  hoodId: string
+  lang: string
+  t: (ko: string, en: string, fr: string) => string
+  onCountChange: (delta: number) => void
+}) {
   const { user } = useAuth()
   const navigate = useNavigate()
+  // Comments stored oldest-first so index maps to 주민 1, 2, 3…
   const [comments, setComments] = useState<NeighbourhoodComment[]>([])
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
@@ -285,8 +328,9 @@ function CommentSection({
     setShowForm(false)
     setText('')
     setError('')
+    // Fetch ascending so oldest = index 0 = 주민 1
     getNeighbourhoodComments(hoodId)
-      .then(setComments)
+      .then(data => setComments([...data].reverse()))
       .finally(() => setLoading(false))
   }, [hoodId])
 
@@ -295,13 +339,20 @@ function CommentSection({
     setSubmitting(true)
     setError('')
     try {
-      const displayName = user.email?.split('@')[0] ?? '익명'
-      const newComment = await addNeighbourhoodComment(hoodId, user.id, displayName, text.trim())
-      setComments(prev => [newComment, ...prev])
+      // Never save email — display_name null, ownership tracked via user_id only
+      const newComment = await addNeighbourhoodComment(hoodId, user.id, null, text.trim())
+      // Append to end (newest = highest index)
+      setComments(prev => [...prev, newComment])
       setText('')
       setShowForm(false)
-    } catch {
-      setError(t('저장에 실패했습니다.', 'Failed to save.', 'Échec de l\'enregistrement.'))
+      onCountChange(+1)
+    } catch (err) {
+      console.error('[CommentSection] submit failed:', err)
+      setError(t(
+        '코멘트를 저장하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        'Could not save your comment. Please try again later.',
+        "Impossible d'enregistrer le commentaire. Veuillez réessayer.",
+      ))
     } finally {
       setSubmitting(false)
     }
@@ -312,6 +363,7 @@ function CommentSection({
     try {
       await deleteNeighbourhoodComment(commentId, user.id)
       setComments(prev => prev.filter(c => c.id !== commentId))
+      onCountChange(-1)
     } catch {
       // silently ignore
     }
@@ -325,13 +377,17 @@ function CommentSection({
     }
   }
 
-  const shown = comments.slice(0, 3)
+  // Show newest first in the list (reverse for display, but keep index from original order)
+  const displayList = [...comments].reverse()
 
   return (
     <div className="border-t border-gray-100 pt-4 mt-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
           {t('거주자 코멘트', 'Resident Comments', 'Commentaires')}
+          {comments.length > 0 && (
+            <span className="ml-1.5 text-gray-500 normal-case font-medium">· {comments.length}</span>
+          )}
         </p>
         <button
           onClick={handleCommentClick}
@@ -340,6 +396,15 @@ function CommentSection({
           {t('코멘트 남기기 +', 'Leave a comment +', 'Laisser un commentaire +')}
         </button>
       </div>
+
+      {!user && (
+        <p className="text-[11px] text-gray-400 mb-3">
+          <Link to="/login" className="underline hover:text-gray-600">
+            {t('로그인', 'Log in', 'Connexion')}
+          </Link>
+          {t('하면 코멘트를 남길 수 있습니다.', ' to leave a comment.', ' pour laisser un commentaire.')}
+        </p>
+      )}
 
       {showForm && user && (
         <div className="mb-3">
@@ -378,7 +443,7 @@ function CommentSection({
         <div className="flex justify-center py-4">
           <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : shown.length === 0 ? (
+      ) : displayList.length === 0 ? (
         <p className="text-[12px] text-gray-400 leading-snug">
           {t(
             '아직 등록된 코멘트가 없습니다. 이 동네에 살아본 경험을 남겨주세요.',
@@ -388,39 +453,46 @@ function CommentSection({
         </p>
       ) : (
         <div className="space-y-2">
-          {shown.map(c => (
-            <div key={c.id} className="flex gap-2.5">
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
-                style={{ background: 'var(--y)', color: '#111' }}
-              >
-                {(c.display_name?.[0] ?? '?').toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-gray-700">{c.display_name}</span>
-                  <span className="text-[10px] text-gray-400">
-                    {new Date(c.created_at).toLocaleDateString(
-                      lang === 'ko' ? 'ko-KR' : lang === 'fr' ? 'fr-CA' : 'en-CA',
-                      { month: 'short', day: 'numeric' },
-                    )}
-                  </span>
-                  {user && user.id === c.user_id && (
-                    <button
-                      onClick={() => handleDelete(c.id)}
-                      className="text-[10px] text-gray-300 hover:text-red-400 transition-colors ml-auto"
-                    >
-                      {t('삭제', 'Delete', 'Supprimer')}
-                    </button>
-                  )}
+          {displayList.slice(0, 10).map(c => {
+            // Find the original ascending index for this comment
+            const origIdx = comments.findIndex(x => x.id === c.id)
+            const name = anonName(hoodId, origIdx)
+            const initial = (HOOD_SHORT[hoodId] ?? hoodId)[0].toUpperCase()
+
+            return (
+              <div key={c.id} className="flex gap-2.5">
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
+                  style={{ background: 'var(--y)', color: '#111' }}
+                >
+                  {initial}
                 </div>
-                <p className="text-[12px] text-gray-600 leading-snug mt-0.5">{c.content}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-gray-700">{name}</span>
+                    <span className="text-[10px] text-gray-400">
+                      {new Date(c.created_at).toLocaleDateString(
+                        lang === 'ko' ? 'ko-KR' : lang === 'fr' ? 'fr-CA' : 'en-CA',
+                        { month: 'short', day: 'numeric' },
+                      )}
+                    </span>
+                    {user && user.id === c.user_id && (
+                      <button
+                        onClick={() => handleDelete(c.id)}
+                        className="text-[10px] text-gray-300 hover:text-red-400 transition-colors ml-auto"
+                      >
+                        {t('삭제', 'Delete', 'Supprimer')}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[12px] text-gray-600 leading-snug mt-0.5">{c.content}</p>
+                </div>
               </div>
-            </div>
-          ))}
-          {comments.length > 3 && (
+            )
+          })}
+          {comments.length > 10 && (
             <p className="text-[11px] text-gray-400 pt-1">
-              {t(`+${comments.length - 3}개 더`, `+${comments.length - 3} more`, `+${comments.length - 3} de plus`)}
+              {t(`+${comments.length - 10}개 더`, `+${comments.length - 10} more`, `+${comments.length - 10} de plus`)}
             </p>
           )}
         </div>
@@ -431,10 +503,12 @@ function CommentSection({
 
 // ─── Neighbourhood detail panel ───────────────────────────────────────────────
 
-function NeighbourhoodPanel({ hood, lang, t }: {
+function NeighbourhoodPanel({ hood, lang, t, commentCount, onCountChange }: {
   hood: Hood
   lang: string
   t: (ko: string, en: string, fr: string) => string
+  commentCount: number
+  onCountChange: (delta: number) => void
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -469,19 +543,115 @@ function NeighbourhoodPanel({ hood, lang, t }: {
         <p className="text-[11px] text-amber-900 font-medium leading-snug">{tri(hood.note, lang)}</p>
       </div>
 
-      <CommentSection hoodId={hood.id} lang={lang} t={t} />
+      <div className="text-[11px] font-semibold text-gray-500">
+        {t('거주자 코멘트', 'Resident Comments', 'Commentaires')}
+        {commentCount > 0
+          ? <span className="text-gray-700 ml-1">· {commentCount}</span>
+          : null}
+      </div>
+
+      <CommentSection hoodId={hood.id} lang={lang} t={t} onCountChange={onCountChange} />
     </div>
   )
 }
 
-// ─── Map section (combined) ───────────────────────────────────────────────────
+// ─── Map section with zoom/pan ────────────────────────────────────────────────
 
 function NeighbourhoodMapSection({ lang, t }: {
   lang: string
   t: (ko: string, en: string, fr: string) => string
 }) {
   const [selectedId, setSelectedId] = useState('plateau')
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({})
+
+  // Zoom/pan state
+  const [mapScale, setMapScale] = useState(1)
+  const [mapOffset, setMapOffset] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null)
+  const hasDraggedRef = useRef(false)
+
   const selected = HOODS.find(h => h.id === selectedId) ?? HOODS[0]
+
+  useEffect(() => {
+    getAllNeighbourhoodCommentCounts().then(setCommentCounts)
+  }, [])
+
+  const handleCountChange = useCallback((hoodId: string, delta: number) => {
+    setCommentCounts(prev => ({
+      ...prev,
+      [hoodId]: Math.max(0, (prev[hoodId] ?? 0) + delta),
+    }))
+  }, [])
+
+  // Zoom controls
+  const zoomIn  = () => setMapScale(s => Math.min(2.2, parseFloat((s + 0.2).toFixed(1))))
+  const zoomOut = () => setMapScale(s => {
+    const next = Math.max(0.8, parseFloat((s - 0.2).toFixed(1)))
+    if (next <= 1) setMapOffset({ x: 0, y: 0 })
+    return next
+  })
+  const resetZoom = () => { setMapScale(1); setMapOffset({ x: 0, y: 0 }) }
+
+  // Drag/pan handlers
+  function onMouseDown(e: React.MouseEvent) {
+    if (mapScale <= 1) return
+    e.preventDefault()
+    dragRef.current = { startX: e.clientX, startY: e.clientY, ox: mapOffset.x, oy: mapOffset.y }
+    setIsDragging(true)
+    hasDraggedRef.current = false
+  }
+
+  function onMouseMove(e: React.MouseEvent) {
+    if (!dragRef.current) return
+    const dx = e.clientX - dragRef.current.startX
+    const dy = e.clientY - dragRef.current.startY
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDraggedRef.current = true
+    const limit = 120 * mapScale
+    setMapOffset({
+      x: Math.max(-limit, Math.min(limit, dragRef.current.ox + dx)),
+      y: Math.max(-limit, Math.min(limit, dragRef.current.oy + dy)),
+    })
+  }
+
+  function onMouseUp() {
+    setIsDragging(false)
+    dragRef.current = null
+  }
+
+  // Touch pan
+  const touchRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null)
+
+  function onTouchStart(e: React.TouchEvent) {
+    if (mapScale <= 1 || e.touches.length !== 1) return
+    const t0 = e.touches[0]
+    touchRef.current = { startX: t0.clientX, startY: t0.clientY, ox: mapOffset.x, oy: mapOffset.y }
+    hasDraggedRef.current = false
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (!touchRef.current || e.touches.length !== 1) return
+    const t0 = e.touches[0]
+    const dx = t0.clientX - touchRef.current.startX
+    const dy = t0.clientY - touchRef.current.startY
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDraggedRef.current = true
+    const limit = 120 * mapScale
+    setMapOffset({
+      x: Math.max(-limit, Math.min(limit, touchRef.current.ox + dx)),
+      y: Math.max(-limit, Math.min(limit, touchRef.current.oy + dy)),
+    })
+  }
+
+  function onTouchEnd() {
+    touchRef.current = null
+  }
+
+  function handleSelectHood(id: string) {
+    if (hasDraggedRef.current) return
+    setSelectedId(id)
+  }
+
+  const cursor = mapScale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
 
   return (
     <section>
@@ -494,16 +664,71 @@ function NeighbourhoodMapSection({ lang, t }: {
         )}
       </p>
 
-      {/* Desktop: side by side | Mobile: stacked */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Map */}
-        <div className="lg:w-[60%] border border-gray-200 rounded-2xl overflow-hidden bg-white p-2" style={{ minHeight: 240 }}>
-          <MontrealMap selected={selectedId} onSelect={setSelectedId} />
+        {/* Map card */}
+        <div className="lg:w-[60%] border border-gray-200 rounded-2xl overflow-hidden bg-white relative" style={{ minHeight: 240 }}>
+          {/* Zoom controls */}
+          <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
+            <button
+              onClick={zoomIn}
+              disabled={mapScale >= 2.2}
+              className="w-7 h-7 flex items-center justify-center text-[13px] font-semibold border border-gray-200 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition-colors shadow-sm"
+              aria-label="Zoom in"
+            >+</button>
+            <button
+              onClick={zoomOut}
+              disabled={mapScale <= 0.8}
+              className="w-7 h-7 flex items-center justify-center text-[13px] font-semibold border border-gray-200 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition-colors shadow-sm"
+              aria-label="Zoom out"
+            >–</button>
+            {(mapScale !== 1 || mapOffset.x !== 0 || mapOffset.y !== 0) && (
+              <button
+                onClick={resetZoom}
+                className="w-7 h-7 flex items-center justify-center text-[9px] font-bold border border-gray-200 rounded-lg bg-white text-gray-500 hover:bg-gray-50 transition-colors shadow-sm leading-none"
+                aria-label="Reset zoom"
+              >↺</button>
+            )}
+          </div>
+
+          {/* Pannable map layer */}
+          <div
+            className="w-full h-full p-2 select-none"
+            style={{ cursor, minHeight: 240 }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
+            <div
+              style={{
+                transform: `translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${mapScale})`,
+                transformOrigin: 'center center',
+                transition: isDragging ? 'none' : 'transform 0.15s ease',
+                width: '100%',
+                height: '100%',
+              }}
+            >
+              <MontrealMap
+                selected={selectedId}
+                onSelect={handleSelectHood}
+                commentCounts={commentCounts}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Detail panel */}
-        <div className="lg:w-[40%] border border-gray-200 rounded-2xl px-4 py-4 bg-white overflow-y-auto" style={{ maxHeight: 480 }}>
-          <NeighbourhoodPanel hood={selected} lang={lang} t={t} />
+        <div className="lg:w-[40%] border border-gray-200 rounded-2xl px-4 py-4 bg-white overflow-y-auto" style={{ maxHeight: 520 }}>
+          <NeighbourhoodPanel
+            hood={selected}
+            lang={lang}
+            t={t}
+            commentCount={commentCounts[selected.id] ?? 0}
+            onCountChange={delta => handleCountChange(selected.id, delta)}
+          />
         </div>
       </div>
     </section>
