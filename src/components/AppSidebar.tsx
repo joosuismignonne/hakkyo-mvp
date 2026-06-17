@@ -137,53 +137,53 @@ const JOURNEY: JourneyItem[] = [
     to: '/arriving',
     icon: IconArriving,
     emoji: '✈️',
-    ko: '도착',
-    en: 'Arriving',
-    fr: 'Arrivée',
+    ko: '첫 걸음',
+    en: 'First Steps',
+    fr: 'Premiers pas',
   },
   {
     to: '/settling',
     icon: IconSettling,
     emoji: '🏠',
-    ko: '정착',
-    en: 'Settling',
-    fr: 'Installation',
+    ko: '집 찾기',
+    en: 'Finding Home',
+    fr: 'Trouver un chez-soi',
   },
   {
     to: '/board',
     activePaths: ['/board', '/community'],
     icon: IconConnecting,
     emoji: '👋',
-    ko: '커넥팅',
-    en: 'Connecting',
-    fr: 'Connexion',
+    ko: '주변 사람들',
+    en: 'People Around You',
+    fr: 'Autour de vous',
   },
   {
     to: '/radar',
     activePaths: ['/radar', '/resume-map'],
     icon: IconWorking,
     emoji: '💼',
-    ko: '워킹',
-    en: 'Working',
-    fr: 'Travail',
+    ko: '다음 기회',
+    en: 'Your Next Opportunity',
+    fr: 'Votre prochaine chance',
   },
   {
-    to: '/programs',
-    activePaths: ['/programs', '/sessions', '/phrases'],
+    to: '/phrases',
+    activePaths: ['/phrases', '/programs', '/sessions'],
     icon: IconLanguage,
     emoji: '🗣',
-    ko: '언어',
-    en: 'Language',
-    fr: 'Langue',
+    ko: '일상 표현',
+    en: 'Everyday Words',
+    fr: 'Mots du quotidien',
   },
   {
     to: '/news',
     activePaths: ['/news'],
     icon: IconLiving,
     emoji: '🌱',
-    ko: '생활',
-    en: 'Living',
-    fr: 'Vie',
+    ko: '몬트리올 생활',
+    en: 'Life in Montréal',
+    fr: 'Vivre à Montréal',
   },
 ]
 
@@ -345,7 +345,7 @@ function DesktopSidebar() {
               className="btn-yellow w-full flex items-center justify-center gap-2 text-[13px] rounded-xl py-2.5"
             >
               <IconPlus />
-              {t('레이더 신호 보내기', 'Send a Signal', 'Envoyer un signal')}
+              {t('공유하기', 'Share Something', 'Partager')}
             </button>
           )}
         </div>
@@ -467,7 +467,7 @@ function DesktopSidebar() {
           collapsed ? (
             <Link
               to="/login"
-              title="Montreal In"
+              title="Start Your Journey"
               className="flex items-center justify-center py-3 text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors"
             >
               <IconUser />
@@ -479,13 +479,13 @@ function DesktopSidebar() {
                 className="flex items-center justify-center w-full py-2.5 rounded-xl text-[13px] font-bold transition-colors"
                 style={{ background: 'var(--y)', color: '#111' }}
               >
-                Montreal In
+                {t('여정 시작하기', 'Start Your Journey', 'Commencer votre parcours')}
               </Link>
               <Link
                 to="/signup"
                 className="flex items-center justify-center w-full py-2 rounded-xl border border-gray-200 text-[12px] font-medium text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-all"
               >
-                {t('여정 만들기', 'Create journey', 'Créer un parcours')}
+                {t('여정 만들기', 'Create Journey', 'Créer un parcours')}
               </Link>
             </div>
           )
@@ -556,7 +556,7 @@ function MobileBottomNav() {
         <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'var(--y)' }}>
           <IconPlus />
         </span>
-        <span className="text-[9px] font-medium text-gray-400">Signal</span>
+        <span className="text-[9px] font-medium text-gray-400">Share</span>
       </button>
     </nav>
   )

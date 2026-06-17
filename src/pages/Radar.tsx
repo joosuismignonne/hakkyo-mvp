@@ -153,7 +153,7 @@ function ItemForm({
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100 shrink-0">
           <h2 className="text-[15px] font-bold text-gray-900">
-            {initial.id ? t('항목 수정', 'Edit Item', 'Modifier') : t('새 항목 추가', 'Add Item', 'Ajouter')}
+            {initial.id ? t('수정하기', 'Edit', 'Modifier') : t('유용한 정보 공유하기', 'Share Something Helpful', 'Partager')}
           </h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-50">
             <X size={18} />
@@ -469,9 +469,9 @@ export default function Radar() {
             </div>
             <p className="text-[13px] text-gray-500">
               {t(
-                '오늘 몬트리올에서 발견한 생활 정보',
-                "Today's local discoveries in Montréal",
-                "Découvertes locales d'aujourd'hui à Montréal",
+                '커뮤니티가 발견한 몬트리올 생활 정보',
+                'Useful leads shared by the community',
+                'Bons plans partagés par la communauté',
               )}
             </p>
           </div>
@@ -480,7 +480,7 @@ export default function Radar() {
             className="btn-yellow flex items-center gap-1.5 text-[13px] rounded-xl px-4 py-2.5 shrink-0"
           >
             <Plus size={15} />
-            {t('추가', 'Add', 'Ajouter')}
+            {t('공유하기', 'Share a Lead', 'Partager')}
           </button>
         </div>
 
@@ -554,14 +554,18 @@ export default function Radar() {
             <div className="text-5xl mb-4">📡</div>
             <p className="text-[15px] font-semibold text-gray-700 mb-1">
               {items.length === 0
-                ? t('아직 레이더에 잡힌 정보가 없어요.', 'Nothing on the radar yet.', 'Rien sur le radar pour l\'instant.')
-                : t('이 카테고리에 항목이 없어요.', 'No items in this category.', 'Aucun élément dans cette catégorie.')}
+                ? t('아직 공유된 정보가 없어요.', 'Be the first to share something useful.', 'Soyez le premier à partager quelque chose d\'utile.')
+                : t('이 카테고리에 항목이 없어요.', 'Nothing here yet in this category.', 'Rien dans cette catégorie pour l\'instant.')}
             </p>
             <p className="text-[13px] text-gray-400 mb-6">
-              {t('몬트리올 생활 정보를 직접 추가해보세요.', 'Add local information for Montréal newcomers.', 'Ajoutez des informations locales pour les nouveaux arrivants.')}
+              {t(
+                '일자리, 집, 이벤트 등 몬트리올 생활에 도움이 되는 정보를 나눠주세요.',
+                'Share a job lead, housing tip, local event, or anything helpful for newcomers.',
+                'Partagez une piste d\'emploi, un conseil logement, ou tout ce qui peut aider.',
+              )}
             </p>
             <button onClick={() => setShowForm(true)} className="btn-yellow rounded-xl px-5 py-2.5 text-[13px] font-bold">
-              {t('첫 항목 추가하기', 'Add first item', 'Ajouter le premier élément')}
+              {t('유용한 정보 공유하기', 'Share Something Helpful', 'Partager quelque chose d\'utile')}
             </button>
           </div>
         ) : (
