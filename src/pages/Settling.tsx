@@ -11,6 +11,65 @@ import {
   type NeighbourhoodComment,
 } from '../lib/db'
 
+// ─── Tab icons ────────────────────────────────────────────────────────────────
+
+function IcoBudget() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M12 6v2M12 16v2M9 9.5C9 8.1 10.3 7 12 7s3 1.1 3 2.5c0 2.5-3 3-3 4.5M12 15h.01"/>
+    </svg>
+  )
+}
+function IcoMap() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="1,6 1,22 8,18 16,22 23,18 23,2 16,6 8,2"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+    </svg>
+  )
+}
+function IcoLease() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+    </svg>
+  )
+}
+function IcoDoor() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 21V3h13l5 5v13H3z"/><circle cx="14" cy="12" r="1"/>
+    </svg>
+  )
+}
+function IcoHydro() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+    </svg>
+  )
+}
+function IcoWifi() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/>
+    </svg>
+  )
+}
+function IcoShield() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  )
+}
+function IcoTransit() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="6" y="4" width="12" height="14" rx="2"/><path d="M6 8h12M6 12h12M9 18l-2 3M15 18l2 3M9 4V2M15 4V2"/>
+    </svg>
+  )
+}
+
 // ─── i18n ─────────────────────────────────────────────────────────────────────
 
 type Tri = { ko: string; en: string; fr: string }
@@ -29,15 +88,37 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── Checklist ────────────────────────────────────────────────────────────────
 
 const SETTLING_KEY = 'hakkyo_settling'
-const CHECKLIST_ITEMS: Array<{ id: string; emoji: string } & Tri> = [
-  { id: 'budget',    emoji: '💰', ko: '예산 설정',              en: 'Set budget',                  fr: 'Définir le budget'             },
-  { id: 'hood',      emoji: '🗺️', ko: '동네 선택',              en: 'Choose neighbourhood',         fr: 'Choisir le quartier'           },
-  { id: 'visits',    emoji: '🚪', ko: '아파트 방문 일정 잡기',   en: 'Schedule apartment visits',   fr: 'Planifier les visites'         },
-  { id: 'lease',     emoji: '📋', ko: '임대차 계약 내용 확인',   en: 'Verify lease details',        fr: 'Vérifier les détails du bail'  },
-  { id: 'hydro',     emoji: '💡', ko: 'Hydro-Québec 계좌 개설', en: 'Open Hydro-Québec account',   fr: 'Ouvrir un compte Hydro-Québec' },
-  { id: 'internet',  emoji: '📡', ko: '인터넷 설치',             en: 'Set up internet',             fr: 'Installer internet'            },
-  { id: 'insurance', emoji: '🛡️', ko: '세입자 보험 가입',        en: 'Get tenant insurance',        fr: 'Souscrire une assurance locataire' },
-  { id: 'transit',   emoji: '🚇', ko: '현지 교통 익히기',        en: 'Learn local transportation',  fr: 'Apprendre les transports locaux' },
+const CHECKLIST_ITEMS: Array<{ id: string } & Tri> = [
+  { id: 'budget',    ko: '예산 설정',              en: 'Set a budget',                fr: 'Définir le budget'                },
+  { id: 'hood',      ko: '동네 선택',              en: 'Choose a neighbourhood',       fr: 'Choisir le quartier'              },
+  { id: 'visits',    ko: '아파트 방문 일정 잡기',   en: 'Schedule apartment visits',    fr: 'Planifier les visites'            },
+  { id: 'lease',     ko: '임대차 계약 내용 확인',   en: 'Verify the lease',             fr: 'Vérifier les détails du bail'     },
+  { id: 'hydro',     ko: 'Hydro-Québec 계정 개설', en: 'Open Hydro-Québec account',    fr: 'Ouvrir un compte Hydro-Québec'    },
+  { id: 'internet',  ko: '인터넷 설치',             en: 'Set up internet',              fr: 'Installer internet'               },
+  { id: 'insurance', ko: '세입자 보험 가입',        en: 'Get tenant insurance',         fr: 'Souscrire une assurance locataire'},
+  { id: 'transit',   ko: '현지 교통 익히기',        en: 'Learn local transit',          fr: 'Apprendre les transports locaux'  },
+]
+
+const SETTLING_TAB_MAP: Record<string, string> = {
+  budget:    'budget',
+  hood:      'hood',
+  visits:    'visits',
+  lease:     'lease',
+  hydro:     'hydro',
+  internet:  'internet',
+  insurance: 'insurance',
+  transit:   'transit',
+}
+
+const TOOL_TABS: Array<{ id: string; icon: React.ReactNode } & Tri> = [
+  { id: 'budget',    icon: <IcoBudget />,  ko: '예산',        en: 'Budget',        fr: 'Budget'       },
+  { id: 'hood',      icon: <IcoMap />,     ko: '동네',        en: 'Neighbourhood', fr: 'Quartier'     },
+  { id: 'visits',    icon: <IcoDoor />,    ko: '아파트 방문', en: 'Visits',        fr: 'Visites'      },
+  { id: 'lease',     icon: <IcoLease />,   ko: '임대 계약',   en: 'Lease',         fr: 'Bail'         },
+  { id: 'hydro',     icon: <IcoHydro />,   ko: 'Hydro-Québec',en: 'Hydro-Québec',  fr: 'Hydro-Québec' },
+  { id: 'internet',  icon: <IcoWifi />,    ko: '인터넷',      en: 'Internet',      fr: 'Internet'     },
+  { id: 'insurance', icon: <IcoShield />,  ko: '보험',        en: 'Insurance',     fr: 'Assurance'    },
+  { id: 'transit',   icon: <IcoTransit />, ko: '교통',        en: 'Transit',       fr: 'Transport'    },
 ]
 
 // ─── Neighbourhood data ───────────────────────────────────────────────────────
@@ -665,7 +746,7 @@ function NeighbourhoodMapSection({ lang, t }: {
       <SectionLabel>{t('몬트리올 동네 지도', 'Montréal Neighbourhood Map', 'Carte des quartiers de Montréal')}</SectionLabel>
       <p className="text-[13px] text-gray-500 mb-4">
         {t(
-          '지도에서 동네를 선택하고, 실제로 살아본 사람들의 이야기를 확인해보세요.',
+          '지도를 탐색하며 실제 거주자들의 이야기를 확인해보세요.',
           'Click a neighbourhood on the map to see details and resident comments.',
           'Cliquez sur un quartier pour voir les détails et les commentaires des résidents.',
         )}
@@ -826,17 +907,233 @@ const CAT_FG: Record<string, string> = {
   'Moving Help':'#7E22CE','이사 도움':'#7E22CE','Aide au déménagement':'#7E22CE',
 }
 
+// ─── Essential Tools panels ───────────────────────────────────────────────────
+
+function ToolPanel({ id, lang, t }: { id: string; lang: string; t: (ko: string, en: string, fr: string) => string }) {
+  if (id === 'budget') return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          '몬트리올의 월세는 동네와 크기에 따라 크게 다릅니다. 예산을 먼저 정하면 동네 선택이 훨씬 쉬워집니다.',
+          'Rent in Montréal varies significantly by neighbourhood and apartment size. Setting a budget first makes the neighbourhood search much easier.',
+          'Le loyer à Montréal varie selon le quartier et la taille. Définir un budget d\'abord simplifie le choix du quartier.',
+        )}
+      </p>
+      <div className="space-y-1.5">
+        {[
+          { label: { ko: '스튜디오 / 1½', en: 'Studio / 1½', fr: 'Studio / 1½' }, price: '$700–$1,100 / mo' },
+          { label: { ko: '1 침실 / 3½',   en: '1 Bedroom / 3½', fr: '1 chambre / 3½' }, price: '$1,000–$1,500 / mo' },
+          { label: { ko: '2 침실 / 4½',   en: '2 Bedrooms / 4½', fr: '2 chambres / 4½' }, price: '$1,300–$2,000 / mo' },
+        ].map(row => (
+          <div key={row.price} className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50">
+            <span className="text-[12px] text-gray-700">{tri(row.label, lang)}</span>
+            <span className="text-[12px] font-semibold text-gray-900">{row.price}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-gray-400 leading-snug">
+        {t(
+          '* 인기 동네(Plateau, Mile End)는 위 범위보다 높을 수 있습니다. 난방·전기 포함 여부를 꼭 확인하세요.',
+          '* Popular areas (Plateau, Mile End) may exceed these ranges. Always check if heat and electricity are included.',
+          '* Les quartiers populaires (Plateau, Mile End) peuvent dépasser ces fourchettes. Vérifiez si le chauffage est inclus.',
+        )}
+      </p>
+    </div>
+  )
+
+  if (id === 'hood') return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          '몬트리올은 동네마다 분위기, 언어, 렌트 수준이 완전히 다릅니다. 아래 지도에서 각 동네의 특성을 확인해보세요.',
+          'Every neighbourhood in Montréal has a different atmosphere, language, and price point. Explore the map below to compare.',
+          'Chaque quartier a une atmosphère, une langue et un niveau de prix différents. Explorez la carte ci-dessous.',
+        )}
+      </p>
+      <div className="space-y-1.5">
+        {[
+          { name: 'Plateau Mont-Royal', note: { ko: '카페·도보 생활, 렌트 높음', en: 'Walkable, cafés, higher rents', fr: 'Piéton, cafés, loyers élevés' } },
+          { name: 'Villeray / Rosemont', note: { ko: '로컬 생활, 가성비 좋음', en: 'Local feel, good value', fr: 'Ambiance locale, bon rapport qualité-prix' } },
+          { name: 'NDG / CDN', note: { ko: '다양한 커뮤니티, 조용한 주거', en: 'Diverse, residential, quieter', fr: 'Divers, résidentiel, plus calme' } },
+          { name: 'Downtown / Griffintown', note: { ko: '교통 편리, 렌트 가장 높음', en: 'Best transit, highest rents', fr: 'Meilleurs transports, loyers les plus élevés' } },
+        ].map(row => (
+          <div key={row.name} className="flex items-start justify-between px-3 py-2 rounded-lg bg-gray-50 gap-3">
+            <span className="text-[12px] font-semibold text-gray-900 shrink-0">{row.name}</span>
+            <span className="text-[12px] text-gray-500 text-right">{tri(row.note, lang)}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-gray-400">{t('아래 지도에서 실거주자 코멘트를 확인할 수 있습니다.', 'Scroll down to see resident comments on the map below.', 'Faites défiler pour voir les commentaires des résidents sur la carte.')}</p>
+    </div>
+  )
+
+  if (id === 'visits') return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          '아파트를 방문할 때 직접 확인해야 할 것들이 있습니다. 계약 전에 꼼꼼히 살펴보세요.',
+          'There are things you must check in person before signing. Don\'t skip the walkthrough.',
+          'Il y a des éléments à vérifier en personne avant de signer. Ne sautez pas la visite.',
+        )}
+      </p>
+      <ul className="space-y-1.5">
+        {(lang === 'ko' ? [
+          '수도꼭지·샤워기 수압 및 온수 확인', '창문 밀봉 상태 (외풍, 결로)', '지하 및 벽면 곰팡이 흔적', '세탁기·건조기 공간 또는 공동 세탁실 위치', '난방 방식 (전기 온수 라디에이터 vs. 바닥 난방)', '주차 공간·자전거 보관', '쓰레기·재활용 규정 확인',
+        ] : lang === 'fr' ? [
+          'Pression de l\'eau et eau chaude', 'Joints de fenêtres (courants d\'air, condensation)', 'Traces de moisissures dans les murs ou sous-sol', 'Espace pour laveuse-sécheuse ou emplacement de la buanderie commune', 'Type de chauffage (radiateurs électriques à eau chaude vs plancher chauffant)', 'Stationnement et rangement pour vélo', 'Règles concernant les ordures et le recyclage',
+        ] : [
+          'Water pressure and hot water', 'Window seals (drafts, condensation)', 'Mould traces in walls or basement', 'In-unit laundry or location of shared laundry', 'Heating type (electric hot water baseboard vs radiant floor)', 'Parking and bike storage', 'Garbage and recycling rules',
+        ]).map((item, i) => (
+          <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700 px-3 py-1.5 rounded-lg bg-gray-50">
+            <span className="text-gray-300 shrink-0 mt-0.5">–</span>{item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+
+  if (id === 'lease') return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          '퀘벡의 임대차 계약은 표준 양식(Formulaire de bail)을 사용합니다. 주요 조항을 꼭 확인하세요.',
+          'Québec leases use a standard form (Formulaire de bail). Make sure you understand the key clauses.',
+          'Les baux au Québec utilisent un formulaire standard. Assurez-vous de comprendre les clauses essentielles.',
+        )}
+      </p>
+      <div className="space-y-1.5">
+        {[
+          { term: { ko: '임대 기간', en: 'Lease term', fr: 'Durée du bail' }, note: { ko: '보통 1년 (7/1–6/30)', en: 'Usually 1 year (July 1–June 30)', fr: 'Généralement 1 an (1er juillet–30 juin)' } },
+          { term: { ko: '렌트 인상', en: 'Rent increase', fr: 'Hausse de loyer' }, note: { ko: '갱신 전 3개월 전 통보 필요', en: '3 months notice required before renewal', fr: '3 mois de préavis avant le renouvellement' } },
+          { term: { ko: '전대차', en: 'Sublet', fr: 'Sous-location' }, note: { ko: '집주인 동의 필요, 거부할 수 없음', en: 'Landlord consent required, cannot be refused', fr: "Consentement du propriétaire requis, ne peut être refusé" } },
+          { term: { ko: '퇴거 통보', en: 'Moving out', fr: 'Départ' }, note: { ko: '갱신 거부 시 3개월 전 통보', en: '3 months notice to decline renewal', fr: '3 mois pour refuser le renouvellement' } },
+        ].map(row => (
+          <div key={row.term.en} className="px-3 py-2 rounded-lg bg-gray-50">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{tri(row.term, lang)}</span>
+            <p className="text-[12px] text-gray-700 mt-0.5">{tri(row.note, lang)}</p>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-gray-400">{t('분쟁 발생 시 TAL (Tribunal administratif du logement)에 연락하세요.', 'For disputes, contact the TAL (Tribunal administratif du logement).', 'En cas de litige, contactez le TAL (Tribunal administratif du logement).')}</p>
+    </div>
+  )
+
+  if (id === 'hydro') return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          '전기와 난방은 Hydro-Québec을 통해 공급됩니다. 입주 전에 계정을 개설해야 합니다.',
+          'Electricity and heating come through Hydro-Québec. You must open an account before moving in.',
+          "L'électricité et le chauffage passent par Hydro-Québec. Vous devez ouvrir un compte avant d'emménager.",
+        )}
+      </p>
+      <div className="space-y-1.5">
+        {[
+          { ko: '입주 최소 2–3일 전에 계정 개설', en: 'Open account 2–3 days before move-in', fr: 'Ouvrir un compte 2–3 jours avant l\'emménagement' },
+          { ko: '필요 서류: 주소, 이사 날짜, 신분증', en: 'Needed: address, move-in date, ID', fr: 'Nécessaire : adresse, date d\'emménagement, pièce d\'identité' },
+          { ko: '온라인(hydroquebec.com) 또는 전화로 개설 가능', en: 'Can be done online at hydroquebec.com or by phone', fr: 'Possible en ligne (hydroquebec.com) ou par téléphone' },
+          { ko: '겨울 난방비는 월 $80–$150 예상', en: 'Winter heating bills typically $80–$150/month', fr: 'Chauffage en hiver : environ 80–150 $/mois' },
+        ].map((item, i) => (
+          <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700 px-3 py-1.5 rounded-lg bg-gray-50 list-none">
+            <span className="text-gray-300 shrink-0 mt-0.5">–</span>{tri(item, lang)}
+          </li>
+        ))}
+      </div>
+    </div>
+  )
+
+  if (id === 'internet') return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          '몬트리올의 주요 인터넷 공급업체와 일반적인 요금입니다. 계약 전 건물 내 공급 가능 여부를 확인하세요.',
+          'Main internet providers in Montréal and typical pricing. Check availability in your building before committing.',
+          'Principaux fournisseurs Internet à Montréal. Vérifiez la disponibilité dans votre immeuble avant de vous engager.',
+        )}
+      </p>
+      <div className="space-y-1.5">
+        {[
+          { name: 'Vidéotron', note: { ko: '케이블, 광범위 커버리지', en: 'Cable, wide coverage', fr: 'Câble, large couverture' }, price: '$55–$85/mo' },
+          { name: 'Bell', note: { ko: '파이버, 빠른 속도', en: 'Fibre, fast speeds', fr: 'Fibre, vitesses rapides' }, price: '$65–$95/mo' },
+          { name: 'Fizz / Distributel', note: { ko: '저렴한 대안, 계약 없음', en: 'Budget options, no contract', fr: 'Options économiques, sans contrat' }, price: '$35–$60/mo' },
+        ].map(row => (
+          <div key={row.name} className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 gap-3">
+            <div>
+              <span className="text-[12px] font-semibold text-gray-900">{row.name}</span>
+              <span className="text-[11px] text-gray-500 ml-2">{tri(row.note, lang)}</span>
+            </div>
+            <span className="text-[12px] font-semibold text-gray-900 shrink-0">{row.price}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-gray-400">{t('대부분 설치 예약은 2주 전에 잡는 것이 좋습니다.', 'Book installation at least 2 weeks in advance.', 'Réservez l\'installation au moins 2 semaines à l\'avance.')}</p>
+    </div>
+  )
+
+  if (id === 'insurance') return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          '퀘벡에서 세입자 보험은 법적 의무는 아니지만, 많은 집주인이 요구합니다. 연간 $150–$300 수준입니다.',
+          'Tenant insurance is not legally required in Québec, but many landlords ask for it. Annual cost is typically $150–$300.',
+          "L'assurance locataire n'est pas légalement obligatoire au Québec, mais beaucoup de propriétaires l'exigent. Coût : environ 150–300 $/an.",
+        )}
+      </p>
+      <div className="space-y-1.5">
+        {(lang === 'ko' ? [
+          '개인 소지품 도난·화재 보상', '제3자 피해 배상 (예: 누수로 아래층 피해)', '임시 거주 비용 (화재 등 거주 불가 시)', '자전거 도난 포함 여부 확인',
+        ] : lang === 'fr' ? [
+          'Couverture vol et incendie pour les biens personnels', 'Responsabilité civile (ex. dégâts des eaux chez le voisin)', 'Frais de séjour temporaire (si le logement est inhabitable)', "Vérifier l'inclusion du vol de vélo",
+        ] : [
+          'Personal belongings theft and fire coverage', 'Third-party liability (e.g. water leak damaging downstairs unit)', 'Temporary housing costs if unit becomes uninhabitable', 'Check if bicycle theft is included',
+        ]).map((item, i) => (
+          <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700 px-3 py-1.5 rounded-lg bg-gray-50 list-none">
+            <span className="text-gray-300 shrink-0 mt-0.5">–</span>{item}
+          </li>
+        ))}
+      </div>
+      <p className="text-[11px] text-gray-400">{t('주요 보험사: Intact, Desjardins, Sonnet, Square One', 'Main providers: Intact, Desjardins, Sonnet, Square One', 'Principaux assureurs : Intact, Desjardins, Sonnet, Square One')}</p>
+    </div>
+  )
+
+  if (id === 'transit') return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          '새 집에서 출퇴근 경로를 미리 테스트해보세요. STM 지하철과 버스 노선을 파악하는 것이 중요합니다.',
+          'Test your commute route from the new address before you move in. Knowing STM metro and bus lines is essential.',
+          "Testez votre trajet depuis la nouvelle adresse avant d'emménager. Connaître les lignes STM est essentiel.",
+        )}
+      </p>
+      <div className="space-y-1.5">
+        {[
+          { label: { ko: 'STM 월정기권', en: 'STM monthly pass', fr: 'Passe mensuelle STM' }, note: { ko: '성인 $100 / 학생 $56', en: 'Adult $100 / Student $56', fr: 'Adulte 100 $ / Étudiant 56 $' } },
+          { label: { ko: 'OPUS 카드', en: 'OPUS card', fr: 'Carte OPUS' }, note: { ko: '첫 카드 발급 $6, 지하철 개찰구에서 충전', en: 'First card $6, recharge at metro turnstiles', fr: 'Première carte 6 $, rechargeable aux tourniquets' } },
+          { label: { ko: 'Bixi (자전거 공유)', en: 'Bixi (bike share)', fr: 'Bixi (vélo-partage)' }, note: { ko: '연간 $115, 5월–11월 운영', en: 'Annual $115, May–November', fr: 'Annuel 115 $, mai–novembre' } },
+          { label: { ko: 'STM 앱', en: 'STM app', fr: 'Application STM' }, note: { ko: '실시간 경로·지연 확인', en: 'Real-time routes and delays', fr: 'Itinéraires et retards en temps réel' } },
+        ].map(row => (
+          <div key={row.label.en} className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 gap-3">
+            <span className="text-[12px] font-semibold text-gray-900 shrink-0">{tri(row.label, lang)}</span>
+            <span className="text-[12px] text-gray-500 text-right">{tri(row.note, lang)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  return null
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Settling() {
   const { lang, t } = useLang()
-  const { user } = useAuth()
-  const navigate = useNavigate()
-
   const [checked, setChecked] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem(SETTLING_KEY) ?? '[]')) }
     catch { return new Set() }
   })
+  const [activeTab, setActiveTab] = useState('budget')
+  const toolsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     try { localStorage.setItem(SETTLING_KEY, JSON.stringify([...checked])) }
@@ -854,41 +1151,27 @@ export default function Settling() {
   const pct = Math.round((checked.size / CHECKLIST_ITEMS.length) * 100)
   const ctaCls = 'inline-flex items-center text-[12px] font-semibold text-gray-500 hover:text-gray-800 transition-colors'
 
-  function handleSharePost() {
-    if (!user) { navigate('/login'); return }
-    navigate('/board')
-  }
-
   return (
     <div className="w-full min-h-screen bg-white pb-24">
       <div className="max-w-[720px] mx-auto px-4 py-8 space-y-10">
 
-        {/* ── HERO ── */}
+        {/* ── HEADER ── */}
         <section>
           <div className="flex items-center gap-2 mb-1">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
             </svg>
             <h1 className="text-[24px] font-bold text-gray-900">
-              {t('나만의 공간 찾기', 'Finding Home', 'Trouver un Logement')}
+              {t('나만의 공간 찾기', 'Finding Your Place', 'Trouver un Logement')}
             </h1>
           </div>
-          <p className="text-[14px] text-gray-500 leading-relaxed mb-5">
+          <p className="text-[14px] text-gray-500 leading-relaxed">
             {t(
-              '집을 구하는 것부터 몬트리올을 나의 동네로 만드는 과정까지.',
-              'Apartment hunting, neighbourhood guides, leases, roommates, and everyday life in Montréal.',
-              'Trouver un logement, comprendre les quartiers, les baux et la vie quotidienne à Montréal.',
+              '예산 설정부터 계약, 입주 후 생활까지. 몬트리올에서 집을 구하는 과정을 단계별로 안내합니다.',
+              'From setting a budget to signing a lease and settling in. A step-by-step guide to finding a home in Montréal.',
+              'Du budget à la signature du bail et à l\'installation. Un guide étape par étape pour trouver un logement à Montréal.',
             )}
           </p>
-          <div className="border border-gray-200 rounded-2xl px-5 py-4 bg-white">
-            <p className="text-[14px] text-gray-700 leading-relaxed">
-              {t(
-                '새로운 도시로 이사하는 것은 단순히 아파트를 구하는 것 이상입니다.\n도시가 어떻게 작동하는지 배우는 과정입니다.',
-                'Moving to a new city is more than finding an apartment.\nIt is learning how a city works.',
-                "S'installer dans une nouvelle ville, c'est plus que trouver un appartement.\nC'est apprendre comment une ville fonctionne.",
-              )}
-            </p>
-          </div>
         </section>
 
         {/* ── CHECKLIST ── */}
@@ -896,49 +1179,55 @@ export default function Settling() {
           <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
             {pct < 100 ? (
               <>
-                <div className="flex items-start justify-between gap-3 mb-1">
+                <div className="flex items-start justify-between gap-3 mb-4">
                   <div>
                     <h2 className="text-[15px] font-bold text-gray-900">
-                      {t('몬트리올 정착 체크리스트', 'Settlement Checklist', 'Liste de règlement')}
+                      {t('나의 몬트리올 정착 준비', 'My Settling Checklist', 'Ma liste d\'installation')}
                     </h2>
                     <p className="text-[12px] text-gray-400 mt-0.5">
                       {t(
-                        '집을 구하기 전부터 이사 후 생활 준비까지, 하나씩 확인해보세요.',
-                        'From apartment hunting to settling in — check each one off.',
-                        "De la recherche de logement à l'installation — cochez au fur et à mesure.",
+                        '집을 구하기 전부터 이사 후 생활 준비까지.',
+                        'From apartment hunting to moving in.',
+                        "De la recherche de logement à l'installation.",
                       )}
                     </p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[20px] font-bold text-gray-900">{pct}%</span>
-                    <p className="text-[11px] text-gray-400">{t('완료', 'done', 'fait')}</p>
-                  </div>
+                  <span className="text-[12px] text-gray-400 shrink-0">
+                    {checked.size} / {CHECKLIST_ITEMS.length} {t('완료', 'done', 'fait')}
+                  </span>
                 </div>
-                <div className="h-1 bg-gray-100 rounded-full mt-3 mb-4 overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: 'var(--y)' }} />
-                </div>
-                <div className="space-y-0.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5">
                   {CHECKLIST_ITEMS.map(item => {
-                    const done = checked.has(item.id)
+                    const isDone = checked.has(item.id)
+                    const tabTarget = SETTLING_TAB_MAP[item.id]
                     return (
                       <button
                         key={item.id}
-                        onClick={() => toggle(item.id)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
-                        style={done ? { background: 'var(--y-l)' } : undefined}
-                        onMouseEnter={e => { if (!done) (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB' }}
-                        onMouseLeave={e => { if (!done) (e.currentTarget as HTMLButtonElement).style.background = '' }}
+                        onClick={() => {
+                          toggle(item.id)
+                          if (tabTarget) {
+                            setActiveTab(tabTarget)
+                            setTimeout(() => {
+                              toolsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }, 50)
+                          }
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors hover:bg-gray-50 group"
                       >
-                        <span className="text-base leading-none shrink-0 w-5 text-center">
-                          {done ? '✅' : item.emoji}
+                        <span className="shrink-0 w-4 flex items-center justify-center">
+                          {isDone ? (
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--y-h)' }}>
+                              <polyline points="1.5,6 4.5,9 10.5,3"/>
+                            </svg>
+                          ) : (
+                            <span className="w-3 h-3 rounded-sm border border-gray-300 inline-block" />
+                          )}
                         </span>
-                        <span className={`text-[13px] font-medium transition-colors ${done ? 'text-gray-500' : 'text-gray-700'}`}>
+                        <span className={`text-[13px] flex-1 ${isDone ? 'text-gray-400' : 'text-gray-700'}`}>
                           {tri(item, lang)}
                         </span>
-                        {done && (
-                          <span className="ml-auto text-[10px] font-semibold text-amber-700 shrink-0">
-                            {t('완료', 'Done', 'Fait')}
-                          </span>
+                        {tabTarget && !isDone && (
+                          <span className="text-[10px] text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">→</span>
                         )}
                       </button>
                     )
@@ -947,98 +1236,54 @@ export default function Settling() {
               </>
             ) : (
               /* ── 100% completion state ── */
-              <div className="text-center py-2">
-                <div className="text-3xl mb-3">🎉</div>
-                <h2 className="text-[18px] font-bold text-gray-900 mb-3">
-                  {t('몬트리올 입성 완료!', 'Welcome to Montréal!', 'Bienvenue à Montréal !')}
-                </h2>
-                <p className="text-[14px] text-gray-500 leading-relaxed mb-5">
+              <div>
+                <p className="text-[14px] font-semibold text-gray-900 mb-3">
+                  {t('집이 생겼습니다.', "You've found your place.", 'Vous avez trouvé votre logement.')}
+                </p>
+                <p className="text-[13px] text-gray-500 leading-[1.85] mb-4">
                   {t(
-                    '항공권도 예약했고,\n집도 구했고,\n첫 친구도 만났네요.\n\n이제 진짜 몬트리올 이야기가 시작됩니다.',
-                    "You've booked the flight,\nfound a place,\nand met your first people.\n\nYour Montréal story starts now.",
-                    "Le vol est réservé,\nle logement est trouvé,\nles premières rencontres sont faites.\n\nVotre histoire montréalaise commence.",
-                  ).split('\n').map((line, i) => (
-                    <span key={i}>{line}<br /></span>
-                  ))}
+                    '예산도 잡고,\n동네도 골랐고,\n계약서에 서명까지 마쳤습니다.\n\n몬트리올이 이제 진짜 당신의 도시가 되어가고 있습니다.',
+                    "You set a budget,\npicked a neighbourhood,\nand signed the lease.\n\nMontréal is becoming your city.",
+                    "Budget défini,\nquartier choisi,\nbail signé.\n\nMontréal devient vraiment votre ville.",
+                  ).split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
                 </p>
-                {/* Completed items — subtle yellow rows */}
-                <div className="space-y-1 mb-5 text-left">
-                  {CHECKLIST_ITEMS.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => toggle(item.id)}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all"
-                      style={{ background: 'var(--y-l)' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--y)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--y-l)' }}
-                    >
-                      <span className="text-base leading-none shrink-0 w-5 text-center">✅</span>
-                      <span className="text-[13px] font-medium text-gray-700">{tri(item, lang)}</span>
-                    </button>
-                  ))}
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-[13px] font-semibold text-gray-800 mb-1">{t('학교 친구들아, 모여라!', 'Ready to meet people?', 'Prêt·e à rencontrer des gens ?')}</p>
+                  <p className="text-[12px] text-gray-400 mb-4">{t('한국어 · 영어 · 프랑스어 · 언어 교환', 'Korean · English · French · Language Exchange', 'Coréen · Anglais · Français · Échange linguistique')}</p>
+                  <Link to="/programs" className="inline-flex items-center text-[13px] font-semibold text-gray-900 hover:opacity-70 transition-opacity">
+                    {t('프로그램 보기 →', 'Browse Programs →', 'Voir les programmes →')}
+                  </Link>
                 </div>
-                <p className="text-[11px] text-gray-300 mb-1">
-                  {t('항목을 클릭하면 체크를 해제할 수 있어요.', 'Click any item to uncheck it.', 'Cliquez sur un élément pour le décocher.')}
-                </p>
               </div>
             )}
           </div>
-
-          {/* ── Community CTA — shown only at 100% ── */}
-          {pct === 100 && (
-            <div className="mt-4 border border-gray-200 rounded-2xl px-5 py-5 bg-white">
-              <p className="text-[13px] font-bold text-gray-900 mb-1">
-                {t('학교 친구들아, 모여라!', 'Ready to meet people?', 'Prêt·e à rencontrer des gens ?')}
-              </p>
-              <p className="text-[13px] text-gray-500 mb-4">
-                {t(
-                  '몬트리올에서 새로운 사람들을 만나고 싶다면',
-                  'If you want to meet new people in Montréal,',
-                  'Si vous souhaitez rencontrer de nouvelles personnes à Montréal,',
-                )}
-              </p>
-              <div className="space-y-2 mb-5">
-                {[
-                  { emoji: '🇰🇷', ko: '한국어 클래스', en: 'Korean class', fr: 'Cours de coréen' },
-                  { emoji: '🇨🇦', ko: '영어 클래스',   en: 'English class', fr: "Cours d'anglais" },
-                  { emoji: '🇫🇷', ko: '프랑스어 클래스', en: 'French class', fr: 'Cours de français' },
-                  { emoji: '🤝', ko: '언어 교환',      en: 'Language exchange', fr: 'Échange linguistique' },
-                ].map(item => (
-                  <div key={item.emoji} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: 'var(--y-l)' }}>
-                    <span className="text-base leading-none">{item.emoji}</span>
-                    <span className="text-[13px] font-medium text-gray-800">{t(item.ko, item.en, item.fr)}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[12px] text-gray-400 mb-4">
-                {t('이 기다리고 있어요.', 'are waiting for you.', 'vous attendent.')}
-              </p>
-              <Link
-                to="/programs"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors"
-                style={{ background: 'var(--y)', color: '#111' }}
-              >
-                {t('프로그램 둘러보기 →', 'Browse Programs →', 'Voir les programmes →')}
-              </Link>
-            </div>
-          )}
         </section>
 
-        {/* ── START HERE ── */}
-        <section>
-          <SectionLabel>{t('처음 몬트리올에 왔다면', 'Start Here', 'Commencer ici')}</SectionLabel>
+        {/* ── ESSENTIAL TOOLS ── */}
+        <section ref={toolsRef}>
+          <SectionLabel>{t('필수 도구', 'Essential Tools', 'Outils essentiels')}</SectionLabel>
           <p className="text-[13px] text-gray-500 mb-4">
-            {t('집을 구하기 전에 알아두면 좋은 몬트리올의 기본 구조.', 'What to understand about Montréal before you start looking.', "Ce qu'il faut savoir avant de commencer à chercher.")}
+            {t('정착 과정에서 필요한 정보를 단계별로 정리했습니다.', 'Everything you need, organised by step.', 'Toutes les informations dont vous avez besoin, étape par étape.')}
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {START_CARDS.map(card => (
-              <div key={card.slug} className="border border-gray-200 rounded-2xl px-4 py-4 bg-white flex flex-col gap-2">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{tri(card.category, lang)}</span>
-                <p className="text-[14px] font-bold text-gray-900 leading-snug">{tri(card.title, lang)}</p>
-                <p className="text-[12px] text-gray-500 leading-snug flex-1">{tri(card.desc, lang)}</p>
-                <Link to={`/settling/${card.slug}`} className={ctaCls} onClick={() => trackEvent({ eventName: 'settling_guide_clicked', targetType: 'card', targetId: card.slug, targetLabel: card.slug })}>{t('읽어보기 →', 'Read more →', 'Lire →')}</Link>
-              </div>
-            ))}
+          <div className="flex gap-1 overflow-x-auto pb-1 mb-4">
+            {TOOL_TABS.map(tab => {
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                    isActive ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  <span className={isActive ? 'text-white' : 'text-gray-400'}>{tab.icon}</span>
+                  {tri(tab, lang)}
+                </button>
+              )
+            })}
+          </div>
+          <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
+            <ToolPanel id={activeTab} lang={lang} t={t} />
           </div>
         </section>
 
@@ -1066,56 +1311,6 @@ export default function Settling() {
               </div>
             ))}
           </div>
-        </section>
-
-        {/* ── COMMUNITY BOARD ── */}
-        <section>
-          <SectionLabel>{t('커뮤니티 주거 게시판', 'Community Housing Board', 'Tableau de logement communautaire')}</SectionLabel>
-          <p className="text-[13px] text-gray-500 mb-4">
-            {t('커뮤니티가 함께 만드는 주거, 룸메이트, 가구, 이사 도움 게시판.', 'Community-driven housing, roommate, furniture, and moving posts.', 'Annonces de logement, colocataires, meubles et aide au déménagement.')}
-          </p>
-          <div className="flex gap-2 flex-wrap mb-4">
-            {[
-              { ko: '주거', en: 'Housing', fr: 'Logement' },
-              { ko: '룸메이트', en: 'Roommates', fr: 'Colocataires' },
-              { ko: '가구', en: 'Furniture', fr: 'Meubles' },
-              { ko: '이사 도움', en: 'Moving Help', fr: 'Aide au déménagement' },
-            ].map((cat, i) => (
-              <span key={i} className="text-[11px] font-semibold px-3 py-1 rounded-full border border-gray-200 text-gray-500 bg-white">
-                {tri(cat, lang)}
-              </span>
-            ))}
-          </div>
-          <div className="space-y-2 mb-3">
-            {BOARD_POSTS.map((post, i) => {
-              const catKey = post.category.en
-              return (
-                <div key={i} className="border border-gray-200 rounded-2xl px-4 py-3 bg-white flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-1"
-                      style={{ background: CAT_BG[catKey] ?? '#F3F4F6', color: CAT_FG[catKey] ?? '#374151' }}>
-                      {tri(post.category, lang)}
-                    </span>
-                    <p className="text-[13px] font-semibold text-gray-800 leading-snug">{tri(post.title, lang)}</p>
-                  </div>
-                  <p className="text-[11px] text-gray-400 shrink-0 mt-0.5">{tri(post.meta, lang)}</p>
-                </div>
-              )
-            })}
-          </div>
-          <button
-            onClick={handleSharePost}
-            className="flex items-center justify-center gap-2 w-full border border-gray-200 rounded-2xl py-3 text-[13px] font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-          >
-            {t('경험 공유하기 →', 'Share your experience →', 'Partager votre expérience →')}
-          </button>
-          {!user && (
-            <p className="text-center text-[11px] text-gray-400 mt-2">
-              {t('글을 작성하려면 ', 'You must ', 'Vous devez ')}
-              <Link to="/login" className="underline hover:text-gray-600">{t('로그인', 'log in', 'vous connecter')}</Link>
-              {t('이 필요합니다.', ' to post.', ' pour publier.')}
-            </p>
-          )}
         </section>
 
       </div>
