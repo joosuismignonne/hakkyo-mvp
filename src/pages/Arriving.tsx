@@ -127,17 +127,17 @@ function TransportIcon({ k }: { k: TransportIconKey }) {
 // ─── Progress checklist ───────────────────────────────────────────────────────
 // milestone:true = feeds "My Montréal Journey" feature (future). Do not remove.
 
-const CHECKLIST: Array<{ id: string; milestone: boolean } & Tri> = [
-  { id: 'flight',   ko: '항공권 예약',          en: 'Flight booked',              fr: 'Vol réservé',                      milestone: true  },
-  { id: 'stay',     ko: '숙소 마련',             en: 'Temporary stay arranged',    fr: 'Logement temporaire arrangé',       milestone: false },
-  { id: 'sim',      ko: 'SIM 카드 개통',         en: 'SIM card activated',         fr: 'Carte SIM activée',                milestone: false },
-  { id: 'bank',     ko: '은행 계좌 개설',         en: 'Bank account opened',        fr: 'Compte bancaire ouvert',           milestone: true  },
-  { id: 'sin',      ko: 'SIN Number',            en: 'SIN Number',                 fr: 'Numéro d\'assurance sociale',      milestone: true  },
-  { id: 'opus',     ko: 'OPUS 카드',             en: 'OPUS card',                  fr: 'Carte OPUS',                       milestone: false },
-  { id: 'licence',  ko: 'Québec Driver\'s Licence', en: 'Québec Driver\'s Licence', fr: 'Permis de conduire du Québec',    milestone: false },
-  { id: 'grocery',  ko: '마트 찾기',             en: 'Found a grocery store',      fr: 'Trouvé une épicerie',              milestone: false },
-  { id: 'exchange', ko: '언어 교환 참여',         en: 'Language exchange joined',   fr: 'Échange linguistique rejoint',     milestone: true  },
-  { id: 'friend',   ko: '첫 현지 친구',           en: 'First local friend',         fr: 'Premier ami local',                milestone: true  },
+const CHECKLIST: Array<{ id: string; emoji: string; milestone: boolean } & Tri> = [
+  { id: 'flight',   emoji: '✈️',  ko: '항공권 예약',              en: 'Flight booked',              fr: 'Vol réservé',                      milestone: true  },
+  { id: 'stay',     emoji: '🏠',  ko: '숙소 마련',                en: 'Temporary stay arranged',    fr: 'Logement temporaire arrangé',       milestone: false },
+  { id: 'sim',      emoji: '📱',  ko: 'SIM 카드 개통',             en: 'SIM card activated',         fr: 'Carte SIM activée',                milestone: false },
+  { id: 'bank',     emoji: '🏦',  ko: '은행 계좌 개설',             en: 'Bank account opened',        fr: 'Compte bancaire ouvert',           milestone: true  },
+  { id: 'sin',      emoji: '🪪',  ko: 'SIN Number',                en: 'SIN Number',                 fr: 'Numéro d\'assurance sociale',      milestone: true  },
+  { id: 'opus',     emoji: '🚇',  ko: 'OPUS 카드',                 en: 'OPUS card',                  fr: 'Carte OPUS',                       milestone: false },
+  { id: 'licence',  emoji: '🚗',  ko: 'Québec Driver\'s Licence',  en: 'Québec Driver\'s Licence',   fr: 'Permis de conduire du Québec',     milestone: false },
+  { id: 'grocery',  emoji: '🛒',  ko: '마트 찾기',                 en: 'Found a grocery store',      fr: 'Trouvé une épicerie',              milestone: false },
+  { id: 'exchange', emoji: '🗣️',  ko: '언어 교환 참여',             en: 'Language exchange joined',   fr: 'Échange linguistique rejoint',     milestone: true  },
+  { id: 'friend',   emoji: '👋',  ko: '첫 현지 친구',               en: 'First local friend',         fr: 'Premier ami local',                milestone: true  },
 ]
 
 const PROGRESS_KEY = 'hakkyo_firststeps'
@@ -1154,73 +1154,152 @@ export default function Arriving() {
         </div>
 
         {/* ── Progress Tracker ── */}
-        <div className="border border-gray-200 rounded-2xl px-5 py-5 mb-6 bg-white">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[15px] font-bold text-gray-900">
-              {t('나의 몬트리올 준비', 'Your Montréal Progress', 'Votre Progression')}
-            </h2>
-            <div className="text-right shrink-0">
-              <span className="text-[20px] font-bold text-gray-900">{pct}%</span>
-              <p className="text-[11px] text-gray-400">{t('완료', 'complete', 'complété')}</p>
-            </div>
-          </div>
-
-          <p className="text-[13px] text-gray-500 italic mb-3 leading-snug">
-            {getJourneyMessage(pct, lang)}
-          </p>
-
-          <div className="h-1 bg-gray-100 rounded-full mb-4 overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${pct}%`, background: 'var(--y)' }}
-            />
-          </div>
-
-          {/* Milestone flash */}
-          <div
-            style={{
-              maxHeight: flash ? 44 : 0,
-              opacity: flash?.visible ? 1 : 0,
-              marginBottom: flash ? 12 : 0,
-              overflow: 'hidden',
-              transition: 'max-height 0.25s ease, opacity 0.35s ease, margin-bottom 0.25s ease',
-            }}
-          >
-            {flash && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium" style={{ background: 'var(--y-l)', color: '#92400E' }}>
-                <span className="text-[12px] font-bold" style={{ color: 'var(--y-h)' }}>→</span>
-                <span>{flash.msg}</span>
+        <div className="border border-gray-200 rounded-2xl px-5 py-5 mb-4 bg-white">
+          {pct < 100 ? (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[15px] font-bold text-gray-900">
+                  {t('나의 몬트리올 준비', 'Your Montréal Progress', 'Votre Progression')}
+                </h2>
+                <div className="text-right shrink-0">
+                  <span className="text-[20px] font-bold text-gray-900">{pct}%</span>
+                  <p className="text-[11px] text-gray-400">{t('완료', 'complete', 'complété')}</p>
+                </div>
               </div>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-            {CHECKLIST.map(item => {
-              const isDone = checked.has(item.id)
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => toggle(item.id)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${isDone ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
-                >
-                  <span
-                    className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all"
-                    style={isDone ? { background: 'var(--y)', borderColor: 'var(--y)' } : { borderColor: '#D1D5DB' }}
+              <p className="text-[13px] text-gray-500 italic mb-3 leading-snug">
+                {getJourneyMessage(pct, lang)}
+              </p>
+
+              <div className="h-1 bg-gray-100 rounded-full mb-4 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%`, background: 'var(--y)' }}
+                />
+              </div>
+
+              {/* Milestone flash */}
+              <div
+                style={{
+                  maxHeight: flash ? 44 : 0,
+                  opacity: flash?.visible ? 1 : 0,
+                  marginBottom: flash ? 12 : 0,
+                  overflow: 'hidden',
+                  transition: 'max-height 0.25s ease, opacity 0.35s ease, margin-bottom 0.25s ease',
+                }}
+              >
+                {flash && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium" style={{ background: 'var(--y-l)', color: '#92400E' }}>
+                    <span className="text-[12px] font-bold" style={{ color: 'var(--y-h)' }}>→</span>
+                    <span>{flash.msg}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-0.5">
+                {CHECKLIST.map(item => {
+                  const isDone = checked.has(item.id)
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => toggle(item.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
+                      style={isDone ? { background: 'var(--y-l)' } : undefined}
+                      onMouseEnter={e => { if (!isDone) (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB' }}
+                      onMouseLeave={e => { if (!isDone) (e.currentTarget as HTMLButtonElement).style.background = '' }}
+                    >
+                      <span className="text-base leading-none shrink-0 w-5 text-center select-none">
+                        {isDone ? '✅' : item.emoji}
+                      </span>
+                      <span className={`text-[13px] font-medium flex-1 ${isDone ? 'text-gray-700' : 'text-gray-700'}`}>
+                        {tri(item, lang)}{isDone ? t(' 완료', ' done', ' fait') : ''}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          ) : (
+            /* ── 100% completion ── */
+            <div className="text-center py-2">
+              <div className="text-3xl mb-4">🎉</div>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-4">
+                {t('몬트리올 입성 완료!', 'You\'re in Montréal!', 'Vous êtes à Montréal !')}
+              </h2>
+              <p className="text-[14px] text-gray-500 leading-[1.85] mb-6 whitespace-pre-line">
+                {t(
+                  '항공권도 예약했고,\n집도 구했고,\n첫 친구도 만났네요.\n\n이제 진짜 몬트리올 이야기가 시작됩니다.',
+                  "You booked the flight,\nfound a place,\nand made your first friend.\n\nYour Montréal story starts now.",
+                  "Le vol est réservé,\nle logement est trouvé,\nle premier ami est là.\n\nVotre histoire montréalaise commence.",
+                )}
+              </p>
+              {/* All items shown as completed yellow rows */}
+              <div className="space-y-1 text-left mb-4">
+                {CHECKLIST.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => toggle(item.id)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
+                    style={{ background: 'var(--y-l)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--y)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--y-l)' }}
                   >
-                    {isDone && (
-                      <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round">
-                        <polyline points="2,6 5,9 10,3"/>
-                      </svg>
-                    )}
-                  </span>
-                  <span className={`text-[13px] font-medium ${isDone ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
-                    {tri(item, lang)}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+                    <span className="text-base leading-none shrink-0 w-5 text-center select-none">✅</span>
+                    <span className="text-[13px] font-medium text-gray-800">
+                      {tri(item, lang)}{t(' 완료', ' done', ' fait')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-300">
+                {t('항목을 클릭하면 체크를 해제할 수 있어요.', 'Click any item to uncheck it.', 'Cliquez pour décocher.')}
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* ── Community CTA — only at 100% ── */}
+        {pct === 100 && (
+          <div className="border border-gray-200 rounded-2xl px-5 py-5 mb-6 bg-white">
+            <p className="text-[15px] font-bold text-gray-900 mb-1">
+              {t('학교 친구들아, 모여라!', 'Ready to meet people?', 'Prêt·e à rencontrer des gens ?')}
+            </p>
+            <p className="text-[13px] text-gray-500 mb-4">
+              {t(
+                '몬트리올에서 새로운 사람들을 만나고 싶다면',
+                'If you want to meet new people in Montréal,',
+                'Si vous voulez rencontrer de nouvelles personnes à Montréal,',
+              )}
+            </p>
+            <div className="space-y-2 mb-4">
+              {[
+                { emoji: '🇰🇷', ko: '한국어 클래스',   en: 'Korean class',        fr: 'Cours de coréen'         },
+                { emoji: '🇨🇦', ko: '영어 클래스',     en: 'English class',       fr: "Cours d'anglais"         },
+                { emoji: '🇫🇷', ko: '프랑스어 클래스', en: 'French class',        fr: 'Cours de français'       },
+                { emoji: '🤝',  ko: '언어 교환',        en: 'Language exchange',   fr: 'Échange linguistique'    },
+              ].map(item => (
+                <div
+                  key={item.emoji}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                  style={{ background: 'var(--y-l)' }}
+                >
+                  <span className="text-base leading-none">{item.emoji}</span>
+                  <span className="text-[13px] font-medium text-gray-800">{t(item.ko, item.en, item.fr)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[13px] text-gray-500 mb-5">
+              {t('이 기다리고 있어요.', 'are waiting for you.', 'vous attendent.')}
+            </p>
+            <Link
+              to="/programs"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-colors hover:opacity-90"
+              style={{ background: 'var(--y)', color: '#111' }}
+            >
+              {t('프로그램 둘러보기 →', 'Browse Programs →', 'Voir les programmes →')}
+            </Link>
+          </div>
+        )}
 
         {/* ── Essential Tools ── */}
         <div className="mb-6">
