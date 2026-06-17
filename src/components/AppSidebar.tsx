@@ -105,6 +105,17 @@ function IconLanguage() {
   )
 }
 
+function IconRadar({ active }: { active?: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth={active ? 2.2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="2"/>
+      <path d="M16.24 7.76a6 6 0 010 8.49M7.76 16.24a6 6 0 010-8.49"/>
+      <path d="M20.07 3.93a10 10 0 010 14.14M3.93 20.07a10 10 0 010-14.14"/>
+    </svg>
+  )
+}
+
 function IconMapPin({ active }: { active?: boolean }) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -142,6 +153,7 @@ const NAV = [
   { to: '/programs', icon: IconPrograms,  ko: '프로그램', en: 'Programs',  fr: 'Programmes', exact: false },
   { to: '/board',    icon: IconCommunity, ko: '커뮤니티', en: 'Community', fr: 'Communauté', exact: false },
   { to: '/news',     icon: IconNews,      ko: '뉴스',    en: 'News',      fr: 'Actualités', exact: false },
+  { to: '/radar',    icon: IconRadar,     ko: '레이더',  en: 'Radar',     fr: 'Radar',      exact: false },
 ]
 
 const TOOLS_NAV = [
