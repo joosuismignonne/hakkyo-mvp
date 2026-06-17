@@ -564,26 +564,32 @@ const COMMUNITY_TIPS: Record<string, CommunityTip[]> = {
     { author: 'Min',     text: '경유 시간이 길어도 괜찮았어요. 도착한 순간 모든 게 시작됐으니까요.' },
   ],
   sim: [
-    { author: 'Jiyeon',  text: 'Fizz eSIM activated before I even landed. By the time I was on the 747 bus I already had data.' },
-    { author: 'Taeyang', text: 'I started with Public Mobile ($15/mo) for the first month, then switched to Fizz once I knew I was staying.' },
+    { author: 'Jiyeon',  text: '비행기 타기 전에 Fizz eSIM 미리 설치했어요. 747 버스 탈 때 이미 데이터 연결돼 있었고요.' },
+    { author: 'Taeyang', text: '처음엔 Public Mobile로 시작했다가 한 달 뒤에 Fizz로 갔어요. 가격 차이가 별로 없어서 그냥 Fizz로 시작할 걸 싶었어요.' },
   ],
   banking: [
-    { author: 'Haein',   text: 'TD student account opened in 20 minutes with just my study permit and passport. No credit history needed.' },
-    { author: 'Joon',    text: 'Get both TD (day-to-day) and the Scotiabank StartRight credit card. It builds your Canadian credit score from month one.' },
+    { author: 'Haein',   text: 'TD 학생 계좌 스터디 퍼밋이랑 여권만 들고 갔는데 20분 만에 됐어요. 신용 기록 없어도 괜찮았어요.' },
+    { author: 'Joon',    text: 'TD 체킹 계좌 만들고 Scotiabank StartRight 카드도 같이 만들었어요. 한국 크레딧 기록이 없어서 캐나다 크레딧부터 쌓아야 했거든요.' },
   ],
   transport: [
-    { author: 'Mirae',   text: 'The 747 bus from the airport was easy. 50 minutes to downtown and my credit card worked right at the bus door.' },
-    { author: 'Sungmin', text: 'BIXI is worth it May–October if you live on the Plateau. Faster than the metro for short trips.' },
+    { author: 'Mirae',   text: '공항에서 747 버스 타고 다운타운까지 왔어요. 50분 걸리는데 카드 대면 바로 됐어요.' },
+    { author: 'Sungmin', text: '플라토에 살면 BIXI 정말 유용해요. 지하철보다 짧은 거리에선 훨씬 빨라요.' },
   ],
   stay: [
-    { author: 'Yeonsu',  text: 'Airbnb in the Plateau for 3 weeks, then found my apartment on Kijiji and moved before the month ended.' },
-    { author: 'Clara',   text: 'Facebook Marketplace had good furnished sublets in Mile End. Message in French even if basic — it helps.' },
+    { author: 'Yeonsu',  text: '처음 3주 Airbnb 잡고 그 사이에 Kijiji로 아파트 찾았어요. 생각보다 빨리 구해졌어요.' },
+    { author: 'Clara',   text: 'Facebook Marketplace에서 Mile End 퍼니쉬드 서블렛 봤어요. 프랑스어로 메시지 보냈는데 기본적인 수준이어도 반응이 더 좋았어요.' },
   ],
-  sin: [],
-  licence: [],
+  sin: [
+    { author: 'Jiho',    text: 'Service Canada에 직접 갔어요. 줄이 좀 길었지만 서류만 다 들고 가면 그 자리에서 바로 받아요.' },
+    { author: 'Eunji',   text: '온라인으로 신청하면 우편으로 오는데 2주 정도 걸렸어요. 급하지 않으면 온라인이 편해요.' },
+  ],
+  licence: [
+    { author: 'Minjae',  text: 'SAAQ 가기 전에 예약 꼭 하세요. 안 하면 몇 시간 기다릴 수 있어요.' },
+    { author: 'Soyeon',  text: '한국 면허증 공증 번역이 필요해요. 미리 준비해 가면 한 번에 끝나요.' },
+  ],
   language: [
-    { author: 'Jiyeon',  text: 'I started going to language exchange meetups in my second week. My French was terrible but nobody cared. It is how you actually learn.' },
-    { author: 'Minjun',  text: 'The Korean community here helped me settle in, but switching to French at the coffee shop — even badly — opened more doors than I expected.' },
+    { author: 'Jiyeon',  text: '2주 차에 언어 교환 나갔어요. 프랑스어 진짜 못 했는데 아무도 신경 안 썼어요. 그냥 말하면 되더라고요.' },
+    { author: 'Minjun',  text: '카페에서 프랑스어로 주문해봤어요. 엉망이었는데도 점원이 같이 웃어줬어요. 그때부터 덜 무서웠어요.' },
   ],
 }
 
@@ -629,40 +635,82 @@ function PrepareList({ items, lang }: { items: Tri[]; lang: string }) {
 }
 
 function CommunityExperience({ section }: { section: string }) {
-  const { lang, t } = useLang()
+  const { t } = useLang()
   const tips = COMMUNITY_TIPS[section] ?? []
+  if (tips.length === 0) return null
+  return (
+    <div className="border-t border-gray-100 pt-4 space-y-2.5">
+      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
+        {t('커뮤니티 경험', 'Community Experience', 'Expérience communautaire')}
+      </p>
+      {tips.map((tip, i) => (
+        <div key={i} className="flex gap-2.5">
+          <div
+            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
+            style={{ background: 'var(--y)', color: '#111' }}
+          >
+            {tip.author[0]}
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-700 mb-0.5">{tip.author}</p>
+            <p className="text-[12px] text-gray-500 leading-[1.7]">{tip.text}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CommunityCTA({ to = '/board' }: { to?: string }) {
+  const { t } = useLang()
   return (
     <div className="border-t border-gray-100 pt-4">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
-          {t('커뮤니티 경험', 'Community Experience', 'Expérience communautaire')}
-        </p>
-        <Link to="/board" className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
-          {t('경험 공유하기 →', 'Share yours →', 'Partagez la vôtre →')}
-        </Link>
+      <p className="text-[13px] font-semibold text-gray-800 mb-1">
+        {t('비슷한 고민을 했던 사람들에게 물어보세요.', 'Ask people who went through the same thing.', 'Demandez à ceux qui sont passés par là.')}
+      </p>
+      <p className="text-[12px] text-gray-400 mb-3">
+        {t('이미 몬트리올에 살고 있는 사람들에게 직접 물어볼 수 있습니다.', 'You can ask people who already live in Montréal.', 'Vous pouvez demander à des personnes qui vivent déjà à Montréal.')}
+      </p>
+      <Link
+        to={to}
+        className="inline-flex items-center px-4 py-2 rounded-lg text-[12px] font-semibold border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+      >
+        {t('커뮤니티에 물어보기 →', 'Ask the community →', 'Demander à la communauté →')}
+      </Link>
+    </div>
+  )
+}
+
+// ─── Tool panels ──────────────────────────────────────────────────────────────
+
+// ─── Action link helpers ──────────────────────────────────────────────────────
+
+function ActionLinks({ label, items }: {
+  label: string
+  items: { name: string; href: string; primary?: boolean }[]
+}) {
+  const cls = (primary?: boolean) =>
+    `inline-flex items-center px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
+      primary ? '' : 'border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+    }`
+  const style = (primary?: boolean) => primary ? { background: 'var(--y)', color: '#111' } : undefined
+
+  return (
+    <div>
+      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {items.map(item =>
+          item.href.startsWith('/') ? (
+            <Link key={item.name} to={item.href} className={cls(item.primary)} style={style(item.primary)}>
+              {item.name}
+            </Link>
+          ) : (
+            <a key={item.name} href={item.href} target="_blank" rel="noopener noreferrer" className={cls(item.primary)} style={style(item.primary)}>
+              {item.name}
+            </a>
+          )
+        )}
       </div>
-      {tips.length > 0 ? (
-        <div className="space-y-2">
-          {tips.map((tip, i) => (
-            <div key={i} className="flex gap-2.5 bg-gray-50 rounded-xl px-3 py-2.5">
-              <div
-                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
-                style={{ background: 'var(--y)', color: '#111' }}
-              >
-                {tip.author[0]}
-              </div>
-              <p className="text-[12px] text-gray-600 leading-snug">
-                <span className="font-semibold text-gray-800">{tip.author} — </span>
-                {tip.text}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-[12px] text-gray-400">
-          {t('아직 공유된 경험이 없습니다. 첫 번째 주인공이 되어보세요.', 'No experiences shared yet. Be the first.', "Aucune expérience partagée pour l'instant. Soyez le premier.")}
-        </p>
-      )}
     </div>
   )
 }
@@ -670,417 +718,200 @@ function CommunityExperience({ section }: { section: string }) {
 // ─── Tool panels ──────────────────────────────────────────────────────────────
 
 function FlightsPanel() {
-  const { lang, t } = useLang()
-
+  const { t } = useLang()
   return (
     <div className="space-y-5">
-      {/* Emotional introduction */}
-      <div>
-        <p className="text-[15px] font-bold text-gray-900 mb-3">
-          {t('몬트리올로 가는 첫 번째 티켓', 'Your first ticket to Montréal', 'Votre premier billet pour Montréal')}
-        </p>
-        <p className="text-[13px] text-gray-600 leading-[1.9]">
-          {t(
-            '많은 사람들이 항공권을 예약하는 순간,\n비로소 이 도시가 현실로 느껴졌다고 말합니다.\n\n설레기도 하고,\n무섭기도 하고,\n조금은 믿기지 않을 수도 있습니다.\n\n그래도 괜찮습니다.\n\n우리도 같은 길을 걸어왔으니까요.',
-            'Many people say it was the moment they booked the flight\nthat Montréal finally felt real.\n\nExcited.\nA little scared.\nMaybe not quite believing it yet.\n\nThat\'s okay.\n\nWe all walked the same road.',
-            'Beaucoup de personnes disent que c\'est en réservant leur billet\nque Montréal est devenu réel.\n\nEnthousiastes.\nUn peu effrayées.\nPas encore tout à fait convaincues.\n\nC\'est normal.\n\nNous sommes tous passés par là.',
-          ).split('\n').map((line, i) => (
-            <span key={i}>{line || <>&nbsp;</>}<br /></span>
-          ))}
-        </p>
-      </div>
-
-      {/* Flight tools */}
-      <div>
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">
-          {t('항공권 검색', 'Search Flights', 'Rechercher des vols')}
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          <a
-            href="https://www.google.com/travel/flights"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center rounded-xl py-2.5 text-[13px] font-bold transition-colors"
-            style={{ background: 'var(--y)', color: '#111' }}
-          >
-            Google Flights
-          </a>
-          <a
-            href="https://www.skyscanner.ca"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center rounded-xl py-2.5 text-[13px] font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-          >
-            Skyscanner
-          </a>
-          <a
-            href="https://www.kayak.ca"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center rounded-xl py-2.5 text-[13px] font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-          >
-            Kayak
-          </a>
-        </div>
-      </div>
-
-      {/* Community stories */}
+      <p className="text-[13px] text-gray-600 leading-relaxed">
+        {t(
+          '항공권을 예약하는 순간, 많은 사람들이 처음으로 몬트리올이 현실처럼 느껴졌다고 말합니다. 가격을 비교하는 것도 중요하지만, 언제 떠날 준비가 되었는지도 중요합니다.',
+          'Many people say it was the moment they booked the flight that Montréal finally felt real. Comparing prices matters, but so does knowing when you\'re ready to go.',
+          "Beaucoup disent que c'est en réservant leur billet que Montréal est devenu réel. Comparer les prix compte, mais savoir quand vous êtes prêt aussi.",
+        )}
+      </p>
+      <ActionLinks
+        label={t('추천 검색 도구', 'Flight Search Tools', 'Outils de recherche de vols')}
+        items={[
+          { name: 'Google Flights', href: 'https://www.google.com/travel/flights', primary: true },
+          { name: 'Skyscanner', href: 'https://www.skyscanner.ca' },
+          { name: 'Kayak', href: 'https://www.kayak.ca' },
+        ]}
+      />
       <CommunityExperience section="flights" />
+      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function SIMPanel() {
-  const { lang, t } = useLang()
+  const { t } = useLang()
   return (
-    <div className="space-y-3">
-      <HakkyoNote text={t(
-        '출발 전에 SIM을 준비하세요 — Fizz eSIM은 도착 즉시 작동합니다. 공항에서 길을 찾으려면 데이터가 필요합니다.',
-        'Get a SIM before you leave — Fizz eSIM works the moment you land. You need data from the moment you arrive.',
-        "Obtenez une SIM avant de partir — la eSIM Fizz fonctionne dès votre atterrissage.",
-      )} />
-      {SIM_PROVIDERS.map(p => (
-        <div key={p.name} className="border border-gray-200 rounded-2xl px-4 py-4 bg-white">
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[15px] font-bold text-gray-900">{p.name}</span>
-              {p.popular && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'var(--y)', color: '#111' }}>
-                  {t('가장 인기 있음', 'Most popular', 'Le plus populaire')}
-                </span>
-              )}
-            </div>
-            <span className="text-[13px] font-bold text-gray-700 shrink-0">{p.price}</span>
-          </div>
-          <p className="text-[12px] text-gray-500 mb-2">{t('추천 대상:', 'Best for:', 'Idéal pour :')} {tri(p.bestFor, lang)}</p>
-          <div className="flex gap-2 flex-wrap mb-2">
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${p.esim ? 'bg-gray-100 text-gray-700' : 'bg-gray-50 text-gray-400'}`}>
-              {p.esim ? 'eSIM ✓' : 'eSIM ✗'}
-            </span>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-              {t('약정 없음', 'No contract', 'Sans contrat')}
-            </span>
-          </div>
-          <ul className="space-y-0.5 mb-3">
-            {p.pros.map((pro, i) => (
-              <li key={i} className="flex items-start gap-1.5 text-[12px] text-gray-600">
-                <span className="text-gray-400 mt-0.5 shrink-0">–</span>{tri(pro, lang)}
-              </li>
-            ))}
-          </ul>
-          <div className="flex items-start gap-2 justify-between">
-            <p className="text-[11px] text-amber-900 font-medium italic leading-snug flex-1">"{tri(p.hakkyoNote, lang)}"</p>
-            <ExtLink href={p.url} className="shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors">
-              {t('방문하기 →', 'Visit →', 'Visiter →')}
-            </ExtLink>
-          </div>
-        </div>
-      ))}
+    <div className="space-y-5">
+      <p className="text-[13px] text-gray-600 leading-relaxed">
+        {t(
+          '출발 전에 SIM을 준비해두면 공항에서 내리는 순간부터 데이터를 쓸 수 있습니다. 특히 Fizz eSIM은 비행기 안에서 설치할 수 있어요.',
+          'Setting up a SIM before you leave means you have data the moment you land. Fizz eSIM can be installed on the plane.',
+          "Préparer une SIM avant de partir signifie avoir des données dès l'atterrissage. La eSIM Fizz peut être installée dans l'avion.",
+        )}
+      </p>
+      <ActionLinks
+        label={t('추천 통신사', 'Recommended Carriers', 'Opérateurs recommandés')}
+        items={[
+          { name: 'Fizz', href: 'https://fizz.ca', primary: true },
+          { name: 'Public Mobile', href: 'https://www.publicmobile.ca' },
+          { name: 'Koodo', href: 'https://www.koodomobile.com' },
+        ]}
+      />
       <CommunityExperience section="sim" />
+      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function BankingPanel() {
-  const { lang, t } = useLang()
+  const { t } = useLang()
   return (
-    <div className="space-y-3">
-      <HakkyoNote text={t(
-        '도착 후 2주 안에 계좌를 개설하세요. 임대료 납부, 이체 수령, 신용 기록 구축에 캐나다 은행 계좌가 필요합니다.',
-        'Open your account in the first two weeks. You need a Canadian bank account to pay rent, receive transfers, and build credit history.',
-        "Ouvrez votre compte dans les deux premières semaines. Vous en avez besoin pour payer le loyer, recevoir des virements et construire un historique de crédit.",
-      )} />
-      {BANKS.map(b => {
-        const bs = badgeStyle(b.badgeColor)
-        return (
-          <div key={b.name} className="border border-gray-200 rounded-2xl px-4 py-4 bg-white">
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[15px] font-bold text-gray-900">{b.name}</span>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={bs}>{tri(b.badge, lang)}</span>
-              </div>
-              <ExtLink href={b.url} className="shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors">
-                {t('방문하기 →', 'Visit →', 'Visiter →')}
-              </ExtLink>
-            </div>
-            <ul className="space-y-0.5 mb-2">
-              {b.pros.map((pro, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-[12px] text-gray-600">
-                  <span className="text-gray-400 mt-0.5 shrink-0">–</span>{tri(pro, lang)}
-                </li>
-              ))}
-            </ul>
-            <p className="text-[11px] text-gray-400 mb-2">{t('필요 서류:', 'Documents:', 'Documents :')} {tri(b.documents, lang)}</p>
-            <p className="text-[11px] text-amber-900 font-medium italic">"{tri(b.hakkyoNote, lang)}"</p>
-          </div>
-        )
-      })}
+    <div className="space-y-5">
+      <p className="text-[13px] text-gray-600 leading-relaxed">
+        {t(
+          '도착 후 2주 안에 계좌를 만드세요. 임대료 납부, 이체 수령, 신용 기록 시작 — 캐나다 은행 계좌 없이는 할 수 없는 일들이 많습니다.',
+          'Open an account within two weeks of arriving. Paying rent, receiving transfers, and building credit — many things require a Canadian bank account.',
+          "Ouvrez un compte dans les deux premières semaines. Loyer, virements et historique de crédit nécessitent tous un compte bancaire canadien.",
+        )}
+      </p>
+      <ActionLinks
+        label={t('추천 은행', 'Recommended Banks', 'Banques recommandées')}
+        items={[
+          { name: 'TD Bank', href: 'https://www.td.com/ca/en/personal-banking', primary: true },
+          { name: 'Scotiabank', href: 'https://www.scotiabank.com' },
+          { name: 'Desjardins', href: 'https://www.desjardins.com' },
+          { name: 'RBC', href: 'https://www.rbcroyalbank.com' },
+        ]}
+      />
       <CommunityExperience section="banking" />
+      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function TransportPanel() {
-  const { lang, t } = useLang()
+  const { t } = useLang()
   return (
-    <div className="space-y-3">
-      <HakkyoNote text={t(
-        '몬트리올에서 자동차는 필요 없습니다. 지하철과 버스로 대부분의 도시를 이동할 수 있습니다. OPUS 카드를 첫 주에 구매하세요.',
-        'You do not need a car in Montréal. Metro + bus covers most of the city. Get the OPUS card in your first week.',
-        "Vous n'avez pas besoin de voiture à Montréal. Métro + bus couvre la majeure partie de la ville. Obtenez la carte OPUS dans votre première semaine.",
-      )} />
-      {TRANSPORT_ITEMS.map(item => (
-        <div key={item.url} className="border border-gray-200 rounded-2xl px-4 py-4 bg-white">
-          <div className="flex items-start justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500"><TransportIcon k={item.iconKey} /></span>
-              <span className="text-[15px] font-bold text-gray-900">{tri(item.name, lang)}</span>
-            </div>
-            <ExtLink href={item.url} className="shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors">
-              {t('정보 →', 'Info →', 'Infos →')}
-            </ExtLink>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('소개', 'What', 'Description')}</p>
-              <p className="text-[12px] text-gray-700 leading-snug">{tri(item.what, lang)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('구매 방법', 'Where to get', 'Où obtenir')}</p>
-              <p className="text-[12px] text-gray-700 leading-snug">{tri(item.where, lang)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('비용', 'Cost', 'Coût')}</p>
-              <p className="text-[12px] text-gray-700 leading-snug">{tri(item.cost, lang)}</p>
-            </div>
-          </div>
-          <p className="text-[11px] text-amber-900 font-medium italic">"{tri(item.hakkyoNote, lang)}"</p>
-        </div>
-      ))}
+    <div className="space-y-5">
+      <p className="text-[13px] text-gray-600 leading-relaxed">
+        {t(
+          '몬트리올에서 자동차는 필요 없습니다. 지하철과 버스로 도시 대부분을 이동할 수 있어요. 첫 주에 OPUS 카드를 만들어두면 됩니다.',
+          'You do not need a car in Montréal. Metro and bus cover most of the city. Get your OPUS card in the first week.',
+          "Vous n'avez pas besoin de voiture à Montréal. Le métro et le bus couvrent la majeure partie de la ville. Obtenez votre carte OPUS la première semaine.",
+        )}
+      </p>
+      <ActionLinks
+        label={t('교통 정보', 'Transit Info', 'Informations de transport')}
+        items={[
+          { name: 'STM (Métro & Bus)', href: 'https://www.stm.info', primary: true },
+          { name: 'BIXI (자전거)', href: 'https://bixi.com' },
+          { name: '747 공항 버스', href: 'https://www.stm.info/en/info/networks/bus/shuttle/more-about-747-YUL-Aeroport-P-E-Trudeau-Montreal-shuttle' },
+        ]}
+      />
       <CommunityExperience section="transport" />
+      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function StayPanel() {
-  const { lang, t } = useLang()
+  const { t } = useLang()
   return (
-    <div className="space-y-3">
-      <HakkyoNote text={t(
-        '도착 전에 2~3주의 임시 숙소를 예약하세요. 그 시간을 활용해 동네를 둘러보고 아파트를 찾으세요.',
-        'Book 2–3 weeks of temporary housing before you arrive. Use that time to visit neighbourhoods and find your real apartment.',
-        "Réservez 2–3 semaines de logement temporaire avant d'arriver. Utilisez ce temps pour visiter des quartiers et trouver votre appartement.",
-      )} />
-      {STAY_OPTIONS.map(s => (
-        <div key={s.url} className="border border-gray-200 rounded-2xl px-4 py-4 bg-white">
-          <div className="flex items-start justify-between gap-3 mb-1">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-[15px] font-bold text-gray-900">{tri(s.name, lang)}</span>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{tri(s.type, lang)}</span>
-              </div>
-              <p className="text-[12px] font-semibold text-gray-600">{s.priceRange}</p>
-            </div>
-            <ExtLink href={s.url} className="shrink-0 text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors">
-              {t('방문하기 →', 'Visit →', 'Visiter →')}
-            </ExtLink>
-          </div>
-          <p className="text-[12px] text-gray-500 mb-2">{t('추천 상황:', 'Good for:', 'Idéal pour :')} {tri(s.goodFor, lang)}</p>
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <div>{s.pros.map((pro, i) => (
-              <div key={i} className="flex items-start gap-1 text-[11px] text-gray-600">
-                <span className="text-gray-400 shrink-0">–</span> {tri(pro, lang)}
-              </div>
-            ))}</div>
-            <div>{s.cons.map((con, i) => (
-              <div key={i} className="flex items-start gap-1 text-[11px] text-gray-500">
-                <span className="text-gray-300 shrink-0">×</span> {tri(con, lang)}
-              </div>
-            ))}</div>
-          </div>
-          <p className="text-[11px] text-amber-900 font-medium italic">"{tri(s.hakkyoNote, lang)}"</p>
-        </div>
-      ))}
+    <div className="space-y-5">
+      <p className="text-[13px] text-gray-600 leading-relaxed">
+        {t(
+          '처음엔 2~3주 임시 숙소부터 잡으세요. 동네를 직접 걸어보고 나서 아파트를 구하는 게 훨씬 낫습니다.',
+          'Start with 2–3 weeks of temporary housing. It is much better to find an apartment after you have walked the neighbourhoods in person.',
+          "Commencez par 2–3 semaines de logement temporaire. Il vaut mieux trouver un appartement après avoir exploré les quartiers en personne.",
+        )}
+      </p>
+      <ActionLinks
+        label={t('임시 숙소 검색', 'Temporary Housing', 'Hébergement temporaire')}
+        items={[
+          { name: 'Airbnb', href: 'https://www.airbnb.ca', primary: true },
+          { name: 'Facebook Marketplace', href: 'https://www.facebook.com/marketplace' },
+          { name: 'Kijiji', href: 'https://www.kijiji.ca' },
+        ]}
+      />
       <CommunityExperience section="stay" />
+      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function SINPanel() {
-  const { lang, t } = useLang()
-  const d = SIN_DATA
+  const { t } = useLang()
   return (
-    <div className="space-y-4">
-      <HakkyoNote text={tri(d.hakkyoNote, lang)} />
-      <div className="border border-gray-200 rounded-2xl px-4 py-4 bg-white space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('SIN이란?', 'What is it?', "Qu'est-ce que c'est ?")}</p>
-            <p className="text-[13px] text-gray-700 leading-snug">{tri(d.what, lang)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('왜 필요한가요?', 'Why do I need it?', "Pourquoi en ai-je besoin ?")}</p>
-            <p className="text-[13px] text-gray-700 leading-snug">{tri(d.why, lang)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('어디서 신청하나요?', 'Where to apply?', 'Où faire la demande ?')}</p>
-            <p className="text-[13px] text-gray-700 leading-snug">{tri(d.where, lang)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('준비물', 'What to prepare', 'À préparer')}</p>
-            <PrepareList items={d.prepare} lang={lang} />
-          </div>
-        </div>
-        <ExtLink
-          href={d.url}
-          className="flex items-center justify-between w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-        >
-          <span className="text-[13px] font-semibold">{t('공식 SIN 안내 →', 'Official SIN Guide →', 'Guide officiel du NAS →')}</span>
-          <span className="text-[11px] text-gray-400">canada.ca</span>
-        </ExtLink>
-      </div>
+    <div className="space-y-5">
+      <p className="text-[13px] text-gray-600 leading-relaxed">
+        {t(
+          'SIN(Social Insurance Number)은 캐나다에서 일하거나 정부 서비스를 받기 위해 필요한 9자리 번호입니다. 도착 후 되도록 빨리 신청하세요.',
+          'The SIN (Social Insurance Number) is a 9-digit number needed to work or access government services in Canada. Apply as soon as possible after arriving.',
+          "Le NAS (Numéro d'assurance sociale) est un numéro à 9 chiffres requis pour travailler ou accéder aux services gouvernementaux au Canada. Faites votre demande dès que possible.",
+        )}
+      </p>
+      <ActionLinks
+        label={t('신청 방법', 'How to Apply', 'Comment faire la demande')}
+        items={[
+          { name: 'Service Canada (온라인)', href: 'https://www.canada.ca/en/employment-social-development/services/sin/apply.html', primary: true },
+          { name: 'Service Canada (방문)', href: 'https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng' },
+        ]}
+      />
       <CommunityExperience section="sin" />
+      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function DriverLicencePanel() {
-  const { lang, t } = useLang()
-  const d = LICENCE_DATA
+  const { t } = useLang()
   return (
-    <div className="space-y-4">
-      <HakkyoNote text={tri(d.hakkyoNote, lang)} />
-      <div className="border border-gray-200 rounded-2xl px-4 py-4 bg-white space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('퀘벡 면허증이란?', 'What is it?', "Qu'est-ce que c'est ?")}</p>
-            <p className="text-[13px] text-gray-700 leading-snug">{tri(d.what, lang)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('왜 필요한가요?', 'Why do I need it?', "Pourquoi en ai-je besoin ?")}</p>
-            <p className="text-[13px] text-gray-700 leading-snug">{tri(d.why, lang)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('어디서 신청하나요?', 'Where to apply?', 'Où faire la demande ?')}</p>
-            <p className="text-[13px] text-gray-700 leading-snug">{tri(d.where, lang)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{t('준비물', 'What to prepare', 'À préparer')}</p>
-            <PrepareList items={d.prepare} lang={lang} />
-          </div>
-        </div>
-        <ExtLink
-          href={d.url}
-          className="flex items-center justify-between w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-        >
-          <span className="text-[13px] font-semibold">{t('공식 SAAQ 안내 →', 'Official SAAQ Guide →', 'Guide officiel SAAQ →')}</span>
-          <span className="text-[11px] text-gray-400">saaq.gouv.qc.ca</span>
-        </ExtLink>
-      </div>
+    <div className="space-y-5">
+      <p className="text-[13px] text-gray-600 leading-relaxed">
+        {t(
+          '퀘벡 운전 면허증은 신분증으로도 쓰입니다. 한국 면허증이 있으면 필기시험 없이 전환할 수 있어요. SAAQ에 예약 후 방문하세요.',
+          'A Québec driver\'s licence doubles as ID. If you have a Korean licence, you can convert it without a written test. Book an appointment at SAAQ first.',
+          "Le permis de conduire québécois sert aussi de pièce d'identité. Si vous avez un permis coréen, vous pouvez le convertir sans examen écrit. Prenez rendez-vous à la SAAQ.",
+        )}
+      </p>
+      <ActionLinks
+        label={t('신청 정보', 'Apply', 'Faire une demande')}
+        items={[
+          { name: 'SAAQ', href: 'https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence', primary: true },
+        ]}
+      />
       <CommunityExperience section="licence" />
+      <CommunityCTA to="/board" />
     </div>
   )
 }
 
 function LanguagePanel() {
-  const { lang, t } = useLang()
-
-  const programs = [
-    {
-      id: 'korean',
-      flag: '🇰🇷',
-      title: { ko: '한국어 프로그램', en: 'Korean Program', fr: 'Programme coréen' } as Tri,
-      desc:  {
-        ko: '일상 대화를 통해 자연스러운 한국어를 배웁니다.',
-        en: 'Learn everyday Korean through real conversations.',
-        fr: 'Apprenez le coréen du quotidien à travers de vraies conversations.',
-      } as Tri,
-      to: '/programs?language=korean',
-      cta: { ko: '살펴보기', en: 'Explore', fr: 'Explorer' } as Tri,
-    },
-    {
-      id: 'english',
-      flag: '🇨🇦',
-      title: { ko: '영어 프로그램', en: 'English Program', fr: 'Programme anglais' } as Tri,
-      desc:  {
-        ko: '몬트리올에서 영어로 자신있게 말하는 연습을 합니다.',
-        en: 'Build confidence speaking English in Montréal.',
-        fr: "Gagnez en confiance pour parler anglais à Montréal.",
-      } as Tri,
-      to: '/programs?language=english',
-      cta: { ko: '살펴보기', en: 'Explore', fr: 'Explorer' } as Tri,
-    },
-    {
-      id: 'french',
-      flag: '🇫🇷',
-      title: { ko: '프랑스어 프로그램', en: 'French Program', fr: 'Programme français' } as Tri,
-      desc:  {
-        ko: '퀘벡 생활에 필요한 실용 프랑스어를 배웁니다.',
-        en: 'Learn practical French for Québec life.',
-        fr: 'Apprenez le français pratique pour la vie au Québec.',
-      } as Tri,
-      to: '/programs?language=french',
-      cta: { ko: '살펴보기', en: 'Explore', fr: 'Explorer' } as Tri,
-    },
-    {
-      id: 'exchange',
-      flag: '🤝',
-      title: { ko: '언어 교환', en: 'Language Exchange', fr: 'Échange linguistique' } as Tri,
-      desc:  {
-        ko: '사람들을 만나고 자연스럽게 언어를 연습합니다.',
-        en: 'Meet people and practice naturally.',
-        fr: 'Rencontrez des gens et pratiquez naturellement.',
-      } as Tri,
-      to: '/programs?type=language-exchange',
-      cta: { ko: '찾아보기', en: 'Find people', fr: 'Trouver des gens' } as Tri,
-    },
-  ]
-
+  const { t } = useLang()
   return (
-    <div className="space-y-4">
-      {/* Quote block */}
-      <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
-        <p className="text-[15px] font-bold text-gray-900 mb-2">
-          {t('언어는 도시로 들어가는 문입니다.', 'Language is the door into a city.', "La langue est la porte d'entrée d'une ville.")}
-        </p>
-        <p className="text-[13px] text-gray-500 leading-relaxed">
-          {t(
-            '완벽한 문법은 필요 없습니다.\n말을 시작할 이유만 있으면 됩니다.',
-            'You do not need perfect grammar.\nYou only need a reason to start talking.',
-            "Vous n'avez pas besoin d'une grammaire parfaite.\nVous avez juste besoin d'une raison de commencer à parler.",
-          )}
-        </p>
-      </div>
-
-      {/* Description */}
-      <p className="text-[13px] text-gray-500 leading-relaxed px-1">
+    <div className="space-y-5">
+      <p className="text-[13px] text-gray-600 leading-relaxed">
         {t(
-          '언어는 학교 과목이 아닙니다. 새로운 도시에서 길을 찾는 방법입니다.\n첫 번째 대화, 첫 번째 커피 주문, 첫 번째 현지 친구 — 많은 것들이 언어에서 시작됩니다.',
-          'Language is not a school subject. It is how people find their way through a new city.\nYour first conversation, your first coffee order, and your first local friend often begin with language.',
-          "La langue n'est pas une matière scolaire. C'est la façon dont les gens trouvent leur chemin dans une nouvelle ville.\nVotre première conversation, votre première commande de café et votre premier ami local commencent souvent par la langue.",
+          '완벽한 문법은 필요 없습니다. 말을 시작할 이유만 있으면 됩니다. 언어 교환 모임, 수업, 카페 대화 — 어디서든 시작할 수 있어요.',
+          'You do not need perfect grammar. You only need a reason to start talking. Language exchange, classes, café conversations — you can start anywhere.',
+          "Vous n'avez pas besoin d'une grammaire parfaite. Il vous suffit d'une raison de commencer à parler. Échange linguistique, cours, conversations au café — vous pouvez commencer partout.",
         )}
       </p>
-
-      {/* Program cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {programs.map(p => (
-          <div key={p.id} className="border border-gray-200 rounded-2xl px-4 py-4 bg-white flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-[18px]">{p.flag}</span>
-              <span className="text-[14px] font-bold text-gray-900">{tri(p.title, lang)}</span>
-            </div>
-            <p className="text-[12px] text-gray-500 leading-snug flex-1">{tri(p.desc, lang)}</p>
-            <Link
-              to={p.to}
-              className="inline-flex items-center text-[12px] font-semibold text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              {tri(p.cta, lang)} →
-            </Link>
-          </div>
-        ))}
-      </div>
-
+      <ActionLinks
+        label={t('HAKKYO 언어 프로그램', 'HAKKYO Language Programs', 'Programmes linguistiques HAKKYO')}
+        items={[
+          { name: t('한국어', 'Korean', 'Coréen'), href: '/programs?language=korean', primary: true },
+          { name: t('영어', 'English', 'Anglais'), href: '/programs?language=english' },
+          { name: t('프랑스어', 'French', 'Français'), href: '/programs?language=french' },
+          { name: t('언어 교환', 'Language Exchange', 'Échange linguistique'), href: '/programs?type=language-exchange' },
+        ]}
+      />
       <CommunityExperience section="language" />
+      <CommunityCTA to="/board" />
     </div>
   )
 }
