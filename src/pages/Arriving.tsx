@@ -7,7 +7,7 @@
  * Future milestone hook: CHECKLIST items with milestone:true will feed
  * "My Montréal Journey" when that feature is built. Do not remove the flag.
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 
@@ -27,6 +27,99 @@ const CHECKLIST = [
 ]
 
 const PROGRESS_KEY = 'hakkyo_firststeps'
+
+// ─── Journey messages by completion % ────────────────────────────────────────
+
+type Tri = { ko: string; en: string; fr: string }
+
+const JOURNEY_MESSAGES: Array<{ min: number; max: number } & Tri> = [
+  {
+    min: 0, max: 0,
+    ko: '몬트리올은 아직 지도 위의 한 점일 뿐입니다.',
+    en: 'Montréal is still just a dot on the map.',
+    fr: 'Montréal n\'est encore qu\'un point sur la carte.',
+  },
+  {
+    min: 1, max: 24,
+    ko: '첫 발걸음을 내디뎠습니다.',
+    en: 'You\'ve taken your first step.',
+    fr: 'Vous avez fait votre premier pas.',
+  },
+  {
+    min: 25, max: 49,
+    ko: '여정이 시작되었습니다.',
+    en: 'The journey has begun.',
+    fr: 'Le voyage a commencé.',
+  },
+  {
+    min: 50, max: 74,
+    ko: '절반쯤 왔습니다.',
+    en: 'Halfway there.',
+    fr: 'À mi-chemin.',
+  },
+  {
+    min: 75, max: 99,
+    ko: '거의 다 왔습니다.',
+    en: 'Almost there.',
+    fr: 'Vous y êtes presque.',
+  },
+  {
+    min: 100, max: 100,
+    ko: '이제 몬트리올은 목적지가 아닙니다. 당신의 이야기가 시작될 곳입니다.',
+    en: 'Montréal is no longer a destination. It\'s where your story begins.',
+    fr: 'Montréal n\'est plus une destination. C\'est là que votre histoire commence.',
+  },
+]
+
+function getJourneyMessage(pct: number, lang: string): string {
+  const row = JOURNEY_MESSAGES.find(m => pct >= m.min && pct <= m.max) ?? JOURNEY_MESSAGES[0]
+  return lang === 'ko' ? row.ko : lang === 'fr' ? row.fr : row.en
+}
+
+// ─── Milestone messages (shown briefly on item check) ────────────────────────
+
+const MILESTONE_MESSAGES: Record<string, Tri> = {
+  flight: {
+    ko: '진짜 가게 되었네요.',
+    en: 'It\'s really happening.',
+    fr: 'Ça devient réel.',
+  },
+  stay: {
+    ko: '첫 번째 집이 생겼습니다.',
+    en: 'Your first home is waiting.',
+    fr: 'Votre premier chez-vous vous attend.',
+  },
+  sim: {
+    ko: '이제 현지 번호를 사용할 준비가 되었습니다.',
+    en: 'You have a local number now.',
+    fr: 'Vous avez maintenant un numéro local.',
+  },
+  bank: {
+    ko: '몬트리올에서의 금융 생활이 시작됩니다.',
+    en: 'Your financial life in Montréal begins.',
+    fr: 'Votre vie financière à Montréal commence.',
+  },
+  opus: {
+    ko: '도시가 당신의 것이 됩니다.',
+    en: 'The city is yours to explore.',
+    fr: 'La ville s\'ouvre à vous.',
+  },
+  grocery: {
+    ko: '여기서의 일상이 시작됩니다.',
+    en: 'Daily life here starts with this.',
+    fr: 'La vie quotidienne commence ici.',
+  },
+  exchange: {
+    ko: '언어는 도시로 들어가는 문입니다.',
+    en: 'Language is the door into the city.',
+    fr: 'La langue est la porte d\'entrée.',
+  },
+  friend: {
+    ko: '도시는 결국 사람으로 기억됩니다.',
+    en: 'A city is remembered through its people.',
+    fr: 'Une ville se souvient à travers ses gens.',
+  },
+}
 
 // ─── Tool data ────────────────────────────────────────────────────────────────
 
@@ -555,18 +648,34 @@ export default function Arriving() {
     catch { return new Set() }
   })
   const [activeTab, setActiveTab] = useState('flights')
+  const [flash, setFlash] = useState<{ msg: string; visible: boolean } | null>(null)
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     try { localStorage.setItem(PROGRESS_KEY, JSON.stringify([...checked])) }
     catch {}
   }, [checked])
 
+  function showFlash(msg: string) {
+    if (flashTimer.current) clearTimeout(flashTimer.current)
+    setFlash({ msg, visible: true })
+    flashTimer.current = setTimeout(() => {
+      setFlash(f => f ? { ...f, visible: false } : null)
+      flashTimer.current = setTimeout(() => setFlash(null), 350)
+    }, 2500)
+  }
+
   function toggle(id: string) {
+    const willCheck = !checked.has(id)
     setChecked(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+    if (willCheck) {
+      const m = MILESTONE_MESSAGES[id]
+      if (m) showFlash(lang === 'ko' ? m.ko : lang === 'fr' ? m.fr : m.en)
+    }
   }
 
   const pct = Math.round((checked.size / CHECKLIST.length) * 100)
@@ -594,28 +703,47 @@ export default function Arriving() {
 
         {/* ── Progress Tracker ── */}
         <div className="bg-white border border-gray-100 rounded-2xl px-5 py-5 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-[16px] font-bold text-gray-900">
-                {lang === 'ko' ? '나의 몬트리올 준비' : 'Your Montréal Progress'}
-              </h2>
-              <p className="text-[12px] text-gray-400 mt-0.5">
-                {lang === 'ko'
-                  ? '한 걸음씩, 몬트리올에 가까워지고 있습니다.'
-                  : "One step at a time. You're getting closer."}
-              </p>
-            </div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[16px] font-bold text-gray-900">
+              {t('나의 몬트리올 준비', 'Your Montréal Progress', 'Votre Progression')}
+            </h2>
             <div className="text-right shrink-0">
               <span className="text-[22px] font-bold text-gray-900">{pct}%</span>
-              <p className="text-[11px] text-gray-400">complete</p>
+              <p className="text-[11px] text-gray-400">{t('완료', 'complete', 'complété')}</p>
             </div>
           </div>
+
+          {/* Journey message — changes by % range */}
+          <p className="text-[13px] text-gray-500 italic mb-3 leading-snug">
+            {getJourneyMessage(pct, lang)}
+          </p>
 
           <div className="h-1.5 bg-gray-100 rounded-full mb-4 overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ width: `${pct}%`, background: 'var(--y)' }}
             />
+          </div>
+
+          {/* Milestone flash — appears on check, fades after 2.5s */}
+          <div
+            className="overflow-hidden transition-all duration-350"
+            style={{
+              maxHeight: flash ? 44 : 0,
+              opacity: flash?.visible ? 1 : 0,
+              marginBottom: flash ? 12 : 0,
+              transition: 'max-height 0.25s ease, opacity 0.35s ease, margin-bottom 0.25s ease',
+            }}
+          >
+            {flash && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium"
+                style={{ background: 'var(--y-l)', color: '#92400E' }}
+              >
+                <span>✨</span>
+                <span>{flash.msg}</span>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -638,23 +766,12 @@ export default function Arriving() {
                     )}
                   </span>
                   <span className={`text-[13px] font-medium ${isDone ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
-                    {lang === 'ko' ? item.ko : item.en}
+                    {lang === 'ko' ? item.ko : lang === 'fr' ? (item as any).fr ?? item.en : item.en}
                   </span>
                 </button>
               )
             })}
           </div>
-
-          {pct === 100 && (
-            <div
-              className="mt-4 text-center py-3 rounded-xl text-[13px] font-bold"
-              style={{ background: 'var(--y-l)', color: '#92400E' }}
-            >
-              {lang === 'ko'
-                ? '이제 몬트리올은 목적지가 아니라 당신의 도시입니다. 🎉'
-                : "🎉 Montréal is no longer a destination. It's your city."}
-            </div>
-          )}
         </div>
 
         {/* ── Essential Tools ── */}
