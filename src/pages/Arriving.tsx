@@ -988,7 +988,7 @@ function LanguagePanel() {
         en: 'Learn everyday Korean through real conversations.',
         fr: 'Apprenez le coréen du quotidien à travers de vraies conversations.',
       } as Tri,
-      to: '/language',
+      to: '/programs?language=korean',
       cta: { ko: '살펴보기', en: 'Explore', fr: 'Explorer' } as Tri,
     },
     {
@@ -1000,7 +1000,7 @@ function LanguagePanel() {
         en: 'Build confidence speaking English in Montréal.',
         fr: "Gagnez en confiance pour parler anglais à Montréal.",
       } as Tri,
-      to: '/language',
+      to: '/programs?language=english',
       cta: { ko: '살펴보기', en: 'Explore', fr: 'Explorer' } as Tri,
     },
     {
@@ -1012,8 +1012,8 @@ function LanguagePanel() {
         en: 'Learn practical French for Québec life.',
         fr: 'Apprenez le français pratique pour la vie au Québec.',
       } as Tri,
-      to: '/language',
-      cta: { ko: '살펴보기', en: 'Explorer', fr: 'Explorer' } as Tri,
+      to: '/programs?language=french',
+      cta: { ko: '살펴보기', en: 'Explore', fr: 'Explorer' } as Tri,
     },
     {
       id: 'exchange',
@@ -1024,7 +1024,7 @@ function LanguagePanel() {
         en: 'Meet people and practice naturally.',
         fr: 'Rencontrez des gens et pratiquez naturellement.',
       } as Tri,
-      to: '/people',
+      to: '/programs?type=language-exchange',
       cta: { ko: '찾아보기', en: 'Find people', fr: 'Trouver des gens' } as Tri,
     },
   ]
@@ -1235,14 +1235,14 @@ export default function Arriving() {
             )}
           </p>
 
-          <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 hide-scrollbar">
+          <div className="flex flex-wrap gap-1.5 mb-4">
             {TOOL_TABS.map(tab => {
               const active = activeTab === tab.id
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-full border whitespace-nowrap transition-all shrink-0"
+                  className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-full border transition-all"
                   style={active
                     ? { background: '#111', borderColor: '#111', color: '#fff' }
                     : { background: '#fff', borderColor: '#E5E7EB', color: '#374151' }}

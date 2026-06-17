@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { DollarSign, MapPin, Pin, Users, Zap } from 'lucide-react'
 import { getTracks, getSiteSettings, getLeSettings, type LeSettings } from '../lib/db'
 import { trackEvent } from '../lib/analytics'
@@ -378,6 +378,7 @@ function LanguageExchangeCard({
 export default function Sessions() {
   const { lang: rawLang, t } = useLang()
   const lang = rawLang as Lang
+  const [searchParams] = useSearchParams()
 
   const [tracks,           setTracks]           = useState<TrackView[]>([])
   const [applyingCommunity, setApplyingCommunity] = useState(false)
@@ -407,8 +408,25 @@ export default function Sessions() {
       .finally(() => setLoading(false))
   }, [])
 
+  // URL query params from /programs?language=korean|english|french or ?type=language-exchange
+  const qLang = searchParams.get('language')   // 'korean' | 'english' | 'french' | null
+  const qType = searchParams.get('type')        // 'language-exchange' | null
+
+  // Keyword maps: match against name_ko + name_en + name_fr (case-insensitive)
+  const LANG_KEYWORDS: Record<string, string[]> = {
+    korean:  ['korean', '한국어', 'coréen'],
+    english: ['english', '영어', 'anglais'],
+    french:  ['french', '불어', '프랑스어', 'français', 'francais'],
+  }
+
+  function matchesLangQuery(track: TrackView): boolean {
+    if (!qLang || !(qLang in LANG_KEYWORDS)) return true
+    const haystack = [track.name_ko, track.name_en, track.name_fr].join(' ').toLowerCase()
+    return LANG_KEYWORDS[qLang].some(kw => haystack.includes(kw))
+  }
+
   // Sorting: pinned first, then open, then closed; within each group by start_date asc
-  const programTracks = tracks
+  const allProgramTracks = tracks
     .filter(s => s.category !== 'community')
     .filter(s => filter === 'all' || s.status === filter)
     .sort((a, b) => {
@@ -419,7 +437,24 @@ export default function Sessions() {
       return (a.start_date ?? '').localeCompare(b.start_date ?? '')
     })
 
+  // When a language query param is present, put matching tracks first
+  const programTracks = qLang
+    ? [
+        ...allProgramTracks.filter(t => matchesLangQuery(t)),
+        ...allProgramTracks.filter(t => !matchesLangQuery(t)),
+      ]
+    : allProgramTracks
+
   const communityTrack = tracks.find(s => s.category === 'community')
+
+  // Scroll to and highlight language exchange section if ?type=language-exchange
+  const showLanguageExchangeHighlight = qType === 'language-exchange'
+  const leRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (showLanguageExchangeHighlight && !loading && leRef.current) {
+      leRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [showLanguageExchangeHighlight, loading])
 
   const leDesc = (lang === 'ko' ? leDescKo : lang === 'fr' ? leDescFr : leDescEn)
     ?? t(
@@ -444,8 +479,30 @@ export default function Sessions() {
     )
   }
 
+  // Label for active language query filter
+  const LANG_LABELS: Record<string, string> = {
+    korean:  t('한국어 프로그램', 'Korean Programs', 'Programmes coréens'),
+    english: t('영어 프로그램', 'English Programs', 'Programmes anglais'),
+    french:  t('프랑스어 프로그램', 'French Programs', 'Programmes français'),
+  }
+
   const mainContent = (
     <>
+      {/* Active language filter indicator */}
+      {qLang && LANG_LABELS[qLang] && (
+        <div className="flex items-center gap-2 mb-3 px-1">
+          <span className="text-[12px] font-semibold text-gray-500">
+            {t('필터:', 'Filtered by:', 'Filtré par :')}
+          </span>
+          <span
+            className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+            style={{ background: 'var(--y-l)', color: '#92400E' }}
+          >
+            {LANG_LABELS[qLang]}
+          </span>
+        </div>
+      )}
+
       {/* Filter chips */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {(['all', 'open', 'closed'] as const).map(f => {
@@ -489,14 +546,19 @@ export default function Sessions() {
 
       {/* Language Exchange */}
       {(communityTrack || leDesc) && (
-        <LanguageExchangeCard
-          leTitle={leTitle || 'Language Exchange'}
-          leDesc={leDesc}
-          leButtonText={leButtonText || t('신청하기', 'Apply for Language Exchange', "S'inscrire")}
-          leSettings={leSettings}
-          onApply={() => setApplyingCommunity(true)}
-          t={t}
-        />
+        <div
+          ref={leRef}
+          style={showLanguageExchangeHighlight ? { borderRadius: 16, outline: '2px solid var(--y)', outlineOffset: 2 } : undefined}
+        >
+          <LanguageExchangeCard
+            leTitle={leTitle || 'Language Exchange'}
+            leDesc={leDesc}
+            leButtonText={leButtonText || t('신청하기', 'Apply for Language Exchange', "S'inscrire")}
+            leSettings={leSettings}
+            onApply={() => setApplyingCommunity(true)}
+            t={t}
+          />
+        </div>
       )}
 
       <div className="border-t border-gray-100" />
