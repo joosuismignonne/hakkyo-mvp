@@ -1,243 +1,385 @@
 /**
- * Phrases — emergency phrase tool for Korean workers in Québec.
- * Preset templates only. No AI. Browser SpeechSynthesis for audio.
+ * 바로 말하기 — 2-click emergency phrase tool.
+ * Step 1: pick category  →  Step 2: pick situation  →  view EN/FR cards.
  */
-import { useState, useCallback } from 'react'
-import { Copy, Volume2, Check } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Volume2, Copy, Check, ChevronLeft, Zap, Bookmark, BookmarkCheck, Search, X } from 'lucide-react'
 import { useLang } from '../context/LangContext'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Phrase {
-  ko: string
-  ko_formal: string
-  en: string
-  fr: string
-}
-
-interface Category {
-  id: string
-  icon: string
-  ko: string
-  en: string
-  fr: string
-  phrases: Phrase[]
-}
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const CATEGORIES: Category[] = [
-  {
-    id: 'resume',
-    icon: '📄',
-    ko: '이력서 내기',
-    en: 'Dropping Resume',
-    fr: 'Déposer son CV',
-    phrases: [
-      { ko: '이력서 드리러 왔어요.', ko_formal: '이력서를 제출하러 방문했습니다.', en: 'I came to drop off my resume.', fr: 'Je suis venu(e) déposer mon CV.' },
-      { ko: '혹시 지금 직원 뽑나요?', ko_formal: '현재 채용 중이신지 여쭤봐도 될까요?', en: 'Are you currently hiring?', fr: 'Est-ce que vous embauchez en ce moment?' },
-      { ko: '매니저랑 얘기할 수 있을까요?', ko_formal: '담당 매니저분과 대화할 수 있을까요?', en: 'Could I speak with the manager?', fr: 'Pourrais-je parler au gérant(e)?' },
-      { ko: '제 연락처가 거기 있어요. 연락 기다릴게요.', ko_formal: '이력서에 연락처가 기재되어 있습니다. 연락 기다리겠습니다.', en: 'My contact is on there. I look forward to hearing from you.', fr: 'Mes coordonnées sont sur mon CV. J\'attends votre appel.' },
-      { ko: '언제쯤 연락 주실 수 있을까요?', ko_formal: '언제쯤 연락을 주실 수 있는지 여쭤볼 수 있을까요?', en: 'When could I expect to hear back?', fr: 'Quand pourrais-je m\'attendre à avoir des nouvelles?' },
-    ],
-  },
-  {
-    id: 'customer',
-    icon: '🛎️',
-    ko: '손님 응대',
-    en: 'Customer Service',
-    fr: 'Service client',
-    phrases: [
-      { ko: '어서 오세요!', ko_formal: '어서 오세요!', en: 'Welcome! How can I help you?', fr: 'Bienvenue! Je peux vous aider?' },
-      { ko: '잠깐 기다려 주세요.', ko_formal: '잠시만 기다려 주시겠습니까?', en: 'One moment please.', fr: 'Un instant s\'il vous plaît.' },
-      { ko: '죄송해요, 다시 한번 말씀해 주실 수 있어요?', ko_formal: '죄송합니다, 다시 한번 말씀해 주시겠어요?', en: 'I\'m sorry, could you repeat that?', fr: 'Pardon, pourriez-vous répéter?' },
-      { ko: '영어로 말씀해 주실 수 있어요?', ko_formal: '영어로 말씀해 주실 수 있으실까요?', en: 'Could you speak in English?', fr: 'Pouvez-vous parler en anglais?' },
-      { ko: '좋은 하루 되세요!', ko_formal: '즐거운 하루 보내세요!', en: 'Have a great day!', fr: 'Bonne journée!' },
-      { ko: '계산은 여기서 해드릴게요.', ko_formal: '결제는 이쪽에서 도와드리겠습니다.', en: 'I\'ll take care of the payment here.', fr: 'Je vais m\'occuper du paiement ici.' },
-    ],
-  },
-  {
-    id: 'order',
-    icon: '☕',
-    ko: '주문하기',
-    en: 'Taking Orders',
-    fr: 'Prendre les commandes',
-    phrases: [
-      { ko: '뭘 드실 건가요?', ko_formal: '무엇을 주문하시겠습니까?', en: 'What would you like to have?', fr: 'Qu\'est-ce que vous désirez?' },
-      { ko: '따뜻한 거요, 차가운 거요?', ko_formal: '따뜻하게 드릴까요, 차갑게 드릴까요?', en: 'Hot or cold?', fr: 'Chaud ou froid?' },
-      { ko: '여기서 드실 건가요, 가져가실 건가요?', ko_formal: '여기서 드실 건가요, 포장하실 건가요?', en: 'For here or to go?', fr: 'Sur place ou pour emporter?' },
-      { ko: '이름이 어떻게 되세요?', ko_formal: '성함이 어떻게 되십니까?', en: 'Can I get your name?', fr: 'C\'est à quel nom?' },
-      { ko: '총 X달러입니다.', ko_formal: '총 금액은 X달러입니다.', en: 'That will be X dollars.', fr: 'Ça fait X dollars.' },
-      { ko: '잠깐만요, 바로 가져다 드릴게요.', ko_formal: '잠시만 기다려 주세요, 바로 가져다 드리겠습니다.', en: 'Just a moment, I\'ll bring that right over.', fr: 'Un instant, je vous apporte ça de suite.' },
-    ],
-  },
-  {
-    id: 'directions',
-    icon: '🗺️',
-    ko: '길 묻기',
-    en: 'Asking Directions',
-    fr: 'Demander son chemin',
-    phrases: [
-      { ko: '지하철역이 어디에요?', ko_formal: '지하철역이 어디에 있나요?', en: 'Where is the metro station?', fr: 'Où est la station de métro?' },
-      { ko: '여기가 맞나요?', ko_formal: '이 주소가 맞는지 확인해도 될까요?', en: 'Is this the right place?', fr: 'C\'est bien ici?' },
-      { ko: '버스 몇 번 타야 해요?', ko_formal: '몇 번 버스를 타야 하나요?', en: 'Which bus should I take?', fr: 'Quel bus je dois prendre?' },
-      { ko: '여기서 걸어서 얼마나 걸려요?', ko_formal: '도보로 얼마나 걸리나요?', en: 'How long does it take to walk from here?', fr: 'C\'est à combien de marche d\'ici?' },
-      { ko: '길을 잃었어요. 도와주실 수 있어요?', ko_formal: '길을 잃었습니다. 도움을 주실 수 있으신가요?', en: 'I\'m lost. Can you help me?', fr: 'Je suis perdu(e). Pouvez-vous m\'aider?' },
-    ],
-  },
-  {
-    id: 'phone',
-    icon: '📞',
-    ko: '전화하기',
-    en: 'On the Phone',
-    fr: 'Au téléphone',
-    phrases: [
-      { ko: '안녕하세요, ○○이라고 하는데요.', ko_formal: '안녕하세요, 저는 ○○입니다.', en: 'Hello, this is ○○ speaking.', fr: 'Bonjour, c\'est ○○ à l\'appareil.' },
-      { ko: '혹시 ○○ 씨 계세요?', ko_formal: '○○ 씨와 통화할 수 있을까요?', en: 'Could I speak with ○○?', fr: 'Est-ce que je pourrais parler à ○○?' },
-      { ko: '다시 한번 말씀해 주실 수 있어요?', ko_formal: '죄송합니다, 다시 말씀해 주시겠어요?', en: 'Could you repeat that please?', fr: 'Pourriez-vous répéter s\'il vous plaît?' },
-      { ko: '천천히 말씀해 주실 수 있어요?', ko_formal: '좀 더 천천히 말씀해 주시겠어요?', en: 'Could you speak more slowly?', fr: 'Pouvez-vous parler plus lentement?' },
-      { ko: '메시지 남겨 드릴까요?', ko_formal: '메시지를 남겨 드릴까요?', en: 'Can I leave a message?', fr: 'Je peux laisser un message?' },
-      { ko: '나중에 다시 전화할게요.', ko_formal: '나중에 다시 연락드리겠습니다.', en: 'I\'ll call back later.', fr: 'Je rappellerai plus tard.' },
-    ],
-  },
-  {
-    id: 'medical',
-    icon: '🏥',
-    ko: '병원/약국',
-    en: 'Medical / Pharmacy',
-    fr: 'Médecin / Pharmacie',
-    phrases: [
-      { ko: '머리가 아파요.', ko_formal: '두통이 있습니다.', en: 'I have a headache.', fr: 'J\'ai mal à la tête.' },
-      { ko: '배가 아파요.', ko_formal: '복통이 있습니다.', en: 'I have a stomachache.', fr: 'J\'ai mal au ventre.' },
-      { ko: '열이 나요.', ko_formal: '발열 증상이 있습니다.', en: 'I have a fever.', fr: 'J\'ai de la fièvre.' },
-      { ko: '이 약 어떻게 먹어요?', ko_formal: '이 약은 어떻게 복용하나요?', en: 'How should I take this medicine?', fr: 'Comment je dois prendre ce médicament?' },
-      { ko: '약국이 어디에 있어요?', ko_formal: '가장 가까운 약국이 어디에 있나요?', en: 'Where is the nearest pharmacy?', fr: 'Où est la pharmacie la plus proche?' },
-      { ko: '알레르기가 있어요.', ko_formal: '알레르기 반응이 있습니다.', en: 'I have an allergy.', fr: 'J\'ai une allergie.' },
-      { ko: '응급실 어디예요?', ko_formal: '응급실이 어디에 있나요?', en: 'Where is the emergency room?', fr: 'Où sont les urgences?' },
-    ],
-  },
-  {
-    id: 'housing',
-    icon: '🏠',
-    ko: '집 구하기',
-    en: 'Finding Housing',
-    fr: 'Chercher un logement',
-    phrases: [
-      { ko: '방 있어요?', ko_formal: '혹시 방을 구하고 있습니다. 방이 있나요?', en: 'Do you have a room available?', fr: 'Avez-vous une chambre disponible?' },
-      { ko: '월세가 얼마예요?', ko_formal: '월 임대료가 얼마인가요?', en: 'How much is the monthly rent?', fr: 'Quel est le loyer mensuel?' },
-      { ko: '유틸리티 포함이에요?', ko_formal: '공과금이 포함되어 있나요?', en: 'Are utilities included?', fr: 'Les services publics sont-ils inclus?' },
-      { ko: '언제부터 들어갈 수 있어요?', ko_formal: '언제부터 입주 가능한가요?', en: 'When would it be available?', fr: 'À partir de quand c\'est disponible?' },
-      { ko: '보증금이 얼마예요?', ko_formal: '보증금은 얼마인가요?', en: 'How much is the deposit?', fr: 'Quel est le dépôt de garantie?' },
-      { ko: '계약서 보여주실 수 있어요?', ko_formal: '계약서를 볼 수 있을까요?', en: 'Can I see the lease?', fr: 'Je peux voir le bail?' },
-      { ko: '가구 있어요?', ko_formal: '가구가 포함된 방인가요?', en: 'Is it furnished?', fr: 'C\'est meublé?' },
-    ],
-  },
-]
+import {
+  QUICK_PHRASES, EMERGENCY_PHRASES,
+  type PhraseCategory, type Situation,
+} from '../data/quickPhrases'
 
 // ─── TTS ──────────────────────────────────────────────────────────────────────
 
-function speak(text: string, lang: 'fr' | 'en') {
+const EN_VOICES_PREF = ['en-CA', 'en-US', 'en-GB', 'en-AU']
+const FR_VOICES_PREF = ['fr-CA', 'fr-FR', 'fr-BE', 'fr']
+
+function pickVoice(lang: 'en' | 'fr'): SpeechSynthesisVoice | null {
+  const all = window.speechSynthesis?.getVoices() ?? []
+  const prefs = lang === 'en' ? EN_VOICES_PREF : FR_VOICES_PREF
+  for (const code of prefs) {
+    const v = all.find(v => v.lang.startsWith(code))
+    if (v) return v
+  }
+  return all.find(v => v.lang.startsWith(lang === 'en' ? 'en' : 'fr')) ?? null
+}
+
+function speak(text: string, lang: 'en' | 'fr', slow = false) {
   if (!window.speechSynthesis) return
   window.speechSynthesis.cancel()
-  const utt = new SpeechSynthesisUtterance(text)
-  utt.lang = lang === 'fr' ? 'fr-CA' : 'en-CA'
-  utt.rate = 0.85
+  const utt      = new SpeechSynthesisUtterance(text)
+  const voice    = pickVoice(lang)
+  if (voice) utt.voice = voice
+  utt.lang  = lang === 'en' ? 'en-CA' : 'fr-CA'
+  utt.rate  = slow ? 0.65 : 0.88
+  utt.pitch = 1
   window.speechSynthesis.speak(utt)
 }
 
 async function copyText(text: string): Promise<boolean> {
-  try { await navigator.clipboard.writeText(text); return true }
-  catch { return false }
+  try { await navigator.clipboard.writeText(text); return true } catch { return false }
 }
 
-// ─── Phrase Card ──────────────────────────────────────────────────────────────
+// ─── localStorage saves ───────────────────────────────────────────────────────
 
-function PhraseCard({ phrase, showFormal }: { phrase: Phrase; showFormal: boolean }) {
-  const [copiedLang, setCopiedLang] = useState<string | null>(null)
+const SAVED_KEY = 'hakkyo_saved_phrases'
 
-  const handleCopy = useCallback(async (text: string, lang: string) => {
+function loadSaved(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]')) }
+  catch { return new Set() }
+}
+function persistSaved(s: Set<string>) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify([...s])) } catch {}
+}
+
+// ─── Tone labels ──────────────────────────────────────────────────────────────
+
+const TONE_LABELS = {
+  natural: { ko: '자연스러운', en: 'Natural',    fr: 'Naturel'  },
+  polite:  { ko: '정중한',    en: 'Polite',     fr: 'Poli'     },
+  simple:  { ko: '짧고 간단', en: 'Very simple', fr: 'Simple'  },
+}
+const TONE_COLORS = {
+  natural: { bg: '#F0FDF4', text: '#15803D', border: '#86EFAC' },
+  polite:  { bg: '#EFF6FF', text: '#1D4ED8', border: '#93C5FD' },
+  simple:  { bg: '#FFF7ED', text: '#C2410C', border: '#FDB97F' },
+}
+
+type Tone = 'natural' | 'polite' | 'simple'
+const TONES: Tone[] = ['natural', 'polite', 'simple']
+
+// ─── Single phrase row (EN or FR) ─────────────────────────────────────────────
+
+function PhraseRow({
+  text, lang, saved, tts, onToggleSave,
+}: {
+  text: string; lang: 'en' | 'fr'; saved: boolean; tts: boolean
+  onToggleSave: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+  const [playing, setPlaying] = useState(false)
+
+  function handlePlay(slow: boolean) {
+    speak(text, lang, slow)
+    setPlaying(true)
+    setTimeout(() => setPlaying(false), 2000)
+  }
+
+  async function handleCopy() {
     const ok = await copyText(text)
-    if (ok) {
-      setCopiedLang(lang)
-      setTimeout(() => setCopiedLang(null), 1800)
-    }
-  }, [])
-
-  const koText = showFormal ? phrase.ko_formal : phrase.ko
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 1800) }
+  }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 hover:border-gray-200 transition-colors">
-      {/* Korean */}
-      <div className="mb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">한국어</span>
-            <p className="text-[15px] font-semibold text-gray-900 mt-0.5 leading-snug">{koText}</p>
-          </div>
-          <div className="flex gap-1 shrink-0 mt-1">
+    <div className="flex items-start gap-2 py-2">
+      <p className="flex-1 text-[14px] leading-relaxed text-gray-800">{text}</p>
+      <div className="flex gap-1 shrink-0 pt-0.5">
+        {tts && (
+          <>
             <button
-              onClick={() => handleCopy(koText, 'ko')}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
-              title="Copy"
+              onClick={() => handlePlay(false)}
+              title={lang === 'en' ? 'Play' : 'Écouter'}
+              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
+              style={playing
+                ? { background: lang === 'en' ? '#EFF6FF' : '#FEF2F2', color: lang === 'en' ? '#1D4ED8' : '#DC2626' }
+                : { color: '#9CA3AF' }}
             >
-              {copiedLang === 'ko' ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+              <Volume2 size={13} />
             </button>
-          </div>
-        </div>
+            <button
+              onClick={() => handlePlay(true)}
+              title="Slow"
+              className="w-6 h-6 flex items-center justify-center rounded text-[9px] font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              0.6×
+            </button>
+          </>
+        )}
+        <button onClick={handleCopy} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors">
+          {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+        </button>
+        <button onClick={onToggleSave} className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
+          style={saved ? { color: 'var(--y-h)', background: 'var(--y-l)' } : { color: '#D1D5DB' }}>
+          {saved ? <BookmarkCheck size={13} /> : <Bookmark size={13} />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Phrase card (one tone) ───────────────────────────────────────────────────
+
+function ToneCard({
+  tone, en, fr, situationId, saved, onToggleSave, tts, lang,
+}: {
+  tone: Tone; en: string; fr: string; situationId: string
+  saved: Set<string>; onToggleSave: (key: string) => void
+  tts: boolean; lang: string
+}) {
+  const col   = TONE_COLORS[tone]
+  const label = TONE_LABELS[tone]
+  const toneLabel = lang === 'ko' ? label.ko : lang === 'fr' ? label.fr : label.en
+  const enKey = `${situationId}_${tone}_en`
+  const frKey = `${situationId}_${tone}_fr`
+
+  return (
+    <div className="border rounded-2xl overflow-hidden" style={{ borderColor: col.border }}>
+      {/* Tone label */}
+      <div className="px-4 py-2 flex items-center gap-2" style={{ background: col.bg }}>
+        <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: col.text }}>
+          {toneLabel}
+        </span>
       </div>
 
-      {/* EN + FR */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="px-4 divide-y divide-gray-100 bg-white">
         {/* English */}
-        <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wide">🇨🇦 EN</span>
-              <p className="text-[13px] text-gray-700 mt-0.5 leading-snug">{phrase.en}</p>
+        <div>
+          <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block pt-2.5 pb-0.5">🇨🇦 EN</span>
+          <PhraseRow
+            text={en} lang="en" tts={tts}
+            saved={saved.has(enKey)}
+            onToggleSave={() => onToggleSave(enKey)}
+          />
+        </div>
+        {/* French */}
+        <div>
+          <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest block pt-2.5 pb-0.5">🇫🇷 FR</span>
+          <PhraseRow
+            text={fr} lang="fr" tts={tts}
+            saved={saved.has(frKey)}
+            onToggleSave={() => onToggleSave(frKey)}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Situation detail view ────────────────────────────────────────────────────
+
+function SituationView({
+  situation, catKo, saved, onToggleSave, onBack, lang,
+}: {
+  situation: Situation; catKo: string
+  saved: Set<string>; onToggleSave: (key: string) => void
+  onBack: () => void; lang: string
+}) {
+  const tts = typeof window !== 'undefined' && !!window.speechSynthesis
+
+  return (
+    <div>
+      {/* Back + breadcrumb */}
+      <button onClick={onBack} className="flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-gray-900 mb-4 transition-colors">
+        <ChevronLeft size={16} />
+        <span>{catKo}</span>
+      </button>
+
+      {/* Korean situation label */}
+      <div className="mb-5">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">한국어</p>
+        <h2 className="text-[18px] font-bold text-gray-900 leading-snug">{situation.ko}</h2>
+      </div>
+
+      {/* Tone cards */}
+      <div className="space-y-3">
+        {TONES.map(tone => (
+          <ToneCard
+            key={tone}
+            tone={tone}
+            en={situation.en[tone]}
+            fr={situation.fr[tone]}
+            situationId={situation.id}
+            saved={saved}
+            onToggleSave={onToggleSave}
+            tts={tts}
+            lang={lang}
+          />
+        ))}
+      </div>
+
+      {!tts && (
+        <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mt-4">
+          {lang === 'ko'
+            ? '이 기기에서는 음성 재생이 지원되지 않습니다.'
+            : lang === 'fr'
+            ? "La synthèse vocale n'est pas disponible sur cet appareil."
+            : 'Speech is not supported on this device.'}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── Emergency overlay ────────────────────────────────────────────────────────
+
+function EmergencyPanel({ onClose, saved, onToggleSave, lang }: {
+  onClose: () => void
+  saved: Set<string>
+  onToggleSave: (key: string) => void
+  lang: string
+}) {
+  const tts = typeof window !== 'undefined' && !!window.speechSynthesis
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col"
+        style={{ animation: 'modal-up 0.18s ease-out', maxHeight: '90vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-red-100 shrink-0"
+          style={{ background: '#FEF2F2' }}>
+          <div>
+            <div className="flex items-center gap-2">
+              <Zap size={16} className="text-red-500" />
+              <h2 className="text-[15px] font-bold text-red-700">
+                {lang === 'ko' ? '지금 바로 말해야 해요' : lang === 'fr' ? 'Je dois parler maintenant' : 'I need to speak now'}
+              </h2>
             </div>
-            <div className="flex gap-1 shrink-0">
-              <button
-                onClick={() => speak(phrase.en, 'en')}
-                className="w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
-                title="Listen"
-              >
-                <Volume2 size={12} />
-              </button>
-              <button
-                onClick={() => handleCopy(phrase.en, 'en')}
-                className="w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                title="Copy"
-              >
-                {copiedLang === 'en' ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
-              </button>
-            </div>
+            <p className="text-[11px] text-red-400 mt-0.5">
+              {lang === 'ko' ? '가장 유용한 긴급 표현들' : lang === 'fr' ? 'Phrases d\'urgence les plus utiles' : 'Most useful emergency phrases'}
+            </p>
           </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-red-400 hover:bg-red-100 transition-colors">
+            <X size={16} />
+          </button>
         </div>
 
-        {/* French */}
-        <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <span className="text-[10px] font-bold text-red-400 uppercase tracking-wide">🇫🇷 FR</span>
-              <p className="text-[13px] text-gray-700 mt-0.5 leading-snug">{phrase.fr}</p>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          {EMERGENCY_PHRASES.map((p, i) => {
+            const enKey = `emergency_${i}_en`
+            const frKey = `emergency_${i}_fr`
+            return (
+              <div key={i} className="bg-gray-50 rounded-2xl px-4 py-3">
+                <p className="text-[12px] text-gray-500 mb-2 font-medium">{p.ko}</p>
+                <div className="space-y-1 divide-y divide-gray-200">
+                  <div>
+                    <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block pt-1 pb-0.5">🇨🇦 EN</span>
+                    <PhraseRow text={p.en} lang="en" tts={tts} saved={saved.has(enKey)} onToggleSave={() => onToggleSave(enKey)} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest block pt-2 pb-0.5">🇫🇷 FR</span>
+                    <PhraseRow text={p.fr} lang="fr" tts={tts} saved={saved.has(frKey)} onToggleSave={() => onToggleSave(frKey)} />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Saved phrases panel ──────────────────────────────────────────────────────
+
+function SavedPanel({ saved, onClose, onClear, lang }: {
+  saved: Set<string>; onClose: () => void
+  onClear: (key: string) => void; lang: string
+}) {
+  const tts = typeof window !== 'undefined' && !!window.speechSynthesis
+
+  // Resolve saved keys to actual phrase text
+  const resolved: { key: string; text: string; phraseLang: 'en' | 'fr' }[] = []
+
+  // Emergency phrases
+  EMERGENCY_PHRASES.forEach((p, i) => {
+    const enKey = `emergency_${i}_en`
+    const frKey = `emergency_${i}_fr`
+    if (saved.has(enKey)) resolved.push({ key: enKey, text: p.en, phraseLang: 'en' })
+    if (saved.has(frKey)) resolved.push({ key: frKey, text: p.fr, phraseLang: 'fr' })
+  })
+
+  // Category phrases
+  QUICK_PHRASES.forEach(cat => {
+    cat.situations.forEach(sit => {
+      TONES.forEach(tone => {
+        const enKey = `${sit.id}_${tone}_en`
+        const frKey = `${sit.id}_${tone}_fr`
+        if (saved.has(enKey)) resolved.push({ key: enKey, text: sit.en[tone], phraseLang: 'en' })
+        if (saved.has(frKey)) resolved.push({ key: frKey, text: sit.fr[tone], phraseLang: 'fr' })
+      })
+    })
+  })
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col"
+        style={{ animation: 'modal-up 0.18s ease-out', maxHeight: '85vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100 shrink-0">
+          <h2 className="text-[15px] font-bold text-gray-900">
+            {lang === 'ko' ? '저장된 표현' : lang === 'fr' ? 'Expressions sauvegardées' : 'Saved phrases'}
+            <span className="ml-2 text-[12px] text-gray-400 font-normal">({resolved.length})</span>
+          </h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-50">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {resolved.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <Bookmark size={28} className="mx-auto mb-3 opacity-40" />
+              <p className="text-[14px]">{lang === 'ko' ? '저장된 표현이 없어요.' : lang === 'fr' ? 'Aucune expression sauvegardée.' : 'No saved phrases yet.'}</p>
             </div>
-            <div className="flex gap-1 shrink-0">
-              <button
-                onClick={() => speak(phrase.fr, 'fr')}
-                className="w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                title="Listen"
-              >
-                <Volume2 size={12} />
-              </button>
-              <button
-                onClick={() => handleCopy(phrase.fr, 'fr')}
-                className="w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                title="Copy"
-              >
-                {copiedLang === 'fr' ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
-              </button>
+          ) : (
+            <div className="space-y-2">
+              {resolved.map(({ key, text, phraseLang }) => (
+                <div key={key} className="flex items-start gap-2 bg-gray-50 rounded-xl px-3.5 py-3">
+                  <span className="text-[10px] font-bold shrink-0 mt-0.5" style={{ color: phraseLang === 'en' ? '#60A5FA' : '#F87171' }}>
+                    {phraseLang === 'en' ? '🇨🇦 EN' : '🇫🇷 FR'}
+                  </span>
+                  <p className="flex-1 text-[13px] text-gray-800 leading-relaxed">{text}</p>
+                  <div className="flex gap-1 shrink-0">
+                    {tts && (
+                      <button onClick={() => speak(text, phraseLang)} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                        <Volume2 size={12} />
+                      </button>
+                    )}
+                    <button onClick={async () => { await copyText(text) }} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                      <Copy size={12} />
+                    </button>
+                    <button onClick={() => onClear(key)} className="w-7 h-7 flex items-center justify-center rounded-lg text-red-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                      <X size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -246,128 +388,270 @@ function PhraseCard({ phrase, showFormal }: { phrase: Phrase; showFormal: boolea
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+type Step = 'categories' | 'situations' | 'detail'
+
 export default function Phrases() {
   const { lang, t } = useLang()
-  const [activeId, setActiveId] = useState(CATEGORIES[0].id)
-  const [showFormal, setShowFormal] = useState(false)
-  const [search, setSearch] = useState('')
 
-  const active = CATEGORIES.find(c => c.id === activeId) ?? CATEGORIES[0]
+  const [step, setStep]             = useState<Step>('categories')
+  const [activeCategory, setActiveCategory] = useState<PhraseCategory | null>(null)
+  const [activeSituation, setActiveSituation] = useState<Situation | null>(null)
 
-  const filtered = search.trim()
-    ? CATEGORIES.flatMap(cat =>
-        cat.phrases
-          .filter(p => {
-            const q = search.toLowerCase()
-            return (
-              p.ko.includes(search) ||
-              p.ko_formal.includes(search) ||
-              p.en.toLowerCase().includes(q) ||
-              p.fr.toLowerCase().includes(q)
-            )
-          })
-          .map(p => ({ ...p, _catIcon: cat.icon, _catName: lang === 'ko' ? cat.ko : lang === 'fr' ? cat.fr : cat.en }))
-      )
-    : active.phrases.map(p => ({ ...p, _catIcon: '', _catName: '' }))
+  const [saved, setSaved]           = useState<Set<string>>(loadSaved)
+  const [showEmergency, setShowEmergency] = useState(false)
+  const [showSaved, setShowSaved]   = useState(false)
 
-  const catLabel = (c: Category) => lang === 'ko' ? c.ko : lang === 'fr' ? c.fr : c.en
+  const [search, setSearch]         = useState('')
+  const [searchResults, setSearchResults] = useState<{ situation: Situation; cat: PhraseCategory }[]>([])
 
-  const tts = window.speechSynthesis !== undefined
+  // Voices load async in some browsers
+  useEffect(() => {
+    if (!window.speechSynthesis) return
+    window.speechSynthesis.onvoiceschanged = () => {}
+  }, [])
+
+  // Search
+  useEffect(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) { setSearchResults([]); return }
+    const results: { situation: Situation; cat: PhraseCategory }[] = []
+    for (const cat of QUICK_PHRASES) {
+      for (const sit of cat.situations) {
+        if (
+          sit.ko.includes(search) ||
+          sit.en.natural.toLowerCase().includes(q) ||
+          sit.en.polite.toLowerCase().includes(q) ||
+          sit.fr.natural.toLowerCase().includes(q) ||
+          sit.fr.polite.toLowerCase().includes(q)
+        ) {
+          results.push({ situation: sit, cat })
+        }
+      }
+    }
+    setSearchResults(results)
+  }, [search])
+
+  function toggleSaved(key: string) {
+    setSaved(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      persistSaved(next)
+      return next
+    })
+  }
+
+  function selectCategory(cat: PhraseCategory) {
+    setActiveCategory(cat)
+    setStep('situations')
+    setSearch('')
+  }
+
+  function selectSituation(sit: Situation, cat?: PhraseCategory) {
+    if (cat) setActiveCategory(cat)
+    setActiveSituation(sit)
+    setStep('detail')
+    setSearch('')
+  }
+
+  function backToCategories() {
+    setStep('categories')
+    setActiveCategory(null)
+    setActiveSituation(null)
+  }
+
+  function backToSituations() {
+    setStep('situations')
+    setActiveSituation(null)
+  }
+
+  const catLabel = (cat: PhraseCategory) =>
+    lang === 'ko' ? cat.ko : lang === 'fr' ? cat.fr : cat.en
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 pb-20">
-      <div className="max-w-[720px] mx-auto px-4 py-8">
+    <div className="w-full min-h-screen bg-gray-50 pb-28">
+      <div className="max-w-[680px] mx-auto px-4 py-7">
 
-        {/* Header */}
-        <div className="mb-5">
-          <h1 className="text-[22px] font-bold text-gray-900">
-            {t('퀵 표현 도우미', 'Quick Phrase Helper', 'Aide aux phrases')}
-          </h1>
-          <p className="text-[13px] text-gray-500 mt-0.5">
-            {t('필요한 상황의 한·영·불 표현을 빠르게 확인하세요.', 'Quickly find Korean, English, and French phrases for any situation.', 'Retrouvez rapidement des phrases en coréen, anglais et français.')}
-          </p>
+        {/* ── Header ── */}
+        <div className="flex items-start justify-between mb-5 gap-3">
+          <div>
+            <h1 className="text-[22px] font-bold text-gray-900">바로 말하기</h1>
+            <p className="text-[13px] text-gray-500 mt-0.5 leading-relaxed">
+              {t(
+                '상황을 고르면 바로 쓸 수 있는 영어·불어 문장을 보여줍니다.',
+                'Choose a situation and get ready-to-use English and French phrases.',
+                'Choisissez une situation pour obtenir des phrases en anglais et en français.',
+              )}
+            </p>
+          </div>
+
+          {/* Saved count chip */}
+          {saved.size > 0 && (
+            <button
+              onClick={() => setShowSaved(true)}
+              className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors"
+              style={{ background: 'var(--y-l)', borderColor: 'var(--y)', color: '#92400E' }}
+            >
+              <BookmarkCheck size={12} />
+              {saved.size}
+            </button>
+          )}
         </div>
 
-        {/* Search */}
-        <div className="relative mb-4">
+        {/* ── Emergency button ── */}
+        <button
+          onClick={() => setShowEmergency(true)}
+          className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3.5 mb-5 font-bold text-[14px] transition-all active:scale-[0.98]"
+          style={{ background: '#FEF2F2', border: '1.5px solid #FECACA', color: '#DC2626' }}
+        >
+          <Zap size={16} />
+          {t('지금 바로 말해야 해요', 'I need to speak RIGHT NOW', 'Je dois parler maintenant')}
+        </button>
+
+        {/* ── Search (secondary) ── */}
+        <div className="relative mb-5">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
-            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-[14px] placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors"
-            placeholder={t('검색: 이력서, sorry, excuse moi...', 'Search: resume, sorry, excuse moi...', 'Chercher: CV, sorry, excuse moi...')}
+            className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-9 py-2.5 text-[14px] placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors"
+            placeholder={t('표현 검색...', 'Search phrases...', 'Chercher des phrases...')}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
           {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-[18px]"
-            >×</button>
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+              <X size={14} />
+            </button>
           )}
         </div>
 
-        {/* Formal toggle */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-            {!search && CATEGORIES.map(c => (
-              <button
-                key={c.id}
-                onClick={() => setActiveId(c.id)}
-                className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full border whitespace-nowrap transition-all shrink-0"
-                style={activeId === c.id && !search
-                  ? { background: '#111', borderColor: '#111', color: '#fff' }
-                  : { background: '#fff', borderColor: '#E5E7EB', color: '#374151' }
-                }
-              >
-                <span>{c.icon}</span>
-                {catLabel(c)}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowFormal(v => !v)}
-            className="ml-3 text-[11px] font-semibold border rounded-full px-3 py-1.5 whitespace-nowrap transition-all shrink-0"
-            style={showFormal
-              ? { background: 'var(--y)', borderColor: 'var(--y)', color: '#111' }
-              : { background: '#fff', borderColor: '#E5E7EB', color: '#6B7280' }
-            }
-          >
-            {t('격식체', 'Formal', 'Formel')}
-          </button>
-        </div>
-
-        {/* TTS unavailable note */}
-        {!tts && (
-          <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4">
-            {t('이 기기에서는 음성 재생이 지원되지 않습니다.', 'Speech is not supported on this device.', 'La synthèse vocale n\'est pas disponible sur cet appareil.')}
-          </p>
-        )}
-
-        {/* Results */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-5xl mb-4">🔍</div>
-            <p className="text-[15px] font-medium text-gray-700">
-              {t('검색 결과가 없어요.', 'No results found.', 'Aucun résultat.')}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((p, i) => (
-              <div key={i}>
-                {search && p._catName && (
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-                    {p._catIcon} {p._catName}
-                  </p>
-                )}
-                <PhraseCard phrase={p} showFormal={showFormal} />
+        {/* ── Search results ── */}
+        {search && (
+          <div>
+            {searchResults.length === 0 ? (
+              <p className="text-center text-[14px] text-gray-400 py-8">
+                {t('검색 결과가 없어요.', 'No results found.', 'Aucun résultat.')}
+              </p>
+            ) : (
+              <div className="space-y-2 mb-6">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  {searchResults.length}{t('개 결과', ' results', ' résultats')}
+                </p>
+                {searchResults.map(({ situation, cat }) => (
+                  <button
+                    key={situation.id}
+                    onClick={() => selectSituation(situation, cat)}
+                    className="w-full bg-white border border-gray-100 rounded-xl px-4 py-3 text-left hover:border-gray-300 transition-colors"
+                  >
+                    <p className="text-[11px] text-gray-400 mb-0.5">{cat.icon} {catLabel(cat)}</p>
+                    <p className="text-[14px] font-semibold text-gray-900">{situation.ko}</p>
+                    <p className="text-[12px] text-gray-500 mt-0.5 truncate">{situation.en.natural}</p>
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
 
+        {/* ── Main content (hidden when searching) ── */}
+        {!search && (
+          <>
+            {/* STEP 1: Category grid */}
+            {step === 'categories' && (
+              <div>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                  {t('상황 선택', 'Choose a situation', 'Choisissez une situation')}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {QUICK_PHRASES.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => selectCategory(cat)}
+                      className="bg-white border border-gray-100 rounded-2xl px-4 py-4 text-left hover:border-gray-300 hover:shadow-sm transition-all active:scale-[0.97]"
+                    >
+                      <span className="text-2xl block mb-2">{cat.icon}</span>
+                      <span className="text-[13px] font-semibold text-gray-900 block">{catLabel(cat)}</span>
+                      <span className="text-[11px] text-gray-400 block mt-0.5">
+                        {cat.situations.length}{t('개 상황', ' situations', ' situations')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: Situation list */}
+            {step === 'situations' && activeCategory && (
+              <div>
+                <button onClick={backToCategories} className="flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-gray-900 mb-4 transition-colors">
+                  <ChevronLeft size={16} />
+                  {t('상황 목록', 'Categories', 'Catégories')}
+                </button>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-2xl">{activeCategory.icon}</span>
+                  <h2 className="text-[18px] font-bold text-gray-900">{catLabel(activeCategory)}</h2>
+                </div>
+
+                <div className="space-y-2">
+                  {activeCategory.situations.map(sit => (
+                    <button
+                      key={sit.id}
+                      onClick={() => selectSituation(sit)}
+                      className="w-full bg-white border border-gray-100 rounded-xl px-4 py-3.5 text-left hover:border-gray-300 hover:shadow-sm transition-all active:scale-[0.98] flex items-center justify-between gap-3"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-semibold text-gray-900 mb-0.5">{sit.ko}</p>
+                        <p className="text-[12px] text-gray-400 truncate">{sit.en.natural}</p>
+                      </div>
+                      <ChevronLeft size={14} className="text-gray-300 rotate-180 shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: Phrase detail */}
+            {step === 'detail' && activeSituation && (
+              <SituationView
+                situation={activeSituation}
+                catKo={activeCategory ? catLabel(activeCategory) : ''}
+                saved={saved}
+                onToggleSave={toggleSaved}
+                onBack={backToSituations}
+                lang={lang}
+              />
+            )}
+          </>
+        )}
+
+        {/* Footer note */}
         <p className="text-center text-[11px] text-gray-400 mt-10">
-          {t('표현은 퀘벡 일상 상황을 기준으로 합니다.', 'Phrases are based on everyday Québec situations.', 'Les phrases sont basées sur des situations quotidiennes au Québec.')}
+          {t(
+            '표현은 퀘벡 일상 상황을 기준으로 합니다.',
+            'Phrases are based on everyday Québec situations.',
+            'Les phrases sont basées sur des situations quotidiennes au Québec.',
+          )}
         </p>
       </div>
+
+      {/* ── Emergency overlay ── */}
+      {showEmergency && (
+        <EmergencyPanel
+          onClose={() => setShowEmergency(false)}
+          saved={saved}
+          onToggleSave={toggleSaved}
+          lang={lang}
+        />
+      )}
+
+      {/* ── Saved phrases overlay ── */}
+      {showSaved && (
+        <SavedPanel
+          saved={saved}
+          onClose={() => setShowSaved(false)}
+          onClear={key => toggleSaved(key)}
+          lang={lang}
+        />
+      )}
     </div>
   )
 }
