@@ -105,6 +105,25 @@ function IconLanguage() {
   )
 }
 
+function IconMapPin({ active }: { active?: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth={active ? 2.2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      <circle cx="12" cy="9" r="2.5"/>
+    </svg>
+  )
+}
+
+function IconPhrases({ active }: { active?: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth={active ? 2.2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+  )
+}
+
 // Chevron pointing right (expand) or left (collapse)
 function IconChevron({ collapsed }: { collapsed: boolean }) {
   return (
@@ -123,6 +142,11 @@ const NAV = [
   { to: '/programs', icon: IconPrograms,  ko: '프로그램', en: 'Programs',  fr: 'Programmes', exact: false },
   { to: '/board',    icon: IconCommunity, ko: '커뮤니티', en: 'Community', fr: 'Communauté', exact: false },
   { to: '/news',     icon: IconNews,      ko: '뉴스',    en: 'News',      fr: 'Actualités', exact: false },
+]
+
+const TOOLS_NAV = [
+  { to: '/resume-map', icon: IconMapPin,   ko: '이력서 지도', en: 'Resume Map',   fr: 'Suivi CV',   exact: false },
+  { to: '/phrases',    icon: IconPhrases,  ko: '퀵 표현',    en: 'Phrases',      fr: 'Phrases',    exact: false },
 ]
 
 const CATS = [
@@ -224,7 +248,48 @@ function DesktopSidebar() {
         })}
       </nav>
 
-      <div className="mx-3 my-4 border-t border-gray-100" />
+      <div className="mx-3 my-3 border-t border-gray-100" />
+
+      {/* ── Tools nav ── */}
+      <nav className="px-2 space-y-0.5">
+        {!collapsed && (
+          <p className="text-[10px] font-semibold tracking-[0.18em] text-gray-400 uppercase px-2 mb-1">
+            {t('도구', 'Tools', 'Outils')}
+          </p>
+        )}
+        {TOOLS_NAV.map(n => {
+          const active = pathname === n.to || pathname.startsWith(n.to + '/')
+          const Icon = n.icon
+          const lbl = lang === 'ko' ? n.ko : lang === 'fr' ? n.fr : n.en
+          return (
+            <Link
+              key={n.to}
+              to={n.to}
+              title={collapsed ? lbl : undefined}
+              className={[
+                'flex items-center rounded-xl transition-all',
+                collapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3 py-2.5',
+                active
+                  ? 'text-gray-900 font-semibold'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50',
+              ].join(' ')}
+              style={active ? { background: 'var(--y-l)', color: '#111' } : {}}
+            >
+              <span style={active ? { color: 'var(--y-h)' } : {}}><Icon active={active} /></span>
+              {!collapsed && (
+                <>
+                  <span className="text-[13px] font-medium">{lbl}</span>
+                  {active && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--y)' }} />
+                  )}
+                </>
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+
+      <div className="mx-3 my-3 border-t border-gray-100" />
 
       {/* ── Post button ── */}
       <div className="px-2">

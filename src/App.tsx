@@ -18,6 +18,8 @@ import Login from './pages/Login'
 import ResetPassword from './pages/ResetPassword'
 import RequireAuth from './components/RequireAuth'
 import BoardMemoryWidget from './components/BoardMemoryWidget'
+import ResumeMap from './pages/ResumeMap'
+import Phrases from './pages/Phrases'
 import { supabase } from './lib/supabase'
 
 function RedirectContentId() {
@@ -74,6 +76,8 @@ export default function App() {
               <Route path="/schedule" element={<Navigate to="/board" replace />} />
               <Route path="/content" element={<Navigate to="/news" replace />} />
               <Route path="/content/:id" element={<RedirectContentId />} />
+              <Route path="/resume-map" element={<ResumeMap />} />
+              <Route path="/phrases" element={<Phrases />} />
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/admin/*" element={<RequireAuth><Admin /></RequireAuth>} />
