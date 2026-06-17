@@ -784,12 +784,23 @@ function FlightsPanel() {
           "Réserver votre vol est le premier engagement. Comparez prix, horaires et escales.",
         )}
       </p>
-      <div className="flex gap-2 flex-wrap">
-        <a href="https://www.google.com/travel/flights" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>Google Flights ↗</a>
-        <a href="https://www.skyscanner.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Skyscanner ↗</a>
-        <a href="https://www.kayak.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Kayak ↗</a>
+
+      {/* Decision cards — always visible */}
+      <div className="space-y-2">
+        <OptionRow primary name="Google Flights" desc={t('가격 추이 그래프 제공, 날짜 유연하게 비교 가능', 'Price trend graphs, flexible date comparison', 'Graphiques de tendances, comparaison de dates flexible')} href="https://www.google.com/travel/flights" />
+        <OptionRow name="Skyscanner" desc={t('월별 최저가 탐색에 유용', 'Useful for finding cheapest month to fly', 'Utile pour trouver le mois le moins cher')} href="https://www.skyscanner.ca" />
+        <OptionRow name="Kayak" desc={t('가격 예측 기능 포함', 'Includes price prediction feature', 'Inclut une fonctionnalité de prédiction de prix')} href="https://www.kayak.ca" />
       </div>
+
+      <WarnNote text={t(
+        '흔한 실수: 심야 도착 항공편 선택 후 당일 처리할 일이 없어서 하루 낭비. 첫날은 낮에 도착해서 바로 움직이는 게 좋습니다.',
+        'Common mistake: choosing a late-night flight and losing your first day. Arrive during the day so you can start moving immediately.',
+        'Erreur fréquente : choisir un vol de nuit et perdre votre première journée. Arrivez en journée pour commencer directement.',
+      )} />
+
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+
+      {/* Educational content — collapsed */}
       {expanded && (
         <div className="space-y-4 pt-2">
           <div>
@@ -815,19 +826,6 @@ function FlightsPanel() {
               { ko: '심야 도착 시 택시/Uber 또는 747 버스 이용. 지하철은 자정 이후 운행 없음', en: 'Late night arrival: use taxi/Uber or the 747 bus. Metro does not run after midnight', fr: 'Arrivée tardive : taxi/Uber ou bus 747. Le métro ne fonctionne pas après minuit' },
             ]} />
           </div>
-          <WarnNote text={t(
-            '흔한 실수: 심야 도착 항공편 선택 후 당일 처리할 일이 없어서 하루 낭비. 첫날은 낮에 도착해서 바로 움직이는 게 좋습니다.',
-            'Common mistake: choosing a late-night flight and losing your first day. Arrive during the day so you can start moving immediately.',
-            'Erreur fréquente : choisir un vol de nuit et perdre votre première journée. Arrivez en journée pour commencer directement.',
-          )} />
-          <div>
-            <PanelLabel>{t('항공권 검색', 'Search Flights', 'Rechercher des vols')}</PanelLabel>
-            <div className="space-y-2">
-              <OptionRow primary name="Google Flights" desc={t('가격 추이 그래프 제공, 날짜 유연하게 비교 가능', 'Price trend graphs, flexible date comparison', 'Graphiques de tendances, comparaison de dates flexible')} href="https://www.google.com/travel/flights" />
-              <OptionRow name="Skyscanner" desc={t('월별 최저가 탐색에 유용', 'Useful for finding cheapest month to fly', 'Utile pour trouver le mois le moins cher')} href="https://www.skyscanner.ca" />
-              <OptionRow name="Kayak" desc={t('가격 예측 기능 포함', 'Includes price prediction feature', 'Inclut une fonctionnalité de prédiction de prix')} href="https://www.kayak.ca" />
-            </div>
-          </div>
           <CommunityExperience section="flights" />
           <CommunityCTA />
         </div>
@@ -848,12 +846,24 @@ function SIMPanel() {
           "Activez votre SIM dès l'arrivée. L'eSIM se configure avant même de quitter l'aéroport.",
         )}
       </p>
-      <div className="flex gap-2 flex-wrap">
-        <a href="https://fizz.ca" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>Fizz ↗</a>
-        <a href="https://www.publicmobile.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Public Mobile ↗</a>
-        <a href="https://www.freedommobile.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Freedom ↗</a>
+
+      {/* Decision cards — always visible */}
+      <div className="space-y-2">
+        <OptionRow primary name="Fizz" desc={t('eSIM 지원, 월 $30–45, 유연한 요금제 — 첫 달 최추천', 'eSIM supported, $30–45/mo, flexible plans — best for first month', 'eSIM disponible, 30–45 $/mois, forfaits flexibles — meilleur choix initial')} href="https://fizz.ca" />
+        <OptionRow name="Public Mobile" desc={t('가장 저렴, 6개월 이상 사용 시 할인 누적', 'Cheapest overall, discounts accumulate after 6+ months', 'Le moins cher, réductions cumulées après 6 mois+')} href="https://www.publicmobile.ca" />
+        <OptionRow name="Freedom Mobile" desc={t('학생 할인, 무제한 요금제 제공', 'Student discounts, unlimited plans available', 'Réductions étudiants, forfaits illimités disponibles')} href="https://www.freedommobile.ca" />
+        <OptionRow name="Koodo" desc={t('대형 통신사(Telus) 품질, 중간 가격대', 'Major carrier (Telus) quality, mid-range pricing', 'Qualité grande marque (Telus), prix intermédiaires')} href="https://www.koodomobile.com" />
+        <OptionRow name="Bell / Rogers / Telus" desc={t('가장 안정적이나 가격 높음, 계약 조건 확인 필수', 'Most reliable but expensive, check contract terms', 'Plus fiables mais plus chers, vérifiez les conditions')} href="https://www.bell.ca" />
       </div>
+
+      <WarnNote text={t(
+        '흔한 실수: 공항 내 통신사에서 비싼 요금제 가입. 공항을 벗어난 뒤 온라인 또는 시내 매장에서 가입하면 더 저렴합니다.',
+        'Common mistake: signing up with a carrier kiosk at the airport. Getting online or visiting a store in the city is almost always cheaper.',
+        "Erreur fréquente : s'inscrire au kiosque de l'aéroport. Passer par internet ou une boutique en ville est presque toujours moins cher.",
+      )} />
+
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+
       {expanded && (
         <div className="space-y-4 pt-2">
           <div>
@@ -871,21 +881,6 @@ function SIMPanel() {
               { ko: '장기 계약 vs 월 단위 요금제 — 처음엔 유연한 월정액 추천', en: 'Long-term contract vs. monthly plan — flexible monthly recommended at first', fr: 'Contrat long terme vs mensuel — optez pour le mensuel au début' },
               { ko: '국제전화 포함 여부 확인', en: 'Check if international calling is included', fr: 'Vérifiez si les appels internationaux sont inclus' },
             ]} />
-          </div>
-          <WarnNote text={t(
-            '흔한 실수: 공항 내 통신사에서 비싼 요금제 가입. 공항을 벗어난 뒤 온라인 또는 시내 매장에서 가입하면 더 저렴합니다.',
-            'Common mistake: signing up with a carrier kiosk at the airport. Getting online or visiting a store in the city is almost always cheaper.',
-            "Erreur fréquente : s'inscrire au kiosque de l'aéroport. Passer par internet ou une boutique en ville est presque toujours moins cher.",
-          )} />
-          <div>
-            <PanelLabel>{t('통신사 비교', 'Compare Carriers', 'Comparer les opérateurs')}</PanelLabel>
-            <div className="space-y-2">
-              <OptionRow primary name="Fizz" desc={t('eSIM 지원, 월 $30–45, 유연한 요금제. 첫 달 가장 추천', 'eSIM supported, $30–45/mo, flexible plans. Best for first month', 'eSIM disponible, 30–45 $/mois, forfaits flexibles. Meilleur choix initial')} href="https://fizz.ca" />
-              <OptionRow name="Public Mobile" desc={t('가장 저렴, 6개월 이상 사용 시 할인 누적', 'Cheapest, discounts accumulate after 6+ months', 'Le moins cher, réductions cumulées après 6 mois+')} href="https://www.publicmobile.ca" />
-              <OptionRow name="Freedom Mobile" desc={t('학생 할인, 무제한 요금제 제공', 'Student discounts, unlimited plans available', 'Réductions étudiants, forfaits illimités disponibles')} href="https://www.freedommobile.ca" />
-              <OptionRow name="Koodo" desc={t('대형 통신사(Telus) 품질, 중간 가격대', 'Major carrier (Telus) quality, mid-range pricing', 'Qualité grande marque (Telus), prix intermédiaires')} href="https://www.koodomobile.com" />
-              <OptionRow name="Bell / Rogers / Telus" desc={t('가장 안정적이나 가격 높음, 계약 조건 확인 필수', 'Most reliable but expensive, check contract terms', 'Plus fiables mais plus chers, vérifiez les conditions')} href="https://www.bell.ca" />
-            </div>
           </div>
           <CommunityExperience section="sim" />
           <CommunityCTA />
@@ -907,12 +902,23 @@ function BankingPanel() {
           "Ouvrez un compte bancaire dans votre première semaine. Commencez par les banques avec forfaits nouvel arrivant.",
         )}
       </p>
-      <div className="flex gap-2 flex-wrap">
-        <a href="https://www.td.com/ca/en/personal-banking/solutions/new-to-canada" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>TD StartRight ↗</a>
-        <a href="https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Scotiabank ↗</a>
-        <a href="https://www.desjardins.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Desjardins ↗</a>
+
+      {/* Decision cards — always visible */}
+      <div className="space-y-2">
+        <OptionRow primary name="TD StartRight" desc={t('신규 이민자 전용, 신용 기록 없어도 개설 가능', 'Designed for newcomers, no Canadian credit history needed', 'Pour les nouveaux arrivants, sans historique de crédit canadien')} href="https://www.td.com/ca/en/personal-banking/solutions/new-to-canada" />
+        <OptionRow name="Scotiabank StartRight" desc={t('이민자 패키지, 수수료 1년 면제 포함', 'Newcomer package includes 1 year of free banking', 'Forfait nouvel arrivant avec 1 an de frais bancaires gratuits')} href="https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html" />
+        <OptionRow name="Desjardins" desc={t('퀘벡 기반 신협, 프랑스어 서비스 강점, 지역 밀착형', 'Québec credit union, strong French service, community-focused', 'Coopérative québécoise, excellent service en français, ancrage local')} href="https://www.desjardins.com" />
+        <OptionRow name="RBC" desc={t('캐나다 최대 은행, 지점 많음, 수수료 있음', "Canada's largest bank, many branches, fees apply", 'La plus grande banque du Canada, nombreuses succursales, frais applicables')} href="https://www.rbcroyalbank.com" />
       </div>
+
+      <WarnNote text={t(
+        '흔한 실수: 은행 계좌 없이 현금만 들고 다니기. 캐나다는 e-Transfer 및 Interac 결제가 일상이라 계좌 없으면 불편합니다.',
+        'Common mistake: relying on cash only. Canada runs on e-Transfer and Interac — a bank account is essential from day one.',
+        'Erreur fréquente : se fier uniquement aux espèces. Le Canada fonctionne avec e-Transfer et Interac — un compte est essentiel dès le premier jour.',
+      )} />
+
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+
       {expanded && (
         <div className="space-y-4 pt-2">
           <div>
@@ -931,20 +937,6 @@ function BankingPanel() {
               { ko: '신용카드는 신용 기록 없이 처음엔 발급 어려움 — 보안 신용카드(Secured Card) 고려', en: 'Credit cards are hard to get without credit history — consider a secured credit card', fr: "Les cartes de crédit sans historique sont difficiles à obtenir — envisagez une carte sécurisée" },
               { ko: 'TD, Scotia 이민자 패키지는 신용 기록 없이 신용카드 발급 가능', en: 'TD and Scotia newcomer packages offer credit cards without Canadian credit history', fr: 'Les forfaits TD et Scotia offrent des cartes de crédit sans historique canadien' },
             ]} />
-          </div>
-          <WarnNote text={t(
-            '흔한 실수: 은행 계좌 없이 현금만 들고 다니기. 캐나다는 e-Transfer 및 Interac 결제가 일상이라 계좌 없으면 불편합니다.',
-            'Common mistake: relying on cash only. Canada runs on e-Transfer and Interac — a bank account is essential from day one.',
-            'Erreur fréquente : se fier uniquement aux espèces. Le Canada fonctionne avec e-Transfer et Interac — un compte est essentiel dès le premier jour.',
-          )} />
-          <div>
-            <PanelLabel>{t('은행 비교', 'Compare Banks', 'Comparer les banques')}</PanelLabel>
-            <div className="space-y-2">
-              <OptionRow primary name="TD StartRight" desc={t('신규 이민자 전용, 신용 기록 없어도 개설 가능', 'Designed for newcomers, no Canadian credit history needed', 'Pour les nouveaux arrivants, sans historique de crédit canadien')} href="https://www.td.com/ca/en/personal-banking/solutions/new-to-canada" />
-              <OptionRow name="Scotiabank StartRight" desc={t('이민자 패키지, 수수료 1년 면제 포함', 'Newcomer package includes 1 year of free banking', 'Forfait nouvel arrivant avec 1 an de frais bancaires gratuits')} href="https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html" />
-              <OptionRow name="Desjardins" desc={t('퀘벡 기반 신협, 프랑스어 서비스 강점, 지역 밀착형', 'Québec credit union, strong French service, community-focused', 'Coopérative québécoise, excellent service en français, ancrage local')} href="https://www.desjardins.com" />
-              <OptionRow name="RBC" desc={t('캐나다 최대 은행, 지점 많음, 수수료 있음', "Canada's largest bank, many branches, fees apply", 'La plus grande banque du Canada, nombreuses succursales, frais applicables')} href="https://www.rbcroyalbank.com" />
-            </div>
           </div>
           <CommunityExperience section="banking" />
           <CommunityCTA />
@@ -966,38 +958,33 @@ function TransportPanel() {
           "Le réseau STM (métro et bus) couvre la majorité du quotidien à Montréal. Procurez-vous d'abord une carte OPUS.",
         )}
       </p>
-      <div className="flex gap-2 flex-wrap">
-        <a href="https://www.stm.info" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>STM ↗</a>
-        <a href="https://bixi.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>BIXI ↗</a>
-        <a href="https://www.communauto.com" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Communauto ↗</a>
+
+      {/* Decision cards — always visible */}
+      <div className="space-y-2">
+        <OptionRow primary name="STM — Métro & Bus" desc={t('노선도, 시간표, OPUS 카드 정보. 월정기권 ~$100', 'Route maps, schedules, OPUS card. Monthly pass ~$100', 'Plans, horaires, carte OPUS. Passe mensuelle ~100 $')} href="https://www.stm.info" />
+        <OptionRow name="747 Airport Bus" desc={t('공항 ↔ 다운타운 24시간 운행, ~$11 (OPUS 가능)', 'Airport ↔ downtown 24/7, ~$11 (OPUS accepted)', 'Aéroport ↔ centre-ville 24h/24, ~11 $ (OPUS accepté)')} href="https://www.stm.info/en/info/networks/bus/shuttle/more-about-747-YUL-Aeroport-P-E-Trudeau-Montreal-shuttle" />
+        <OptionRow name="BIXI" desc={t('자전거 공유, 5월–11월 운영, 연간 $15', 'Bike sharing, May–Nov, annual pass $15', 'Vélos en libre-service, mai–nov, abonnement annuel 15 $')} href="https://bixi.com" />
+        <OptionRow name="Communauto" desc={t('시간 단위 카셰어링, 이사·장보기·나들이', 'Hourly car-sharing, moving/groceries/day trips', "Autopartage à l'heure, déménagement/courses/sorties")} href="https://www.communauto.com" />
+        <OptionRow name="Turo" desc={t('개인 간 차량 렌트, 렌터카보다 저렴', 'Peer-to-peer car rental, often cheaper than agencies', 'Location entre particuliers, souvent moins cher')} href="https://turo.com/ca/en" />
       </div>
+
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+
       {expanded && (
         <div className="space-y-4 pt-2">
           <div>
             <PanelLabel>{t('OPUS 카드 사용법', 'Using the OPUS card', "Utiliser la carte OPUS")}</PanelLabel>
             <PrepareList lang={lang} items={[
               { ko: 'OPUS 카드: 지하철역 자판기에서 $6에 구매, 충전식', en: 'OPUS card: Buy at metro station machines for $6, then load trips or passes', fr: 'Carte OPUS : achetez aux machines des stations de métro pour 6 $, puis rechargez' },
-              { ko: '월정기권(All-in-One): 약 $100/월, 무제한 탑승', en: 'Monthly pass (All-in-One): ~$100/month, unlimited rides', fr: 'Passe mensuelle (Tout-en-un) : ~100 $/mois, trajets illimités' },
               { ko: '학생 할인: 유효한 학생증 소지 시 약 30% 할인', en: 'Student discount: ~30% off with valid student ID', fr: 'Réduction étudiant : ~30 % de rabais avec une carte étudiante valide' },
             ]} />
           </div>
           <div>
             <PanelLabel>{t('공항에서 시내로', 'Airport to city', "De l'aéroport à la ville")}</PanelLabel>
             <PrepareList lang={lang} items={[
-              { ko: '747 버스: 공항 ↔ 다운타운 24시간 운행, 약 $11 (OPUS 사용 가능)', en: '747 bus: Airport ↔ downtown, runs 24/7, ~$11 (OPUS accepted)', fr: 'Bus 747 : aéroport ↔ centre-ville, 24h/24, ~11 $ (OPUS accepté)' },
+              { ko: '747 버스: OPUS 카드 또는 현금 $11, 24시간 운행', en: '747 bus: OPUS card or $11 cash, runs 24/7', fr: 'Bus 747 : carte OPUS ou 11 $ en espèces, 24h/24' },
               { ko: 'Uber/Taxi: 약 $40–55, 야간에는 이 방법이 편리함', en: 'Uber/Taxi: ~$40–55, best option late at night', fr: 'Uber/Taxi : ~40–55 $, meilleure option en soirée' },
             ]} />
-          </div>
-          <div>
-            <PanelLabel>{t('이동 수단 비교', 'Getting around', 'Se déplacer')}</PanelLabel>
-            <div className="space-y-2">
-              <OptionRow primary name="STM — Métro & Bus" desc={t('노선도, 시간표, OPUS 카드 정보', 'Route maps, schedules, OPUS card info', 'Plans de lignes, horaires, info carte OPUS')} href="https://www.stm.info" />
-              <OptionRow name="747 Airport Bus" desc={t('공항 ↔ 다운타운 24시간, 약 $11', 'Airport ↔ downtown 24/7, ~$11', 'Aéroport ↔ centre-ville 24h/24, ~11 $')} href="https://www.stm.info/en/info/networks/bus/shuttle/more-about-747-YUL-Aeroport-P-E-Trudeau-Montreal-shuttle" />
-              <OptionRow name="BIXI" desc={t('자전거 공유, 5월–11월, 연간 $15', 'Bike sharing, May–Nov, $15/year', 'Vélos en libre-service, mai–nov, 15 $/an')} href="https://bixi.com" />
-              <OptionRow name="Communauto" desc={t('시간 단위 카셰어링, 이사·장보기·나들이', 'Hourly car-sharing, moving/groceries/day trips', "Autopartage à l'heure, déménagement/courses/sorties")} href="https://www.communauto.com" />
-              <OptionRow name="Turo" desc={t('개인 간 차량 렌트, 렌터카보다 저렴', 'Peer-to-peer car rental, often cheaper than agencies', 'Location entre particuliers, souvent moins cher')} href="https://turo.com/ca/en" />
-            </div>
           </div>
           <CommunityExperience section="transport" />
           <CommunityCTA />
@@ -1019,22 +1006,24 @@ function StayPanel() {
           "Commencez par un Airbnb ou une sous-location pour les 1–2 premières semaines. Vous prendrez de meilleures décisions une fois la ville mieux connue.",
         )}
       </p>
-      <div className="flex gap-2 flex-wrap">
-        <a href="https://www.airbnb.ca" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>Airbnb ↗</a>
-        <a href="https://www.facebook.com/marketplace" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>FB Marketplace ↗</a>
-        <a href="https://www.kijiji.ca" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Kijiji ↗</a>
+
+      {/* Decision cards — always visible */}
+      <div className="space-y-2">
+        <OptionRow primary name="Airbnb" desc={t('즉시 예약, 가구 완비, 리뷰 확인 가능 — 첫 숙소 최추천', 'Instant booking, fully furnished, reviews — best for first stay', 'Réservation immédiate, entièrement meublé, avis — meilleur pour débuter')} href="https://www.airbnb.ca" />
+        <OptionRow name="Facebook Marketplace" desc={t('단기 서블렛, 가격 저렴, 프랑스어 메시지 추천', 'Short-term sublets, lower prices, message in French', 'Sous-locations à court terme, prix bas, écrivez en français')} href="https://www.facebook.com/marketplace" />
+        <OptionRow name="Kijiji" desc={t('단기 방 임대, 하우스메이트 포함 옵션', 'Short-term room rentals, housemate options', 'Locations de chambres à court terme, options avec colocataires')} href="https://www.kijiji.ca" />
       </div>
+
+      <WarnNote text={t(
+        '흔한 실수: 온라인 사진만 보고 장기 계약 체결. 직접 방문 전 최소 1주일은 단기 숙소에서 지내며 동네를 파악하세요.',
+        'Common mistake: signing a long-term lease from photos alone. Stay short-term for at least a week and visit in person first.',
+        'Erreur fréquente : signer un bail à long terme sur la base des photos seulement. Restez en location courte durée au moins une semaine et visitez en personne.',
+      )} />
+
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+
       {expanded && (
         <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('어디서 머물까요', 'Where to stay first', 'Où séjourner au début')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: 'Airbnb: 즉시 예약, 가구 완비, 중심부에 많음', en: 'Airbnb: Instant booking, fully furnished, lots of options near the centre', fr: "Airbnb : réservation immédiate, entièrement meublé, nombreuses options près du centre" },
-              { ko: 'Facebook Marketplace 서블렛: 가격 저렴, 프랑스어로 메시지 추천', en: 'Facebook Marketplace sublets: Lower prices, message in French for better response', fr: 'Sous-locations Facebook Marketplace : prix plus bas, écrivez en français' },
-              { ko: 'Kijiji: 방 임대, 하우스메이트 포함 옵션 많음', en: 'Kijiji: Room rentals with housemate options', fr: 'Kijiji : locations de chambres avec options de colocataires' },
-            ]} />
-          </div>
           <div>
             <PanelLabel>{t('단기 vs 장기', 'Short-term vs long-term', 'Court terme vs long terme')}</PanelLabel>
             <PrepareList lang={lang} items={[
@@ -1043,11 +1032,6 @@ function StayPanel() {
               { ko: '퀘벡 임대차법: 7월 1일 이사 시즌, 계약 주의', en: 'Quebec lease law: July 1 is peak moving season — plan contracts carefully', fr: 'Bail au Québec : le 1er juillet est la saison des déménagements — planifiez soigneusement' },
             ]} />
           </div>
-          <WarnNote text={t(
-            '흔한 실수: 온라인 사진만 보고 장기 계약 체결. 직접 방문 전 최소 1주일은 단기 숙소에서 지내며 동네를 파악하세요.',
-            'Common mistake: signing a long-term lease from photos alone. Stay short-term for at least a week and visit in person first.',
-            'Erreur fréquente : signer un bail à long terme sur la base des photos seulement. Restez en location courte durée au moins une semaine et visitez en personne.',
-          )} />
           <CommunityExperience section="stay" />
           <CommunityCTA />
         </div>
@@ -1065,14 +1049,18 @@ function SINPanel() {
         {t(
           'SIN(사회보험번호)은 일을 하거나 세금 신고를 위해 반드시 필요합니다. 온라인으로 신청하면 2주 내 수령합니다.',
           'Your SIN (Social Insurance Number) is required to work and file taxes. Apply online and receive it by mail in about 2 weeks.',
-          "Le NAS (numéro d'assurance sociale) est requis pour travailler et déclarer vos impôts. Faites la demande en ligne pour le recevoir par courrier en ~2 semaines.",
+          "Le NAS est requis pour travailler et déclarer vos impôts. Faites la demande en ligne pour le recevoir par courrier en ~2 semaines.",
         )}
       </p>
-      <div className="flex gap-2 flex-wrap">
-        <a href="https://www.canada.ca/en/employment-social-development/services/sin/apply.html" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>Apply Online ↗</a>
-        <a href="https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>Find Office ↗</a>
+
+      {/* Decision cards — always visible */}
+      <div className="space-y-2">
+        <OptionRow primary name={t('온라인 신청 — Service Canada', 'Apply Online — Service Canada', 'Demande en ligne — Service Canada')} desc={t('2주 내 우편 수령, 서류: 여권 + 비자', 'Received by mail in ~2 weeks. Need: passport + visa', 'Reçu par courrier en ~2 semaines. Documents: passeport + visa')} href="https://www.canada.ca/en/employment-social-development/services/sin/apply.html" />
+        <OptionRow name={t('Service Canada 방문 예약', 'Service Canada Office — In Person', 'Bureau Service Canada — en personne')} desc={t('당일 확인서 발급. 예약 권장 (워크인 2–3시간 대기)', 'Same-day confirmation. Booking recommended (walk-in: 2–3h wait)', 'Confirmation le jour même. Réservation recommandée (sans RDV : 2–3h d\'attente)')} href="https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng" />
       </div>
+
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+
       {expanded && (
         <div className="space-y-4 pt-2">
           <div>
@@ -1080,8 +1068,6 @@ function SINPanel() {
             <PrepareList lang={lang} items={[
               { ko: '여권 + 비자/이민 서류 스캔 파일 준비', en: 'Have scans of your passport and immigration document ready', fr: "Préparez les scans de votre passeport et de votre document d'immigration" },
               { ko: '캐나다 주소 필요 (임시 주소 가능)', en: 'Canadian mailing address required (temporary is fine)', fr: 'Adresse postale canadienne requise (temporaire acceptée)' },
-              { ko: '온라인 신청: 2주 내 우편 수령', en: 'Online application: received by mail in ~2 weeks', fr: 'Demande en ligne : reçu par courrier en ~2 semaines' },
-              { ko: 'Service Canada 직접 방문: 당일 확인서 발급, 예약 권장', en: 'Service Canada office: same-day confirmation letter, appointment recommended', fr: 'Bureau Service Canada : lettre de confirmation le jour même, rendez-vous recommandé' },
             ]} />
           </div>
           <div>
@@ -1111,10 +1097,20 @@ function DriverLicencePanel() {
           "Commencez le transfert de votre permis québécois dans les 90 jours suivant votre arrivée. Les titulaires d'un permis coréen peuvent le convertir sans examen.",
         )}
       </p>
-      <div className="flex gap-2 flex-wrap">
-        <a href="https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>SAAQ ↗</a>
+
+      {/* Decision cards — always visible */}
+      <div className="space-y-2">
+        <OptionRow primary name="SAAQ — Permis de conduire" desc={t('온라인 예약 후 방문. 워크인은 2–3시간 대기 가능. 수수료 ~$27–35', 'Book online before visiting. Walk-in: 2–3h wait. Fee ~$27–35', 'Réservez en ligne. Sans RDV : 2–3h d\'attente. Frais ~27–35 $')} href="https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence" />
       </div>
+
+      <WarnNote text={t(
+        '흔한 실수: 90일 기한을 놓쳐 필기·실기 시험을 다시 봐야 하는 경우. 달력에 꼭 표시해두세요.',
+        'Common mistake: missing the 90-day window and having to take written and road tests from scratch. Put a reminder in your calendar.',
+        'Erreur fréquente : rater la fenêtre de 90 jours et devoir repasser les examens. Mettez un rappel dans votre calendrier.',
+      )} />
+
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+
       {expanded && (
         <div className="space-y-4 pt-2">
           <div>
@@ -1126,18 +1122,6 @@ function DriverLicencePanel() {
               { ko: '시력 검사 ($15 내외, SAAQ 방문 시 현장 가능)', en: 'Vision test (~$15, can be done on-site at SAAQ)', fr: 'Test de vision (~15 $, peut être effectué sur place à la SAAQ)' },
             ]} />
           </div>
-          <div>
-            <PanelLabel>{t('방문 절차', 'Visit process', 'Processus de visite')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '온라인 예약 필수 (워크인은 2–3시간 대기)', en: 'Online booking strongly recommended (walk-in: 2–3 hour wait)', fr: "Réservation en ligne fortement recommandée (sans RDV : 2–3 heures d'attente)" },
-              { ko: '수수료 약 $27–35 (현장 카드 결제 가능)', en: 'Fee ~$27–35 (card payment accepted on-site)', fr: 'Frais ~27–35 $ (paiement par carte accepté sur place)' },
-            ]} />
-          </div>
-          <WarnNote text={t(
-            '흔한 실수: 90일 기한을 놓쳐 필기·실기 시험을 다시 봐야 하는 경우. 달력에 꼭 표시해두세요.',
-            'Common mistake: missing the 90-day window and having to take written and road tests from scratch. Put a reminder in your calendar.',
-            'Erreur fréquente : rater la fenêtre de 90 jours et devoir repasser les examens. Mettez un rappel dans votre calendrier.',
-          )} />
           <CommunityExperience section="licence" />
           <CommunityCTA />
         </div>
@@ -1158,12 +1142,18 @@ function LanguagePanel() {
           "Le français fait partie du quotidien à Montréal. Commencez par l'échange linguistique HAKKYO pour les expressions de la vie réelle.",
         )}
       </p>
-      <div className="flex gap-2 flex-wrap">
-        <a href="/programs?type=language-exchange" className="btn-primary" style={{height:34,padding:'0 12px',fontSize:13}}>{t('HAKKYO 언어 교환', 'HAKKYO Exchange', 'Échange HAKKYO')}</a>
-        <a href="/programs?language=french" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>{t('프랑스어 수업', 'French Classes', 'Cours de français')}</a>
-        <a href="/programs?language=english" className="btn-secondary" style={{height:34,padding:'0 12px',fontSize:13}}>{t('영어 수업', 'English Classes', "Cours d'anglais")}</a>
+
+      {/* Decision cards — always visible */}
+      <div className="space-y-2">
+        <OptionRow primary name={t('HAKKYO 언어 교환', 'HAKKYO Language Exchange', 'Échange linguistique HAKKYO')} desc={t('한국어·영어·프랑스어 교환, 소규모, 정기 모임 — 가장 추천', 'Korean / English / French exchange, small groups, regular meetups — top pick', 'Échange coréen/anglais/français, petits groupes, rencontres régulières — recommandé')} href="/programs?type=language-exchange" />
+        <OptionRow name={t('HAKKYO 프랑스어 수업', 'HAKKYO French Classes', 'Cours de français HAKKYO')} desc={t('초급부터 중급까지', 'Beginner to intermediate', 'Débutant à intermédiaire')} href="/programs?language=french" />
+        <OptionRow name={t('HAKKYO 영어 수업', 'HAKKYO English Classes', "Cours d'anglais HAKKYO")} desc={t('일상 영어, 발음, 비즈니스 영어', 'Everyday English, pronunciation, business English', "Anglais quotidien, prononciation, anglais des affaires")} href="/programs?language=english" />
+        <OptionRow name="Alliance Française Montréal" desc={t('레벨별 정규 프랑스어 수업', 'Structured French courses at all levels', 'Cours de français structurés à tous les niveaux')} href="https://www.alliance-francaise.ca/montreal" />
+        <OptionRow name="McGill Continuing Education" desc={t('저렴한 저녁 수업, 다양한 언어', 'Affordable evening classes, multiple languages', 'Cours du soir abordables, plusieurs langues')} href="https://www.mcgill.ca/continuingstudies" />
       </div>
+
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
+
       {expanded && (
         <div className="space-y-4 pt-2">
           <div>
@@ -1173,16 +1163,6 @@ function LanguagePanel() {
               { ko: '영어: 비즈니스·다운타운에서 주로 사용, 몬트리올은 이중언어 도시', en: 'English: Used in business and downtown — Montréal is bilingual', fr: 'Anglais : utilisé en affaires et au centre-ville — Montréal est bilingue' },
               { ko: '언어 교환: 실생활 표현 + 현지 친구 사귀기, 가장 빠른 방법', en: 'Language exchange: Real-world phrases + local friendships, fastest learning path', fr: 'Échange linguistique : expressions réelles + amitiés locales, la voie la plus rapide' },
             ]} />
-          </div>
-          <div>
-            <PanelLabel>{t('프로그램 비교', 'Program comparison', 'Comparaison des programmes')}</PanelLabel>
-            <div className="space-y-2">
-              <OptionRow primary name={t('HAKKYO 언어 교환', 'HAKKYO Language Exchange', 'Échange linguistique HAKKYO')} desc={t('한국어·영어·프랑스어 교환, 소규모, 정기 모임', 'Korean / English / French exchange, small groups, regular meetups', 'Échange coréen/anglais/français, petits groupes, rencontres régulières')} href="/programs?type=language-exchange" />
-              <OptionRow name={t('HAKKYO 프랑스어 수업', 'HAKKYO French Classes', 'Cours de français HAKKYO')} desc={t('초급부터 중급까지', 'Beginner to intermediate', 'Débutant à intermédiaire')} href="/programs?language=french" />
-              <OptionRow name={t('HAKKYO 영어 수업', 'HAKKYO English Classes', "Cours d'anglais HAKKYO")} desc={t('일상 영어, 발음, 비즈니스 영어', 'Everyday English, pronunciation, business English', "Anglais quotidien, prononciation, anglais des affaires")} href="/programs?language=english" />
-              <OptionRow name="Alliance Française Montréal" desc={t('레벨별 정규 프랑스어 수업', 'Structured French courses at all levels', 'Cours de français structurés à tous les niveaux')} href="https://www.alliance-francaise.ca/montreal" />
-              <OptionRow name="McGill Continuing Education" desc={t('저렴한 저녁 수업, 다양한 언어', 'Affordable evening classes, multiple languages', 'Cours du soir abordables, plusieurs langues')} href="https://www.mcgill.ca/continuingstudies" />
-            </div>
           </div>
           <CommunityExperience section="language" />
           <CommunityCTA />
