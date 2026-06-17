@@ -549,7 +549,7 @@ const TOOL_TABS = [
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function Arriving() {
-  const { lang } = useLang()
+  const { lang, t } = useLang()
   const [checked, setChecked] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '[]')) }
     catch { return new Set() }
@@ -579,7 +579,9 @@ export default function Arriving() {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">✈️</span>
-            <h1 className="text-[24px] font-bold text-gray-900">First Steps</h1>
+            <h1 className="text-[24px] font-bold text-gray-900">
+              {t('첫 걸음', 'First Steps', 'Premiers Pas')}
+            </h1>
           </div>
           <p className="text-[14px] text-gray-500 leading-relaxed">
             {lang === 'ko'

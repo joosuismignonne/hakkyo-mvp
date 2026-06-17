@@ -139,15 +139,15 @@ const JOURNEY: JourneyItem[] = [
     emoji: '✈️',
     ko: '첫 걸음',
     en: 'First Steps',
-    fr: 'Premiers pas',
+    fr: 'Premiers Pas',
   },
   {
     to: '/settling',
     icon: IconSettling,
     emoji: '🏡',
-    ko: '내 공간 찾기',
+    ko: '나만의 공간 찾기',
     en: 'Finding Your Place',
-    fr: 'Trouver sa place',
+    fr: 'Trouver Son Chez-Soi',
   },
   {
     to: '/board',
@@ -156,7 +156,7 @@ const JOURNEY: JourneyItem[] = [
     emoji: '👋',
     ko: '주변 사람들',
     en: 'People Around You',
-    fr: 'Autour de vous',
+    fr: 'Autour de Vous',
   },
   {
     to: '/radar',
@@ -165,7 +165,7 @@ const JOURNEY: JourneyItem[] = [
     emoji: '💼',
     ko: '새로운 기회',
     en: 'New Opportunities',
-    fr: 'Nouvelles opportunités',
+    fr: 'Nouvelles Opportunités',
   },
   {
     to: '/phrases',
@@ -174,16 +174,16 @@ const JOURNEY: JourneyItem[] = [
     emoji: '🗣',
     ko: '일상 표현',
     en: 'Everyday Words',
-    fr: 'Mots du quotidien',
+    fr: 'Expressions du Quotidien',
   },
   {
     to: '/news',
     activePaths: ['/news'],
     icon: IconLiving,
     emoji: '🌱',
-    ko: '몬트리올 생활',
+    ko: '몬트리올 라이프',
     en: 'Life in Montréal',
-    fr: 'Vivre à Montréal',
+    fr: 'La Vie à Montréal',
   },
 ]
 
@@ -294,7 +294,7 @@ function DesktopSidebar() {
                     {user.email?.[0]?.toUpperCase() ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold text-gray-900 leading-tight">My Journey</p>
+                    <p className="text-[12px] font-bold text-gray-900 leading-tight">{t('나의 여정', 'My Journey', 'Mon Parcours')}</p>
                     <p className="text-[11px] text-gray-400 leading-tight truncate">{user.email}</p>
                   </div>
                   <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-400 shrink-0">
@@ -310,7 +310,7 @@ function DesktopSidebar() {
                     <polyline points="16 17 21 12 16 7"/>
                     <line x1="21" y1="12" x2="9" y2="12"/>
                   </svg>
-                  Sign out
+                  {t('로그아웃', 'Sign out', 'Se déconnecter')}
                 </button>
               </div>
             )
@@ -329,7 +329,7 @@ function DesktopSidebar() {
                 className="flex items-center justify-center w-full py-2.5 rounded-xl text-[13px] font-bold transition-colors"
                 style={{ background: 'var(--y)', color: '#111' }}
               >
-                Montréal In
+                {t('몬트리올 시작하기', 'Montréal In', 'Commencer')}
               </Link>
             )
           )}
@@ -495,7 +495,7 @@ function DesktopSidebar() {
 // ─── Mobile bottom tab bar ────────────────────────────────────────────────────
 
 function MobileBottomNav() {
-  const { lang } = useLang()
+  const { lang, t } = useLang()
   const { pathname } = useLocation()
 
   return (
@@ -524,7 +524,7 @@ function MobileBottomNav() {
         <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'var(--y)' }}>
           <IconPlus />
         </span>
-        <span className="text-[9px] font-medium text-gray-400">Share</span>
+        <span className="text-[9px] font-medium text-gray-400">{t('공유', 'Share', 'Partager')}</span>
       </button>
     </nav>
   )
