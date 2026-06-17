@@ -147,39 +147,39 @@ const PROGRESS_KEY = 'hakkyo_firststeps'
 const JOURNEY_MESSAGES: Array<{ min: number; max: number } & Tri> = [
   {
     min: 0, max: 0,
-    ko: '여정이 시작됩니다.',
-    en: 'The journey begins.',
-    fr: 'Le voyage commence.',
+    ko: '아직 시작 전입니다. 하나씩 확인해 보세요.',
+    en: 'Not started yet. Check things off as you go.',
+    fr: 'Pas encore commencé. Cochez au fur et à mesure.',
   },
   {
     min: 1, max: 29,
-    ko: '당신의 몬트리올 챕터가 조금씩 모습을 갖춰가고 있습니다.',
-    en: 'Your Montréal chapter is starting to take shape.',
-    fr: 'Votre chapitre montréalais commence à prendre forme.',
+    ko: '준비가 시작됐습니다.',
+    en: 'Getting started.',
+    fr: 'Vous démarrez.',
   },
   {
     min: 30, max: 59,
-    ko: '자신만의 리듬을 찾아가고 있습니다.',
-    en: "You're finding your rhythm.",
-    fr: 'Vous trouvez votre rythme.',
+    ko: '몬트리올 생활이 조금씩 자리를 잡아가고 있습니다.',
+    en: 'Settling into Montréal life, step by step.',
+    fr: 'Vous vous installez à Montréal, pas à pas.',
   },
   {
     min: 60, max: 89,
-    ko: '몬트리올이 익숙해지기 시작했습니다.',
-    en: 'Montréal is beginning to feel familiar.',
-    fr: 'Montréal commence à vous sembler familière.',
+    ko: '도시에 익숙해지는 중입니다.',
+    en: 'Getting comfortable in the city.',
+    fr: 'Vous vous familiarisez avec la ville.',
   },
   {
     min: 90, max: 99,
-    ko: '거의 다 됐습니다. 몬트리올이 집처럼 느껴지고 있습니다.',
-    en: "Almost there. Montréal is starting to feel like home.",
-    fr: "Presque là. Montréal commence à ressembler à un chez-soi.",
+    ko: '거의 다 됐습니다.',
+    en: 'Almost done.',
+    fr: 'Presque terminé.',
   },
   {
     min: 100, max: 100,
-    ko: '환영합니다. 이제 당신은 몬트리올을 준비하는 것이 아닙니다. 몬트리올에서 살고 있습니다.',
-    en: "Welcome. You're no longer preparing for Montréal. You're living in it.",
-    fr: "Bienvenue. Vous ne préparez plus votre arrivée à Montréal. Vous y vivez.",
+    ko: '몬트리올에 도착하셨네요.',
+    en: "You've arrived in Montréal.",
+    fr: 'Vous êtes arrivé·e à Montréal.',
   },
 ]
 
@@ -1091,6 +1091,18 @@ const TOOL_TABS: Array<{ id: string; icon: React.ReactNode } & Tri> = [
   { id: 'language',  icon: <IcoLang />,    ko: '언어',           en: 'Language',             fr: 'Langue'            },
 ]
 
+// Maps each checklist item to the Essential Tools tab it should open
+const CHECKLIST_TAB_MAP: Record<string, string> = {
+  flight:   'flights',
+  stay:     'stay',
+  sim:      'sim',
+  bank:     'banking',
+  sin:      'sin',
+  opus:     'transport',
+  licence:  'licence',
+  exchange: 'language',
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function Arriving() {
@@ -1102,6 +1114,7 @@ export default function Arriving() {
   const [activeTab, setActiveTab] = useState('flights')
   const [flash, setFlash] = useState<{ msg: string; visible: boolean } | null>(null)
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const toolsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     try { localStorage.setItem(PROGRESS_KEY, JSON.stringify([...checked])) }
@@ -1159,19 +1172,17 @@ export default function Arriving() {
             <h2 className="text-[15px] font-bold text-gray-900">
               {t('나의 몬트리올 준비', 'Your Montréal Progress', 'Votre Progression')}
             </h2>
-            <div className="text-right shrink-0">
-              <span className="text-[20px] font-bold text-gray-900">{pct}%</span>
-              <p className="text-[11px] text-gray-400">{t('완료', 'complete', 'complété')}</p>
-            </div>
+            {/* Human-readable count instead of large % */}
+            <span className="text-[12px] text-gray-400 shrink-0">
+              {checked.size} / {CHECKLIST.length} {t('완료', 'done', 'fait')}
+            </span>
           </div>
 
-          {pct < 100 && (
-            <p className="text-[13px] text-gray-500 italic mb-3 leading-snug">
-              {getJourneyMessage(pct, lang)}
-            </p>
-          )}
+          <p className="text-[12px] text-gray-400 mb-3 leading-snug">
+            {getJourneyMessage(pct, lang)}
+          </p>
 
-          <div className="h-1 bg-gray-100 rounded-full mb-4 overflow-hidden">
+          <div className="h-[2px] bg-gray-100 rounded-full mb-4 overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ width: `${pct}%`, background: 'var(--y)' }}
@@ -1196,16 +1207,25 @@ export default function Arriving() {
             )}
           </div>
 
-          <div className="space-y-0.5">
+          {/* Two-column grid on sm+, single column on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5">
             {CHECKLIST.map(item => {
               const isDone = checked.has(item.id)
+              const tabTarget = CHECKLIST_TAB_MAP[item.id]
               return (
                 <button
                   key={item.id}
-                  onClick={() => toggle(item.id)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors hover:bg-gray-50"
+                  onClick={() => {
+                    toggle(item.id)
+                    if (tabTarget) {
+                      setActiveTab(tabTarget)
+                      setTimeout(() => {
+                        toolsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }, 50)
+                    }
+                  }}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors hover:bg-gray-50 group"
                 >
-                  {/* check icon — visible only when done */}
                   <span className="shrink-0 w-4 flex items-center justify-center">
                     {isDone ? (
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--y-h)' }}>
@@ -1215,9 +1235,15 @@ export default function Arriving() {
                       <span className="w-3 h-3 rounded-sm border border-gray-300 inline-block" />
                     )}
                   </span>
-                  <span className={`text-[13px] ${isDone ? 'text-gray-400' : 'text-gray-700'}`}>
+                  <span className={`text-[13px] flex-1 ${isDone ? 'text-gray-400' : 'text-gray-700'}`}>
                     {tri(item, lang)}
                   </span>
+                  {/* subtle hint that item links to a guide */}
+                  {tabTarget && !isDone && (
+                    <span className="text-[10px] text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      →
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -1268,7 +1294,7 @@ export default function Arriving() {
         )}
 
         {/* ── Essential Tools ── */}
-        <div className="mb-6">
+        <div className="mb-6" ref={toolsRef}>
           <h2 className="text-[15px] font-bold text-gray-900 mb-1">
             {t('필수 도구', 'Essential Tools', 'Outils Essentiels')}
           </h2>
