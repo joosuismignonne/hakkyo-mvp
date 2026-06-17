@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLoca
 import { useEffect } from 'react'
 import { trackPageView } from './lib/analytics'
 import { LangProvider } from './context/LangContext'
+import { AuthProvider } from './context/AuthContext'
 import AppSidebar from './components/AppSidebar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -15,12 +16,16 @@ import ApplyPage from './pages/ApplyPage'
 import BoardDetail from './pages/BoardDetail'
 import CommunityDetail from './pages/CommunityDetail'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Account from './pages/Account'
 import ResetPassword from './pages/ResetPassword'
 import RequireAuth from './components/RequireAuth'
 import BoardMemoryWidget from './components/BoardMemoryWidget'
 import Radar from './pages/Radar'
 import ResumeMap from './pages/ResumeMap'
 import Phrases from './pages/Phrases'
+import Arriving from './pages/Arriving'
+import Settling from './pages/Settling'
 import { supabase } from './lib/supabase'
 
 function RedirectContentId() {
@@ -54,6 +59,7 @@ function AuthListener() {
 
 export default function App() {
   return (
+    <AuthProvider>
     <LangProvider>
       <BrowserRouter>
         <div className="min-h-screen flex bg-white text-gray-900 font-sans">
@@ -77,10 +83,14 @@ export default function App() {
               <Route path="/schedule" element={<Navigate to="/board" replace />} />
               <Route path="/content" element={<Navigate to="/news" replace />} />
               <Route path="/content/:id" element={<RedirectContentId />} />
+              <Route path="/arriving" element={<Arriving />} />
+              <Route path="/settling" element={<Settling />} />
               <Route path="/radar" element={<Radar />} />
               <Route path="/resume-map" element={<ResumeMap />} />
               <Route path="/phrases" element={<Phrases />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/account" element={<Account />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/admin/*" element={<RequireAuth><Admin /></RequireAuth>} />
             </Routes>
@@ -91,5 +101,6 @@ export default function App() {
         </div>
       </BrowserRouter>
     </LangProvider>
+    </AuthProvider>
   )
 }

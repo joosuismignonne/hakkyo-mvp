@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
 type Mode = 'signin' | 'forgot' | 'forgot-sent'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { signIn } = useAuth()
   const [mode, setMode]         = useState<Mode>('signin')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -16,10 +18,8 @@ export default function Login() {
     e.preventDefault()
     setError(''); setLoading(true)
     try {
-      if (!supabase) throw new Error('Supabase is not configured.')
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      if (authError) throw authError
-      navigate('/admin', { replace: true })
+      await signIn(email, password)
+      navigate('/', { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign in failed.')
     } finally {
@@ -50,8 +50,8 @@ export default function Login() {
 
         {mode === 'signin' && (
           <>
-            <h1 className="text-xl font-bold text-gray-900 mb-1">Admin sign in</h1>
-            <p className="text-sm text-gray-400 mb-8">HAKKYO · restricted area</p>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Sign in</h1>
+            <p className="text-sm text-gray-400 mb-8">HAKKYO · welcome back</p>
 
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
@@ -72,11 +72,14 @@ export default function Login() {
               </button>
             </form>
 
-            <div className="mt-4 text-center">
+            <div className="mt-4 flex items-center justify-between">
               <button onClick={() => { setMode('forgot'); setError('') }}
                       className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
                 Forgot password?
               </button>
+              <Link to="/signup" className="text-xs text-gray-500 hover:text-gray-800 transition-colors font-medium">
+                Create account →
+              </Link>
             </div>
           </>
         )}
