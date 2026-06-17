@@ -69,6 +69,13 @@ function IcoCar() {
     </svg>
   )
 }
+function IcoLang() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+  )
+}
 
 // Transport-specific icons (slightly larger, in cards)
 function IcoMetro() {
@@ -574,6 +581,10 @@ const COMMUNITY_TIPS: Record<string, CommunityTip[]> = {
   ],
   sin: [],
   licence: [],
+  language: [
+    { author: 'Jiyeon',  text: 'I started going to language exchange meetups in my second week. My French was terrible but nobody cared. It is how you actually learn.' },
+    { author: 'Minjun',  text: 'The Korean community here helped me settle in, but switching to French at the coffee shop — even badly — opened more doors than I expected.' },
+  ],
 }
 
 // ─── Badge colour helper ──────────────────────────────────────────────────────
@@ -964,6 +975,109 @@ function DriverLicencePanel() {
   )
 }
 
+function LanguagePanel() {
+  const { lang, t } = useLang()
+
+  const programs = [
+    {
+      id: 'korean',
+      flag: '🇰🇷',
+      title: { ko: '한국어 프로그램', en: 'Korean Program', fr: 'Programme coréen' } as Tri,
+      desc:  {
+        ko: '일상 대화를 통해 자연스러운 한국어를 배웁니다.',
+        en: 'Learn everyday Korean through real conversations.',
+        fr: 'Apprenez le coréen du quotidien à travers de vraies conversations.',
+      } as Tri,
+      to: '/language',
+      cta: { ko: '살펴보기', en: 'Explore', fr: 'Explorer' } as Tri,
+    },
+    {
+      id: 'english',
+      flag: '🇨🇦',
+      title: { ko: '영어 프로그램', en: 'English Program', fr: 'Programme anglais' } as Tri,
+      desc:  {
+        ko: '몬트리올에서 영어로 자신있게 말하는 연습을 합니다.',
+        en: 'Build confidence speaking English in Montréal.',
+        fr: "Gagnez en confiance pour parler anglais à Montréal.",
+      } as Tri,
+      to: '/language',
+      cta: { ko: '살펴보기', en: 'Explore', fr: 'Explorer' } as Tri,
+    },
+    {
+      id: 'french',
+      flag: '🇫🇷',
+      title: { ko: '프랑스어 프로그램', en: 'French Program', fr: 'Programme français' } as Tri,
+      desc:  {
+        ko: '퀘벡 생활에 필요한 실용 프랑스어를 배웁니다.',
+        en: 'Learn practical French for Québec life.',
+        fr: 'Apprenez le français pratique pour la vie au Québec.',
+      } as Tri,
+      to: '/language',
+      cta: { ko: '살펴보기', en: 'Explorer', fr: 'Explorer' } as Tri,
+    },
+    {
+      id: 'exchange',
+      flag: '🤝',
+      title: { ko: '언어 교환', en: 'Language Exchange', fr: 'Échange linguistique' } as Tri,
+      desc:  {
+        ko: '사람들을 만나고 자연스럽게 언어를 연습합니다.',
+        en: 'Meet people and practice naturally.',
+        fr: 'Rencontrez des gens et pratiquez naturellement.',
+      } as Tri,
+      to: '/people',
+      cta: { ko: '찾아보기', en: 'Find people', fr: 'Trouver des gens' } as Tri,
+    },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* Quote block */}
+      <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
+        <p className="text-[15px] font-bold text-gray-900 mb-2">
+          {t('언어는 도시로 들어가는 문입니다.', 'Language is the door into a city.', "La langue est la porte d'entrée d'une ville.")}
+        </p>
+        <p className="text-[13px] text-gray-500 leading-relaxed">
+          {t(
+            '완벽한 문법은 필요 없습니다.\n말을 시작할 이유만 있으면 됩니다.',
+            'You do not need perfect grammar.\nYou only need a reason to start talking.',
+            "Vous n'avez pas besoin d'une grammaire parfaite.\nVous avez juste besoin d'une raison de commencer à parler.",
+          )}
+        </p>
+      </div>
+
+      {/* Description */}
+      <p className="text-[13px] text-gray-500 leading-relaxed px-1">
+        {t(
+          '언어는 학교 과목이 아닙니다. 새로운 도시에서 길을 찾는 방법입니다.\n첫 번째 대화, 첫 번째 커피 주문, 첫 번째 현지 친구 — 많은 것들이 언어에서 시작됩니다.',
+          'Language is not a school subject. It is how people find their way through a new city.\nYour first conversation, your first coffee order, and your first local friend often begin with language.',
+          "La langue n'est pas une matière scolaire. C'est la façon dont les gens trouvent leur chemin dans une nouvelle ville.\nVotre première conversation, votre première commande de café et votre premier ami local commencent souvent par la langue.",
+        )}
+      </p>
+
+      {/* Program cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {programs.map(p => (
+          <div key={p.id} className="border border-gray-200 rounded-2xl px-4 py-4 bg-white flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[18px]">{p.flag}</span>
+              <span className="text-[14px] font-bold text-gray-900">{tri(p.title, lang)}</span>
+            </div>
+            <p className="text-[12px] text-gray-500 leading-snug flex-1">{tri(p.desc, lang)}</p>
+            <Link
+              to={p.to}
+              className="inline-flex items-center text-[12px] font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              {tri(p.cta, lang)} →
+            </Link>
+          </div>
+        ))}
+      </div>
+
+      <CommunityExperience section="language" />
+    </div>
+  )
+}
+
 // ─── Tool tabs ────────────────────────────────────────────────────────────────
 
 const TOOL_TABS: Array<{ id: string; icon: React.ReactNode } & Tri> = [
@@ -974,6 +1088,7 @@ const TOOL_TABS: Array<{ id: string; icon: React.ReactNode } & Tri> = [
   { id: 'stay',      icon: <IcoBed />,     ko: '첫 숙소',        en: 'First Stay',           fr: 'Premier Logement'  },
   { id: 'sin',       icon: <IcoID />,      ko: 'SIN Number',     en: 'SIN Number',           fr: 'NAS'               },
   { id: 'licence',   icon: <IcoCar />,     ko: '운전 면허증',    en: "Driver's Licence",     fr: 'Permis de conduire'},
+  { id: 'language',  icon: <IcoLang />,    ko: '언어',           en: 'Language',             fr: 'Langue'            },
 ]
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -1147,6 +1262,7 @@ export default function Arriving() {
             {activeTab === 'stay'      && <StayPanel />}
             {activeTab === 'sin'       && <SINPanel />}
             {activeTab === 'licence'   && <DriverLicencePanel />}
+            {activeTab === 'language'  && <LanguagePanel />}
           </div>
         </div>
 
