@@ -770,6 +770,92 @@ function OptionRow({ name, desc, href, primary }: { name: string; desc: string; 
     : <a href={href} target="_blank" rel="noopener noreferrer">{inner}</a>
 }
 
+// ─── Compare card ─────────────────────────────────────────────────────────────
+
+type CompareCardData = {
+  name: string
+  href: string
+  external?: boolean
+  price: string           // e.g. "$30–45/mo"
+  forWho: string          // brief target user description
+  fromKorea: 'yes' | 'partial' | 'no'
+  channels: string        // e.g. "Online · eSIM app"
+  pros: string[]
+  cons: string[]
+  rating: 'top' | 'good' | 'ok'
+  costco?: string
+}
+
+function CompareCard({ d }: { d: CompareCardData }) {
+  const RATING = {
+    top:  { label: 'Top Pick',    style: { background: '#111', color: '#fff' } },
+    good: { label: 'Good option', style: { background: '#f3f4f6', color: '#374151' } },
+    ok:   { label: 'Situational', style: { background: '#fef9c3', color: '#713f12' } },
+  }
+  const KOREA = {
+    yes:     { text: 'From Korea ✓', color: '#166534' },
+    partial: { text: 'Partial ◑',    color: '#92400e' },
+    no:      { text: 'Must arrive ✗', color: '#991b1b' },
+  }
+  const r = RATING[d.rating]
+  const k = KOREA[d.fromKorea]
+
+  const linkProps = d.external || !d.href.startsWith('/')
+    ? { href: d.href, target: '_blank', rel: 'noopener noreferrer' }
+    : { href: d.href }
+
+  return (
+    <div style={{ border: '1px solid #f3f4f6', borderRadius: 14, padding: '16px 18px', background: '#fff' }}>
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-3 mb-2.5">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 5, padding: '1px 7px', letterSpacing: '0.06em', textTransform: 'uppercase', ...r.style }}>
+              {r.label}
+            </span>
+          </div>
+          <a {...linkProps} className="text-[14px] font-semibold text-gray-900 hover:text-gray-500 transition-colors">
+            {d.name} ↗
+          </a>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-[15px] font-bold text-gray-900 leading-tight">{d.price}</p>
+        </div>
+      </div>
+
+      {/* Meta strip */}
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5 pb-3 mb-3" style={{ borderBottom: '1px solid #f3f4f6' }}>
+        <span style={{ fontSize: 11, color: '#6b7280' }}>
+          <span style={{ fontWeight: 600, color: '#374151' }}>For </span>{d.forWho}
+        </span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: k.color }}>{k.text}</span>
+        <span style={{ fontSize: 11, color: '#6b7280' }}>
+          <span style={{ fontWeight: 600, color: '#374151' }}>Via </span>{d.channels}
+        </span>
+        {d.costco && (
+          <span style={{ fontSize: 11, color: '#6b7280' }}>
+            <span style={{ fontWeight: 600, color: '#374151' }}>Costco </span>{d.costco}
+          </span>
+        )}
+      </div>
+
+      {/* Pros / Cons */}
+      <div className="grid grid-cols-1 gap-0.5">
+        {d.pros.map((p, i) => (
+          <p key={`p${i}`} style={{ fontSize: 12, color: '#374151', lineHeight: 1.55 }}>
+            <span style={{ color: '#16a34a', fontWeight: 700, marginRight: 5 }}>+</span>{p}
+          </p>
+        ))}
+        {d.cons.map((c, i) => (
+          <p key={`c${i}`} style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.55 }}>
+            <span style={{ color: '#dc2626', fontWeight: 700, marginRight: 5 }}>−</span>{c}
+          </p>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Tool panels ──────────────────────────────────────────────────────────────
 
 function FlightsPanel() {
@@ -786,10 +872,57 @@ function FlightsPanel() {
       </p>
 
       {/* Decision cards — always visible */}
-      <div className="space-y-2">
-        <OptionRow primary name="Google Flights" desc={t('가격 추이 그래프 제공, 날짜 유연하게 비교 가능', 'Price trend graphs, flexible date comparison', 'Graphiques de tendances, comparaison de dates flexible')} href="https://www.google.com/travel/flights" />
-        <OptionRow name="Skyscanner" desc={t('월별 최저가 탐색에 유용', 'Useful for finding cheapest month to fly', 'Utile pour trouver le mois le moins cher')} href="https://www.skyscanner.ca" />
-        <OptionRow name="Kayak" desc={t('가격 예측 기능 포함', 'Includes price prediction feature', 'Inclut une fonctionnalité de prédiction de prix')} href="https://www.kayak.ca" />
+      <div className="space-y-2.5">
+        <CompareCard d={{
+          name: 'Google Flights',
+          href: 'https://www.google.com/travel/flights',
+          external: true,
+          price: t('가격 변동', 'Varies', 'Variable'),
+          forWho: t('모든 사람 — 가격 비교 시작점', 'Everyone — best starting point', 'Tout le monde — meilleur point de départ'),
+          fromKorea: 'yes',
+          channels: t('웹 · 앱', 'Web · App', 'Web · App'),
+          pros: [
+            t('날짜 유연성 비교 달력', 'Flexible date calendar to find cheapest day', 'Calendrier de dates flexibles pour trouver le jour le moins cher'),
+            t('가격 추이 그래프, 가격 알림 설정 가능', 'Price trend graphs + price drop alerts', 'Graphiques de tendances + alertes de baisse de prix'),
+          ],
+          cons: [
+            t('직접 예약 불가 — 항공사 사이트로 이동', 'Cannot book directly — redirects to airline', 'Impossible de réserver directement — redirige vers la compagnie'),
+          ],
+          rating: 'top',
+        }} />
+        <CompareCard d={{
+          name: 'Skyscanner',
+          href: 'https://www.skyscanner.ca',
+          external: true,
+          price: t('가격 변동', 'Varies', 'Variable'),
+          forWho: t('월별 최저가 찾는 사람', 'Anyone finding the cheapest month to travel', "Ceux qui cherchent le mois le moins cher pour voyager"),
+          fromKorea: 'yes',
+          channels: t('웹 · 앱', 'Web · App', 'Web · App'),
+          pros: [
+            t('전체 월 최저가 보기 가능', 'View cheapest prices across a whole month', 'Voir les prix les moins chers sur tout un mois'),
+            t('여러 항공사 동시 비교', 'Compares many airlines at once', 'Compare de nombreuses compagnies en même temps'),
+          ],
+          cons: [
+            t('일부 링크가 제3자 사이트로 이동', 'Some links go to third-party booking sites', 'Certains liens mènent à des sites tiers'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Kayak',
+          href: 'https://www.kayak.ca',
+          external: true,
+          price: t('가격 변동', 'Varies', 'Variable'),
+          forWho: t('가격 예측이 필요한 사람', 'Anyone who wants a price forecast before booking', 'Ceux qui veulent une prévision de prix avant de réserver'),
+          fromKorea: 'yes',
+          channels: t('웹 · 앱', 'Web · App', 'Web · App'),
+          pros: [
+            t('"지금 살까 기다릴까" 가격 예측 기능', '"Buy now or wait" price prediction feature', 'Fonctionnalité de prévision "acheter maintenant ou attendre"'),
+          ],
+          cons: [
+            t('예측이 항상 정확하지는 않음', 'Predictions are not always accurate', 'Les prévisions ne sont pas toujours exactes'),
+          ],
+          rating: 'good',
+        }} />
       </div>
 
       <WarnNote text={t(
@@ -848,12 +981,97 @@ function SIMPanel() {
       </p>
 
       {/* Decision cards — always visible */}
-      <div className="space-y-2">
-        <OptionRow primary name="Fizz" desc={t('eSIM 지원, 월 $30–45, 유연한 요금제 — 첫 달 최추천', 'eSIM supported, $30–45/mo, flexible plans — best for first month', 'eSIM disponible, 30–45 $/mois, forfaits flexibles — meilleur choix initial')} href="https://fizz.ca" />
-        <OptionRow name="Public Mobile" desc={t('가장 저렴, 6개월 이상 사용 시 할인 누적', 'Cheapest overall, discounts accumulate after 6+ months', 'Le moins cher, réductions cumulées après 6 mois+')} href="https://www.publicmobile.ca" />
-        <OptionRow name="Freedom Mobile" desc={t('학생 할인, 무제한 요금제 제공', 'Student discounts, unlimited plans available', 'Réductions étudiants, forfaits illimités disponibles')} href="https://www.freedommobile.ca" />
-        <OptionRow name="Koodo" desc={t('대형 통신사(Telus) 품질, 중간 가격대', 'Major carrier (Telus) quality, mid-range pricing', 'Qualité grande marque (Telus), prix intermédiaires')} href="https://www.koodomobile.com" />
-        <OptionRow name="Bell / Rogers / Telus" desc={t('가장 안정적이나 가격 높음, 계약 조건 확인 필수', 'Most reliable but expensive, check contract terms', 'Plus fiables mais plus chers, vérifiez les conditions')} href="https://www.bell.ca" />
+      <div className="space-y-2.5">
+        <CompareCard d={{
+          name: 'Fizz',
+          href: 'https://fizz.ca',
+          external: true,
+          price: '$30–45/mo',
+          forWho: t('신규 이민자, eSIM 사용자 — 첫 달 최추천', 'New arrivals, eSIM users — best for first month', 'Nouveaux arrivants, utilisateurs eSIM — meilleur choix initial'),
+          fromKorea: 'yes',
+          channels: t('온라인 전용 · eSIM', 'Online only · eSIM', 'En ligne uniquement · eSIM'),
+          pros: [
+            t('eSIM — 공항 도착 전 설정 가능', 'eSIM — set up before you land', 'eSIM — configurez avant d\'atterrir'),
+            t('약정 없음, 월별 유연한 변경 가능', 'No contract, change plan monthly', 'Sans contrat, changez de forfait mensuellement'),
+            t('친구 추천 시 크레딧 제공', 'Referral credits available', 'Crédits de parrainage disponibles'),
+          ],
+          cons: [
+            t('고객 서비스 온라인 전용 (전화 없음)', 'Customer service online only — no phone support', 'Service client en ligne uniquement — pas de support téléphonique'),
+            t('도심 외 지역 커버리지 약함', 'Coverage weaker outside city core', 'Couverture plus faible hors du centre-ville'),
+          ],
+          rating: 'top',
+        }} />
+        <CompareCard d={{
+          name: 'Public Mobile',
+          href: 'https://www.publicmobile.ca',
+          external: true,
+          price: '$15–34/mo',
+          forWho: t('장기 사용 예정인 예산 중시 사용자', 'Budget-focused users staying 6+ months', 'Utilisateurs axés sur le budget restant 6 mois+'),
+          fromKorea: 'yes',
+          channels: t('온라인 전용 · eSIM', 'Online only · eSIM', 'En ligne uniquement · eSIM'),
+          pros: [
+            t('캐나다에서 가장 저렴한 요금제 중 하나', 'One of the cheapest plans in Canada', "L'un des forfaits les moins chers au Canada"),
+            t('3·6개월마다 자동 할인 누적', 'Auto discounts after 3 and 6 months', 'Réductions automatiques après 3 et 6 mois'),
+          ],
+          cons: [
+            t('전화 고객 서비스 없음', 'No phone customer support', 'Pas de support client par téléphone'),
+            t('커버리지가 Telus/Rogers보다 제한적', 'Coverage more limited than Telus/Rogers', 'Couverture plus limitée que Telus/Rogers'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Freedom Mobile',
+          href: 'https://www.freedommobile.ca',
+          external: true,
+          price: '$25–55/mo',
+          forWho: t('학생, 무제한 데이터 필요자', 'Students, users who need unlimited data', 'Étudiants, utilisateurs ayant besoin de données illimitées'),
+          fromKorea: 'partial',
+          channels: t('온라인 · 매장 · eSIM', 'Online · Store · eSIM', 'En ligne · Boutique · eSIM'),
+          pros: [
+            t('학생 할인 제공', 'Student discounts available', 'Réductions étudiants disponibles'),
+            t('무제한 데이터 요금제 있음', 'Unlimited data plans available', 'Forfaits données illimitées disponibles'),
+          ],
+          cons: [
+            t('도시 외 지역 커버리지 약함', 'Weak coverage outside major cities', 'Couverture faible hors des grandes villes'),
+            t('로밍 옵션 제한적', 'Limited roaming options', 'Options de roaming limitées'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Koodo',
+          href: 'https://www.koodomobile.com',
+          external: true,
+          price: '$40–65/mo',
+          forWho: t('안정성과 가격의 균형을 원하는 사람', 'Users wanting balance of reliability and price', 'Ceux qui veulent un équilibre entre fiabilité et prix'),
+          fromKorea: 'yes',
+          channels: t('온라인 · 매장 · eSIM', 'Online · Store · eSIM', 'En ligne · Boutique · eSIM'),
+          pros: [
+            t('Telus 네트워크 품질 (캐나다 최고)', 'Telus network quality (best in Canada)', 'Qualité réseau Telus (meilleur au Canada)'),
+            t('eSIM 지원, 공항 도착 전 설정 가능', 'eSIM supported, set up before arrival', 'eSIM disponible, configurez avant l\'arrivée'),
+          ],
+          cons: [
+            t('Fizz/Public Mobile보다 비쌈', 'More expensive than Fizz or Public Mobile', 'Plus cher que Fizz ou Public Mobile'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Bell · Rogers · Telus',
+          href: 'https://www.bell.ca',
+          external: true,
+          price: '$55–90+/mo',
+          forWho: t('최고 커버리지가 필요한 사람, 비즈니스 사용자', 'Users needing the best coverage, business users', 'Utilisateurs ayant besoin de la meilleure couverture, professionnels'),
+          fromKorea: 'partial',
+          channels: t('온라인 · 매장', 'Online · Store', 'En ligne · Boutique'),
+          pros: [
+            t('캐나다 최고 네트워크 커버리지', 'Best network coverage in Canada', 'Meilleure couverture réseau au Canada'),
+            t('매장 방문 지원 가능', 'In-person store support available', 'Support en boutique disponible'),
+          ],
+          cons: [
+            t('가장 비쌈 — 신규 이민자에게 불필요', 'Most expensive — unnecessary for newcomers', 'Le plus cher — inutile pour les nouveaux arrivants'),
+            t('약정 계약 조건 반드시 확인', 'Contract terms — read carefully', 'Conditions du contrat — lisez attentivement'),
+          ],
+          rating: 'ok',
+        }} />
       </div>
 
       <WarnNote text={t(
@@ -904,11 +1122,81 @@ function BankingPanel() {
       </p>
 
       {/* Decision cards — always visible */}
-      <div className="space-y-2">
-        <OptionRow primary name="TD StartRight" desc={t('신규 이민자 전용, 신용 기록 없어도 개설 가능', 'Designed for newcomers, no Canadian credit history needed', 'Pour les nouveaux arrivants, sans historique de crédit canadien')} href="https://www.td.com/ca/en/personal-banking/solutions/new-to-canada" />
-        <OptionRow name="Scotiabank StartRight" desc={t('이민자 패키지, 수수료 1년 면제 포함', 'Newcomer package includes 1 year of free banking', 'Forfait nouvel arrivant avec 1 an de frais bancaires gratuits')} href="https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html" />
-        <OptionRow name="Desjardins" desc={t('퀘벡 기반 신협, 프랑스어 서비스 강점, 지역 밀착형', 'Québec credit union, strong French service, community-focused', 'Coopérative québécoise, excellent service en français, ancrage local')} href="https://www.desjardins.com" />
-        <OptionRow name="RBC" desc={t('캐나다 최대 은행, 지점 많음, 수수료 있음', "Canada's largest bank, many branches, fees apply", 'La plus grande banque du Canada, nombreuses succursales, frais applicables')} href="https://www.rbcroyalbank.com" />
+      <div className="space-y-2.5">
+        <CompareCard d={{
+          name: 'TD StartRight',
+          href: 'https://www.td.com/ca/en/personal-banking/solutions/new-to-canada',
+          external: true,
+          price: t('1년 무료 → $16/월', '1 yr free → $16/mo', '1 an gratuit → 16 $/mois'),
+          forWho: t('신규 이민자 — 캐나다 신용 기록 없어도 OK', 'New arrivals — no Canadian credit history needed', 'Nouveaux arrivants — sans historique de crédit canadien'),
+          fromKorea: 'no',
+          channels: t('지점 방문 필요 (예약 온라인)', 'Branch visit required (book online)', 'Visite en succursale requise (réservez en ligne)'),
+          pros: [
+            t('이민자 패키지 — 신용 기록 없이 신용카드 발급 가능', 'Newcomer package — credit card without Canadian history', 'Forfait nouvel arrivant — carte de crédit sans historique canadien'),
+            t('1년간 수수료 면제', '1 year fee waiver', '1 an de frais bancaires gratuits'),
+            t('영어·한국어 서비스 가능한 지점 있음', 'Some branches offer Korean language service', 'Certaines succursales offrent un service en coréen'),
+          ],
+          cons: [
+            t('1년 후 월 $16 수수료 (최소 잔액 유지 시 면제)', 'After 1yr: $16/mo fee (waived with minimum balance)', "Après 1 an : 16 $/mois (exonéré avec solde minimum)"),
+            t('캐나다 도착 후에만 개설 가능', 'Can only be opened after arriving in Canada', 'Peut uniquement être ouvert après l\'arrivée au Canada'),
+          ],
+          rating: 'top',
+        }} />
+        <CompareCard d={{
+          name: 'Scotiabank StartRight',
+          href: 'https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html',
+          external: true,
+          price: t('1년 무료 → $15.95/월', '1 yr free → $15.95/mo', '1 an gratuit → 15,95 $/mois'),
+          forWho: t('신규 이민자, 혜택 비교 원하는 사람', 'New arrivals who want to compare packages', 'Nouveaux arrivants voulant comparer les forfaits'),
+          fromKorea: 'no',
+          channels: t('지점 방문 필요 (예약 온라인)', 'Branch visit required (book online)', 'Visite en succursale requise (réservez en ligne)'),
+          pros: [
+            t('이민자 패키지 — TD와 유사한 혜택', 'Newcomer package — similar benefits to TD', 'Forfait nouvel arrivant — avantages similaires à TD'),
+            t('Scene+ 포인트 리워드 프로그램', 'Scene+ rewards program', 'Programme de récompenses Scene+'),
+          ],
+          cons: [
+            t('1년 후 수수료 발생', 'Fee applies after 1 year', 'Des frais s\'appliquent après 1 an'),
+            t('캐나다 도착 후에만 개설 가능', 'Can only be opened after arriving in Canada', 'Peut uniquement être ouvert après l\'arrivée au Canada'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Desjardins',
+          href: 'https://www.desjardins.com',
+          external: true,
+          price: '$0–10/mo',
+          forWho: t('퀘벡 장기 거주 예정자, 프랑스어 사용자', 'Long-term Québec residents, French speakers', 'Résidents à long terme au Québec, francophones'),
+          fromKorea: 'no',
+          channels: t('지점 방문 필요', 'Branch visit required', 'Visite en succursale requise'),
+          pros: [
+            t('퀘벡 전역 ATM 네트워크', 'Large ATM network across Québec', 'Grand réseau de guichets automatiques au Québec'),
+            t('퀘벡 지역 사회 밀착형 협동조합', 'Québec-rooted cooperative, community focus', 'Coopérative ancrée au Québec, axée sur la communauté'),
+            t('낮은 월 수수료', 'Low monthly fees', 'Frais mensuels bas'),
+          ],
+          cons: [
+            t('영어 서비스 제한적', 'Limited English-language service', 'Service en anglais limité'),
+            t('이민자 전용 패키지 없음', 'No dedicated newcomer package', 'Pas de forfait dédié aux nouveaux arrivants'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'RBC Royal Bank',
+          href: 'https://www.rbcroyalbank.com',
+          external: true,
+          price: '$11–30/mo',
+          forWho: t('대형 은행 선호자, 전국 지점 필요자', 'Preference for big banks, need national branches', 'Préférence pour les grandes banques, besoin de succursales nationales'),
+          fromKorea: 'no',
+          channels: t('온라인 · 지점', 'Online · Branch', 'En ligne · Succursale'),
+          pros: [
+            t('캐나다 최대 은행 — 전국 지점 네트워크', "Canada's largest bank — national branch network", 'Plus grande banque du Canada — réseau national de succursales'),
+            t('다국어 서비스 제공', 'Multilingual service available', 'Service multilingue disponible'),
+          ],
+          cons: [
+            t('이민자 전용 패키지 없음', 'No dedicated newcomer package', 'Pas de forfait dédié aux nouveaux arrivants'),
+            t('월 수수료 바로 부과', 'Monthly fees apply from day one', 'Frais mensuels dès le premier jour'),
+          ],
+          rating: 'ok',
+        }} />
       </div>
 
       <WarnNote text={t(
@@ -960,12 +1248,99 @@ function TransportPanel() {
       </p>
 
       {/* Decision cards — always visible */}
-      <div className="space-y-2">
-        <OptionRow primary name="STM — Métro & Bus" desc={t('노선도, 시간표, OPUS 카드 정보. 월정기권 ~$100', 'Route maps, schedules, OPUS card. Monthly pass ~$100', 'Plans, horaires, carte OPUS. Passe mensuelle ~100 $')} href="https://www.stm.info" />
-        <OptionRow name="747 Airport Bus" desc={t('공항 ↔ 다운타운 24시간 운행, ~$11 (OPUS 가능)', 'Airport ↔ downtown 24/7, ~$11 (OPUS accepted)', 'Aéroport ↔ centre-ville 24h/24, ~11 $ (OPUS accepté)')} href="https://www.stm.info/en/info/networks/bus/shuttle/more-about-747-YUL-Aeroport-P-E-Trudeau-Montreal-shuttle" />
-        <OptionRow name="BIXI" desc={t('자전거 공유, 5월–11월 운영, 연간 $15', 'Bike sharing, May–Nov, annual pass $15', 'Vélos en libre-service, mai–nov, abonnement annuel 15 $')} href="https://bixi.com" />
-        <OptionRow name="Communauto" desc={t('시간 단위 카셰어링, 이사·장보기·나들이', 'Hourly car-sharing, moving/groceries/day trips', "Autopartage à l'heure, déménagement/courses/sorties")} href="https://www.communauto.com" />
-        <OptionRow name="Turo" desc={t('개인 간 차량 렌트, 렌터카보다 저렴', 'Peer-to-peer car rental, often cheaper than agencies', 'Location entre particuliers, souvent moins cher')} href="https://turo.com/ca/en" />
+      <div className="space-y-2.5">
+        <CompareCard d={{
+          name: 'STM — OPUS Card',
+          href: 'https://www.stm.info',
+          external: true,
+          price: t('월 $100 또는 $3.75/회', '$100/mo or $3.75/trip', '100 $/mois ou 3,75 $/trajet'),
+          forWho: t('일상 통근자 — 매달 사용하면 무조건 이득', 'Daily commuters — always worth it if used monthly', 'Navetteurs quotidiens — toujours rentable si utilisé mensuellement'),
+          fromKorea: 'no',
+          channels: t('지하철역 자판기 · 온라인', 'Metro station machines · Online', 'Machines des stations de métro · En ligne'),
+          pros: [
+            t('월정기권 = 무제한 탑승 (지하철 + 버스)', 'Monthly pass = unlimited metro + bus rides', 'Passe mensuelle = trajets illimités (métro + bus)'),
+            t('학생 할인 약 30% (학생증 필요)', 'Student discount ~30% (valid student ID required)', 'Réduction étudiant ~30 % (carte étudiante valide requise)'),
+            t('747 공항 버스도 OPUS 사용 가능', '747 airport bus accepts OPUS', 'Le bus 747 accepte la carte OPUS'),
+          ],
+          cons: [
+            t('카드 구매는 현장에서만 가능 ($6)', 'Card must be purchased on-site ($6)', 'La carte doit être achetée sur place (6 $)'),
+            t('자정 이후 지하철 운행 없음', 'Metro does not run after midnight', 'Le métro ne fonctionne pas après minuit'),
+          ],
+          rating: 'top',
+        }} />
+        <CompareCard d={{
+          name: '747 Airport Bus',
+          href: 'https://www.stm.info/en/info/networks/bus/shuttle/more-about-747-YUL-Aeroport-P-E-Trudeau-Montreal-shuttle',
+          external: true,
+          price: '$11',
+          forWho: t('공항 도착자 — 택시보다 저렴한 첫 이동 수단', 'Airport arrivals — cheap alternative to taxi', "Arrivants à l'aéroport — alternative bon marché au taxi"),
+          fromKorea: 'no',
+          channels: t('OPUS 카드 또는 현금', 'OPUS card or cash', 'Carte OPUS ou espèces'),
+          pros: [
+            t('24시간 운행 — 야간 도착도 OK', 'Runs 24/7 — late night arrivals OK', 'Fonctionne 24h/24 — les arrivées nocturnes sont OK'),
+            t('택시($40–55)보다 훨씬 저렴', 'Much cheaper than taxi ($40–55)', 'Beaucoup moins cher que le taxi (40–55 $)'),
+          ],
+          cons: [
+            t('짐이 많으면 불편 — 이사 짐은 Uber 추천', 'Inconvenient with heavy luggage — use Uber for moving bags', "Peu pratique avec beaucoup de bagages — utilisez Uber si vous avez beaucoup de valises"),
+            t('다운타운까지 약 45–60분', 'About 45–60 min to downtown', 'Environ 45–60 minutes jusqu\'au centre-ville'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'BIXI',
+          href: 'https://bixi.com',
+          external: true,
+          price: t('연간 $15 또는 $1.25 + $0.15/분', '$15/yr or $1.25 unlock + $0.15/min', '15 $/an ou 1,25 $ déverrouillage + 0,15 $/min'),
+          forWho: t('봄~가을 활동적인 이동 선호자', 'Active users, spring to fall only', 'Utilisateurs actifs, printemps à automne seulement'),
+          fromKorea: 'yes',
+          channels: t('앱 등록 (공항에서도 가능)', 'App registration (possible from airport)', "Inscription via l'app (possible depuis l'aéroport)"),
+          pros: [
+            t('연간 $15 — 몬트리올 최고 가성비 이동 수단', 'Annual $15 — best value transit in Montréal', 'Annuel 15 $ — le meilleur rapport qualité-prix à Montréal'),
+            t('한국에서 앱으로 미리 등록 가능', 'Can register in advance from Korea', 'Peut s\'inscrire à l\'avance depuis la Corée'),
+          ],
+          cons: [
+            t('5월–11월만 운영 — 겨울 없음', 'May–November only — not available in winter', 'Mai–novembre seulement — pas disponible en hiver'),
+            t('헬멧 미제공', 'Helmets not provided', 'Casques non fournis'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Communauto',
+          href: 'https://www.communauto.com',
+          external: true,
+          price: t('$15–100/회 (사용량 따라)', '$15–100/use depending on trip', '15–100 $/utilisation selon le trajet'),
+          forWho: t('가끔 차가 필요한 사람 — 이사, 장보기, 나들이', 'Occasional car users — moving, groceries, day trips', 'Utilisateurs occasionnels — déménagement, courses, sorties'),
+          fromKorea: 'yes',
+          channels: t('온라인 등록 (한국에서 가능)', 'Online registration (possible from Korea)', "Inscription en ligne (possible depuis la Corée)"),
+          pros: [
+            t('자동차 소유 없이 필요할 때만 사용', 'No car ownership needed — use only when needed', 'Pas de voiture nécessaire — utilisez seulement quand vous en avez besoin'),
+            t('시간 단위 또는 일 단위 대여', 'Hourly or daily rental', 'Location à l\'heure ou à la journée'),
+            t('한국에서 미리 계정 만들기 가능', 'Can create account from Korea in advance', 'Peut créer un compte depuis la Corée à l\'avance'),
+          ],
+          cons: [
+            t('피크 시간대 차량 없을 수도 있음', 'Cars may not be available during peak hours', 'Voitures peut-être indisponibles aux heures de pointe'),
+            t('퀘벡 면허 필요 (최소 전환 필요)', 'Requires Québec licence (need to transfer)', 'Nécessite un permis québécois (transfert nécessaire)'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Turo',
+          href: 'https://turo.com/ca/en',
+          external: true,
+          price: t('$40–100+/일', '$40–100+/day', '40–100+ $/jour'),
+          forWho: t('하루~며칠 차가 필요한 사람, 렌터카 대안', 'Users needing a car for a day or few days, rental car alternative', 'Utilisateurs ayant besoin d\'une voiture pour 1–3 jours, alternative à la location'),
+          fromKorea: 'yes',
+          channels: t('앱 전용', 'App only', 'App uniquement'),
+          pros: [
+            t('렌터카 회사보다 평균 30% 저렴', '~30% cheaper than traditional rental agencies', '~30 % moins cher que les agences de location traditionnelles'),
+            t('다양한 차량 선택 (전기차 포함)', 'Wide vehicle selection including EVs', 'Large sélection de véhicules dont des véhicules électriques'),
+          ],
+          cons: [
+            t('차량 품질이 오너마다 다름', 'Vehicle quality varies by owner', 'La qualité du véhicule varie selon le propriétaire'),
+            t('반납 장소가 오너 위치에 따라 불편할 수 있음', 'Return location may be inconvenient', 'Le lieu de retour peut être peu pratique'),
+          ],
+          rating: 'ok',
+        }} />
       </div>
 
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
@@ -1008,10 +1383,62 @@ function StayPanel() {
       </p>
 
       {/* Decision cards — always visible */}
-      <div className="space-y-2">
-        <OptionRow primary name="Airbnb" desc={t('즉시 예약, 가구 완비, 리뷰 확인 가능 — 첫 숙소 최추천', 'Instant booking, fully furnished, reviews — best for first stay', 'Réservation immédiate, entièrement meublé, avis — meilleur pour débuter')} href="https://www.airbnb.ca" />
-        <OptionRow name="Facebook Marketplace" desc={t('단기 서블렛, 가격 저렴, 프랑스어 메시지 추천', 'Short-term sublets, lower prices, message in French', 'Sous-locations à court terme, prix bas, écrivez en français')} href="https://www.facebook.com/marketplace" />
-        <OptionRow name="Kijiji" desc={t('단기 방 임대, 하우스메이트 포함 옵션', 'Short-term room rentals, housemate options', 'Locations de chambres à court terme, options avec colocataires')} href="https://www.kijiji.ca" />
+      <div className="space-y-2.5">
+        <CompareCard d={{
+          name: 'Airbnb',
+          href: 'https://www.airbnb.ca',
+          external: true,
+          price: t('$60–150/박 또는 $1,200–2,500/월', '$60–150/night or $1,200–2,500/mo', '60–150 $/nuit ou 1 200–2 500 $/mois'),
+          forWho: t('첫 2주 — 한국에서 예약 가능, 즉시 입주', 'First 2 weeks — book from Korea, move in immediately', '2 premières semaines — réservez depuis la Corée, emménagez immédiatement'),
+          fromKorea: 'yes',
+          channels: t('온라인 · 앱', 'Online · App', 'En ligne · App'),
+          pros: [
+            t('한국에서 예약 확정 가능 — 도착 전 안심', 'Fully confirmed from Korea — peace of mind before arrival', 'Réservation confirmée depuis la Corée — tranquillité avant l\'arrivée'),
+            t('가구 완비, 즉시 입주', 'Fully furnished, move in immediately', 'Entièrement meublé, emménagez immédiatement'),
+            t('리뷰로 품질 확인 가능', 'Reviews let you verify quality in advance', 'Les avis vous permettent de vérifier la qualité à l\'avance'),
+          ],
+          cons: [
+            t('장기 거주 시 비쌈 — 2주 이상은 다른 옵션 추천', 'Expensive for long-term — look elsewhere after 2 weeks', 'Cher pour le long terme — cherchez autre chose après 2 semaines'),
+            t('수수료가 표시 가격의 15–20% 추가', 'Service fees add 15–20% on top of listed price', 'Frais de service 15–20 % en plus du prix affiché'),
+          ],
+          rating: 'top',
+        }} />
+        <CompareCard d={{
+          name: 'Facebook Marketplace',
+          href: 'https://www.facebook.com/marketplace',
+          external: true,
+          price: t('$500–1,200/월 (서블렛)', '$500–1,200/mo (sublet)', '500–1 200 $/mois (sous-location)'),
+          forWho: t('예산 중시자, 현지인 네트워크 있는 사람', 'Budget hunters, those with local contacts', 'Chasseurs de bonnes affaires, ceux ayant des contacts locaux'),
+          fromKorea: 'partial',
+          channels: t('앱 · 웹 (한국에서 문의 가능)', 'App · Web (can contact from Korea)', 'App · Web (contact possible depuis la Corée)'),
+          pros: [
+            t('Airbnb보다 훨씬 저렴', 'Much cheaper than Airbnb', 'Beaucoup moins cher qu\'Airbnb'),
+            t('실제 동네 사람들과 직접 연결', 'Direct connection with real locals', 'Connexion directe avec de vrais locaux'),
+          ],
+          cons: [
+            t('사기 위험 있음 — 선불 요구 시 절대 거절', 'Scam risk — never pay upfront without verification', 'Risque d\'arnaque — ne jamais payer à l\'avance sans vérification'),
+            t('프랑스어로 메시지 보내야 응답률 높음', 'Response rates higher if you message in French', 'Meilleur taux de réponse si vous écrivez en français'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Kijiji',
+          href: 'https://www.kijiji.ca',
+          external: true,
+          price: t('$600–1,500/월 (방 임대)', '$600–1,500/mo (room rental)', '600–1 500 $/mois (location de chambre)'),
+          forWho: t('방 임대 또는 하우스메이트 원하는 사람', 'Room hunters or those wanting a housemate setup', 'Chercheurs de chambre ou de colocation'),
+          fromKorea: 'partial',
+          channels: t('웹 · 앱', 'Web · App', 'Web · App'),
+          pros: [
+            t('다양한 방 임대 및 하우스메이트 옵션', 'Wide variety of room rentals and housemate options', 'Grande variété de locations de chambres et options de colocation'),
+            t('비교적 저렴', 'Relatively affordable', 'Relativement abordable'),
+          ],
+          cons: [
+            t('품질 편차 큼 — 방문 전 사진만 믿지 말 것', 'Quality varies — do not rely on photos alone', 'La qualité varie — ne vous fiez pas uniquement aux photos'),
+            t('응답이 느릴 수 있음', 'Responses can be slow', 'Les réponses peuvent être lentes'),
+          ],
+          rating: 'good',
+        }} />
       </div>
 
       <WarnNote text={t(
@@ -1054,9 +1481,43 @@ function SINPanel() {
       </p>
 
       {/* Decision cards — always visible */}
-      <div className="space-y-2">
-        <OptionRow primary name={t('온라인 신청 — Service Canada', 'Apply Online — Service Canada', 'Demande en ligne — Service Canada')} desc={t('2주 내 우편 수령, 서류: 여권 + 비자', 'Received by mail in ~2 weeks. Need: passport + visa', 'Reçu par courrier en ~2 semaines. Documents: passeport + visa')} href="https://www.canada.ca/en/employment-social-development/services/sin/apply.html" />
-        <OptionRow name={t('Service Canada 방문 예약', 'Service Canada Office — In Person', 'Bureau Service Canada — en personne')} desc={t('당일 확인서 발급. 예약 권장 (워크인 2–3시간 대기)', 'Same-day confirmation. Booking recommended (walk-in: 2–3h wait)', 'Confirmation le jour même. Réservation recommandée (sans RDV : 2–3h d\'attente)')} href="https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng" />
+      <div className="space-y-2.5">
+        <CompareCard d={{
+            name: t('온라인 신청 — Service Canada', 'Apply Online — Service Canada', 'Demande en ligne — Service Canada'),
+            href: 'https://www.canada.ca/en/employment-social-development/services/sin/apply.html',
+            external: true,
+            price: t('무료', 'Free', 'Gratuit'),
+            forWho: t('모든 이민자 — 가장 빠르고 편한 방법', 'All newcomers — fastest and most convenient', 'Tous les nouveaux arrivants — méthode la plus rapide et pratique'),
+            fromKorea: 'no',
+            channels: t('government.ca 웹사이트', 'government.ca website', 'Site web gouvernement.ca'),
+            pros: [
+              t('약 2주 내 우편 수령', 'Received by mail in ~2 weeks', 'Reçu par courrier en ~2 semaines'),
+              t('줄 서기 없음 — 언제나 신청 가능', 'No queue — apply anytime', 'Pas de file — faites la demande à tout moment'),
+              t('필요 서류: 여권 + 비자/이민 서류만', 'Documents needed: passport + visa/immigration doc only', "Documents requis : passeport + visa/document d'immigration uniquement"),
+            ],
+            cons: [
+              t('카드 수령까지 2주 대기 — 급하면 직접 방문', 'Takes ~2 weeks — if urgent, visit in person', 'Prend ~2 semaines — si urgent, visitez en personne'),
+              t('캐나다 도착 후에만 신청 가능', 'Can only apply after arriving in Canada', "Peut uniquement être demandé après l'arrivée au Canada"),
+            ],
+            rating: 'top',
+          }} />
+          <CompareCard d={{
+            name: t('Service Canada 방문 (당일 발급)', 'Service Canada Office — Same Day', 'Bureau Service Canada — le jour même'),
+            href: 'https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng',
+            external: true,
+            price: t('무료', 'Free', 'Gratuit'),
+            forWho: t('즉시 SIN이 필요한 사람 (당장 취업 등)', 'Anyone who needs SIN immediately (starting work soon)', "Toute personne ayant besoin du NAS immédiatement (début d'emploi imminent)"),
+            fromKorea: 'no',
+            channels: t('직접 방문 — 예약 강력 권장', 'In-person visit — appointment strongly recommended', 'Visite en personne — rendez-vous fortement recommandé'),
+            pros: [
+              t('당일 확인서 발급 — 즉시 고용주에 제출 가능', 'Same-day confirmation letter — provide to employer immediately', 'Lettre de confirmation le jour même — fournissez à votre employeur immédiatement'),
+            ],
+            cons: [
+              t('예약 없이 방문 시 2–3시간 대기', 'Walk-in: 2–3 hour wait without appointment', "Sans RDV : 2–3 heures d'attente"),
+              t('예약이 몇 주 후일 수도 있음', 'Appointment slots may be weeks away', 'Les créneaux de rendez-vous peuvent être dans plusieurs semaines'),
+            ],
+            rating: 'good',
+          }} />
       </div>
 
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
@@ -1099,8 +1560,27 @@ function DriverLicencePanel() {
       </p>
 
       {/* Decision cards — always visible */}
-      <div className="space-y-2">
-        <OptionRow primary name="SAAQ — Permis de conduire" desc={t('온라인 예약 후 방문. 워크인은 2–3시간 대기 가능. 수수료 ~$27–35', 'Book online before visiting. Walk-in: 2–3h wait. Fee ~$27–35', 'Réservez en ligne. Sans RDV : 2–3h d\'attente. Frais ~27–35 $')} href="https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence" />
+      <div className="space-y-2.5">
+        <CompareCard d={{
+          name: 'SAAQ — Permis de conduire',
+          href: 'https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence',
+          external: true,
+          price: '$27–35',
+          forWho: t('한국 면허 소지자 — 필기·실기 시험 없이 전환 가능', 'Korean licence holders — transfer without written or road test', "Titulaires d'un permis coréen — transfert sans examen écrit ni pratique"),
+          fromKorea: 'no',
+          channels: t('직접 방문 필수 — 예약 온라인', 'In-person visit required — book appointment online', 'Visite en personne requise — réservez en ligne'),
+          pros: [
+            t('한국 면허 소지자: 필기·실기 시험 면제', 'Korean licence: no written or road test required', 'Permis coréen : aucun examen écrit ou pratique requis'),
+            t('시력 검사는 현장에서 가능 (~$15)', 'Vision test available on-site (~$15)', 'Test de vision disponible sur place (~15 $)'),
+            t('당일 임시 허가증 발급, 플라스틱 카드 우편 수령', 'Temporary permit same day, plastic card by mail', 'Permis temporaire le jour même, carte plastique par courrier'),
+          ],
+          cons: [
+            t('90일 기한 엄수 필요 — 놓치면 시험 다시 봐야 함', '90-day deadline is strict — miss it and you must test', 'Délai de 90 jours strict — passé ce délai, vous devez repasser les examens'),
+            t('공증 번역본 필요 (공인 번역사)', 'Certified translation of Korean licence required', 'Traduction certifiée du permis coréen requise'),
+            t('예약 없이 방문 시 2–3시간 대기', 'Walk-in without appointment: 2–3 hour wait', 'Sans rendez-vous : 2–3 heures d\'attente'),
+          ],
+          rating: 'top',
+        }} />
       </div>
 
       <WarnNote text={t(
@@ -1144,12 +1624,75 @@ function LanguagePanel() {
       </p>
 
       {/* Decision cards — always visible */}
-      <div className="space-y-2">
-        <OptionRow primary name={t('HAKKYO 언어 교환', 'HAKKYO Language Exchange', 'Échange linguistique HAKKYO')} desc={t('한국어·영어·프랑스어 교환, 소규모, 정기 모임 — 가장 추천', 'Korean / English / French exchange, small groups, regular meetups — top pick', 'Échange coréen/anglais/français, petits groupes, rencontres régulières — recommandé')} href="/programs?type=language-exchange" />
-        <OptionRow name={t('HAKKYO 프랑스어 수업', 'HAKKYO French Classes', 'Cours de français HAKKYO')} desc={t('초급부터 중급까지', 'Beginner to intermediate', 'Débutant à intermédiaire')} href="/programs?language=french" />
-        <OptionRow name={t('HAKKYO 영어 수업', 'HAKKYO English Classes', "Cours d'anglais HAKKYO")} desc={t('일상 영어, 발음, 비즈니스 영어', 'Everyday English, pronunciation, business English', "Anglais quotidien, prononciation, anglais des affaires")} href="/programs?language=english" />
-        <OptionRow name="Alliance Française Montréal" desc={t('레벨별 정규 프랑스어 수업', 'Structured French courses at all levels', 'Cours de français structurés à tous les niveaux')} href="https://www.alliance-francaise.ca/montreal" />
-        <OptionRow name="McGill Continuing Education" desc={t('저렴한 저녁 수업, 다양한 언어', 'Affordable evening classes, multiple languages', 'Cours du soir abordables, plusieurs langues')} href="https://www.mcgill.ca/continuingstudies" />
+      <div className="space-y-2.5">
+        <CompareCard d={{
+          name: t('HAKKYO 언어 교환', 'HAKKYO Language Exchange', 'Échange linguistique HAKKYO'),
+          href: '/programs?type=language-exchange',
+          external: false,
+          price: t('무료', 'Free', 'Gratuit'),
+          forWho: t('현지 친구를 사귀며 배우고 싶은 사람', 'Anyone who wants to learn while making local friends', 'Toute personne voulant apprendre tout en se faisant des amis locaux'),
+          fromKorea: 'no',
+          channels: t('HAKKYO 앱 · 몬트리올 현장', 'HAKKYO app · In-person Montréal', 'App HAKKYO · En personne à Montréal'),
+          pros: [
+            t('실생활 표현 + 현지 친구 사귀기', 'Real-world phrases + meet locals', 'Expressions réelles + rencontrer des locaux'),
+            t('한국어·영어·프랑스어 동시 교환', 'Korean / English / French all exchanged', 'Coréen / anglais / français tous échangés'),
+            t('소규모 그룹 — 덜 두렵고 더 효과적', 'Small groups — less intimidating, more effective', 'Petits groupes — moins intimidant, plus efficace'),
+          ],
+          cons: [
+            t('스케줄이 정해져 있어 유연성 제한', 'Fixed schedule — less flexible than self-study', 'Horaire fixe — moins flexible que l\'auto-apprentissage'),
+          ],
+          rating: 'top',
+        }} />
+        <CompareCard d={{
+          name: t('HAKKYO 프랑스어 수업', 'HAKKYO French Classes', 'Cours de français HAKKYO'),
+          href: '/programs?language=french',
+          external: false,
+          price: t('무료–소액', 'Free–low cost', 'Gratuit–faible coût'),
+          forWho: t('퀘벡 취업·임대·생활을 위해 프랑스어 필요한 사람', 'Anyone needing French for Québec jobs, rentals, and daily life', 'Toute personne ayant besoin du français pour l\'emploi, le logement et la vie quotidienne'),
+          fromKorea: 'no',
+          channels: t('몬트리올 현장', 'In-person Montréal', 'En personne à Montréal'),
+          pros: [
+            t('초급부터 중급까지 단계별 진행', 'Structured beginner to intermediate levels', 'Niveaux structurés du débutant à l\'intermédiaire'),
+            t('퀘벡 일상 프랑스어 중심', 'Focus on everyday Québec French', 'Axé sur le français québécois du quotidien'),
+          ],
+          cons: [
+            t('도착 후에만 참여 가능', 'In-person only — must be in Montréal', 'En personne uniquement — doit être à Montréal'),
+          ],
+          rating: 'good',
+        }} />
+        <CompareCard d={{
+          name: 'Alliance Française Montréal',
+          href: 'https://www.alliance-francaise.ca/montreal',
+          external: true,
+          price: '$200–500/학기',
+          forWho: t('공식 자격증이 필요한 사람 (DELF 등)', 'Anyone needing official certification (DELF etc.)', 'Toute personne ayant besoin d\'une certification officielle (DELF, etc.)'),
+          fromKorea: 'partial',
+          channels: t('온라인 등록 · 몬트리올 현장', 'Online registration · In-person Montréal', 'Inscription en ligne · En personne à Montréal'),
+          pros: [
+            t('레벨별 공식 수업 및 자격증 제공', 'Official level-based courses and certifications', 'Cours et certifications officiels par niveau'),
+          ],
+          cons: [
+            t('비용이 높음', 'More expensive', 'Plus cher'),
+          ],
+          rating: 'ok',
+        }} />
+        <CompareCard d={{
+          name: 'McGill Continuing Education',
+          href: 'https://www.mcgill.ca/continuingstudies',
+          external: true,
+          price: '$150–400/수업',
+          forWho: t('저렴한 저녁 수업 원하는 직장인', 'Working adults wanting affordable evening classes', 'Actifs souhaitant des cours du soir abordables'),
+          fromKorea: 'partial',
+          channels: t('온라인 등록 · 몬트리올 현장', 'Online registration · In-person Montréal', 'Inscription en ligne · En personne à Montréal'),
+          pros: [
+            t('다양한 언어 — 프랑스어, 영어, 스페인어 등', 'Multiple languages — French, English, Spanish, and more', 'Plusieurs langues — français, anglais, espagnol et plus'),
+            t('저렴한 저녁 수업', 'Affordable evening schedules', 'Cours du soir abordables'),
+          ],
+          cons: [
+            t('HAKKYO보다 현지 네트워크 형성 어려움', 'Less community networking than HAKKYO', 'Moins de réseautage communautaire que HAKKYO'),
+          ],
+          rating: 'ok',
+        }} />
       </div>
 
       <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
