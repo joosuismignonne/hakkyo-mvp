@@ -466,6 +466,100 @@ export async function submitApplication(payload: SubmitPayload): Promise<void> {
   }).catch((err) => console.error('[analytics] application_submitted failed:', err))
 }
 
+// ─── Simple form application (new 4-step form) ────────────────────────────────
+//
+// Saves core identity to `applications` and all labeled answers to
+// `application_answers` using question_id: null + question_label_snapshot.
+// This is the same pattern as submitLeApplication.
+
+export interface SimpleAnswerEntry {
+  label: string
+  value: string
+  order: number
+  type?: string
+}
+
+export interface SimpleApplicationPayload {
+  trackId?: string | null
+  selectedLabel?: string | null
+  totalPrice?: number | null
+  name: string
+  email: string
+  phone: string
+  instagram: string
+  answers: SimpleAnswerEntry[]   // every question/answer pair for application_answers
+}
+
+export async function submitSimpleApplication(payload: SimpleApplicationPayload): Promise<string> {
+  if (!isConfigured) {
+    await new Promise(r => setTimeout(r, 700))
+    return 'demo-' + Math.random().toString(36).slice(2)
+  }
+  const { trackId, selectedLabel, totalPrice, name, email, phone, instagram, answers } = payload
+  const applicationId = crypto.randomUUID()
+
+  const { error: appErr } = await db().from('applications').insert({
+    id:             applicationId,
+    track_id:       trackId   ?? null,
+    session_id:     null,
+    name,
+    email,
+    phone,
+    instagram,
+    total_price:    totalPrice    ?? null,
+    selected_label: selectedLabel ?? null,
+    status:         'pending',
+  })
+  if (appErr) {
+    console.error('[submitSimpleApplication] insert error:', appErr)
+    throw appErr
+  }
+
+  const answerRows = answers
+    .filter(a => a.value?.trim())
+    .map(a => ({
+      application_id:          applicationId,
+      question_id:             null,
+      answer:                  a.value,
+      question_label_snapshot: a.label,
+      question_type_snapshot:  a.type ?? 'text',
+      question_order_snapshot: a.order,
+    }))
+
+  if (answerRows.length > 0) {
+    const { error: ansErr } = await db().from('application_answers').insert(answerRows)
+    if (ansErr) {
+      console.error('[submitSimpleApplication] answers insert error:', ansErr)
+      throw ansErr
+    }
+  }
+
+  // Notification — fire-and-forget
+  createAdminNotification({
+    type: 'application',
+    title: `New Application: ${selectedLabel ?? trackId ?? 'Program'}`,
+    message: `${name} (${email}) submitted an application.`,
+    related_table: 'applications',
+    related_id: applicationId,
+  }).catch(() => {})
+
+  // Analytics — fire-and-forget
+  trackEvent({
+    eventName: 'application_submitted',
+    targetType: 'program',
+    targetId: trackId ?? undefined,
+    targetLabel: selectedLabel ?? undefined,
+    metadata: {
+      application_id: applicationId,
+      program_id: trackId ?? null,
+      program_title: selectedLabel ?? null,
+      total_price: totalPrice ?? null,
+    },
+  }).catch((err) => console.error('[analytics] application_submitted (simple) failed:', err))
+
+  return applicationId
+}
+
 
 // ─── Admin Notifications ──────────────────────────────────────────────────────
 
