@@ -1,6 +1,6 @@
 // analytics.ts — two-layer tracking
 // Layer 1: GA4 via gtag (page views, kept for backward compat)
-// Layer 2: Supabase event_logs (custom button/action events)
+// Layer 2: Supabase analytics_events (custom button/action events)
 
 import { supabase, isConfigured } from './supabase'
 
@@ -55,7 +55,7 @@ export interface TrackEventParams {
 export async function trackEvent(params: TrackEventParams): Promise<void> {
   if (!isConfigured || !supabase) return
   try {
-    await supabase.from('event_logs').insert({
+    await supabase.from('analytics_events').insert({
       event_name:   params.eventName,
       page_path:    window.location.pathname,
       target_type:  params.targetType  ?? null,

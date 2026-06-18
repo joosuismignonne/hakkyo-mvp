@@ -3182,12 +3182,12 @@ function AnalyticsAdmin() {
     async function load() {
       try {
         const [todayRes, weekRes, applyRes, postRes, hoodRes, recentRes] = await Promise.all([
-          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
-          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).gte('created_at', weekStart),
-          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).eq('event_name', 'program_apply_clicked'),
-          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).eq('event_name', 'post_submit_success'),
-          supabase!.from('event_logs').select('id', { count: 'exact', head: true }).eq('event_name', 'neighbourhood_comment_submitted'),
-          supabase!.from('event_logs').select('created_at, event_name, page_path, target_label, user_id').order('created_at', { ascending: false }).limit(50),
+          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
+          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).gte('created_at', weekStart),
+          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'program_apply_clicked'),
+          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'application_submitted'),
+          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'neighbourhood_comment_submitted'),
+          supabase!.from('analytics_events').select('created_at, event_name, page_path, target_label, user_id').order('created_at', { ascending: false }).limit(50),
         ])
 
         setTodayCount(todayRes.count ?? 0)

@@ -206,7 +206,7 @@ export default function ProgramDetail() {
       {/* ── Top CTA ── */}
       <div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-100">
         {isOpen
-          ? <ApplyButton onClick={() => navigate(`/apply/${id}`)} label={applyLabel} />
+          ? <ApplyButton onClick={() => { trackEvent({ eventName: 'program_apply_clicked', targetType: 'program', targetId: id, targetLabel: track.name_en || track.name_ko }); navigate(`/apply/${id}`) }} label={applyLabel} />
           : <span className="border border-gray-100 rounded-lg px-5 py-2.5 text-[12px] text-gray-300">{t('마감', 'Closed', 'Fermé')}</span>
         }
         {deadline && isOpen && (
@@ -426,7 +426,7 @@ export default function ProgramDetail() {
           }
         </p>
         {isOpen
-          ? <ApplyButton onClick={() => navigate(`/apply/${id}`)} label={applyLabel} />
+          ? <ApplyButton onClick={() => { trackEvent({ eventName: 'program_apply_clicked', targetType: 'program', targetId: id, targetLabel: track.name_en || track.name_ko }); navigate(`/apply/${id}`) }} label={applyLabel} />
           : <span className="border border-gray-100 rounded-lg px-5 py-2.5 text-[12px] text-gray-300">{t('마감', 'Closed', 'Fermé')}</span>
         }
       </div>

@@ -848,7 +848,6 @@ export default function ApplyPage() {
         definition_great_class: draft.definition_great_class?.trim() || null,
         questions_for_hakkyo:   draft.questions_for_hakkyo?.trim() || null,
       })
-      trackEvent({ eventName: 'program_apply_clicked', targetType: 'form', targetId: id ?? undefined })
       if (id) { try { localStorage.removeItem(DRAFT_KEY(id)) } catch {} }
       setDone(true)
     } catch (e: unknown) {
@@ -1078,7 +1077,10 @@ export default function ApplyPage() {
         {error && <p className="text-sm text-red-500 mb-4 whitespace-pre-line">{error}</p>}
         <div>
           <button
-            onClick={submit}
+            onClick={() => {
+              trackEvent({ eventName: 'program_apply_clicked', targetType: 'program', targetId: id ?? undefined, targetLabel: program?.name_en || program?.name_ko || undefined })
+              submit()
+            }}
             disabled={submitting}
             className="w-full bg-gray-900 text-white rounded-xl py-4 text-[15px] font-light hover:bg-gray-700 transition-colors disabled:opacity-50"
           >

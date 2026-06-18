@@ -1,4 +1,5 @@
 import { supabase, isConfigured } from './supabase'
+import { trackEvent } from './analytics'
 import {
   MOCK_SESSIONS, MOCK_TRACKS, MOCK_NOTICES, MOCK_CONTENTS, MOCK_QUESTIONS,
   MOCK_COMMUNITY_SUBMISSIONS,
@@ -448,6 +449,21 @@ export async function submitApplication(payload: SubmitPayload): Promise<void> {
     related_table: 'applications',
     related_id: applicationId,
   }).catch(() => {})
+
+  // Analytics — fire-and-forget, never blocks submission
+  trackEvent({
+    eventName: 'application_submitted',
+    targetType: 'program',
+    targetId: trackId ?? undefined,
+    targetLabel: selectedLabel ?? undefined,
+    metadata: {
+      application_id: applicationId,
+      program_id: trackId ?? null,
+      program_title: selectedLabel ?? null,
+      selected_label: selectedLabel ?? null,
+      total_price: totalPrice ?? null,
+    },
+  }).catch((err) => console.error('[analytics] application_submitted failed:', err))
 }
 
 
@@ -555,6 +571,18 @@ export async function submitLeApplication(payload: LeSubmitPayload): Promise<voi
       throw ansErr
     }
   }
+
+  // Analytics — fire-and-forget, never blocks submission
+  trackEvent({
+    eventName: 'application_submitted',
+    targetType: 'program',
+    targetLabel: 'Language Exchange',
+    metadata: {
+      application_id: applicationId,
+      program_title: 'Language Exchange',
+      selected_label: 'Language Exchange',
+    },
+  }).catch((err) => console.error('[analytics] application_submitted (LE) failed:', err))
 }
 
 export async function getApplications(): Promise<Application[]> {
@@ -889,6 +917,20 @@ export async function submitProgramApplication(
     .from('program_applications')
     .insert({ id, ...data, status: 'new' })
   if (error) throw error
+
+  // Analytics — fire-and-forget, never blocks submission
+  trackEvent({
+    eventName: 'application_submitted',
+    targetType: 'program',
+    targetId: data.program_id ?? undefined,
+    targetLabel: data.program_name ?? undefined,
+    metadata: {
+      application_id: id,
+      program_id: data.program_id ?? null,
+      program_title: data.program_name ?? null,
+    },
+  }).catch((err) => console.error('[analytics] application_submitted (program) failed:', err))
+
   return id
 }
 
