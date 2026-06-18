@@ -2,6 +2,7 @@
  * First Steps — HAKKYO Montréal Starter Kit
  *
  * Tone: "a friend who arrived before you." Neutral options, never prescriptive.
+ * Each of 8 tabs is a complete decision page with 7 sections + sticky sidebar.
  * i18n: every visible string through tri(). Three languages inline (ko/en/fr).
  */
 import React, { useState, useEffect } from 'react'
@@ -16,7 +17,16 @@ function tri(obj: Tri, lang: string): string {
 
 const PROGRESS_KEY = 'hakkyo_firststeps'
 
-// ─── Tab data types ──────────────────────────────────────────────────────────
+// ─── Data types ───────────────────────────────────────────────────────────────
+
+interface HeroData {
+  title: Tri
+  sub: Tri
+  when: Tri
+  cost: Tri
+  time: Tri
+  canBeforeArrival: Tri
+}
 
 interface OptionData {
   name: string
@@ -28,1049 +38,116 @@ interface OptionData {
   recommendNote?: Tri
 }
 
-interface CommunityNoteData {
+interface CompareRow {
+  name: string
+  cols: Array<string | boolean>
+}
+
+interface CompareTable {
+  headers: Tri[]
+  rows: CompareRow[]
+}
+
+interface CommunityNote {
   flag: string
   person: Tri
   text: Tri
   likes: number
 }
 
-interface TopicIntroData {
-  what: Tri
-  behavior: Tri
-  when: Tri
+interface HelpLink {
+  label: Tri
+  url: string
+  domain: string
+}
+
+interface FAQItem {
+  q: Tri
+  a: Tri
+}
+
+interface SidebarData {
+  quickFacts: Array<{ label: Tri; value: Tri }>
+  timeline: Tri
 }
 
 interface TabContent {
-  intro: TopicIntroData
+  id: string
+  label: Tri
+  hero: HeroData
   options: OptionData[]
-  notes: CommunityNoteData[]
+  compareTable: CompareTable
+  communityNotes: CommunityNote[]
+  helpLinks: HelpLink[]
+  faq: FAQItem[]
+  sidebar: SidebarData
 }
 
-// ─── TAB 1: SIM card ─────────────────────────────────────────────────────────
+// ─── Reusable components ───────────────────────────────────────────────────────
 
-const SIM_TAB: TabContent = {
-  intro: {
-    what: {
-      ko: 'SIM 카드는 휴대폰을 캐나다 통신망에 연결해줘요. 없으면 통화, 문자, 데이터가 안 돼요.',
-      en: "A SIM card connects your phone to a Canadian mobile network. Without one, your phone won't work for calls, texts, or data.",
-      fr: "Une carte SIM connecte votre téléphone à un réseau mobile canadien. Sans elle, pas d'appels, de textos ni de données.",
-    },
-    behavior: {
-      ko: '출국 전에 eSIM을 온라인으로 개통하거나, 도착 첫 주에 공항이나 매장에서 받는 분이 많아요.',
-      en: 'Most people either activate an eSIM online before leaving, or pick one up at the airport or a phone store in their first week.',
-      fr: "Beaucoup activent une eSIM en ligne avant de partir, ou en récupèrent une à l'aéroport ou en boutique la première semaine.",
-    },
-    when: {
-      ko: '도착하자마자 숙소 연락처에 연락하거나 택시를 잡아야 한다면, 첫날부터 폰이 되는 게 편해요.',
-      en: 'If you land and need to reach your housing contact or get a taxi, having a working phone from day one makes things smoother.',
-      fr: "Si vous devez joindre votre logement ou prendre un taxi à l'arrivée, avoir un téléphone fonctionnel dès le départ aide.",
-    },
-  },
-  options: [
-    {
-      name: 'Fizz',
-      sub: { ko: '가성비 좋음, eSIM 지원', en: 'Budget-friendly, eSIM supported', fr: 'Économique, eSIM prise en charge' },
-      topPick: true,
-      meta: [
-        { icon: 'coin', label: { ko: '월 $25–35', en: '$25–35/mo', fr: '25–35 $/mois' } },
-        { icon: 'plane-departure', label: { ko: '도착 전 개통 가능', en: 'Can activate before arrival', fr: 'Activable avant arrivée' } },
-        { icon: 'device-mobile', label: { ko: 'eSIM 가능', en: 'eSIM available', fr: 'eSIM disponible' } },
-        { icon: 'bolt', label: { ko: '즉시 설정', en: 'Instant setup', fr: 'Configuration immédiate' } },
-      ],
-      worksFor: [
-        { ko: '비행기 안에서 개통하기', en: 'Activating on the flight', fr: "Activer pendant le vol" },
-        { ko: '대부분의 언락폰과 호환', en: 'Works with most unlocked phones', fr: 'Compatible avec la plupart des téléphones déverrouillés' },
-        { ko: '유연한 월 단위 요금제', en: 'Flexible monthly plans', fr: 'Forfaits mensuels flexibles' },
-      ],
-      worthKnowing: [
-        { ko: '도시 외곽에선 커버리지가 약할 수 있어요', en: 'Coverage can be weaker outside cities', fr: 'Couverture parfois plus faible hors des villes' },
-        { ko: '고객 지원은 앱으로만 가능해요', en: 'Support is app-only', fr: "Le support se fait uniquement via l'application" },
-      ],
-      recommendNote: {
-        ko: '출국 하루 전에 Fizz eSIM을 미리 개통해두는 분이 많아요. 착륙하면 이미 연결되어 있어요.',
-        en: 'Many people activate the Fizz eSIM a day before their flight. By the time they land, the phone is already connected.',
-        fr: "Beaucoup activent l'eSIM Fizz la veille du vol. À l'atterrissage, le téléphone est déjà connecté.",
-      },
-    },
-    {
-      name: 'Public Mobile',
-      sub: { ko: '월 비용이 가장 저렴', en: 'Lowest monthly cost', fr: 'Coût mensuel le plus bas' },
-      meta: [
-        { icon: 'coin', label: { ko: '월 $15–25', en: '$15–25/mo', fr: '15–25 $/mois' } },
-        { icon: 'building-store', label: { ko: '실물 SIM, 매장 수령', en: 'Physical SIM, in-store pickup', fr: 'SIM physique, retrait en magasin' } },
-        { icon: 'clock', label: { ko: '약 30분 설정', en: 'Setup in about 30 min', fr: 'Configuration en ~30 min' } },
-      ],
-      worksFor: [
-        { ko: '장기 체류 시 가장 저렴한 월 비용', en: 'Lowest monthly cost for longer stays', fr: 'Coût mensuel le plus bas pour les longs séjours' },
-        { ko: '부가 옵션 없는 간단한 요금제', en: 'Simple plans without extras', fr: 'Forfaits simples sans extras' },
-      ],
-      worthKnowing: [
-        { ko: 'eSIM이 없어서 도착 후 매장 방문이 필요해요', en: 'No eSIM — need to visit a store after arrival', fr: "Pas d'eSIM — visite en magasin nécessaire après l'arrivée" },
-        { ko: '데이터 속도는 대형 통신사보다 느려요', en: 'Data speeds are lower than major carriers', fr: 'Vitesses de données inférieures aux grands opérateurs' },
-      ],
-    },
-    {
-      name: 'Bell / Rogers (Airport)',
-      sub: { ko: '도착 즉시 이용 가능', en: 'Available immediately at arrivals', fr: 'Disponible dès les arrivées' },
-      meta: [
-        { icon: 'coin', label: { ko: '월 $50–80', en: '$50–80/mo', fr: '50–80 $/mois' } },
-        { icon: 'plane-arrival', label: { ko: 'YUL 도착층에서 이용', en: 'Available at YUL arrivals', fr: 'Disponible aux arrivées YUL' } },
-        { icon: 'antenna', label: { ko: '대형 통신사 커버리지', en: 'Major carrier coverage', fr: 'Couverture grand opérateur' } },
-      ],
-      worksFor: [
-        { ko: '미리 아무것도 준비하지 못한 경우', en: "If you didn't set anything up beforehand", fr: "Si vous n'avez rien préparé d'avance" },
-        { ko: '대형 통신사의 안정성이 중요한 경우', en: 'If major carrier reliability matters to you', fr: "Si la fiabilité d'un grand opérateur compte pour vous" },
-      ],
-      worthKnowing: [
-        { ko: '예산형 통신사보다 월 비용이 높아요', en: 'Higher monthly cost than budget carriers', fr: 'Coût mensuel plus élevé que les opérateurs économiques' },
-        { ko: '나중에 더 저렴한 요금제로 쉽게 바꿀 수 있어요', en: 'Easy to switch to a cheaper plan later', fr: 'Facile de passer à un forfait moins cher plus tard' },
-      ],
-    },
-  ],
-  notes: [
-    {
-      flag: '🇰🇷',
-      person: { ko: '워킹홀리데이 · 2024년 8월', en: 'Working Holiday · Aug 2024', fr: 'Vacances-Travail · août 2024' },
-      text: {
-        ko: '탑승 전에 게이트에서 Fizz eSIM을 개통했어요. 착륙하니 자동으로 연결됐어요. 신경 쓸 게 없었어요.',
-        en: "I activated the Fizz eSIM at the gate before boarding. It connected automatically when I landed. Didn't have to think about it.",
-        fr: "J'ai activé l'eSIM Fizz à la porte avant d'embarquer. Elle s'est connectée automatiquement à l'atterrissage. Rien à gérer.",
-      },
-      likes: 31,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '유학생 · 2023년 9월', en: 'Student · Sept 2023', fr: 'Étudiant · sept. 2023' },
-      text: {
-        ko: '공항에서 Bell SIM을 받고 일주일 뒤에 Fizz로 바꿨어요. 단기적으론 비싸지만 마음이 편한 게 저한텐 가치가 있었어요.',
-        en: 'I got a Bell SIM at the airport and switched to Fizz after a week. Costs more short-term but the peace of mind was worth it for me.',
-        fr: "J'ai pris une SIM Bell à l'aéroport puis suis passé à Fizz après une semaine. Plus cher à court terme, mais la tranquillité en valait la peine.",
-      },
-      likes: 19,
-    },
-    {
-      flag: '🇨🇦',
-      person: { ko: '한국계 캐나다인 영주권자', en: 'Korean-Canadian PR', fr: 'Résident permanent coréen-canadien' },
-      text: {
-        ko: 'Public Mobile이 제일 싸지만 매장에 가야 해요. 누가 마중 나온다면 SIM은 하루쯤 미뤄도 괜찮아요.',
-        en: 'Public Mobile is cheapest but needs a store visit. If someone is picking you up, the SIM can wait a day.',
-        fr: "Public Mobile est le moins cher mais demande une visite en magasin. Si quelqu'un vient vous chercher, la SIM peut attendre un jour.",
-      },
-      likes: 14,
-    },
-  ],
-}
-
-// ─── TAB 2: Bank account ─────────────────────────────────────────────────────
-
-const BANK_TAB: TabContent = {
-  intro: {
-    what: {
-      ko: '캐나다 은행 계좌가 있으면 송금을 받고, 월세를 내고, 시간이 지나면서 신용 기록을 쌓을 수 있어요.',
-      en: 'A Canadian bank account lets you receive transfers, pay rent, and build a credit history over time.',
-      fr: "Un compte bancaire canadien permet de recevoir des virements, payer le loyer et bâtir un historique de crédit avec le temps.",
-    },
-    behavior: {
-      ko: '첫 주에 여권과 비자를 가지고 지점을 방문하는 분이 많아요. 일부 은행은 첫 해 수수료를 면제하는 새 이민자 패키지가 있어요.',
-      en: 'Most people visit a branch in their first week with their passport and permit. Some banks have newcomer packages that waive fees for the first year.',
-      fr: "La plupart visitent une succursale la première semaine avec passeport et permis. Certaines banques offrent des programmes nouveaux arrivants sans frais la première année.",
-    },
-    when: {
-      ko: '집주인이 임대 계약 시 무효 수표나 계좌번호를 요구하는 경우가 많아서, 집을 구하기 전에 계좌가 있으면 도움이 돼요.',
-      en: 'Landlords often ask for a void cheque or bank account number when signing a lease, so having an account before apartment hunting can be helpful.',
-      fr: "Les propriétaires demandent souvent un chèque annulé ou un numéro de compte à la signature du bail, donc avoir un compte avant la recherche aide.",
-    },
-  },
-  options: [
-    {
-      name: 'RBC',
-      sub: { ko: '새 이민자 패키지, 신용 기록 없이 신용카드', en: 'Newcomer package, credit card without credit history', fr: 'Programme nouveaux arrivants, carte sans historique de crédit' },
-      topPick: true,
-      meta: [
-        { icon: 'coin', label: { ko: '1년차 $0 (새 이민자 패키지)', en: '$0 yr 1 (newcomer pkg)', fr: '0 $ an 1 (forfait nouv. arrivants)' } },
-        { icon: 'user', label: { ko: '대면, 약 1시간', en: 'In-person, ~1 hr', fr: 'En personne, ~1 h' } },
-        { icon: 'language', label: { ko: '일부 지점 한국어 직원', en: 'Korean-speaking staff at some branches', fr: 'Personnel coréanophone dans certaines succursales' } },
-      ],
-      worksFor: [
-        { ko: '캐나다 신용 기록이 없는 분', en: 'People without Canadian credit history', fr: 'Personnes sans historique de crédit canadien' },
-        { ko: '처음부터 신용카드를 원하는 분', en: 'Those who want a credit card from day one', fr: 'Ceux qui veulent une carte de crédit dès le départ' },
-        { ko: '장기 체류', en: 'Longer-term stays', fr: 'Séjours de longue durée' },
-      ],
-      worthKnowing: [
-        { ko: '1년 이후엔 월 수수료가 붙어요', en: 'Monthly fee applies after year 1', fr: 'Des frais mensuels s\'appliquent après la 1re année' },
-        { ko: '직접 방문이 필요해요', en: 'Requires in-person visit', fr: 'Nécessite une visite en personne' },
-      ],
-      recommendNote: {
-        ko: 'RBC 새 이민자 패키지는 첫 해 월 수수료를 면제해주고, 캐나다 신용 기록 없이도 신용카드를 발급해줘요 — 다른 은행이 동시에 제공하지 않는 두 가지예요.',
-        en: "RBC's newcomer package waives the monthly fee for the first year and can issue a credit card without a Canadian credit history — two things many other banks don't offer at the same time.",
-        fr: "Le programme nouveaux arrivants de RBC exonère les frais la 1re année et peut émettre une carte de crédit sans historique canadien — deux choses rares chez les autres banques.",
-      },
-    },
-    {
-      name: 'TD Bank',
-      sub: { ko: '폭넓게 이용 가능, 학생 친화적', en: 'Widely available, student-friendly', fr: 'Largement disponible, adapté aux étudiants' },
-      meta: [
-        { icon: 'coin', label: { ko: '월 약 $10–16', en: '~$10–16/mo', fr: '~10–16 $/mois' } },
-        { icon: 'device-laptop', label: { ko: '대면 또는 온라인', en: 'In-person or online', fr: 'En personne ou en ligne' } },
-        { icon: 'map-pin', label: { ko: '몬트리올 지점 다수', en: 'Many Montreal branches', fr: 'Nombreuses succursales à Montréal' } },
-      ],
-      worksFor: [
-        { ko: '학생', en: 'Students', fr: 'Étudiants' },
-        { ko: 'TD 지점 근처에 사는 분', en: 'Those near a TD branch', fr: "Ceux qui habitent près d'une succursale TD" },
-        { ko: '한국 TD를 써본 분께 익숙한 인터페이스', en: 'Familiar interface for those who used TD Korea', fr: 'Interface familière pour ceux qui ont utilisé TD en Corée' },
-      ],
-      worthKnowing: [
-        { ko: '신용 기록 없이 자동 신용카드 발급은 안 돼요', en: 'No automatic credit card without history', fr: 'Pas de carte automatique sans historique' },
-        { ko: '풀타임 학생은 수수료가 면제돼요', en: 'Fee waived for full-time students', fr: 'Frais exonérés pour les étudiants à temps plein' },
-      ],
-    },
-    {
-      name: 'Desjardins',
-      sub: { ko: '퀘벡 지역 협동조합 은행', en: 'Local Québec cooperative bank', fr: 'Banque coopérative locale québécoise' },
-      meta: [
-        { icon: 'coin', label: { ko: '월 약 $10', en: '~$10/mo', fr: '~10 $/mois' } },
-        { icon: 'user', label: { ko: '대면', en: 'In-person', fr: 'En personne' } },
-        { icon: 'language', label: { ko: '탄탄한 프랑스어 서비스', en: 'Strong French-language service', fr: 'Solide service en français' } },
-      ],
-      worksFor: [
-        { ko: '프랑스어 사용자', en: 'French speakers', fr: 'Francophones' },
-        { ko: '퀘벡에 장기 정착할 계획인 분', en: 'Those planning to stay long-term in Québec', fr: 'Ceux qui prévoient rester longtemps au Québec' },
-        { ko: '지역 커뮤니티 뱅킹', en: 'Local community banking', fr: 'Banque communautaire locale' },
-      ],
-      worthKnowing: [
-        { ko: '퀘벡 밖에서는 덜 편리해요', en: 'Less convenient for those outside Québec', fr: 'Moins pratique hors du Québec' },
-        { ko: '영어 서비스는 지점마다 달라요', en: 'English service varies by branch', fr: "Le service en anglais varie selon la succursale" },
-      ],
-    },
-    {
-      name: 'BMO',
-      sub: { ko: '새 이민자 패키지 제공', en: 'Newcomer package available', fr: 'Programme nouveaux arrivants disponible' },
-      meta: [
-        { icon: 'coin', label: { ko: '1년차 $0 (새 이민자 패키지)', en: '$0 yr 1 (newcomer pkg)', fr: '0 $ an 1 (forfait nouv. arrivants)' } },
-        { icon: 'device-laptop', label: { ko: '대면 또는 온라인', en: 'In-person or online', fr: 'En personne ou en ligne' } },
-        { icon: 'school', label: { ko: '유학생 중심', en: 'International student focus', fr: 'Axé sur les étudiants internationaux' } },
-      ],
-      worksFor: [
-        { ko: '유학생', en: 'International students', fr: 'Étudiants internationaux' },
-        { ko: '첫 해 무료를 원하는 분', en: 'Those who want a no-fee first year', fr: 'Ceux qui veulent une première année sans frais' },
-      ],
-      worthKnowing: [
-        { ko: '신용 기록 없이는 신용카드 발급이 더 제한적이에요', en: 'Credit card access more limited without history', fr: "Accès à la carte plus limité sans historique" },
-      ],
-    },
-  ],
-  notes: [
-    {
-      flag: '🇰🇷',
-      person: { ko: '유학생 · 2024년 1월', en: 'Student · Jan 2024', fr: 'Étudiant · janv. 2024' },
-      text: {
-        ko: '도착 3일째에 RBC에 갔어요. 직원분들이 친절했고 한 시간 정도 걸렸어요. 당일에 직불카드도 받았어요.',
-        en: 'I went to RBC on my third day. The staff were patient and the whole process took about an hour. Had a debit card the same day.',
-        fr: "Je suis allé à RBC le 3e jour. Le personnel était patient et tout a pris environ une heure. J'ai eu une carte de débit le jour même.",
-      },
-      likes: 28,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '워킹홀리데이 · 2023년 10월', en: 'Working Holiday · Oct 2023', fr: 'Vacances-Travail · oct. 2023' },
-      text: {
-        ko: '프랑스어를 연습하고 싶어서 Desjardins를 골랐어요. 일부 지점은 새 이민자에게 정말 친절해요.',
-        en: 'I picked Desjardins because I wanted to practice French. Some branches are very helpful with newcomers.',
-        fr: "J'ai choisi Desjardins pour pratiquer mon français. Certaines succursales sont très accueillantes avec les nouveaux arrivants.",
-      },
-      likes: 16,
-    },
-    {
-      flag: '🇫🇷',
-      person: { ko: '프랑스 출신 영주권자', en: 'French PR', fr: 'Résident permanent français' },
-      text: {
-        ko: 'Desjardins가 가장 현지스러웠어요. 몬트리올에서 일상 프랑스어 생활엔 잘 맞았어요.',
-        en: 'Desjardins felt the most local. For everyday French life in Montreal it worked well.',
-        fr: 'Desjardins faisait le plus local. Pour la vie quotidienne en français à Montréal, ça marchait bien.',
-      },
-      likes: 11,
-    },
-  ],
-}
-
-// ─── TAB 3: Transit ──────────────────────────────────────────────────────────
-
-const TRANSIT_TAB: TabContent = {
-  intro: {
-    what: {
-      ko: '몬트리올 대중교통(STM)은 지하철과 버스로 도시 대부분을 커버해요. OPUS 카드는 둘 다 쓰는 충전식 교통 카드예요.',
-      en: "Montréal's public transit (STM) covers most of the city with metro and buses. The OPUS card is the rechargeable transit card used for both.",
-      fr: "Le transport public de Montréal (STM) couvre la majorité de la ville avec le métro et les bus. La carte OPUS est la carte rechargeable utilisée pour les deux.",
-    },
-    behavior: {
-      ko: '도착 첫 며칠 안에 공항이나 지하철역에서 OPUS 카드를 받는 분이 많아요. 따뜻한 계절엔 자전거나 도보를 선호하는 분도 있어요.',
-      en: 'Most people pick up an OPUS card at the airport or a metro station in their first few days. Some prefer cycling or walking in warmer months.',
-      fr: "La plupart prennent une carte OPUS à l'aéroport ou en station de métro dans les premiers jours. Certains préfèrent le vélo ou la marche aux beaux jours.",
-    },
-    when: {
-      ko: '차가 없다면 첫날부터 지하철이나 버스를 쓰게 돼요. 공항 버스(747)는 신용카드를 받으니 도착 당일엔 OPUS가 급하진 않아요.',
-      en: "Unless you have a car, you'll use the metro or bus from day one. The airport bus (747) accepts credit cards, so an OPUS card isn't urgent on arrival day.",
-      fr: "Sauf si vous avez une voiture, vous prendrez le métro ou le bus dès le premier jour. Le bus 747 accepte la carte de crédit, donc l'OPUS n'est pas urgent à l'arrivée.",
-    },
-  },
-  options: [
-    {
-      name: 'STM Monthly Pass + OPUS Card',
-      sub: { ko: '지하철·버스 무제한', en: 'Unlimited metro and bus', fr: 'Métro et bus illimités' },
-      topPick: true,
-      meta: [
-        { icon: 'coin', label: { ko: '월 $97 (일반) / $56 (학생)', en: '$97/mo (regular) or $56/mo (student)', fr: '97 $/mois (régulier) ou 56 $/mois (étudiant)' } },
-        { icon: 'credit-card', label: { ko: 'OPUS 카드 1회 $6', en: 'OPUS card $6 one-time', fr: 'Carte OPUS 6 $ une fois' } },
-        { icon: 'map-pin', label: { ko: '지하철역에서 구매', en: 'Available at metro stations', fr: 'Disponible en station de métro' } },
-      ],
-      worksFor: [
-        { ko: '매일 통근하는 분', en: 'Daily commuters', fr: 'Navetteurs quotidiens' },
-        { ko: '학생 (자격 시 50% 할인)', en: 'Students (50% discount with eligible status)', fr: 'Étudiants (50 % de rabais selon le statut)' },
-        { ko: '지하철 노선 근처에 사는 분', en: 'Those living near a metro line', fr: "Ceux qui habitent près d'une ligne de métro" },
-      ],
-      worthKnowing: [
-        { ko: '월 패스는 매월 1일에 리셋돼요 — 월말에 사면 한 달을 다 못 써요', en: "Monthly pass resets on the 1st — buy toward the end of a month and you'll get less than a full month", fr: "La passe mensuelle se réinitialise le 1er — achetée en fin de mois, vous aurez moins d'un mois complet" },
-        { ko: '학생 요금은 재학 증명이 필요해요', en: 'Student rate requires enrollment verification', fr: "Le tarif étudiant exige une preuve d'inscription" },
-      ],
-      recommendNote: {
-        ko: '학생 요금은 일반 요금의 절반 정도예요. 학교나 프로그램이 자격이 되는지 확인해볼 만해요 — 의외로 되는 경우가 많아요.',
-        en: 'The student rate is about half the regular price. Worth checking if your school or program qualifies — many do.',
-        fr: "Le tarif étudiant est environ moitié prix. Vérifiez si votre école ou programme y a droit — beaucoup y ont droit.",
-      },
-    },
-    {
-      name: 'OPUS Pay-Per-Ride',
-      sub: { ko: '필요할 때마다 충전, 월 약정 없음', en: 'Load trips as needed, no monthly commitment', fr: 'Recharge à la demande, sans engagement mensuel' },
-      meta: [
-        { icon: 'coin', label: { ko: '회당 약 $3.75', en: '~$3.75/trip', fr: '~3,75 $/trajet' } },
-        { icon: 'calendar-off', label: { ko: '월 약정 없음', en: 'No monthly commitment', fr: 'Sans engagement mensuel' } },
-        { icon: 'credit-card', label: { ko: '동일한 OPUS 카드', en: 'Same OPUS card', fr: 'Même carte OPUS' } },
-      ],
-      worksFor: [
-        { ko: '가끔 이용하는 분', en: 'Infrequent riders', fr: 'Usagers occasionnels' },
-        { ko: '월 패스 결정 전 첫 주', en: 'First week before committing to a monthly pass', fr: "Première semaine avant de choisir une passe mensuelle" },
-        { ko: '간헐적인 이동', en: 'Occasional trips', fr: 'Trajets occasionnels' },
-      ],
-      worthKnowing: [
-        { ko: '매일 쓰면 금방 쌓여요 — 약 26회부터는 월 패스가 더 저렴해요', en: 'Adds up quickly if used daily — monthly pass becomes cheaper after about 26 trips', fr: 'Ça monte vite au quotidien — la passe mensuelle devient moins chère après ~26 trajets' },
-      ],
-    },
-    {
-      name: 'BIXI (Bike Share)',
-      sub: { ko: '몬트리올 중심부 도크형 자전거', en: 'Dock-to-dock bikes across central Montréal', fr: 'Vélos en libre-service au centre de Montréal' },
-      meta: [
-        { icon: 'coin', label: { ko: '월 약 $27 (시즌) / 일 약 $7', en: '~$27/mo (seasonal) or ~$7/day', fr: '~27 $/mois (saison) ou ~7 $/jour' } },
-        { icon: 'calendar', label: { ko: '4월–11월', en: 'April–November', fr: 'Avril–novembre' } },
-        { icon: 'device-mobile', label: { ko: '앱 기반', en: 'App-based', fr: 'Via application' } },
-      ],
-      worksFor: [
-        { ko: 'Plateau, Mile End, 다운타운 단거리', en: 'Short trips in Plateau, Mile End, downtown', fr: 'Courts trajets au Plateau, Mile End, centre-ville' },
-        { ko: '자전거 타기를 즐기는 분', en: 'Those who enjoy cycling', fr: 'Ceux qui aiment le vélo' },
-        { ko: '지하철과 잘 어울리는 보완책', en: 'Nice complement to metro', fr: 'Beau complément au métro' },
-      ],
-      worthKnowing: [
-        { ko: '계절제 — 겨울엔 운영 안 해요', en: 'Seasonal — not available in winter', fr: "Saisonnier — pas disponible l'hiver" },
-        { ko: '헬멧은 제공되지 않아요', en: 'Helmets not provided', fr: 'Casques non fournis' },
-      ],
-    },
-    {
-      name: 'Airport Bus 747',
-      sub: { ko: 'YUL ↔ 다운타운, 24시간 운행', en: 'YUL to downtown, runs 24/7', fr: 'YUL au centre-ville, 24h/24' },
-      meta: [
-        { icon: 'coin', label: { ko: '회당 $11', en: '$11 per ride', fr: '11 $ par trajet' } },
-        { icon: 'credit-card', label: { ko: '신용카드 가능 (OPUS 불필요)', en: 'Accepts credit card (no OPUS needed)', fr: "Carte de crédit acceptée (OPUS non requis)" } },
-        { icon: 'clock', label: { ko: '20–30분 간격', en: 'Every 20–30 min', fr: 'Toutes les 20–30 min' } },
-      ],
-      worksFor: [
-        { ko: '도착 당일 공항에서 이동', en: 'Getting from the airport on arrival', fr: "Se déplacer depuis l'aéroport à l'arrivée" },
-        { ko: '준비 없이 간단하게', en: 'Simple, no setup required', fr: 'Simple, aucune configuration' },
-      ],
-      worthKnowing: [
-        { ko: '교통 상황에 따라 45–70분 걸려요', en: 'Takes 45–70 min depending on traffic', fr: 'Prend 45–70 min selon la circulation' },
-        { ko: '다운타운 여러 정류장에 서요 — 도어투도어는 아니에요', en: 'Stops at several downtown points, not door-to-door', fr: "S'arrête à plusieurs points au centre-ville, pas porte-à-porte" },
-      ],
-    },
-  ],
-  notes: [
-    {
-      flag: '🇰🇷',
-      person: { ko: '유학생 · 2023년 9월', en: 'Student · Sept 2023', fr: 'Étudiant · sept. 2023' },
-      text: {
-        ko: '공항에서 747 버스가 편했어요. 카드로 결제했고 OPUS도 필요 없었어요. 다음 날 지하철역에서 OPUS를 받았어요.',
-        en: 'The 747 bus was easy from the airport. I paid with my card, no OPUS needed. Got an OPUS the next day at the metro station.',
-        fr: "Le bus 747 était facile depuis l'aéroport. J'ai payé par carte, sans OPUS. J'ai pris une OPUS le lendemain en station.",
-      },
-      likes: 24,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '워킹홀리데이 · 2024년 6월', en: 'Working Holiday · June 2024', fr: 'Vacances-Travail · juin 2024' },
-      text: {
-        ko: '여름엔 BIXI가 정말 좋아요. 5월부터 9월까지 지하철을 거의 안 탔어요.',
-        en: 'BIXI in summer is great. I barely used the metro from May to September.',
-        fr: "Le BIXI l'été, c'est génial. J'ai à peine pris le métro de mai à septembre.",
-      },
-      likes: 18,
-    },
-    {
-      flag: '🇨🇦',
-      person: { ko: '한국계 캐나다인', en: 'Korean-Canadian', fr: 'Coréen-Canadien' },
-      text: {
-        ko: '지하철을 하루 한 번 이상 탄다면 월 패스를 사세요. 계산해보면 금방 이득이에요.',
-        en: 'Get the monthly pass if you\'re taking the metro more than once a day. The math works out pretty quickly.',
-        fr: "Prenez la passe mensuelle si vous faites le métro plus d'une fois par jour. Le calcul est vite rentable.",
-      },
-      likes: 15,
-    },
-  ],
-}
-
-// ─── TAB 4: Temporary housing ────────────────────────────────────────────────
-
-const HOUSING_TAB: TabContent = {
-  intro: {
-    what: {
-      ko: '장기 아파트를 찾는 동안 처음 몇 주는 임시 거처에서 지내는 분이 대부분이에요.',
-      en: 'Most people stay in temporary housing for the first few weeks while searching for a longer-term apartment.',
-      fr: "La plupart logent en hébergement temporaire les premières semaines, le temps de chercher un appartement à long terme.",
-    },
-    behavior: {
-      ko: '도착 전에 Airbnb, 호스텔, 단기 서블렛을 미리 잡는 분도 있고, 친구 집이나 학교 홈스테이에 머무는 분도 있어요.',
-      en: 'Some people arrange something before arriving — an Airbnb, a hostel, or a short-term sublet. Others stay with friends or in a homestay through their school.',
-      fr: "Certains réservent avant d'arriver — Airbnb, auberge ou sous-location courte. D'autres logent chez des amis ou en famille d'accueil via leur école.",
-    },
-    when: {
-      ko: '도착 전에 확정된 곳이 있으면 좋아요. 영구 아파트를 찾는 데 몬트리올 현지에서 보통 2–4주 걸리고, 원격으론 훨씬 어려워요.',
-      en: "You'll want somewhere confirmed before you land. Finding a permanent apartment usually takes 2–4 weeks from Montréal — it's much harder to do remotely.",
-      fr: "Mieux vaut avoir un endroit confirmé avant d'atterrir. Trouver un appartement permanent prend en général 2–4 semaines sur place — bien plus difficile à distance.",
-    },
-  },
-  options: [
-    {
-      name: 'Airbnb / Short-term rental',
-      sub: { ko: '개인 공간, 유연한 날짜', en: 'Private space, flexible dates', fr: 'Espace privé, dates flexibles' },
-      topPick: true,
-      meta: [
-        { icon: 'coin', label: { ko: '2주 약 $800–1,400', en: '~$800–1,400 for 2 weeks', fr: '~800–1 400 $ pour 2 semaines' } },
-        { icon: 'plane-departure', label: { ko: '도착 전 예약', en: 'Book before arrival', fr: 'Réserver avant arrivée' } },
-        { icon: 'home', label: { ko: '은행 주소로 사용 가능', en: 'Address usable for banking', fr: 'Adresse utilisable pour la banque' } },
-      ],
-      worksFor: [
-        { ko: '개인 공간을 원하는 분', en: 'Those who want private space', fr: 'Ceux qui veulent un espace privé' },
-        { ko: '은행 계좌 개설 시 주소로 활용', en: 'Using the address for bank account setup', fr: "Utiliser l'adresse pour ouvrir un compte" },
-        { ko: '아파트 검색이 길어질 때 연장 가능', en: 'Flexibility to extend if apartment search takes longer', fr: 'Souplesse pour prolonger si la recherche traîne' },
-      ],
-      worthKnowing: [
-        { ko: '호스텔보다 비싸요', en: 'More expensive than hostels', fr: 'Plus cher que les auberges' },
-        { ko: '일부 집주인은 Airbnb를 검증된 주소로 인정하지 않아요', en: "Some landlords don't count Airbnb as a verified address for lease applications", fr: "Certains propriétaires n'acceptent pas Airbnb comme adresse vérifiée pour un bail" },
-      ],
-      recommendNote: {
-        ko: 'Airbnb 주소로 은행 계좌를 여는 분이 많아요. 예약 확인 이메일이 주소 증명으로 보통 인정돼요.',
-        en: 'Many people use their Airbnb address when opening a bank account. The confirmation email is usually accepted as proof of address.',
-        fr: "Beaucoup utilisent leur adresse Airbnb pour ouvrir un compte. Le courriel de confirmation est en général accepté comme preuve d'adresse.",
-      },
-    },
-    {
-      name: 'Hostel / Student Residence',
-      sub: { ko: '저예산 옵션, 사교적 분위기', en: 'Budget option, social atmosphere', fr: 'Option économique, ambiance conviviale' },
-      meta: [
-        { icon: 'coin', label: { ko: '하루 약 $35–60', en: '~$35–60/night', fr: '~35–60 $/nuit' } },
-        { icon: 'plane-departure', label: { ko: '도착 전 예약', en: 'Book before arrival', fr: 'Réserver avant arrivée' } },
-        { icon: 'calendar', label: { ko: '주·월 단위 요금도 있음', en: 'Some offer weekly/monthly rates', fr: 'Tarifs hebdo/mensuels parfois offerts' } },
-      ],
-      worksFor: [
-        { ko: '예산을 아끼는 분', en: 'Budget-conscious arrivals', fr: 'Nouveaux arrivants soucieux du budget' },
-        { ko: '다른 새 이민자를 만나고 싶은 분', en: 'Those who want to meet other newcomers', fr: "Ceux qui veulent rencontrer d'autres nouveaux arrivants" },
-        { ko: '1–2주 단기 체류', en: 'Short stays of 1–2 weeks', fr: 'Séjours courts de 1–2 semaines' },
-      ],
-      worthKnowing: [
-        { ko: '공용 공간 — 프라이버시가 적어요', en: 'Shared spaces — less privacy', fr: "Espaces partagés — moins d'intimité" },
-        { ko: '주소가 공식 서류에 인정 안 될 수 있어요', en: 'Address may not be accepted for official documents', fr: "L'adresse peut ne pas être acceptée pour les documents officiels" },
-      ],
-    },
-    {
-      name: 'Facebook / Kijiji Short-term Sublet',
-      sub: { ko: '현지 호스트의 가구 포함 방', en: 'Furnished rooms from local hosts', fr: 'Chambres meublées chez des hôtes locaux' },
-      meta: [
-        { icon: 'coin', label: { ko: '월 약 $700–1,200', en: '~$700–1,200/mo', fr: '~700–1 200 $/mois' } },
-        { icon: 'map-pin', label: { ko: '몬트리올 현지에서 찾기 좋음', en: 'Best found from Montréal', fr: 'Plus facile à trouver sur place' } },
-        { icon: 'calendar', label: { ko: '유연한 조건', en: 'Flexible terms', fr: 'Conditions flexibles' } },
-      ],
-      worksFor: [
-        { ko: '오래 검색하는 경우 (1–2개월)', en: 'Longer searches (1–2 months)', fr: 'Recherches plus longues (1–2 mois)' },
-        { ko: '검증을 도와줄 현지 지인이 있는 분', en: 'Those with a local contact to help vet', fr: "Ceux qui ont un contact local pour vérifier" },
-        { ko: 'Airbnb보다 저렴', en: 'Lower cost than Airbnb', fr: "Moins cher qu'Airbnb" },
-      ],
-      worthKnowing: [
-        { ko: '추천인 없이 원격으로 잡기는 어려워요', en: 'Harder to arrange remotely without a reference', fr: 'Plus difficile à distance sans référence' },
-        { ko: '꼼꼼히 확인하세요 — 사기 매물도 있어요', en: 'Vet carefully — some listings are scams', fr: 'Vérifiez bien — certaines annonces sont frauduleuses' },
-      ],
-    },
-    {
-      name: 'School Residence / Homestay',
-      sub: { ko: '학교나 프로그램을 통해', en: 'Through your school or program', fr: 'Via votre école ou programme' },
-      meta: [
-        { icon: 'school', label: { ko: '학교마다 다름', en: 'Varies by school', fr: "Variable selon l'école" } },
-        { icon: 'plane-departure', label: { ko: '보통 도착 전 준비', en: 'Usually arranged before arrival', fr: "Habituellement avant l'arrivée" } },
-        { icon: 'heart-handshake', label: { ko: '체계적인 지원', en: 'Structured support', fr: 'Soutien encadré' } },
-      ],
-      worksFor: [
-        { ko: '주거 서비스가 있는 학교 재학생', en: 'Those enrolled in a school with housing services', fr: "Inscrits dans une école offrant des services de logement" },
-        { ko: '안정적인 착지를 원하는 첫 방문자', en: 'First-time arrivals who want a supported landing', fr: 'Primo-arrivants qui veulent un atterrissage encadré' },
-      ],
-      worthKnowing: [
-        { ko: '자리가 제한적이에요 — 일찍 신청하세요', en: 'Usually limited availability — apply early', fr: 'Places souvent limitées — postulez tôt' },
-        { ko: '중심부에 있지 않은 경우도 많아요', en: 'Not always in central locations', fr: 'Pas toujours en zone centrale' },
-      ],
-    },
-  ],
-  notes: [
-    {
-      flag: '🇰🇷',
-      person: { ko: '유학생 · 2023년 8월', en: 'Student · Aug 2023', fr: 'Étudiant · août 2023' },
-      text: {
-        ko: '오기 전에 Airbnb를 3주 예약했어요. 3일째에 그 주소로 은행 계좌를 열었는데 문제없었어요.',
-        en: 'I booked an Airbnb for 3 weeks before coming. Used that address for my bank account on day 3. It worked fine.',
-        fr: "J'ai réservé un Airbnb 3 semaines avant de venir. J'ai utilisé l'adresse pour mon compte le 3e jour. Aucun souci.",
-      },
-      likes: 26,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '워킹홀리데이 · 2023년 11월', en: 'Working Holiday · Nov 2023', fr: 'Vacances-Travail · nov. 2023' },
-      text: {
-        ko: '호스텔에서 일주일 지내고 Facebook에서 서블렛을 찾았어요. 호스텔도 괜찮았어요 — 여행자들도 만나고 적응에 도움이 됐어요.',
-        en: 'I stayed at a hostel for a week and found a sublet on Facebook. The hostel was fine — met other travellers and it helped me get oriented.',
-        fr: "J'ai logé en auberge une semaine puis trouvé une sous-location sur Facebook. L'auberge était bien — j'ai rencontré des voyageurs et ça m'a aidé à me repérer.",
-      },
-      likes: 17,
-    },
-    {
-      flag: '🇫🇷',
-      person: { ko: '프랑스 출신 유학생', en: 'French Student', fr: 'Étudiant français' },
-      text: {
-        ko: '학교에 홈스테이 프로그램이 있었어요. 비용은 더 들었지만 첫 달에 현지 호스트가 있다는 게 큰 차이를 만들었어요.',
-        en: 'My school had a homestay program. It cost more but having a local host the first month made a big difference.',
-        fr: "Mon école avait un programme de famille d'accueil. Plus cher, mais avoir un hôte local le premier mois a fait une grande différence.",
-      },
-      likes: 13,
-    },
-  ],
-}
-
-// ─── TAB 5: SIN number ───────────────────────────────────────────────────────
-
-const SIN_TAB: TabContent = {
-  intro: {
-    what: {
-      ko: 'SIN(사회보험번호)은 캐나다에서 취업, 세금, 일부 정부 서비스에 쓰는 9자리 번호예요.',
-      en: 'A Social Insurance Number (SIN) is a 9-digit number used for employment, taxes, and some government services in Canada.',
-      fr: "Le numéro d'assurance sociale (NAS) est un numéro à 9 chiffres utilisé pour l'emploi, les impôts et certains services gouvernementaux au Canada.",
-    },
-    behavior: {
-      ko: '도착 후 첫 몇 주 안에 SIN을 받는 분이 많아요 — 곧 일이나 학교를 시작하면 더 일찍 받기도 해요.',
-      en: "Most people get their SIN within the first few weeks of arriving — often earlier if they're starting work or school soon.",
-      fr: "La plupart obtiennent leur NAS dans les premières semaines — souvent plus tôt s'ils commencent bientôt à travailler ou étudier.",
-    },
-    when: {
-      ko: '첫 출근 전에 SIN이 필요해요. 학생은 파트타임 일을 하지 않는 한 덜 급해요.',
-      en: "You'll need a SIN before your first day of work. For students, it's less time-sensitive unless you have a part-time job.",
-      fr: "Vous aurez besoin d'un NAS avant votre premier jour de travail. Pour les étudiants, c'est moins urgent sauf emploi à temps partiel.",
-    },
-  },
-  options: [
-    {
-      name: 'In-person at Service Canada',
-      sub: { ko: '당일 발급, 대기 없음', en: 'Issued same day, no waiting', fr: 'Émis le jour même, sans attente' },
-      topPick: true,
-      meta: [
-        { icon: 'coin', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
-        { icon: 'bolt', label: { ko: '당일 처리', en: 'Same-day processing', fr: 'Traitement le jour même' } },
-        { icon: 'id', label: { ko: '여권 + 학생/취업 비자', en: 'Passport + study/work permit required', fr: "Passeport + permis d'études/travail requis" } },
-        { icon: 'calendar-off', label: { ko: '예약 불필요', en: 'No appointment needed', fr: 'Sans rendez-vous' } },
-      ],
-      worksFor: [
-        { ko: 'SIN이 빨리 필요한 누구나', en: 'Anyone who needs their SIN quickly', fr: 'Quiconque a besoin de son NAS rapidement' },
-        { ko: '직접 확인받고 싶은 분', en: 'Those who want it confirmed in person', fr: 'Ceux qui veulent une confirmation en personne' },
-      ],
-      worthKnowing: [
-        { ko: 'Service Canada 사무소 방문이 필요해요 — 몬트리올에 여러 곳 있어요', en: "You'll need to visit a Service Canada office — there are several in Montréal", fr: 'Il faut visiter un bureau Service Canada — il y en a plusieurs à Montréal' },
-        { ko: '여권과 비자를 챙기세요', en: 'Bring your passport and permit', fr: 'Apportez votre passeport et votre permis' },
-      ],
-      recommendNote: {
-        ko: '직접 가는 절차는 간단해요 — 보통 45분 안에 끝나요. 대부분의 사무소는 예약이 필요 없어요.',
-        en: 'The in-person process is straightforward — most people are in and out within 45 minutes. No appointment needed at most locations.',
-        fr: "La démarche en personne est simple — la plupart en ont pour 45 minutes. Sans rendez-vous dans la plupart des bureaux.",
-      },
-    },
-    {
-      name: 'Online Application',
-      sub: { ko: '집에서 신청, 우편으로 수령', en: 'Apply from home, delivered by mail', fr: 'Demande à domicile, livraison par la poste' },
-      meta: [
-        { icon: 'coin', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
-        { icon: 'clock', label: { ko: '2–4주 처리', en: '2–4 weeks processing', fr: 'Traitement 2–4 semaines' } },
-        { icon: 'device-laptop', label: { ko: 'canada.ca에서 신청', en: 'Applied at canada.ca', fr: 'Demande sur canada.ca' } },
-      ],
-      worksFor: [
-        { ko: '당장 일하지 않는 분', en: "Those who aren't working right away", fr: 'Ceux qui ne travaillent pas tout de suite' },
-        { ko: '사무소 방문을 피하고 싶은 분', en: 'Those who prefer not to visit an office', fr: 'Ceux qui préfèrent éviter le déplacement' },
-      ],
-      worthKnowing: [
-        { ko: '처리에 2–4주 걸려요', en: 'Processing takes 2–4 weeks', fr: 'Le traitement prend 2–4 semaines' },
-        { ko: 'SIN 번호를 바로 받지는 못해요', en: "You won't have a SIN number immediately", fr: "Vous n'aurez pas de NAS immédiatement" },
-      ],
-    },
-  ],
-  notes: [
-    {
-      flag: '🇰🇷',
-      person: { ko: '워킹홀리데이 · 2024년 7월', en: 'Working Holiday · July 2024', fr: 'Vacances-Travail · juil. 2024' },
-      text: {
-        ko: '도착 둘째 날에 Service Canada에 갔어요. 한 시간도 안 돼서 SIN 번호를 손에 들고 나왔어요. 정말 쉬웠어요.',
-        en: 'I went to Service Canada on my second day. I was out in under an hour with my SIN number in hand. Very easy.',
-        fr: "Je suis allé à Service Canada le 2e jour. J'en suis ressorti en moins d'une heure avec mon NAS en main. Très facile.",
-      },
-      likes: 35,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '유학생 · 2023년 9월', en: 'Student · Sept 2023', fr: 'Étudiant · sept. 2023' },
-      text: {
-        ko: '처음엔 온라인으로 신청했어요. 3주 걸려서 파트타임 시작을 놓칠 뻔했어요. 가능하면 직접 가는 게 빨라요.',
-        en: 'I applied online at first. It took 3 weeks and I almost missed starting my part-time job. Going in person is faster if you can.',
-        fr: "J'ai d'abord fait la demande en ligne. Ça a pris 3 semaines et j'ai failli rater le début de mon emploi. En personne, c'est plus rapide si vous le pouvez.",
-      },
-      likes: 22,
-    },
-    {
-      flag: '🇨🇦',
-      person: { ko: '한국계 캐나다인', en: 'Korean-Canadian', fr: 'Coréen-Canadien' },
-      text: {
-        ko: '대부분의 사무소는 예약 없이 가도 괜찮아요. 저는 예약이 필요했던 적이 없어요.',
-        en: "Walk-in is fine at most offices. I've never needed an appointment.",
-        fr: "Sans rendez-vous, ça va dans la plupart des bureaux. Je n'en ai jamais eu besoin.",
-      },
-      likes: 12,
-    },
-  ],
-}
-
-// ─── TAB 6: Driver's licence ─────────────────────────────────────────────────
-
-const LICENCE_TAB: TabContent = {
-  intro: {
-    what: {
-      ko: '한국 운전면허가 있다면 추가 시험 없이 퀘벡 면허로 교환할 수 있는 경우가 있어요.',
-      en: 'If you have a Korean driver\'s licence, you may be able to exchange it for a Québec licence without taking additional tests.',
-      fr: "Si vous avez un permis de conduire coréen, vous pourriez l'échanger contre un permis québécois sans examens supplémentaires.",
-    },
-    behavior: {
-      ko: '운전하는 한국 새 이민자 중 첫 몇 달 안에 이걸 하는 분이 많아요. 교환은 서류 몇 가지를 가지고 SAAQ 사무소를 방문하면 돼요.',
-      en: 'Many Korean newcomers who drive choose to do this in their first few months. The exchange process requires a visit to a SAAQ office with a few documents.',
-      fr: "Beaucoup de nouveaux arrivants coréens qui conduisent le font dans les premiers mois. L'échange se fait en visitant un bureau SAAQ avec quelques documents.",
-    },
-    when: {
-      ko: '한국 면허는 도착 후 일정 기간 퀘벡에서 유효해요 — 정확한 기간은 이민 신분에 따라 달라요. 교환은 언제든 가능하지만 첫 몇 달 안에 하는 분이 많아요.',
-      en: 'Your Korean licence is valid in Québec for a period after arrival — the exact duration depends on your immigration status. The exchange can be done at any point, but many people do it within their first few months.',
-      fr: "Votre permis coréen est valide au Québec pendant une période après l'arrivée — la durée exacte dépend de votre statut. L'échange peut se faire à tout moment, mais beaucoup le font dans les premiers mois.",
-    },
-  },
-  options: [
-    {
-      name: 'Licence Exchange at SAAQ',
-      sub: { ko: '한국 면허 → 퀘벡 면허, 재시험 없음', en: 'Korean licence → Québec licence, no retesting', fr: 'Permis coréen → québécois, sans réexamen' },
-      topPick: true,
-      meta: [
-        { icon: 'coin', label: { ko: '약 $30–100', en: '~$30–100 fee', fr: '~30–100 $ de frais' } },
-        { icon: 'user', label: { ko: 'SAAQ 대면', en: 'In-person at SAAQ', fr: 'En personne à la SAAQ' } },
-        { icon: 'calendar', label: { ko: '예약 권장', en: 'Appointment recommended', fr: 'Rendez-vous recommandé' } },
-        { icon: 'file-text', label: { ko: '여권 + 한국 면허 + 공증 번역', en: 'Passport + Korean licence + certified translation', fr: 'Passeport + permis coréen + traduction certifiée' } },
-      ],
-      worksFor: [
-        { ko: '운전할 계획이 있고 유효한 한국 면허가 있는 분', en: 'Anyone with a valid Korean licence who plans to drive', fr: 'Quiconque a un permis coréen valide et prévoit conduire' },
-        { ko: '퀘벡 신분증을 원하는 분', en: 'Those who want a Québec ID card', fr: "Ceux qui veulent une pièce d'identité québécoise" },
-      ],
-      worthKnowing: [
-        { ko: '한국 면허의 공증 프랑스어 번역본이 보통 필요해요', en: 'A certified French translation of your Korean licence is typically required', fr: 'Une traduction française certifiée du permis coréen est en général requise' },
-        { ko: 'SAAQ 사무소는 붐빌 수 있어요 — 미리 예약하면 시간이 절약돼요', en: 'SAAQ offices can be busy — booking in advance saves time', fr: 'Les bureaux SAAQ peuvent être achalandés — réserver à l\'avance fait gagner du temps' },
-      ],
-      recommendNote: {
-        ko: '한국 운전면허는 교환 대상으로 인정돼요 — 필기나 도로 시험이 없어요. 예약과 서류만 있으면 돼요.',
-        en: 'A Korean driver\'s licence is recognized for exchange — no written or road tests required. Just an appointment and the documents.',
-        fr: "Le permis coréen est reconnu pour l'échange — sans examen théorique ni pratique. Juste un rendez-vous et les documents.",
-      },
-    },
-    {
-      name: 'International Driving Permit (IDP)',
-      sub: { ko: '출국 전 한국에서 발급', en: 'Get this in Korea before you leave', fr: 'À obtenir en Corée avant le départ' },
-      meta: [
-        { icon: 'coin', label: { ko: '한국에서 약 ₩8,500', en: '~₩8,500 in Korea', fr: '~8 500 ₩ en Corée' } },
-        { icon: 'calendar', label: { ko: '1년 유효', en: 'Valid for 1 year', fr: 'Valide 1 an' } },
-        { icon: 'id', label: { ko: '한국 면허의 보조 서류', en: 'Supplement to your Korean licence', fr: 'Complément à votre permis coréen' } },
-      ],
-      worksFor: [
-        { ko: '도착하자마자 운전이 필요한 분', en: 'Those who need to drive immediately on arrival', fr: "Ceux qui doivent conduire dès l'arrivée" },
-        { ko: 'SAAQ 교환을 기다리는 동안의 보조 수단', en: 'As a supplement while waiting for the SAAQ exchange', fr: "Comme complément en attendant l'échange SAAQ" },
-      ],
-      worthKnowing: [
-        { ko: 'IDP만으로는 장기적으로 퀘벡 면허를 대체하지 못해요', en: 'An IDP alone is not a substitute for a Québec licence long-term', fr: "Un PCI seul ne remplace pas un permis québécois à long terme" },
-        { ko: '출국 전 한국에서 발급받아야 해요', en: 'Needs to be obtained in Korea before departure', fr: 'À obtenir en Corée avant le départ' },
-      ],
-    },
-  ],
-  notes: [
-    {
-      flag: '🇰🇷',
-      person: { ko: '워킹홀리데이 · 2024년 5월', en: 'Working Holiday · May 2024', fr: 'Vacances-Travail · mai 2024' },
-      text: {
-        ko: '둘째 달에 SAAQ 교환을 했어요. 온라인 예약이 쉬웠어요. 번역은 공증사무소에서 $40 정도 들었어요.',
-        en: 'I did the SAAQ exchange in my second month. The appointment was easy to book online. The translation cost me about $40 at a notary.',
-        fr: "J'ai fait l'échange SAAQ le 2e mois. Le rendez-vous était facile à prendre en ligne. La traduction m'a coûté ~40 $ chez un notaire.",
-      },
-      likes: 21,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '유학생 · 2023년 12월', en: 'Student · Dec 2023', fr: 'Étudiant · déc. 2023' },
-      text: {
-        ko: '출국 전에 한국에서 IDP를 받았어요. SAAQ 교환을 정리하는 동안 첫 몇 달간 도움이 됐어요.',
-        en: 'I got an IDP in Korea before leaving. It helped for the first few months while I waited to sort out the SAAQ exchange.',
-        fr: "J'ai pris un PCI en Corée avant de partir. Ça m'a aidé les premiers mois en attendant de régler l'échange SAAQ.",
-      },
-      likes: 16,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '영주권자 · 2024년 2월', en: 'PR · Feb 2024', fr: 'Résident permanent · févr. 2024' },
-      text: {
-        ko: 'Sherbrooke에 있는 SAAQ 사무소는 간단했어요. 서류만 다 갖추니 전체가 20분 정도 걸렸어요.',
-        en: 'The SAAQ office on Sherbrooke was straightforward. The whole thing took about 20 minutes once I had all my documents.',
-        fr: "Le bureau SAAQ sur Sherbrooke était simple. Tout a pris environ 20 minutes une fois tous mes documents en main.",
-      },
-      likes: 11,
-    },
-  ],
-}
-
-// ─── TAB 7: Language programs ────────────────────────────────────────────────
-
-const LANGUAGE_TAB: TabContent = {
-  intro: {
-    what: {
-      ko: '몬트리올은 프랑스어와 영어가 모두 널리 쓰이는 이중언어 도시예요. 언어 프로그램은 무료 정부 과정부터 교환 모임, 사설 수업까지 다양해요.',
-      en: 'Montréal is a bilingual city — both French and English are widely spoken. Language programs range from free government courses to exchange meetups and private classes.',
-      fr: "Montréal est une ville bilingue — le français et l'anglais y sont tous deux courants. Les programmes vont des cours gouvernementaux gratuits aux rencontres d'échange et cours privés.",
-    },
-    behavior: {
-      ko: '첫 달에 언어 교환이나 회화 모임에 참여하는 분이 많아요. 프랑스어 향상이 우선이라면 SANA(무료 정부 프랑스어 과정)에 등록하는 분도 있어요.',
-      en: 'Many newcomers join a language exchange or conversation group in their first month. Some enroll in SANA (free government French classes) if improving French is a priority.',
-      fr: "Beaucoup rejoignent un échange linguistique ou un groupe de conversation le premier mois. Certains s'inscrivent à SANA (cours de français gratuits) si améliorer leur français est prioritaire.",
-    },
-    when: {
-      ko: '언어 프로그램엔 마감이 없어요. 대부분 자리가 잡히면 시작해요 — 첫 주에 시작하는 분도, 한두 달 기다리는 분도 있어요.',
-      en: "There's no deadline for language programs. Most people start whenever they feel settled — some begin in their first week, others wait a month or two.",
-      fr: "Il n'y a pas de date limite. La plupart commencent une fois installés — certains la première semaine, d'autres après un mois ou deux.",
-    },
-  },
-  options: [
-    {
-      name: 'HAKKYO Language Exchange',
-      sub: { ko: '한국어-프랑스어-영어 회화 교환', en: 'Korean-French-English conversation exchange', fr: 'Échange de conversation coréen-français-anglais' },
-      topPick: true,
-      meta: [
-        { icon: 'coin', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
-        { icon: 'users', label: { ko: '소규모 그룹 세션', en: 'Small group sessions', fr: 'Sessions en petit groupe' } },
-        { icon: 'calendar', label: { ko: '상시 등록', en: 'Ongoing enrollment', fr: 'Inscription continue' } },
-        { icon: 'check', label: { ko: '사전 요건 없음', en: 'No prerequisites', fr: 'Aucun prérequis' } },
-      ],
-      worksFor: [
-        { ko: '현지 프랑스어·영어 사용자를 만나고 싶은 누구나', en: 'Anyone who wants to meet local French or English speakers', fr: 'Quiconque veut rencontrer des francophones ou anglophones locaux' },
-        { ko: '사교적인 학습 환경을 원하는 분', en: 'Those who want a social learning environment', fr: 'Ceux qui veulent un cadre d\'apprentissage convivial' },
-        { ko: '모든 레벨', en: 'All levels', fr: 'Tous niveaux' },
-      ],
-      worthKnowing: [
-        { ko: '정규 수업이 아니라 회화 교환 중심이에요', en: 'Focus is on conversation exchange, not formal instruction', fr: "L'accent est mis sur l'échange, pas sur un enseignement formel" },
-        { ko: '다른 학습의 보완책으로 가장 좋아요', en: 'Best as a complement to other study', fr: 'Idéal en complément d\'autres études' },
-      ],
-      recommendNote: {
-        ko: 'HAKKYO 참가자들은 교환 덕분에 실제 환경에서 말하는 게 수업만 듣는 것보다 빨리 편해졌다고 자주 얘기해요.',
-        en: 'Many HAKKYO participants say the exchange helped them feel comfortable speaking in a real environment faster than classes alone.',
-        fr: "Beaucoup de participants HAKKYO disent que l'échange les a aidés à parler à l'aise en situation réelle plus vite que les cours seuls.",
-      },
-    },
-    {
-      name: 'SANA (Government French Classes)',
-      sub: { ko: '무료 풀타임·파트타임 프랑스어 수업', en: 'Free full-time or part-time French instruction', fr: 'Cours de français gratuits à temps plein ou partiel' },
-      meta: [
-        { icon: 'coin', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
-        { icon: 'clock', label: { ko: '주간 또는 야간 선택', en: 'Daytime or evening options', fr: 'Options de jour ou de soir' } },
-        { icon: 'device-laptop', label: { ko: 'immigration-quebec.gouv.qc.ca에서 등록', en: 'Enroll through immigration-quebec.gouv.qc.ca', fr: 'Inscription via immigration-quebec.gouv.qc.ca' } },
-        { icon: 'chart-bar', label: { ko: '중급–고급 제공', en: 'Intermediate–advanced available', fr: 'Niveaux intermédiaire–avancé offerts' } },
-      ],
-      worksFor: [
-        { ko: '체계적인 프랑스어 수업을 원하는 분', en: 'Those who want structured French instruction', fr: 'Ceux qui veulent un enseignement structuré' },
-        { ko: '워킹홀리데이·영주권자 (자격 확인)', en: 'Working Holiday and PR holders (check eligibility)', fr: 'Titulaires PVT et RP (vérifier l\'admissibilité)' },
-        { ko: '직무용 프랑스어가 목표인 분', en: 'Those targeting professional French', fr: 'Ceux qui visent un français professionnel' },
-      ],
-      worthKnowing: [
-        { ko: '인기 시간대엔 대기가 길 수 있어요', en: 'Waitlists can be long at popular times', fr: 'Les listes d\'attente peuvent être longues aux périodes prisées' },
-        { ko: '풀타임 과정은 시간 여유가 많이 필요해요', en: 'Full-time program requires significant availability', fr: 'Le programme à temps plein demande beaucoup de disponibilité' },
-      ],
-    },
-    {
-      name: 'Concordia CCE / UQAM Continuing Ed',
-      sub: { ko: '유료 과정, 유연한 일정', en: 'Paid courses, flexible schedule', fr: 'Cours payants, horaire flexible' },
-      meta: [
-        { icon: 'coin', label: { ko: '과정당 $150–500', en: '$150–500/course', fr: '150–500 $/cours' } },
-        { icon: 'clock', label: { ko: '저녁·주말 선택', en: 'Evening and weekend options', fr: 'Options de soir et de fin de semaine' } },
-        { icon: 'certificate', label: { ko: '수료증 옵션 제공', en: 'Certificate options available', fr: 'Options de certificat offertes' } },
-      ],
-      worksFor: [
-        { ko: '공인 언어 수료증을 원하는 분', en: 'Those who want accredited language certificates', fr: 'Ceux qui veulent des certificats reconnus' },
-        { ko: '낮에 일하는 저녁 학습자', en: 'Evening learners who work daytime', fr: 'Apprenants du soir qui travaillent le jour' },
-      ],
-      worthKnowing: [
-        { ko: '비용은 과정과 레벨에 따라 달라요', en: 'Costs vary by course and level', fr: 'Les coûts varient selon le cours et le niveau' },
-      ],
-    },
-  ],
-  notes: [
-    {
-      flag: '🇰🇷',
-      person: { ko: '유학생 · 2023년 10월', en: 'Student · Oct 2023', fr: 'Étudiant · oct. 2023' },
-      text: {
-        ko: '셋째 주에 HAKKYO 교환을 시작했어요. 생각보다 훨씬 부담이 없었어요. 일상 프랑스어에 정말 도움이 됐어요.',
-        en: 'I started HAKKYO exchange in my third week. It was much less intimidating than I expected. Really helped with everyday French.',
-        fr: "J'ai commencé l'échange HAKKYO la 3e semaine. C'était bien moins intimidant que prévu. Ça a vraiment aidé pour le français du quotidien.",
-      },
-      likes: 27,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '워킹홀리데이 · 2024년 8월', en: 'Working Holiday · Aug 2024', fr: 'Vacances-Travail · août 2024' },
-      text: {
-        ko: 'SANA 대기가 저는 두 달이었어요. 그동안 HAKKYO를 썼는데 회화 연습엔 오히려 더 좋았어요.',
-        en: 'SANA waitlist was 2 months for me. I used HAKKYO in the meantime and it was actually better for conversational practice.',
-        fr: "La liste d'attente SANA était de 2 mois pour moi. J'ai utilisé HAKKYO entre-temps et c'était même mieux pour la pratique de conversation.",
-      },
-      likes: 20,
-    },
-    {
-      flag: '🇫🇷',
-      person: { ko: '프랑스 출신 유학생', en: 'French Student', fr: 'Étudiant français' },
-      text: {
-        ko: 'HAKKYO는 정규 수업의 부담 없이 영어를 연습하기에 좋았어요.',
-        en: 'HAKKYO was good for practicing English without the pressure of a formal class.',
-        fr: "HAKKYO était bien pour pratiquer l'anglais sans la pression d'un cours formel.",
-      },
-      likes: 13,
-    },
-  ],
-}
-
-// ─── TAB 8: Flights ──────────────────────────────────────────────────────────
-
-const FLIGHTS_TAB: TabContent = {
-  intro: {
-    what: {
-      ko: '몬트리올의 주요 국제공항은 몬트리올-트뤼도(YUL)예요. 서울(ICN)발 직항은 Air Canada와 대한항공이 운항해요.',
-      en: 'The main international airport serving Montréal is Montréal-Trudeau (YUL). Direct flights from Seoul (ICN) are operated by Air Canada and Korean Air.',
-      fr: "Le principal aéroport international de Montréal est Montréal-Trudeau (YUL). Les vols directs depuis Séoul (ICN) sont assurés par Air Canada et Korean Air.",
-    },
-    behavior: {
-      ko: '출발 6–10주 전에 예약하는 분이 많아요. Costco Travel을 이용하거나 호텔과 묶어 할인받는 분도 있어요.',
-      en: 'Most people book 6–10 weeks before their planned departure. Some travel with Costco Travel or bundle with hotel stays for a discount.',
-      fr: "La plupart réservent 6–10 semaines avant le départ prévu. Certains passent par Costco Travel ou combinent avec un hôtel pour un rabais.",
-    },
-    when: {
-      ko: '항공권 가격은 보통 출발 60–90일 전에 예약할 때 가장 낮아요. 출발이 가까워지거나 성수기(8월, 12월)엔 가격이 올라요.',
-      en: 'Ticket prices tend to be lower when booked 60–90 days in advance. Prices rise closer to departure and during peak travel seasons (August, December).',
-      fr: "Les prix sont généralement plus bas en réservant 60–90 jours à l'avance. Ils montent à l'approche du départ et en haute saison (août, décembre).",
-    },
-  },
-  options: [
-    {
-      name: 'Air Canada Direct (ICN → YUL)',
-      sub: { ko: '직항, 약 14시간', en: 'Non-stop, ~14 hours', fr: 'Sans escale, ~14 heures' },
-      topPick: true,
-      meta: [
-        { icon: 'coin', label: { ko: '$800–1,400', en: '$800–1,400', fr: '800–1 400 $' } },
-        { icon: 'plane', label: { ko: '직항, 경유 없음', en: 'Direct flight, no stopover', fr: 'Vol direct, sans escale' } },
-        { icon: 'sofa', label: { ko: 'Air Canada 앱 + 라운지', en: 'Air Canada app + lounge access', fr: 'Appli Air Canada + accès salon' } },
-      ],
-      worksFor: [
-        { ko: '한 번의 비행을 선호하는 분', en: 'Those who prefer a single flight', fr: 'Ceux qui préfèrent un seul vol' },
-        { ko: '도착 일정이 빠듯한 분', en: 'Those with tight arrival schedules', fr: 'Ceux qui ont un horaire d\'arrivée serré' },
-        { ko: '짐이 많은 경우', en: 'Carrying significant luggage', fr: 'Avec beaucoup de bagages' },
-      ],
-      worthKnowing: [
-        { ko: '경유편보다 보통 비싸요', en: 'Generally pricier than connecting options', fr: 'En général plus cher que les vols avec correspondance' },
-        { ko: '좋은 좌석은 일찍 예약하는 게 좋아요', en: 'Book early for the best availability', fr: 'Réservez tôt pour la meilleure disponibilité' },
-      ],
-      recommendNote: {
-        ko: '직항이면 덜 지친 채로 도착해서 긴 경유 없이 첫날을 시작할 수 있어요. 많은 분들에게 절약되는 시간이 가격 차이만큼의 가치가 있어요.',
-        en: 'A direct flight means you land fresh and can start your first day without a long layover. For many, the time saved is worth the price difference.',
-        fr: "Un vol direct, c'est arriver en forme et commencer sa première journée sans longue escale. Pour beaucoup, le temps gagné vaut la différence de prix.",
-      },
-    },
-    {
-      name: 'Korean Air / Asiana (via connection)',
-      sub: { ko: '경유, 18–22시간', en: 'Via stopover, 18–22 hours', fr: 'Avec escale, 18–22 heures' },
-      meta: [
-        { icon: 'coin', label: { ko: '$750–1,200', en: '$750–1,200', fr: '750–1 200 $' } },
-        { icon: 'transfer', label: { ko: '경유 1회 (변동)', en: '1 stopover (varies)', fr: '1 escale (variable)' } },
-        { icon: 'plane', label: { ko: '마일리지 적립', en: 'Frequent flyer miles', fr: 'Milles de fidélité' } },
-      ],
-      worksFor: [
-        { ko: '이동 시간에 여유가 있는 분', en: 'Those flexible on travel time', fr: 'Ceux qui sont flexibles sur la durée' },
-        { ko: '마일리지 프로그램 회원', en: 'Frequent flyer program holders', fr: 'Membres de programmes de fidélité' },
-        { ko: '예산을 아끼는 여행자', en: 'Budget-conscious travelers', fr: 'Voyageurs soucieux du budget' },
-      ],
-      worthKnowing: [
-        { ko: '경유로 이동 시간이 늘어요', en: 'Stopover adds travel time', fr: "L'escale allonge le temps de trajet" },
-        { ko: '일부 노선은 환승 시간이 빠듯할 수 있어요', en: 'Connection timing can be tight on some routes', fr: 'Les correspondances peuvent être serrées sur certains trajets' },
-      ],
-    },
-    {
-      name: 'Costco Travel / Bundle Deals',
-      sub: { ko: '항공 + 호텔 패키지 할인', en: 'Flight + hotel package discount', fr: 'Forfait vol + hôtel à rabais' },
-      meta: [
-        { icon: 'coin', label: { ko: '변동', en: 'Varies', fr: 'Variable' } },
-        { icon: 'home', label: { ko: '임시 숙소와 묶음', en: 'Bundle with temporary housing', fr: 'Combiné avec hébergement temporaire' } },
-        { icon: 'calendar', label: { ko: '계절별 가격', en: 'Seasonal pricing', fr: 'Tarifs saisonniers' } },
-      ],
-      worksFor: [
-        { ko: '숙소와 항공을 함께 예약하고 싶은 분', en: 'Those who want to book housing and flights together', fr: 'Ceux qui veulent réserver logement et vol ensemble' },
-        { ko: '이미 Costco 회원인 분', en: 'Those already Costco members', fr: 'Ceux qui sont déjà membres Costco' },
-      ],
-      worthKnowing: [
-        { ko: '계획 변경의 유연성이 적어요', en: 'Less flexibility in changing plans', fr: 'Moins de souplesse pour modifier les plans' },
-        { ko: '날짜를 미리 알면 가장 큰 가치를 얻어요', en: 'Best value if you know your dates in advance', fr: "Meilleure valeur si vous connaissez vos dates d'avance" },
-      ],
-    },
-  ],
-  notes: [
-    {
-      flag: '🇰🇷',
-      person: { ko: '유학생 · 2024년 8월', en: 'Student · Aug 2024', fr: 'Étudiant · août 2024' },
-      text: {
-        ko: '8주 전에 Air Canada 직항을 예약했어요. $1,100 정도였어요. 아침에 도착해서 하루 종일 일을 처리할 수 있었어요.',
-        en: 'I booked Air Canada direct, 8 weeks before. It was around $1,100. Landed in the morning and had the whole day to sort things out.',
-        fr: "J'ai réservé Air Canada direct, 8 semaines avant. C'était environ 1 100 $. Arrivé le matin, j'ai eu toute la journée pour m'organiser.",
-      },
-      likes: 29,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '워킹홀리데이 · 2024년 3월', en: 'Working Holiday · Mar 2024', fr: 'Vacances-Travail · mars 2024' },
-      text: {
-        ko: '밴쿠버 경유로 대한항공을 탔어요. 더 싸지만 총 20시간이었어요. 가격 차이만큼은 괜찮았어요.',
-        en: 'I took Korean Air with a connection in Vancouver. Cheaper but 20 hours total. Worth it for the price difference.',
-        fr: "J'ai pris Korean Air avec une correspondance à Vancouver. Moins cher mais 20 heures au total. Ça valait la différence de prix.",
-      },
-      likes: 17,
-    },
-    {
-      flag: '🇰🇷',
-      person: { ko: '영주권자', en: 'PR', fr: 'Résident permanent' },
-      text: {
-        ko: '저는 항상 60–90일 전에 예약해요. 그보다 늦으면 가격이 확 뛰어요.',
-        en: 'I always book 60–90 days out. Anything less and the prices jump a lot.',
-        fr: "Je réserve toujours 60–90 jours à l'avance. En deçà, les prix grimpent beaucoup.",
-      },
-      likes: 12,
-    },
-  ],
-}
-
-// ─── Tab registry ────────────────────────────────────────────────────────────
-
-type TabId = 'sim' | 'bank' | 'transit' | 'housing' | 'sin' | 'licence' | 'language' | 'flights'
-
-const TAB_LABELS: Record<TabId, Tri> = {
-  sim: { ko: 'SIM 카드', en: 'SIM card', fr: 'Carte SIM' },
-  bank: { ko: '은행', en: 'Bank', fr: 'Banque' },
-  transit: { ko: '교통', en: 'Transit', fr: 'Transport' },
-  housing: { ko: '임시 거처', en: 'Housing', fr: 'Logement' },
-  sin: { ko: 'SIN 번호', en: 'SIN number', fr: 'NAS' },
-  licence: { ko: '운전 면허', en: "Driver's licence", fr: 'Permis' },
-  language: { ko: '언어 프로그램', en: 'Language', fr: 'Langue' },
-  flights: { ko: '항공편', en: 'Flights', fr: 'Vols' },
-}
-
-const TAB_DATA: Record<TabId, TabContent> = {
-  sim: SIM_TAB,
-  bank: BANK_TAB,
-  transit: TRANSIT_TAB,
-  housing: HOUSING_TAB,
-  sin: SIN_TAB,
-  licence: LICENCE_TAB,
-  language: LANGUAGE_TAB,
-  flights: FLIGHTS_TAB,
-}
-
-const TAB_QUESTIONS: Record<TabId, Tri> = {
-  sim: { ko: '어떤 통신사를 선택할까요?', en: 'Which provider works for me?', fr: 'Quel fournisseur choisir?' },
-  bank: { ko: '어느 은행에서 계좌를 열까요?', en: 'Which bank should I open?', fr: 'Quelle banque ouvrir?' },
-  transit: { ko: '몬트리올에서 어떻게 이동하나요?', en: 'How do I get around Montréal?', fr: 'Comment me déplacer?' },
-  housing: { ko: '처음 몇 주는 어디서 지내나요?', en: 'Where do I stay first?', fr: 'Où loger au début?' },
-  sin: { ko: 'SIN 번호는 어떻게 받나요?', en: 'How do I get my SIN?', fr: 'Comment obtenir mon NAS?' },
-  licence: { ko: '한국 면허를 퀘벡 면허로 바꿀 수 있나요?', en: 'Can I convert my Korean licence?', fr: 'Puis-je convertir mon permis?' },
-  language: { ko: '언어 공부는 어떻게 시작하나요?', en: 'How do I start learning French?', fr: 'Comment apprendre le français?' },
-  flights: { ko: '항공편은 언제 예약하는 게 좋나요?', en: 'When should I book my flight?', fr: 'Quand réserver mon vol?' },
-}
-
-// ─── Components ───────────────────────────────────────────────────────────────
-
-function MetaChip({ icon, text }: { icon: string; text: string }) {
+function Hero({ data, lang }: { data: HeroData; lang: string }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 px-2 py-0.5 bg-gray-50 rounded-full border border-gray-100">
-      <i className={`ti ti-${icon} text-[12px]`} aria-hidden="true" />
-      {text}
-    </span>
+    <div className="bg-gray-50 rounded-xl p-5 mb-8">
+      <p className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">
+        {lang==='ko'?'이게 뭔가요?':lang==='fr'?"Qu'est-ce que c'est?":'What is this?'}
+      </p>
+      <h2 className="text-[20px] font-light text-gray-900 leading-snug mb-2">{tri(data.title, lang)}</h2>
+      <p className="text-[13px] text-gray-500 leading-relaxed mb-4">{tri(data.sub, lang)}</p>
+      <div className="flex flex-wrap gap-2">
+        {[
+          { icon: 'calendar', text: tri(data.when, lang) },
+          { icon: 'currency-dollar', text: tri(data.cost, lang) },
+          { icon: 'clock', text: tri(data.time, lang) },
+          { icon: 'plane', text: tri(data.canBeforeArrival, lang) },
+        ].map((c, i) => (
+          <span key={i} className="inline-flex items-center gap-1.5 text-[11px] text-gray-500 px-2.5 py-1 bg-white border border-gray-200 rounded-full">
+            <i className={`ti ti-${c.icon} text-[12px]`} aria-hidden="true" />{c.text}
+          </span>
+        ))}
+      </div>
+    </div>
   )
 }
 
 function OptionCard({ opt, lang }: { opt: OptionData; lang: string }) {
   return (
-    <div className={`rounded-xl border bg-white p-5 ${opt.topPick ? 'border-blue-200 border-[1.5px]' : 'border-gray-200'}`}>
+    <div className={`bg-white rounded-xl p-5 ${opt.topPick ? 'border-[1.5px] border-blue-200' : 'border border-gray-200'}`}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
           <p className="text-[14px] font-medium text-gray-900">{opt.name}</p>
           <p className="text-[12px] text-gray-400 mt-0.5">{tri(opt.sub, lang)}</p>
         </div>
-        {opt.topPick && (
-          <span className="flex-shrink-0 text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-blue-50 text-blue-700">
-            {lang === 'ko' ? '추천' : lang === 'fr' ? 'Choix' : 'Top pick'}
-          </span>
-        )}
+        {opt.topPick && <span className="flex-shrink-0 text-[9px] font-bold tracking-wider uppercase px-2 py-1 rounded bg-blue-50 text-blue-700">
+          {lang==='ko'?'추천':lang==='fr'?'Recommandé':'Top pick'}
+        </span>}
       </div>
       <div className="flex flex-wrap gap-1.5 mb-4">
-        {opt.meta.map((m, i) => <MetaChip key={i} icon={m.icon} text={tri(m.label, lang)} />)}
+        {opt.meta.map((m, i) => (
+          <span key={i} className="inline-flex items-center gap-1 text-[10px] text-gray-500 px-2 py-0.5 bg-gray-50 rounded-full border border-gray-100">
+            <i className={`ti ti-${m.icon} text-[11px]`} aria-hidden="true" />{tri(m.label, lang)}
+          </span>
+        ))}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-2">
-            {lang === 'ko' ? '이런 분께 적합' : lang === 'fr' ? 'Convient si' : 'Works well for'}
+          <p className="text-[9px] font-bold tracking-wider uppercase text-green-700 mb-2">
+            {lang==='ko'?'이런 분께 적합':lang==='fr'?'Convient si':'Works well for'}
           </p>
-          {opt.worksFor.map((w, i) => (
-            <p key={i} className="text-[12px] text-gray-600 leading-snug mb-1">{tri(w, lang)}</p>
-          ))}
+          {opt.worksFor.map((w, i) => <p key={i} className="text-[11px] text-gray-600 leading-snug mb-1">{tri(w, lang)}</p>)}
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">
-            {lang === 'ko' ? '알아두면 좋은 점' : lang === 'fr' ? 'À savoir' : 'Worth knowing'}
+          <p className="text-[9px] font-bold tracking-wider uppercase text-gray-400 mb-2">
+            {lang==='ko'?'알아두면 좋은 점':lang==='fr'?'À savoir':'Worth knowing'}
           </p>
-          {opt.worthKnowing.map((w, i) => (
-            <p key={i} className="text-[12px] text-gray-600 leading-snug mb-1">{tri(w, lang)}</p>
-          ))}
+          {opt.worthKnowing.map((w, i) => <p key={i} className="text-[11px] text-gray-600 leading-snug mb-1">{tri(w, lang)}</p>)}
         </div>
       </div>
       {opt.recommendNote && (
         <div className="mt-3 border-l-2 border-blue-200 pl-3">
-          <p className="text-[12px] text-gray-500 leading-relaxed">
-            <span className="font-medium text-gray-700">{lang === 'ko' ? '많은 분들의 경험:' : lang === 'fr' ? 'Ce que font beaucoup :' : 'A common pattern:'}</span>{' '}
+          <p className="text-[11px] text-gray-500 leading-relaxed">
+            <span className="font-medium text-gray-700">
+              {lang==='ko'?'많은 분들의 경험: ':lang==='fr'?'Ce que font beaucoup : ':'A common pattern: '}
+            </span>
             {tri(opt.recommendNote, lang)}
           </p>
         </div>
@@ -1079,54 +156,1080 @@ function OptionCard({ opt, lang }: { opt: OptionData; lang: string }) {
   )
 }
 
-function CommunityNotes({ notes, lang }: { notes: CommunityNoteData[]; lang: string }) {
+function CompareTableComp({ table, lang }: { table: CompareTable; lang: string }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4 mt-4">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3">
-        {lang === 'ko' ? '먼저 경험한 분들의 이야기' : lang === 'fr' ? 'Témoignages' : 'People who went through this'}
-      </p>
-      <div className="flex flex-col gap-2">
-        {notes.map((n, i) => (
-          <div key={i} className="bg-white rounded-lg border border-gray-100 p-3">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[14px]">{n.flag}</span>
-              <span className="text-[11px] text-gray-400">{tri(n.person, lang)}</span>
-            </div>
-            <p className="text-[12px] text-gray-700 leading-relaxed italic mb-1.5">"{tri(n.text, lang)}"</p>
-            <div className="flex items-center gap-1 text-[11px] text-gray-400">
-              <i className="ti ti-thumb-up text-[12px]" aria-hidden="true" />
-              {n.likes}
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="overflow-x-auto border border-gray-200 rounded-xl">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            {table.headers.map((h, i) => (
+              <th key={i} className="text-left text-[9px] font-bold tracking-[0.08em] uppercase text-gray-400 px-4 py-3 border-b border-gray-100 whitespace-nowrap bg-gray-50/50">
+                {tri(h, lang)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row, ri) => (
+            <tr key={ri} className="hover:bg-gray-50/50">
+              <td className="px-4 py-3 text-[12px] font-medium text-gray-900 border-b border-gray-100 whitespace-nowrap">{row.name}</td>
+              {row.cols.map((c, ci) => (
+                <td key={ci} className="px-4 py-3 text-[12px] text-gray-500 border-b border-gray-100">
+                  {typeof c === 'boolean'
+                    ? c
+                      ? <i className="ti ti-check text-green-600 text-[13px]" aria-label="yes" />
+                      : <i className="ti ti-x text-gray-300 text-[13px]" aria-label="no" />
+                    : c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
 
-function TopicIntro({ data, lang }: { data: TopicIntroData; lang: string }) {
+function CommunityNotes({ notes, lang }: { notes: CommunityNote[]; lang: string }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4 mb-5">
-      <p className="text-[13px] text-gray-600 leading-relaxed mb-3">{tri(data.what, lang)}</p>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-lg border border-gray-100 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
-            {lang === 'ko' ? '보통 어떻게 하나요' : lang === 'fr' ? 'Ce que font la plupart' : 'What people usually do'}
-          </p>
-          <p className="text-[12px] text-gray-600 leading-relaxed">{tri(data.behavior, lang)}</p>
+    <div className="flex flex-col gap-3">
+      {notes.map((n, i) => (
+        <div key={i} className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[14px]">{n.flag}</span>
+            <span className="text-[10px] text-gray-400">{tri(n.person, lang)}</span>
+          </div>
+          <p className="text-[12px] text-gray-700 leading-relaxed italic mb-2">"{tri(n.text, lang)}"</p>
+          <div className="flex items-center gap-1 text-[10px] text-gray-400">
+            <i className="ti ti-thumb-up text-[11px]" aria-hidden="true" />{n.likes}
+          </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-100 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
-            {lang === 'ko' ? '언제 필요한가요' : lang === 'fr' ? "Quand c'est utile" : 'When it matters'}
-          </p>
-          <p className="text-[12px] text-gray-600 leading-relaxed">{tri(data.when, lang)}</p>
-        </div>
-      </div>
+      ))}
     </div>
   )
+}
+
+function HelpLinks({ links, lang }: { links: HelpLink[]; lang: string }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {links.map((l, i) => (
+        <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg border border-gray-100 text-[12px] text-gray-600 hover:bg-gray-100 transition-colors no-underline">
+          <i className="ti ti-external-link text-[14px] text-gray-400" aria-hidden="true" />
+          <span className="flex-1">{tri(l.label, lang)}</span>
+          <span className="text-[10px] text-gray-400">{l.domain}</span>
+        </a>
+      ))}
+    </div>
+  )
+}
+
+function FAQ({ items, lang }: { items: FAQItem[]; lang: string }) {
+  const [open, setOpen] = React.useState<number | null>(0)
+  return (
+    <div className="flex flex-col gap-2">
+      {items.map((item, i) => (
+        <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setOpen(open === i ? null : i)}
+            className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-[12px] font-medium text-gray-800 bg-white hover:bg-gray-50 transition-colors"
+          >
+            {tri(item.q, lang)}
+            <i className={`ti ti-chevron-down text-[14px] text-gray-400 flex-shrink-0 transition-transform ${open === i ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </button>
+          {open === i && (
+            <div className="px-4 pb-4 pt-1 text-[12px] text-gray-500 leading-relaxed bg-gray-50/50">
+              {tri(item.a, lang)}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function AskCommunity({ lang }: { lang: string }) {
+  return (
+    <div className="bg-gray-50 rounded-xl p-5 text-center">
+      <p className="text-[13px] font-medium text-gray-800 mb-1">
+        {lang==='ko'?'더 궁금한 것이 있으신가요?':lang==='fr'?'Une question spécifique?':'Have a specific question?'}
+      </p>
+      <p className="text-[12px] text-gray-400 leading-relaxed mb-4 max-w-[360px] mx-auto">
+        {lang==='ko'
+          ? '같은 과정을 먼저 경험한 분들이 HAKKYO 커뮤니티에서 기다리고 있어요.'
+          : lang==='fr'
+          ? "Des personnes qui ont vécu la même expérience vous attendent dans la communauté HAKKYO."
+          : 'People who already went through this are in the HAKKYO community and happy to help.'}
+      </p>
+      <a href="/community" className="inline-block px-4 py-2 bg-gray-900 text-white text-[12px] font-medium rounded-lg hover:bg-gray-700 transition-colors no-underline">
+        {lang==='ko'?'커뮤니티에 질문하기':lang==='fr'?'Poser une question':'Ask the community'}
+      </a>
+    </div>
+  )
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 whitespace-nowrap">{children}</span>
+      <div className="flex-1 h-px bg-gray-100" />
+    </div>
+  )
+}
+
+// ─── TAB 1: SIM card ──────────────────────────────────────────────────────────
+
+const SIM_TAB: TabContent = {
+  id: 'sim',
+  label: { ko: 'SIM 카드', en: 'SIM card', fr: 'Carte SIM' },
+  hero: {
+    title: {
+      ko: '도착하는 순간부터 연결된 상태로',
+      en: 'Stay connected from the moment you land',
+      fr: 'Restez connecté dès votre arrivée',
+    },
+    sub: {
+      ko: '캐나다 SIM 카드는 휴대폰을 현지 통신망에 연결해 통화, 문자, 데이터를 쓸 수 있게 해줘요. 없으면 도착해서 숙소 호스트에게 연락하거나, 택시를 부르거나, 길을 찾기가 어려워요.',
+      en: "A Canadian SIM card connects your phone to local networks for calls, texts, and data. Without one, you won't be able to reach your housing contact, call a taxi, or navigate when you arrive.",
+      fr: "Une carte SIM canadienne connecte votre téléphone aux réseaux locaux pour les appels, textos et données. Sans elle, difficile de joindre votre hôte, d'appeler un taxi ou de vous orienter à l'arrivée.",
+    },
+    when: { ko: '도착 당일 또는 그 전날', en: 'Arrival day, or the day before', fr: "Le jour d'arrivée ou la veille" },
+    cost: { ko: '$15–80/월', en: '$15–80/mo', fr: '15–80$/mois' },
+    time: { ko: '5분 (eSIM) ~ 1시간 (매장)', en: '5 min (eSIM) to 1 hr (in-store)', fr: '5 min (eSIM) à 1h (boutique)' },
+    canBeforeArrival: { ko: '네, eSIM 가능', en: 'Yes, via eSIM', fr: 'Oui, via eSIM' },
+  },
+  options: [
+    {
+      name: 'Fizz',
+      sub: { ko: '저렴하고 앱으로 관리, eSIM 지원', en: 'Affordable, app-managed, eSIM-ready', fr: 'Abordable, géré par appli, eSIM' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$25–35/월', en: '$25–35/mo', fr: '25–35$/mois' } },
+        { icon: 'device-mobile', label: { ko: 'eSIM 지원', en: 'eSIM available', fr: 'eSIM dispo' } },
+        { icon: 'plane', label: { ko: '도착 전 개통 가능', en: 'Set up before arrival', fr: 'Avant arrivée' } },
+      ],
+      worksFor: [
+        { ko: '대부분의 분들', en: 'Most people', fr: 'La plupart des gens' },
+        { ko: '앱으로 직접 관리하고 싶은 분', en: 'Those who prefer managing things in an app', fr: "Ceux qui aiment tout gérer dans une appli" },
+      ],
+      worthKnowing: [
+        { ko: '고객 지원은 앱/온라인 위주', en: 'Support is app/online based', fr: 'Support surtout par appli/en ligne' },
+        { ko: '한국어 지원은 없음', en: 'No Korean-language support', fr: 'Pas de support en coréen' },
+      ],
+      recommendNote: {
+        ko: '많은 분들이 비행기 타기 전에 Fizz eSIM을 개통해 두고, 도착하자마자 바로 데이터를 써요.',
+        en: 'Many set up a Fizz eSIM before their flight so they have data the moment they land.',
+        fr: "Beaucoup activent une eSIM Fizz avant le vol pour avoir des données dès l'atterrissage.",
+      },
+    },
+    {
+      name: 'Public Mobile',
+      sub: { ko: '가장 저렴한 장기 옵션', en: 'Cheapest for longer stays', fr: 'Le moins cher pour longs séjours' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$15–25/월', en: '$15–25/mo', fr: '15–25$/mois' } },
+        { icon: 'device-mobile', label: { ko: '물리 SIM', en: 'Physical SIM', fr: 'SIM physique' } },
+      ],
+      worksFor: [
+        { ko: '예산을 아끼는 장기 체류자', en: 'Budget-conscious long stays', fr: 'Longs séjours à petit budget' },
+      ],
+      worthKnowing: [
+        { ko: 'eSIM 미지원, 도착 후 개통', en: 'No eSIM, set up after arrival', fr: "Pas d'eSIM, activation après arrivée" },
+        { ko: '데이터 속도는 중간 수준', en: 'Moderate data speed', fr: 'Vitesse de données moyenne' },
+      ],
+    },
+    {
+      name: 'Bell / Rogers (airport)',
+      sub: { ko: '준비 없이 도착해도 공항에서 바로', en: 'Right at the airport, no prep', fr: "Direct à l'aéroport, sans préparation" },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$55–80/월', en: '$55–80/mo', fr: '55–80$/mois' } },
+        { icon: 'bolt', label: { ko: '빠른 속도', en: 'Fast speeds', fr: 'Vitesse rapide' } },
+      ],
+      worksFor: [
+        { ko: '미리 준비하지 못하고 도착한 분', en: 'No-prep arrivals', fr: 'Arrivées sans préparation' },
+      ],
+      worthKnowing: [
+        { ko: '월 요금이 가장 비쌈', en: 'Most expensive monthly', fr: 'Le forfait le plus cher' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '통신사', en: 'Provider', fr: 'Fournisseur' },
+      { ko: '월 요금', en: 'Price/mo', fr: 'Prix/mois' },
+      { ko: 'eSIM', en: 'eSIM', fr: 'eSIM' },
+      { ko: '도착 전 개통', en: 'Before arrival', fr: 'Avant arrivée' },
+      { ko: '데이터 속도', en: 'Data speed', fr: 'Vitesse' },
+      { ko: '적합한 분', en: 'Best for', fr: 'Idéal pour' },
+    ],
+    rows: [
+      { name: 'Fizz', cols: ['$25–35', true, true, 'Good', 'Most people'] },
+      { name: 'Public Mobile', cols: ['$15–25', false, false, 'Moderate', 'Budget long stays'] },
+      { name: 'Virgin Plus', cols: ['$30–45', true, true, 'Good', 'Mid-range'] },
+      { name: 'Bell airport', cols: ['$55–80', true, true, 'Excellent', 'No-prep arrivals'] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2023년 9월', en: 'Student Sept 2023', fr: 'Étudiant sept. 2023' }, text: { ko: '출국 전에 Fizz eSIM을 켜뒀더니 도착하자마자 바로 인터넷이 됐어요. 정말 편했어요.', en: 'I activated a Fizz eSIM before flying and had internet the second I landed. So convenient.', fr: "J'ai activé une eSIM Fizz avant de partir, j'avais internet dès l'atterrissage. Super pratique." }, likes: 31 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 2월', en: 'Working Holiday Feb 2024', fr: 'PVT févr. 2024' }, text: { ko: 'Public Mobile로 한 달에 $20 정도만 써요. 데이터를 많이 안 쓰면 충분해요.', en: "I pay about $20/mo with Public Mobile. Plenty if you don't use much data.", fr: "Je paie environ 20$/mois chez Public Mobile. Suffisant si on consomme peu." }, likes: 19 },
+    { flag: '🇨🇦', person: { ko: '한국계 캐나다인', en: 'Korean-Canadian', fr: 'Coréen-Canadien' }, text: { ko: '공항에서 급하게 Bell을 샀는데 비싸더라고요. 다음엔 미리 eSIM 준비하라고 말해주고 싶어요.', en: 'I grabbed a Bell SIM at the airport in a rush — pricey. Next time, prep an eSIM ahead.', fr: "J'ai pris une SIM Bell à l'aéroport en vitesse — cher. La prochaine fois, une eSIM à l'avance." }, likes: 14 },
+  ],
+  helpLinks: [
+    { label: { ko: 'Fizz — 요금제 및 가격', en: 'Fizz — Plans and pricing', fr: 'Fizz — Forfaits et prix' }, url: 'https://fizz.ca', domain: 'fizz.ca' },
+    { label: { ko: 'Public Mobile — 요금제', en: 'Public Mobile — Plans', fr: 'Public Mobile — Forfaits' }, url: 'https://www.publicmobile.ca', domain: 'publicmobile.ca' },
+    { label: { ko: 'CRTC 무선 소비자 가이드', en: 'CRTC wireless consumer guide', fr: 'Guide CRTC du consommateur sans fil' }, url: 'https://crtc.gc.ca', domain: 'crtc.gc.ca' },
+  ],
+  faq: [
+    { q: { ko: '도착해서 한국 SIM을 그대로 써도 되나요?', en: 'Can I use my Korean SIM when I arrive?', fr: "Puis-je utiliser ma SIM coréenne à l'arrivée?" }, a: { ko: '한국 SIM은 로밍으로 작동하지만 데이터가 하루 $10–20 정도 들어요. 대부분 금방 캐나다 SIM으로 바꿔요.', en: 'A Korean SIM works on roaming but data costs $10–20/day. Most people switch quickly.', fr: 'Une SIM coréenne fonctionne en itinérance mais les données coûtent 10–20$/jour. La plupart changent vite.' } },
+    { q: { ko: '제 휴대폰이 캐나다 SIM과 호환되나요?', en: 'Does my phone work with a Canadian SIM?', fr: 'Mon téléphone fonctionne-t-il avec une SIM canadienne?' }, a: { ko: '대부분의 한국 휴대폰은 언락 상태예요. 통신사를 통해 산 경우 잠겨 있을 수 있으니 출국 전 확인하세요.', en: 'Most Korean phones are unlocked. If bought through a carrier, it may be locked — check before leaving.', fr: "La plupart des téléphones coréens sont déverrouillés. Acheté via un opérateur, il peut être verrouillé — vérifiez avant de partir." } },
+    { q: { ko: '통신사를 바꿔도 번호를 유지할 수 있나요?', en: 'Can I keep my number when I switch carriers?', fr: "Puis-je garder mon numéro en changeant d'opérateur?" }, a: { ko: '네, 캐나다 번호 이동성 덕분에 번호를 유지할 수 있어요. 몇 시간 정도 걸려요.', en: 'Yes, Canadian number portability lets you keep your number. Takes a few hours.', fr: 'Oui, la portabilité canadienne permet de garder votre numéro. Cela prend quelques heures.' } },
+    { q: { ko: '프랑스어를 못하는데 도움이 필요하면요?', en: "What if I need help and don't speak French?", fr: 'Et si je ne parle pas français et ai besoin d\'aide?' }, a: { ko: '주요 통신사는 모두 영어 지원이 있어요. Fizz는 영어/프랑스어 둘 다 앱으로 처리해요.', en: 'All major carriers have English-language support. Fizz is app-based in both languages.', fr: "Tous les grands opérateurs offrent un support en anglais. Fizz se gère par appli dans les deux langues." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '가격대', en: 'Cost range', fr: 'Fourchette' }, value: { ko: '$15–80/월', en: '$15–80/mo', fr: '15–80$/mois' } },
+      { label: { ko: '추천 옵션', en: 'Best option', fr: 'Meilleure option' }, value: { ko: 'Fizz (eSIM)', en: 'Fizz (eSIM)', fr: 'Fizz (eSIM)' } },
+      { label: { ko: '도착 전 가능', en: 'Before arrival', fr: 'Avant arrivée' }, value: { ko: '가능', en: 'Yes', fr: 'Oui' } },
+      { label: { ko: '설정 시간', en: 'Setup time', fr: 'Temps' }, value: { ko: '5분–1시간', en: '5 min–1 hr', fr: '5 min–1h' } },
+    ],
+    timeline: { ko: '대부분 비행기 탑승 전날 또는 도착 당일에 해결해요.', en: 'Most people handle this the day before their flight or on arrival day.', fr: "La plupart règlent ça la veille du vol ou le jour d'arrivée." },
+  },
+}
+
+// ─── TAB 2: Bank ──────────────────────────────────────────────────────────────
+
+const BANK_TAB: TabContent = {
+  id: 'bank',
+  label: { ko: '은행 계좌', en: 'Bank account', fr: 'Compte bancaire' },
+  hero: {
+    title: {
+      ko: '첫 주에 은행 계좌 열기',
+      en: 'Open a bank account in your first week',
+      fr: 'Ouvrir un compte bancaire la première semaine',
+    },
+    sub: {
+      ko: '캐나다 은행 계좌가 있으면 송금을 받고, 월세를 내고, 신용 기록을 쌓기 시작할 수 있어요. 임대 계약 시 집주인이 보통 무효 수표나 계좌 번호를 요구해요.',
+      en: 'A Canadian bank account lets you receive transfers, pay rent, and start building a credit history. Most landlords ask for a void cheque or account number when you sign a lease.',
+      fr: "Un compte bancaire canadien permet de recevoir des virements, payer le loyer et bâtir un historique de crédit. Les propriétaires demandent souvent un chèque annulé ou un numéro de compte au bail.",
+    },
+    when: { ko: '첫 번째 주, 아파트 계약 전에', en: 'First week, before signing a lease', fr: 'Première semaine, avant de signer un bail' },
+    cost: { ko: '무료~$16/월 (1년차 신규 이민자 패키지 무료)', en: '$0–16/mo (newcomer packages waive yr 1)', fr: '0–16$/mois (forfaits nouveaux arrivants gratuits an 1)' },
+    time: { ko: '약 1시간 (방문)', en: '~1 hour in person', fr: '~1 heure en personne' },
+    canBeforeArrival: { ko: '아니요, 도착 후 방문 필요', en: 'No, requires an in-person visit after arrival', fr: "Non, visite en personne après l'arrivée" },
+  },
+  options: [
+    {
+      name: 'RBC',
+      sub: { ko: '신규 이민자 패키지, 신용 기록 없이도 신용카드', en: 'Newcomer package, credit card without history', fr: 'Forfait nouveaux arrivants, carte de crédit sans historique' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '1년차 무료', en: '$0 yr 1 newcomer pkg', fr: 'Gratuit an 1' } },
+        { icon: 'building-bank', label: { ko: '방문 ~1시간', en: 'In-person ~1hr', fr: 'En personne ~1h' } },
+        { icon: 'language', label: { ko: '일부 지점 한국어 직원', en: 'Korean-speaking staff at some branches', fr: 'Personnel coréanophone (certaines succursales)' } },
+      ],
+      worksFor: [
+        { ko: '신용 기록이 없는 분', en: 'No credit history', fr: 'Sans historique de crédit' },
+        { ko: '첫날부터 신용카드를 원하는 분', en: 'Want a credit card from day 1', fr: 'Carte de crédit dès le jour 1' },
+        { ko: '장기 체류자', en: 'Longer stays', fr: 'Longs séjours' },
+      ],
+      worthKnowing: [
+        { ko: '1년 후 수수료 발생', en: 'Fee after yr 1', fr: 'Frais après an 1' },
+        { ko: '방문 필요', en: 'In-person required', fr: 'Visite requise' },
+      ],
+      recommendNote: {
+        ko: 'RBC 신규 이민자 패키지는 첫 1년 월 수수료가 무료이고, 캐나다 신용 기록 없이도 신용카드를 발급해줘요. 이 둘을 함께 제공하는 은행은 많지 않아요.',
+        en: "RBC's newcomer package waives the monthly fee for the first year and can issue a credit card without Canadian credit history — two things many other banks don't offer together.",
+        fr: "Le forfait nouveaux arrivants de RBC offre la première année sans frais et une carte de crédit sans historique canadien — deux choses rares ensemble.",
+      },
+    },
+    {
+      name: 'TD Bank',
+      sub: { ko: '지점이 많고 학생 친화적', en: 'Widely available, student-friendly', fr: 'Très accessible, adapté aux étudiants' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$10–16/월 (정규 학생 무료)', en: '$10–16/mo ($0 full-time students)', fr: '10–16$/mois (gratuit étudiants temps plein)' } },
+        { icon: 'building-bank', label: { ko: '방문 또는 온라인', en: 'In-person or online', fr: 'En personne ou en ligne' } },
+      ],
+      worksFor: [
+        { ko: '학생', en: 'Students', fr: 'Étudiants' },
+        { ko: 'TD 지점 근처에 사는 분', en: 'Near a TD branch', fr: "Près d'une succursale TD" },
+      ],
+      worthKnowing: [
+        { ko: '기록 없이 자동 신용카드는 안 됨', en: 'No automatic CC without history', fr: 'Pas de carte auto sans historique' },
+        { ko: '정규 학생은 수수료 면제', en: 'Fee waived for full-time students', fr: 'Frais annulés pour étudiants temps plein' },
+      ],
+    },
+    {
+      name: 'Desjardins',
+      sub: { ko: '퀘벡 지역 협동조합', en: 'Local Québec cooperative', fr: 'Coopérative locale du Québec' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$10/월', en: '~$10/mo', fr: '~10$/mois' } },
+        { icon: 'building-bank', label: { ko: '방문', en: 'In-person', fr: 'En personne' } },
+        { icon: 'language', label: { ko: '프랑스어 서비스 강함', en: 'Strong French service', fr: 'Excellent service en français' } },
+      ],
+      worksFor: [
+        { ko: '프랑스어 사용자', en: 'French speakers', fr: 'Francophones' },
+        { ko: '퀘벡 장기 정착', en: 'Long-term Québec stay', fr: 'Séjour long au Québec' },
+      ],
+      worthKnowing: [
+        { ko: '영어 서비스는 지점마다 차이', en: 'English service varies by branch', fr: 'Service anglais variable selon la succursale' },
+      ],
+    },
+    {
+      name: 'BMO',
+      sub: { ko: '신규 이민자 패키지', en: 'Newcomer package', fr: 'Forfait nouveaux arrivants' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '1년차 무료', en: '$0 yr 1', fr: 'Gratuit an 1' } },
+        { icon: 'building-bank', label: { ko: '방문 또는 온라인', en: 'In-person or online', fr: 'En personne ou en ligne' } },
+      ],
+      worksFor: [
+        { ko: '국제 학생', en: 'International students', fr: 'Étudiants internationaux' },
+        { ko: '첫해 수수료 없이', en: 'No-fee first year', fr: 'Première année sans frais' },
+      ],
+      worthKnowing: [
+        { ko: '신용카드 접근성은 더 제한적', en: 'CC access more limited', fr: 'Accès carte de crédit plus limité' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '은행', en: 'Bank', fr: 'Banque' },
+      { ko: '1년차 수수료', en: 'Year 1 fee', fr: 'Frais an 1' },
+      { ko: '이민자 패키지', en: 'Newcomer pkg', fr: 'Forfait nouv. arr.' },
+      { ko: '기록 없이 신용카드', en: 'CC w/o history', fr: 'Carte sans histo.' },
+      { ko: '프랑스어 서비스', en: 'French service', fr: 'Service français' },
+      { ko: '온라인 뱅킹', en: 'Online banking', fr: 'Banque en ligne' },
+    ],
+    rows: [
+      { name: 'RBC', cols: ['Free', '$0 yr 1', true, true, 'Good', 'Good'] },
+      { name: 'TD', cols: ['~$10–16/mo', 'Students only', false, true, 'Good', 'Excellent'] },
+      { name: 'Desjardins', cols: ['~$10/mo', 'No', false, true, 'Excellent', 'Good'] },
+      { name: 'BMO', cols: ['Free yr 1', true, false, true, 'Good', 'Excellent'] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2024년 1월', en: 'Student Jan 2024', fr: 'Étudiant janv. 2024' }, text: { ko: '도착 3일째에 RBC에 갔어요. 직원분이 친절하셨고 전체 한 시간 정도 걸렸어요. 당일에 직불카드를 받았어요.', en: 'I went to RBC on my third day. The staff were patient and the whole thing took about an hour. Had a debit card the same day.', fr: "Je suis allé à RBC le 3e jour. Personnel patient, environ une heure. Carte de débit le jour même." }, likes: 28 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2023년 10월', en: 'Working Holiday Oct 2023', fr: 'PVT oct. 2023' }, text: { ko: '프랑스어 연습하려고 Desjardins를 골랐어요. 일부 지점은 신규 이민자에게 정말 친절해요.', en: 'I picked Desjardins because I wanted to practice French. Some branches are very helpful with newcomers.', fr: "J'ai choisi Desjardins pour pratiquer le français. Certaines succursales sont très accueillantes." }, likes: 16 },
+    { flag: '🇫🇷', person: { ko: '프랑스 영주권자', en: 'French PR', fr: 'Résident permanent français' }, text: { ko: 'Desjardins가 가장 지역적인 느낌이었어요. 몬트리올의 일상적인 프랑스어 생활에 잘 맞았어요.', en: 'Desjardins felt the most local. For everyday French life in Montréal it worked really well.', fr: "Desjardins était le plus local. Pour la vie quotidienne en français à Montréal, parfait." }, likes: 11 },
+  ],
+  helpLinks: [
+    { label: { ko: 'RBC 신규 이민자 뱅킹', en: 'RBC Newcomer Banking', fr: 'RBC Nouveaux arrivants' }, url: 'https://www.rbc.com/newcomers', domain: 'rbc.com' },
+    { label: { ko: 'TD New to Canada', en: 'TD New to Canada', fr: 'TD Nouveaux au Canada' }, url: 'https://www.td.com/newcomers', domain: 'td.com' },
+    { label: { ko: 'BMO NewStart 프로그램', en: 'BMO NewStart Program', fr: 'BMO Programme NewStart' }, url: 'https://www.bmo.com/newcomers', domain: 'bmo.com' },
+    { label: { ko: 'Desjardins', en: 'Desjardins', fr: 'Desjardins' }, url: 'https://www.desjardins.com', domain: 'desjardins.com' },
+  ],
+  faq: [
+    { q: { ko: '계좌를 열려면 어떤 서류가 필요한가요?', en: 'What documents do I need to open a bank account?', fr: 'Quels documents pour ouvrir un compte?' }, a: { ko: '여권과 학업/취업 허가증이요. 일부 은행은 임대 계약서나 에어비앤비 확인서를 주소 증빙으로 받아줘요.', en: 'Passport + study/work permit. Some banks also accept a lease or Airbnb confirmation as proof of address.', fr: "Passeport + permis d'études/travail. Certaines banques acceptent un bail ou une confirmation Airbnb comme preuve d'adresse." } },
+    { q: { ko: '캐나다 주소 없이 계좌를 열 수 있나요?', en: 'Can I open an account without a Canadian address?', fr: 'Puis-je ouvrir un compte sans adresse canadienne?' }, a: { ko: '대부분 주소가 필요해요. 처음 몇 주는 보통 에어비앤비 확인서가 인정돼요.', en: 'Most banks require an address. Your Airbnb confirmation is usually accepted for the first few weeks.', fr: "La plupart exigent une adresse. La confirmation Airbnb est généralement acceptée les premières semaines." } },
+    { q: { ko: '한국어 직원이 있는 은행은 어디인가요?', en: 'Which bank has Korean-speaking staff?', fr: 'Quelle banque a du personnel coréanophone?' }, a: { ko: 'RBC와 NDG/CDN 지역 일부 TD 지점에 한국어 직원이 있어요. 미리 전화로 확인하세요.', en: 'RBC and some TD branches in the NDG/CDN area have Korean-speaking staff. Call ahead to confirm.', fr: "RBC et certaines succursales TD du secteur NDG/CDN ont du personnel coréanophone. Appelez avant." } },
+    { q: { ko: '계좌를 쓰기까지 얼마나 걸리나요?', en: 'How long until I can use my account?', fr: "Combien de temps avant d'utiliser mon compte?" }, a: { ko: '직불카드는 보통 당일 발급돼요. 온라인 뱅킹은 24시간 내에 활성화돼요.', en: 'Debit card usually issued same day. Online banking activated within 24 hours.', fr: 'Carte de débit généralement le jour même. Banque en ligne activée sous 24h.' } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '추천 옵션', en: 'Best option', fr: 'Meilleure option' }, value: { ko: 'RBC (이민자 패키지)', en: 'RBC (newcomer pkg)', fr: 'RBC (forfait)' } },
+      { label: { ko: '1년차 수수료', en: 'Year 1 fee', fr: 'Frais an 1' }, value: { ko: '$0 (이민자)', en: '$0 (newcomer)', fr: '0$ (nouv. arr.)' } },
+      { label: { ko: '주소 증빙', en: 'Address proof', fr: "Preuve d'adresse" }, value: { ko: '에어비앤비 가능', en: 'Airbnb OK', fr: 'Airbnb OK' } },
+      { label: { ko: '소요 시간', en: 'Time', fr: 'Durée' }, value: { ko: '약 1시간', en: '~1 hour', fr: '~1 heure' } },
+    ],
+    timeline: { ko: '대부분 도착 2–3일 후에 방문해요. 임시 주소(에어비앤비)로도 개설 가능해요.', en: 'Most people visit within days 2–3 of arrival. An Airbnb address is usually accepted.', fr: "La plupart visitent 2–3 jours après l'arrivée. L'adresse Airbnb est généralement acceptée." },
+  },
+}
+
+// ─── TAB 3: Transit ───────────────────────────────────────────────────────────
+
+const TRANSIT_TAB: TabContent = {
+  id: 'transit',
+  label: { ko: '대중교통', en: 'Transit', fr: 'Transport' },
+  hero: {
+    title: { ko: '몬트리올에서 이동하기', en: 'Getting around Montréal', fr: 'Se déplacer à Montréal' },
+    sub: {
+      ko: '몬트리올의 대중교통(STM)은 지하철과 버스로 도시 대부분을 커버해요. 충전식 OPUS 카드를 둘 다에 쓸 수 있어요. 공항버스(747)는 신용카드를 직접 받아서 도착 당일에는 OPUS가 필요 없어요.',
+      en: "Montréal's public transit (STM) covers most of the city with metro and buses. The rechargeable OPUS card is used for both. The airport bus (747) accepts credit cards directly — no OPUS needed on arrival day.",
+      fr: "Le transport public de Montréal (STM) couvre la ville avec métro et bus. La carte OPUS rechargeable sert aux deux. Le bus 747 accepte la carte de crédit — pas besoin d'OPUS le jour d'arrivée.",
+    },
+    when: { ko: '도착 당일부터', en: 'From arrival day', fr: "Dès le jour d'arrivée" },
+    cost: { ko: '$3.75/회 또는 $56–97/월', en: '$3.75/trip or $56–97/mo', fr: '3,75$/trajet ou 56–97$/mois' },
+    time: { ko: 'OPUS 카드 구매: 5분', en: 'OPUS card: 5 min at any metro station', fr: 'Carte OPUS : 5 min dans toute station' },
+    canBeforeArrival: { ko: '아니요, 현지에서 구매', en: 'No, purchase on arrival', fr: 'Non, acheter sur place' },
+  },
+  options: [
+    {
+      name: 'STM Monthly Pass + OPUS',
+      sub: { ko: '지하철·버스 무제한', en: 'Unlimited metro and bus', fr: 'Métro et bus illimités' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$97/월 (학생 $56)', en: '$97/mo or $56/mo student', fr: '97$/mois ou 56$ étudiant' } },
+        { icon: 'credit-card', label: { ko: 'OPUS 카드 1회 $6', en: 'OPUS card $6 one-time', fr: 'Carte OPUS 6$ unique' } },
+      ],
+      worksFor: [
+        { ko: '매일 통근하는 분', en: 'Daily commuters', fr: 'Navetteurs quotidiens' },
+        { ko: '학생 (50% 할인)', en: 'Students (50% off)', fr: 'Étudiants (50% de rabais)' },
+        { ko: '지하철 노선 근처', en: 'Near a metro line', fr: "Près d'une ligne de métro" },
+      ],
+      worthKnowing: [
+        { ko: '월 정기권은 매월 1일에 초기화 — 월 중반에 사면 손해', en: 'Monthly pass resets on the 1st — buy mid-month for best value', fr: "Le pass mensuel se réinitialise le 1er — acheter en milieu de mois est moins avantageux" },
+        { ko: '학생 요금은 재학 증명 필요', en: 'Student rate requires enrollment verification', fr: "Le tarif étudiant exige une preuve d'inscription" },
+      ],
+      recommendNote: {
+        ko: '학생 요금은 일반 요금의 거의 절반이에요. 대부분의 학교가 해당되니 첫 정기권을 사기 전에 확인해보세요.',
+        en: 'The student rate is roughly half the regular price. Most schools qualify — worth checking before you buy your first monthly pass.',
+        fr: "Le tarif étudiant est environ la moitié du prix normal. La plupart des écoles sont admissibles — vérifiez avant le premier pass.",
+      },
+    },
+    {
+      name: 'OPUS Pay-Per-Ride',
+      sub: { ko: '월 약정 없음', en: 'No monthly commitment', fr: 'Sans engagement mensuel' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$3.75/회', en: '$3.75/trip', fr: '3,75$/trajet' } },
+        { icon: 'credit-card', label: { ko: '같은 OPUS 카드', en: 'Same OPUS card', fr: 'Même carte OPUS' } },
+      ],
+      worksFor: [
+        { ko: '정하기 전 첫 주', en: 'First week before committing', fr: "Première semaine avant de s'engager" },
+        { ko: '가끔 타는 분', en: 'Infrequent riders', fr: 'Usagers occasionnels' },
+      ],
+      worthKnowing: [
+        { ko: '쌓이면 비쌈 — 약 26회부터 정기권이 더 저렴', en: 'Adds up — monthly pass cheaper after ~26 trips', fr: "Ça s'accumule — le pass est plus avantageux après ~26 trajets" },
+      ],
+    },
+    {
+      name: 'BIXI Bike Share',
+      sub: { ko: '도크 자전거, 몬트리올 중심부', en: 'Dock-to-dock bikes, central Montréal', fr: 'Vélos en libre-service, centre de Montréal' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$27/월 (시즌) 또는 $7/일', en: '$27/mo seasonal or $7/day', fr: '27$/mois (saison) ou 7$/jour' } },
+        { icon: 'calendar', label: { ko: '앱 기반, 4월–11월', en: 'App-based, April–November', fr: 'Appli, avril–novembre' } },
+      ],
+      worksFor: [
+        { ko: 'Plateau/Mile End/다운타운 짧은 이동', en: 'Short trips in Plateau/Mile End/downtown', fr: 'Courts trajets Plateau/Mile End/centre-ville' },
+        { ko: '자전거를 좋아하는 분', en: 'Cycling fans', fr: 'Amateurs de vélo' },
+      ],
+      worthKnowing: [
+        { ko: '겨울에는 운영 안 함', en: 'Not available in winter', fr: "Pas disponible l'hiver" },
+        { ko: '헬멧 미제공', en: 'Helmets not provided', fr: 'Casques non fournis' },
+      ],
+    },
+    {
+      name: 'Airport Bus 747',
+      sub: { ko: 'YUL ↔ 다운타운, 24시간', en: 'YUL to downtown, 24/7', fr: 'YUL au centre-ville, 24/7' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$11 정액 (카드 가능)', en: '$11 flat (credit card accepted)', fr: '11$ forfait (carte acceptée)' } },
+        { icon: 'clock', label: { ko: '20–30분 간격', en: 'Every 20–30 min', fr: 'Toutes les 20–30 min' } },
+      ],
+      worksFor: [
+        { ko: '공항에서 이동, OPUS 불필요', en: 'Getting from airport, no OPUS needed', fr: "Depuis l'aéroport, sans OPUS" },
+      ],
+      worthKnowing: [
+        { ko: '교통 상황에 따라 45–70분', en: '45–70 min depending on traffic', fr: 'Selon le trafic, 45–70 min' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '옵션', en: 'Option', fr: 'Option' },
+      { ko: '비용', en: 'Cost', fr: 'Coût' },
+      { ko: 'OPUS 카드', en: 'OPUS card', fr: 'Carte OPUS' },
+      { ko: '24시간', en: '24/7', fr: '24/7' },
+      { ko: '적합한 분', en: 'Best for', fr: 'Idéal pour' },
+    ],
+    rows: [
+      { name: 'STM Monthly', cols: ['$97 or $56/mo', true, true, 'Daily use'] },
+      { name: 'Pay-per-ride', cols: ['$3.75/trip', true, true, 'First week'] },
+      { name: 'BIXI', cols: ['$27/mo seasonal', false, false, 'Central short trips'] },
+      { name: '747 bus', cols: ['$11 flat', false, true, 'Airport only'] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2023년 9월', en: 'Student Sept 2023', fr: 'Étudiant sept. 2023' }, text: { ko: '공항에서 747이 정말 편했어요. 카드로 결제하고 OPUS는 필요 없었어요. 다음 날 지하철역에서 OPUS를 받았어요.', en: 'The 747 was easy from the airport. Paid with my card, no OPUS needed. Got an OPUS the next day at a metro station.', fr: "Le 747 était facile depuis l'aéroport. Payé par carte, sans OPUS. J'ai pris une OPUS le lendemain au métro." }, likes: 24 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 6월', en: 'Working Holiday June 2024', fr: 'PVT juin 2024' }, text: { ko: '여름에 BIXI 정말 좋아요. 5월부터 9월까지 지하철을 거의 안 탔어요.', en: 'BIXI in summer is great. I barely used the metro from May to September.', fr: "BIXI l'été, c'est génial. J'ai à peine pris le métro de mai à septembre." }, likes: 18 },
+    { flag: '🇨🇦', person: { ko: '한국계 캐나다인', en: 'Korean-Canadian', fr: 'Coréen-Canadien' }, text: { ko: '하루에 한 번 이상 지하철을 탄다면 정기권을 사세요. 금방 본전을 뽑아요.', en: "Get the monthly pass if you're taking the metro more than once a day. The math works out pretty quickly.", fr: "Prenez le pass mensuel si vous prenez le métro plus d'une fois par jour. C'est vite rentable." }, likes: 15 },
+  ],
+  helpLinks: [
+    { label: { ko: 'STM 대중교통', en: 'STM transit', fr: 'STM transport' }, url: 'https://www.stm.info', domain: 'stm.info' },
+    { label: { ko: 'BIXI 자전거 공유', en: 'BIXI bike share', fr: 'BIXI vélopartage' }, url: 'https://bixi.com', domain: 'bixi.com' },
+    { label: { ko: 'Chronobus 747 공항버스', en: 'Chronobus 747 airport bus', fr: 'Chronobus 747' }, url: 'https://www.stm.info/en/info/networks/bus/express-shuttle/route-747-yul-aeroport-montreal-trudeau-downtown', domain: 'stm.info' },
+    { label: { ko: 'OPUS 카드', en: 'OPUS card', fr: 'Carte OPUS' }, url: 'https://www.stm.info/en/info/fares/opus-cards-and-other-fare-media', domain: 'stm.info' },
+  ],
+  faq: [
+    { q: { ko: 'OPUS 카드는 어디서 사나요?', en: 'Where do I buy an OPUS card?', fr: 'Où acheter une carte OPUS?' }, a: { ko: '아무 지하철역 발권기, 일부 편의점에서요. 카드 자체는 $6이고, 거기에 횟수나 월 정기권을 충전해요.', en: 'Any metro station ticket machine, some convenience stores. The card costs $6 and you load trips or a monthly pass onto it.', fr: "Toute machine de station de métro, certains dépanneurs. La carte coûte 6$ et on y charge des trajets ou un pass." } },
+    { q: { ko: '학생 할인이 있나요?', en: 'Is there a student discount?', fr: 'Y a-t-il un rabais étudiant?' }, a: { ko: '네, 자격이 되면 약 50% 할인이에요. 먼저 학교 학적과에서 인증받아야 해요.', en: 'Yes — about 50% off with eligible student status. You need to get it validated at your school\'s registrar first.', fr: "Oui — environ 50% avec un statut étudiant admissible. À faire valider d'abord au registraire de l'école." } },
+    { q: { ko: '747 버스는 밤에도 운행하나요?', en: 'Does the 747 bus run at night?', fr: 'Le bus 747 circule-t-il la nuit?' }, a: { ko: '네, 747은 야간 포함 24시간 운행해요. 공항을 오가는 가장 확실한 방법이에요.', en: "Yes, the 747 runs 24/7 including overnight. It's the most reliable way to and from the airport.", fr: "Oui, le 747 circule 24/7, y compris la nuit. C'est le moyen le plus fiable pour l'aéroport." } },
+    { q: { ko: '휴대폰으로 교통비를 낼 수 있나요?', en: 'Can I use my phone to pay for transit?', fr: 'Puis-je payer le transport avec mon téléphone?' }, a: { ko: 'OPUS는 이제 많은 휴대폰에서 모바일 결제를 지원해요. 호환 여부는 STM 웹사이트에서 확인하세요.', en: 'OPUS now supports mobile payment on many phones. Check the STM website for compatibility.', fr: 'OPUS prend désormais en charge le paiement mobile sur de nombreux téléphones. Vérifiez la compatibilité sur le site STM.' } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '공항→다운타운', en: 'Airport to downtown', fr: 'Aéroport → centre' }, value: { ko: '$11 (747)', en: '$11 (747)', fr: '11$ (747)' } },
+      { label: { ko: '월 정기권', en: 'Monthly pass', fr: 'Pass mensuel' }, value: { ko: '$56 (학생) / $97', en: '$56 (student) / $97', fr: '56$ (étud.) / 97$' } },
+      { label: { ko: 'OPUS 카드', en: 'OPUS card', fr: 'Carte OPUS' }, value: { ko: '$6 (1회)', en: '$6 one-time', fr: '6$ (unique)' } },
+      { label: { ko: 'BIXI 월', en: 'BIXI monthly', fr: 'BIXI mensuel' }, value: { ko: '$27 (시즌)', en: '$27 (seasonal)', fr: '27$ (saison)' } },
+    ],
+    timeline: { ko: '공항에서 시내까지 747 버스, 그 다음 날 OPUS 카드 구매 추천.', en: 'Take the 747 bus from the airport. Pick up an OPUS card the next day.', fr: "Prenez le 747 depuis l'aéroport. Achetez une carte OPUS le lendemain." },
+  },
+}
+
+// ─── TAB 4: Housing ───────────────────────────────────────────────────────────
+
+const HOUSING_TAB: TabContent = {
+  id: 'housing',
+  label: { ko: '주거', en: 'Housing', fr: 'Logement' },
+  hero: {
+    title: {
+      ko: '도착 직후 머물 곳 찾기',
+      en: 'Finding somewhere to stay when you first arrive',
+      fr: 'Trouver où loger à votre arrivée',
+    },
+    sub: {
+      ko: '대부분 영구 아파트를 찾는 동안 첫 2–4주는 임시 거처에 머물러요. 아파트 찾기는 현지에서 직접 보는 게 훨씬 효과적이라, 원격으로 찾는 건 더 어려워요.',
+      en: 'Most people stay in temporary housing for the first 2–4 weeks while searching for a permanent apartment. Apartment hunting is much more effective in person — remote searches are harder.',
+      fr: "La plupart logent en hébergement temporaire 2–4 semaines en cherchant un appartement permanent. La recherche est plus efficace sur place — à distance, c'est plus dur.",
+    },
+    when: { ko: '도착 전 예약 권장', en: 'Book before you arrive', fr: "Réserver avant d'arriver" },
+    cost: { ko: '2주에 $400–1,400', en: '$400–1,400 for 2 weeks', fr: '400–1 400$ pour 2 semaines' },
+    time: { ko: '2–4주 임시 거처, 아파트 구하는데 보통 2–4주 더', en: '2–4 weeks temp housing, then 2–4 weeks to find an apartment', fr: '2–4 semaines temporaire, puis 2–4 semaines pour trouver' },
+    canBeforeArrival: { ko: '네, 도착 전 예약 가능', en: 'Yes, book before arriving', fr: "Oui, réserver avant d'arriver" },
+  },
+  options: [
+    {
+      name: 'Airbnb / Short-term rental',
+      sub: { ko: '독립된 공간, 유연한 날짜', en: 'Private space, flexible dates', fr: 'Espace privé, dates flexibles' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '2주에 ~$800–1,400', en: '~$800–1,400 for 2 weeks', fr: '~800–1 400$ / 2 sem.' } },
+        { icon: 'plane', label: { ko: '도착 전 예약', en: 'Book before arrival', fr: 'Réserver avant' } },
+        { icon: 'building-bank', label: { ko: '은행용 주소 사용 가능', en: 'Address usable for banking', fr: 'Adresse utilisable en banque' } },
+      ],
+      worksFor: [
+        { ko: '독립된 공간을 원하는 분', en: 'Those wanting private space', fr: 'Ceux qui veulent un espace privé' },
+        { ko: '은행 계좌에 주소를 쓰려는 분', en: 'Using address for bank account', fr: "Adresse pour le compte bancaire" },
+        { ko: '연장 유연성이 필요한 분', en: 'Flexibility to extend', fr: 'Flexibilité de prolonger' },
+      ],
+      worthKnowing: [
+        { ko: '호스텔보다 비쌈', en: 'More expensive than hostels', fr: 'Plus cher que les auberges' },
+        { ko: '일부 집주인은 임대 신청에 에어비앤비 주소를 안 받음', en: "Some landlords don't accept Airbnb for lease applications", fr: "Certains proprios refusent l'adresse Airbnb pour un bail" },
+      ],
+      recommendNote: {
+        ko: '많은 분들이 은행 계좌를 열 때 에어비앤비 주소를 써요. 예약 확인 이메일이 보통 주소 증빙으로 인정돼요.',
+        en: 'Many people use their Airbnb address when opening a bank account. The confirmation email is usually accepted as proof of address.',
+        fr: "Beaucoup utilisent leur adresse Airbnb pour ouvrir un compte. Le courriel de confirmation sert souvent de preuve d'adresse.",
+      },
+    },
+    {
+      name: 'Hostel / Student residence',
+      sub: { ko: '저렴한 옵션', en: 'Budget option', fr: 'Option économique' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$35–60/박', en: '~$35–60/night', fr: '~35–60$/nuit' } },
+      ],
+      worksFor: [
+        { ko: '예산을 아끼는 분', en: 'Budget-conscious', fr: 'Petit budget' },
+        { ko: '다른 이민자를 만나고 싶은 분', en: 'Meet other newcomers', fr: "Rencontrer d'autres arrivants" },
+        { ko: '1–2주', en: '1–2 weeks', fr: '1–2 semaines' },
+      ],
+      worthKnowing: [
+        { ko: '공용 공간', en: 'Shared spaces', fr: 'Espaces partagés' },
+        { ko: '공식 서류용 주소로 안 받힐 수 있음', en: 'Address may not be accepted for official documents', fr: "L'adresse peut ne pas être acceptée officiellement" },
+      ],
+    },
+    {
+      name: 'Facebook / Kijiji Sublet',
+      sub: { ko: '가구 포함 방', en: 'Furnished rooms', fr: 'Chambres meublées' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$700–1,200/월', en: '~$700–1,200/mo', fr: '~700–1 200$/mois' } },
+      ],
+      worksFor: [
+        { ko: '더 긴 탐색 (1–2개월)', en: 'Longer searches (1–2 months)', fr: 'Recherches plus longues (1–2 mois)' },
+        { ko: '에어비앤비보다 저렴하게', en: 'Lower cost than Airbnb', fr: "Moins cher qu'Airbnb" },
+      ],
+      worthKnowing: [
+        { ko: '원격으로 잡기 어려움', en: 'Harder to arrange remotely', fr: 'Difficile à distance' },
+        { ko: '꼼꼼히 확인 — 일부는 사기', en: 'Vet carefully — some listings are scams', fr: 'Vérifiez bien — certaines annonces sont des arnaques' },
+      ],
+    },
+    {
+      name: 'School Residence / Homestay',
+      sub: { ko: '학교를 통해', en: 'Through your school', fr: 'Via votre école' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '경우에 따라 다름', en: 'Varies', fr: 'Variable' } },
+      ],
+      worksFor: [
+        { ko: '주거 서비스가 있는 재학생', en: 'Enrolled students with housing services', fr: 'Étudiants avec services de logement' },
+        { ko: '지원받는 정착을 원하는 분', en: 'Want a supported landing', fr: 'Veulent une arrivée encadrée' },
+      ],
+      worthKnowing: [
+        { ko: '자리가 한정적 — 일찍 신청', en: 'Limited availability — apply early', fr: 'Places limitées — postulez tôt' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '옵션', en: 'Option', fr: 'Option' },
+      { ko: '2주 비용', en: '2-week cost', fr: 'Coût 2 sem.' },
+      { ko: '주소 증빙', en: 'Address proof', fr: "Preuve d'adresse" },
+      { ko: '미리 예약', en: 'Book ahead', fr: 'Réserver tôt' },
+      { ko: '적합한 분', en: 'Best for', fr: 'Idéal pour' },
+    ],
+    rows: [
+      { name: 'Airbnb', cols: ['~$800–1,400', true, true, 'Privacy, banking'] },
+      { name: 'Hostel', cols: ['~$400–600', false, true, 'Budget newcomers'] },
+      { name: 'Sublet (Facebook)', cols: ['~$600–900', true, false, 'Longer searches'] },
+      { name: 'School housing', cols: ['Varies', true, true, 'Enrolled students'] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2023년 8월', en: 'Student Aug 2023', fr: 'Étudiant août 2023' }, text: { ko: '오기 전에 에어비앤비를 3주 예약했어요. 도착 3일째에 그 주소로 은행 계좌를 열었고 문제없었어요.', en: 'I booked an Airbnb for 3 weeks before coming. Used that address for my bank account on day 3. Worked fine.', fr: "J'ai réservé un Airbnb 3 semaines avant. J'ai utilisé l'adresse pour mon compte au 3e jour. Sans souci." }, likes: 26 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2023년 11월', en: 'Working Holiday Nov 2023', fr: 'PVT nov. 2023' }, text: { ko: '호스텔에 일주일 묵으면서 페이스북에서 서블렛을 찾았어요. 다른 여행자도 만나고 빨리 적응했어요.', en: 'I stayed at a hostel for a week and found a sublet on Facebook. Met other travellers and got oriented quickly.', fr: "J'ai logé une semaine en auberge et trouvé un sous-loc sur Facebook. Rencontré d'autres voyageurs, vite orienté." }, likes: 17 },
+    { flag: '🇫🇷', person: { ko: '프랑스 학생', en: 'French Student', fr: 'Étudiant français' }, text: { ko: '학교에 홈스테이 프로그램이 있었어요. 더 비쌌지만 첫 달에 현지 호스트가 있는 게 정말 큰 도움이었어요.', en: 'My school had a homestay program. More expensive but having a local host the first month made a real difference.', fr: "Mon école avait un programme d'hébergement. Plus cher, mais avoir un hôte local le premier mois a tout changé." }, likes: 13 },
+  ],
+  helpLinks: [
+    { label: { ko: 'Airbnb 몬트리올', en: 'Airbnb Montréal', fr: 'Airbnb Montréal' }, url: 'https://www.airbnb.ca/montreal', domain: 'airbnb.ca' },
+    { label: { ko: 'Kijiji 몬트리올 임대', en: 'Kijiji Montréal rentals', fr: 'Kijiji locations Montréal' }, url: 'https://www.kijiji.ca', domain: 'kijiji.ca' },
+    { label: { ko: 'Facebook Marketplace', en: 'Facebook Marketplace', fr: 'Facebook Marketplace' }, url: 'https://www.facebook.com/marketplace', domain: 'facebook.com' },
+    { label: { ko: 'Concordia 교외 주거', en: 'Concordia off-campus housing', fr: 'Concordia logement hors campus' }, url: 'https://www.concordia.ca/students/housing.html', domain: 'concordia.ca' },
+  ],
+  faq: [
+    { q: { ko: '영구 아파트 없이 은행 계좌 주소를 어떻게 증빙하나요?', en: 'How do I prove my address for a bank account without a permanent apartment?', fr: "Comment prouver mon adresse sans appartement permanent?" }, a: { ko: '에어비앤비 예약 확인 이메일이 대부분 은행에서 주소 증빙으로 인정돼요. 호스텔 확인서도 될 수 있으니 미리 전화하세요.', en: 'An Airbnb confirmation email is accepted as proof of address at most banks. A hostel confirmation may also work — call ahead to confirm.', fr: "Le courriel de confirmation Airbnb est accepté dans la plupart des banques. Une confirmation d'auberge peut aussi marcher — appelez avant." } },
+    { q: { ko: '아파트를 찾기 가장 좋은 시기는 언제인가요?', en: 'When is the best time to look for apartments?', fr: 'Quand chercher un appartement?' }, a: { ko: '4–6월에 매물이 가장 많아요. 7월 1일은 몬트리올의 비공식 "이사의 날"로 대부분의 임대가 바뀌어요. 1월은 더 어려워요.', en: 'April–June has the most listings. July 1 is Montréal\'s unofficial "moving day" when most leases turn over. Searching in January is harder.', fr: "Avril–juin offre le plus d'annonces. Le 1er juillet est le « jour du déménagement » à Montréal. Janvier est plus difficile." } },
+    { q: { ko: '페이스북에서 집을 찾아도 안전한가요?', en: 'Is it safe to find housing on Facebook?', fr: 'Est-ce sûr de chercher sur Facebook?' }, a: { ko: '"Logements/Appartements Montréal" 같은 그룹을 많이 써요. 돈을 보내기 전에 직접 보거나 영상통화로 확인하세요.', en: 'Facebook groups like "Logements/Appartements Montréal" are widely used. Arrange to see the place (or video call) before sending any money.', fr: "Des groupes comme « Logements/Appartements Montréal » sont très utilisés. Visitez (ou appel vidéo) avant d'envoyer de l'argent." } },
+    { q: { ko: '첫 달과 마지막 달 월세로 얼마를 잡아야 하나요?', en: "How much should I budget for first and last month's rent?", fr: 'Combien prévoir pour le premier et dernier mois?' }, a: { ko: '퀘벡 집주인은 법적으로 마지막 달 월세를 요구할 수 없어요. 첫 달만 내는 게 일반적이에요.', en: "Québec landlords cannot legally ask for last month's rent. First month only is standard.", fr: "Au Québec, le proprio ne peut légalement exiger le dernier mois. Le premier mois seul est la norme." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '에어비앤비 2주', en: 'Airbnb 2 weeks', fr: 'Airbnb 2 sem.' }, value: { ko: '~$800–1,400', en: '~$800–1,400', fr: '~800–1 400$' } },
+      { label: { ko: '호스텔 2주', en: 'Hostel 2 weeks', fr: 'Auberge 2 sem.' }, value: { ko: '~$400–600', en: '~$400–600', fr: '~400–600$' } },
+      { label: { ko: '이사의 날', en: 'Moving day', fr: 'Jour du déménagement' }, value: { ko: '7월 1일', en: 'July 1', fr: '1er juillet' } },
+      { label: { ko: '임대 시작', en: 'Lease start', fr: 'Début du bail' }, value: { ko: '보통 7월 1일', en: 'Typically July 1', fr: 'Souvent 1er juillet' } },
+    ],
+    timeline: { ko: '도착 전 에어비앤비 2–3주 예약. 도착 후 2–4주 내에 장기 아파트 계약.', en: 'Book 2–3 weeks of Airbnb before arriving. Find a permanent apartment within 2–4 weeks of arrival.', fr: "Réservez 2–3 semaines sur Airbnb avant d'arriver. Trouvez un appartement permanent dans les 2–4 semaines." },
+  },
+}
+
+// ─── TAB 5: SIN ───────────────────────────────────────────────────────────────
+
+const SIN_TAB: TabContent = {
+  id: 'sin',
+  label: { ko: 'SIN 번호', en: 'SIN', fr: 'NAS' },
+  hero: {
+    title: { ko: 'SIN 번호 발급받기', en: 'Getting your Social Insurance Number', fr: "Obtenir votre numéro d'assurance sociale" },
+    sub: {
+      ko: '사회보험번호(SIN)는 캐나다에서 고용, 세금, 정부 서비스에 쓰이는 9자리 번호예요. 일을 시작하기 전에 필요해요.',
+      en: "A Social Insurance Number (SIN) is a 9-digit number used for employment, taxes, and government services in Canada. It's required before starting work.",
+      fr: "Le numéro d'assurance sociale (NAS) est un numéro à 9 chiffres pour l'emploi, les impôts et les services publics. Requis avant de travailler.",
+    },
+    when: { ko: '취업 전, 보통 도착 첫 주에', en: 'Before starting work — most people do this in their first week', fr: 'Avant de travailler — la plupart le font la première semaine' },
+    cost: { ko: '무료', en: 'Free', fr: 'Gratuit' },
+    time: { ko: '당일 (방문) 또는 2–4주 (온라인)', en: 'Same day (in-person) or 2–4 weeks (online)', fr: 'Même jour (en personne) ou 2–4 semaines (en ligne)' },
+    canBeforeArrival: { ko: '아니요, 캐나다 도착 후에만 신청 가능', en: 'No, only after arriving in Canada', fr: "Non, seulement après l'arrivée au Canada" },
+  },
+  options: [
+    {
+      name: 'In-person at Service Canada',
+      sub: { ko: '당일 처리, 대기 없음', en: 'Same day, no waiting', fr: "Même jour, sans attente" },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
+        { icon: 'walk', label: { ko: '예약 없이 방문 가능', en: 'Walk-in accepted', fr: 'Sans rendez-vous' } },
+        { icon: 'id', label: { ko: '여권 + 허가증 필요', en: 'Passport + permit required', fr: 'Passeport + permis requis' } },
+      ],
+      worksFor: [
+        { ko: 'SIN이 빨리 필요한 분', en: 'Anyone needing their SIN quickly', fr: 'Ceux qui ont vite besoin du NAS' },
+        { ko: '직접 확인받고 싶은 분', en: 'Wants confirmation in person', fr: 'Confirmation en personne' },
+      ],
+      worthKnowing: [
+        { ko: 'Service Canada 사무소 방문 필요 — 몬트리올에 여러 곳', en: 'Need to visit a Service Canada office — several in Montréal', fr: 'Visiter un bureau Service Canada — plusieurs à Montréal' },
+      ],
+      recommendNote: {
+        ko: '대부분 45분 안에 끝나요. 대부분의 사무소는 예약이 필요 없어요. 여권과 학업/취업 허가증을 가져가세요.',
+        en: 'Most people are in and out within 45 minutes. No appointment needed at most locations. Bring your passport and study/work permit.',
+        fr: "La plupart en ressortent en 45 min. Sans rendez-vous dans la plupart des bureaux. Apportez passeport et permis d'études/travail.",
+      },
+    },
+    {
+      name: 'Online application',
+      sub: { ko: '집에서 신청', en: 'Apply from home', fr: 'Demander de chez soi' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
+        { icon: 'clock', label: { ko: '2–4주 처리', en: '2–4 weeks processing', fr: 'Traitement 2–4 semaines' } },
+        { icon: 'world', label: { ko: 'canada.ca/sin', en: 'canada.ca/sin', fr: 'canada.ca/nas' } },
+      ],
+      worksFor: [
+        { ko: '당장 일하지 않는 분', en: 'Not working right away', fr: 'Pas de travail immédiat' },
+        { ko: '사무소 방문을 피하고 싶은 분', en: 'Prefer not to visit an office', fr: 'Préfèrent éviter le bureau' },
+      ],
+      worthKnowing: [
+        { ko: '2–4주 대기, 번호를 바로 받지 못함', en: '2–4 weeks wait, no SIN number immediately', fr: 'Attente 2–4 semaines, pas de numéro immédiat' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '방법', en: 'Method', fr: 'Méthode' },
+      { ko: '처리 시간', en: 'Processing time', fr: 'Délai' },
+      { ko: '방문?', en: 'In person?', fr: 'En personne?' },
+      { ko: '비용', en: 'Cost', fr: 'Coût' },
+      { ko: '필요 서류', en: 'Documents needed', fr: 'Documents requis' },
+    ],
+    rows: [
+      { name: 'Service Canada walk-in', cols: ['Same day', true, 'Free', 'Passport + permit'] },
+      { name: 'Online', cols: ['2–4 weeks', false, 'Free', 'Passport + permit'] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 7월', en: 'Working Holiday July 2024', fr: 'PVT juil. 2024' }, text: { ko: '도착 이틀째에 Service Canada에 갔어요. 한 시간도 안 돼서 SIN을 손에 들고 나왔어요. 정말 쉬웠어요.', en: 'I went to Service Canada on my second day. Was out in under an hour with my SIN in hand. Very easy.', fr: "Service Canada le 2e jour. Sorti en moins d'une heure avec mon NAS. Très facile." }, likes: 35 },
+    { flag: '🇰🇷', person: { ko: '학생 · 2023년 9월', en: 'Student Sept 2023', fr: 'Étudiant sept. 2023' }, text: { ko: '처음에 온라인으로 신청했는데 3주 걸려서 아르바이트 시작을 거의 놓칠 뻔했어요. 가능하면 방문이 빨라요.', en: 'I applied online at first. Took 3 weeks and I almost missed starting my part-time job. In-person is faster if you can.', fr: "J'ai demandé en ligne d'abord. 3 semaines, j'ai failli rater mon emploi à temps partiel. En personne, c'est plus rapide." }, likes: 22 },
+    { flag: '🇨🇦', person: { ko: '한국계 캐나다인', en: 'Korean-Canadian', fr: 'Coréen-Canadien' }, text: { ko: '대부분의 사무소는 예약 없이 가도 돼요. 저는 한 번도 예약이 필요했던 적이 없어요.', en: "Walk-in is fine at most offices. I've never needed an appointment.", fr: "Sans rendez-vous dans la plupart des bureaux. Je n'ai jamais eu besoin d'en prendre un." }, likes: 12 },
+  ],
+  helpLinks: [
+    { label: { ko: 'Service Canada 사무소 찾기', en: 'Service Canada office locator', fr: 'Localisateur de bureaux Service Canada' }, url: 'https://www.canada.ca/en/employment-social-development/corporate/portfolio/service-canada/office-locations.html', domain: 'canada.ca' },
+    { label: { ko: '온라인으로 SIN 신청', en: 'Apply for SIN online', fr: 'Demander un NAS en ligne' }, url: 'https://www.canada.ca/en/employment-social-development/services/sin/apply.html', domain: 'canada.ca' },
+    { label: { ko: 'SIN 정보 안내', en: 'SIN information guide', fr: "Guide d'information NAS" }, url: 'https://www.canada.ca/en/employment-social-development/services/sin.html', domain: 'canada.ca' },
+  ],
+  faq: [
+    { q: { ko: '몬트리올에서 가장 가까운 Service Canada는 어디인가요?', en: 'Where is the nearest Service Canada office in Montréal?', fr: 'Où est le bureau Service Canada le plus proche?' }, a: { ko: '몬트리올에 여러 사무소가 있어요. 다운타운 근처(Guy-Concordia 지역)가 편리해요. 전체 목록과 운영 시간은 canada.ca/service-canada에서 확인하세요.', en: 'There are several offices in Montréal. The one near downtown (Guy-Concordia area) is convenient. Check canada.ca/service-canada for the full list and hours.', fr: "Plusieurs bureaux à Montréal. Celui près du centre-ville (secteur Guy-Concordia) est pratique. Liste et horaires sur canada.ca/service-canada." } },
+    { q: { ko: 'SIN 없이 일하면 어떻게 되나요?', en: 'What happens if I work without a SIN?', fr: 'Que se passe-t-il si je travaille sans NAS?' }, a: { ko: '고용주는 첫 급여일 전에 SIN을 요구해야 해요. SIN을 기다리는 동안 일을 시작하고 며칠 안에 제출할 수 있어요.', en: 'Employers are required to ask for a SIN before your first payday. You can start work while waiting for your SIN and provide it within a few days.', fr: "L'employeur doit demander le NAS avant la première paie. Vous pouvez commencer en attendant et le fournir sous quelques jours." } },
+    { q: { ko: 'SIN이 세금 번호와 같은 건가요?', en: 'Is a SIN the same as a tax ID?', fr: 'Le NAS est-il un identifiant fiscal?' }, a: { ko: '네, SIN은 고용, 세금 신고, 일부 정부 혜택에 쓰여요. 민감한 개인정보이니 비공개로 보관하세요.', en: 'Yes — your SIN is used for employment, tax returns, and some government benefits. Keep it private — it\'s sensitive personal information.', fr: "Oui — le NAS sert à l'emploi, aux déclarations et à certaines prestations. Gardez-le confidentiel — c'est une donnée sensible." } },
+    { q: { ko: '영구 주소가 없어도 신청할 수 있나요?', en: 'Can I apply before I have a permanent address?', fr: "Puis-je demander sans adresse permanente?" }, a: { ko: '네. 임시 주소(에어비앤비, 호스텔)도 SIN 신청에 사용할 수 있어요.', en: 'Yes. A temporary address (Airbnb, hostel) is acceptable for the SIN application.', fr: "Oui. Une adresse temporaire (Airbnb, auberge) est acceptée pour la demande de NAS." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '비용', en: 'Cost', fr: 'Coût' }, value: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
+      { label: { ko: '방문 시간', en: 'In-person time', fr: 'Temps en personne' }, value: { ko: '~45분', en: '~45 min', fr: '~45 min' } },
+      { label: { ko: '온라인 시간', en: 'Online time', fr: 'Temps en ligne' }, value: { ko: '2–4주', en: '2–4 weeks', fr: '2–4 semaines' } },
+      { label: { ko: '서류', en: 'Documents', fr: 'Documents' }, value: { ko: '여권 + 허가증', en: 'Passport + permit', fr: 'Passeport + permis' } },
+    ],
+    timeline: { ko: '대부분 도착 첫 주에 해결해요. 취업 전에 꼭 필요해요.', en: 'Most people do this in their first week. Required before starting any work.', fr: 'La plupart le font la première semaine. Nécessaire avant tout emploi.' },
+  },
+}
+
+// ─── TAB 6: Licence ───────────────────────────────────────────────────────────
+
+const LICENCE_TAB: TabContent = {
+  id: 'licence',
+  label: { ko: '운전면허', en: 'Driver licence', fr: 'Permis de conduire' },
+  hero: {
+    title: { ko: '한국 운전면허 교환하기', en: "Converting your Korean driver's licence", fr: 'Échanger votre permis coréen' },
+    sub: {
+      ko: '한국 운전면허가 있다면 추가 시험 없이 퀘벡 면허로 교환할 수 있는 경우가 많아요. 교환은 SAAQ 사무소에서 처리해요.',
+      en: "If you have a Korean driver's licence, you may be able to exchange it for a Québec licence without additional tests. The exchange is handled at a SAAQ office.",
+      fr: "Avec un permis coréen, vous pouvez souvent l'échanger contre un permis québécois sans examen. L'échange se fait à un bureau de la SAAQ.",
+    },
+    when: { ko: '첫 몇 달 이내, 서두를 필요는 없어요', en: 'Within your first few months — no rush', fr: 'Dans les premiers mois — rien ne presse' },
+    cost: { ko: '~$30–100 (수수료 다양)', en: '~$30–100 (fees vary)', fr: '~30–100$ (frais variables)' },
+    time: { ko: '~30분 (예약 후 방문)', en: '~30 min once you have an appointment', fr: '~30 min avec rendez-vous' },
+    canBeforeArrival: { ko: '아니요, 캐나다 도착 후', en: 'No, done after arriving', fr: "Non, après l'arrivée" },
+  },
+  options: [
+    {
+      name: 'SAAQ licence exchange',
+      sub: { ko: '한국 → 퀘벡 면허, 재시험 없음', en: 'Korean → Québec licence, no retesting', fr: 'Coréen → québécois, sans réexamen' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$30–100', en: '~$30–100', fr: '~30–100$' } },
+        { icon: 'calendar', label: { ko: '방문, 예약 권장', en: 'In-person, appointment recommended', fr: 'En personne, rendez-vous conseillé' } },
+        { icon: 'file-text', label: { ko: '여권 + 한국 면허 + 공인 프랑스어 번역', en: 'Passport + Korean licence + certified French translation', fr: 'Passeport + permis coréen + traduction certifiée' } },
+      ],
+      worksFor: [
+        { ko: '운전할 계획이고 유효한 한국 면허가 있는 분', en: 'Anyone with valid Korean licence who plans to drive', fr: 'Avec un permis coréen valide et envie de conduire' },
+        { ko: '퀘벡 신분증을 원하는 분', en: 'Those wanting Québec ID', fr: "Ceux qui veulent une pièce d'identité québécoise" },
+      ],
+      worthKnowing: [
+        { ko: '공인 프랑스어 번역이 보통 필요 (공증사무소 ~$40)', en: 'Certified French translation typically required (~$40 at a notary)', fr: 'Traduction française certifiée souvent requise (~40$ chez un notaire)' },
+        { ko: 'SAAQ 사무소는 붐빌 수 있음 — 미리 예약', en: 'SAAQ offices can be busy — book in advance', fr: 'Les bureaux SAAQ sont souvent occupés — réservez à l\'avance' },
+      ],
+      recommendNote: {
+        ko: '한국 운전면허는 직접 교환이 인정돼서 필기나 도로 주행 시험이 필요 없어요. 예약과 서류만 준비하면 돼요.',
+        en: 'A Korean driver\'s licence is recognized for direct exchange — no written or road test required. Just an appointment and the documents.',
+        fr: "Le permis coréen est reconnu pour un échange direct — sans examen théorique ni pratique. Juste un rendez-vous et les documents.",
+      },
+    },
+    {
+      name: 'International Driving Permit (IDP)',
+      sub: { ko: '출국 전 한국에서 발급', en: 'Get in Korea before leaving', fr: 'À obtenir en Corée avant le départ' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~₩8,500 (한국)', en: '~₩8,500 in Korea', fr: '~8 500₩ en Corée' } },
+        { icon: 'calendar', label: { ko: '1년 유효', en: 'Valid for 1 year', fr: 'Valide 1 an' } },
+      ],
+      worksFor: [
+        { ko: '도착 즉시 운전해야 하는 분', en: 'Needing to drive immediately on arrival', fr: "Besoin de conduire dès l'arrivée" },
+        { ko: 'SAAQ 교환을 기다리는 동안', en: 'While waiting for SAAQ exchange', fr: "En attendant l'échange SAAQ" },
+      ],
+      worthKnowing: [
+        { ko: '출국 전 한국에서 발급해야 함', en: 'Must be obtained in Korea before departure', fr: 'À obtenir en Corée avant de partir' },
+        { ko: '영구적인 대체물은 아님', en: 'Not a permanent substitute', fr: 'Pas un substitut permanent' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '옵션', en: 'Option', fr: 'Option' },
+      { ko: '비용', en: 'Cost', fr: 'Coût' },
+      { ko: '시험 필요', en: 'Tests required', fr: 'Examen requis' },
+      { ko: '장소', en: 'Where', fr: 'Où' },
+      { ko: '유효 기간', en: 'Valid for', fr: 'Validité' },
+    ],
+    rows: [
+      { name: 'SAAQ exchange', cols: ['$30–100', false, 'SAAQ office, Montréal', 'Permanent'] },
+      { name: 'IDP', cols: ['$11 approx.', false, 'Korean driving association', '1 year only'] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 5월', en: 'Working Holiday May 2024', fr: 'PVT mai 2024' }, text: { ko: '두 번째 달에 SAAQ 교환을 했어요. 온라인 예약이 쉬웠고, 번역은 공증사무소에서 $40 정도 들었어요.', en: 'Did the SAAQ exchange in my second month. Appointment was easy to book online. The translation cost me about $40 at a notary.', fr: "Échange SAAQ au 2e mois. Rendez-vous facile en ligne. La traduction m'a coûté ~40$ chez un notaire." }, likes: 21 },
+    { flag: '🇰🇷', person: { ko: '학생 · 2023년 12월', en: 'Student Dec 2023', fr: 'Étudiant déc. 2023' }, text: { ko: '출국 전에 한국에서 국제운전면허증을 받았어요. SAAQ 정리하는 동안 첫 몇 달에 도움이 됐어요.', en: 'Got an IDP in Korea before leaving. Helped for the first few months while I sorted out the SAAQ.', fr: "J'ai pris un permis international en Corée avant de partir. Utile les premiers mois le temps de régler la SAAQ." }, likes: 16 },
+    { flag: '🇰🇷', person: { ko: '영주권 · 2024년 2월', en: 'PR Feb 2024', fr: 'RP févr. 2024' }, text: { ko: 'Sherbrooke의 SAAQ 사무소는 간단했어요. 서류만 다 있으면 20분 정도면 끝나요.', en: 'SAAQ office on Sherbrooke was straightforward. Whole thing took about 20 minutes once I had all documents.', fr: "Le bureau SAAQ sur Sherbrooke était simple. Environ 20 min une fois tous les documents prêts." }, likes: 11 },
+  ],
+  helpLinks: [
+    { label: { ko: 'SAAQ — 면허 교환', en: 'SAAQ — Licence exchange', fr: 'SAAQ — Échange de permis' }, url: 'https://saaq.gouv.qc.ca/en/drivers-licences/exchange-licence', domain: 'saaq.gouv.qc.ca' },
+    { label: { ko: 'SAAQ 예약하기', en: 'Book SAAQ appointment', fr: 'Prendre rendez-vous SAAQ' }, url: 'https://saaq.gouv.qc.ca', domain: 'saaq.gouv.qc.ca' },
+    { label: { ko: '국제운전면허증 정보', en: 'International Driving Permit info', fr: 'Info permis international' }, url: 'https://saaq.gouv.qc.ca', domain: 'saaq.gouv.qc.ca' },
+  ],
+  faq: [
+    { q: { ko: '운전 시험을 봐야 하나요?', en: 'Do I need to take a driving test?', fr: 'Dois-je passer un examen de conduite?' }, a: { ko: '아니요 — 한국 면허는 직접 교환이 인정돼요. 필기나 도로 주행 시험이 필요 없어요.', en: 'No — Korean licences are recognized for direct exchange. No written or road test required.', fr: "Non — les permis coréens sont reconnus pour un échange direct. Sans examen théorique ni pratique." } },
+    { q: { ko: '공인 프랑스어 번역은 어디서 받나요?', en: 'Where do I get a certified French translation?', fr: 'Où obtenir une traduction française certifiée?' }, a: { ko: '공인 공증사무소나 번역 서비스에서요. 보통 $30–60 들어요. "traducteur certifié Montréal"로 검색해보세요.', en: 'A certified notary or translation service. Usually costs $30–60. Search "traducteur certifié Montréal" for local options.', fr: 'Un notaire certifié ou un service de traduction. Généralement 30–60$. Cherchez « traducteur certifié Montréal ».' } },
+    { q: { ko: '교환 전에 한국 면허가 퀘벡에서 얼마나 유효한가요?', en: 'How long is my Korean licence valid in Québec before I need to exchange it?', fr: 'Combien de temps mon permis coréen est-il valide avant échange?' }, a: { ko: '도착 후 일정 기간 동안 한국 면허로 운전할 수 있어요. 정확한 기간은 허가 유형에 따라 달라요. 교환은 언제든 가능하고, 많은 분이 첫 1–3개월에 해요.', en: 'Your Korean licence is valid for driving in Québec for a limited period after arrival. The exact duration depends on your permit type. The exchange can be done at any time — many people do it in their first 1–3 months.', fr: "Votre permis coréen est valide un temps limité après l'arrivée. La durée dépend de votre permis. L'échange est possible à tout moment — beaucoup le font dans les 1–3 premiers mois." } },
+    { q: { ko: 'SAAQ 예약을 온라인으로 할 수 있나요?', en: 'Can I book a SAAQ appointment online?', fr: 'Puis-je réserver un rendez-vous SAAQ en ligne?' }, a: { ko: '네 — saaq.gouv.qc.ca에서 온라인 예약을 해요. 인기 있는 지점은 몇 주 전에 마감돼요.', en: 'Yes — saaq.gouv.qc.ca has online booking. Appointments at popular locations fill up a few weeks out.', fr: 'Oui — saaq.gouv.qc.ca offre la réservation en ligne. Les bureaux populaires se remplissent des semaines à l\'avance.' } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '시험 필요', en: 'Test required', fr: 'Examen requis' }, value: { ko: '없음', en: 'No', fr: 'Non' } },
+      { label: { ko: '번역 비용', en: 'Translation cost', fr: 'Coût traduction' }, value: { ko: '~$40', en: '~$40', fr: '~40$' } },
+      { label: { ko: '예약', en: 'Appointment', fr: 'Rendez-vous' }, value: { ko: '온라인 예약', en: 'Book online', fr: 'En ligne' } },
+      { label: { ko: 'SAAQ 수수료', en: 'SAAQ fee', fr: 'Frais SAAQ' }, value: { ko: '~$30–100', en: '~$30–100', fr: '~30–100$' } },
+    ],
+    timeline: { ko: '보통 첫 1–3개월 이내에 해요. 당장 운전하지 않는다면 서두를 필요 없어요.', en: "Most people do this within their first 1–3 months. No rush if you're not driving immediately.", fr: "La plupart le font dans les 1–3 premiers mois. Pas urgent si vous ne conduisez pas tout de suite." },
+  },
+}
+
+// ─── TAB 7: Language ──────────────────────────────────────────────────────────
+
+const LANGUAGE_TAB: TabContent = {
+  id: 'language',
+  label: { ko: '언어 프로그램', en: 'Language', fr: 'Langues' },
+  hero: {
+    title: { ko: '몬트리올의 언어 프로그램', en: 'Language programs in Montréal', fr: 'Programmes de langues à Montréal' },
+    sub: {
+      ko: '몬트리올은 이중언어 도시로, 프랑스어와 영어 둘 다 널리 쓰여요. 언어 프로그램은 무료 정부 프랑스어 강좌부터 회화 교환, 사설 수업까지 다양해요. 시작 마감일은 없어요.',
+      en: "Montréal is bilingual — French and English are both widely spoken. Language programs range from free government French courses to conversation exchanges and private classes. There's no deadline for starting.",
+      fr: "Montréal est bilingue — le français et l'anglais sont tous deux courants. Les programmes vont des cours de français gratuits aux échanges de conversation et cours privés. Aucun délai pour commencer.",
+    },
+    when: { ko: '언제든 준비되면 시작하세요', en: 'Whenever you feel settled — no deadline', fr: 'Quand vous vous sentez prêt — pas de délai' },
+    cost: { ko: '무료 ~ $500/과목', en: 'Free to $500/course', fr: 'Gratuit à 500$/cours' },
+    time: { ko: '유연한 일정', en: 'Flexible schedule', fr: 'Horaire flexible' },
+    canBeforeArrival: { ko: '온라인 프로그램은 가능', en: 'Some online options available', fr: 'Certaines options en ligne disponibles' },
+  },
+  options: [
+    {
+      name: 'HAKKYO Language Exchange',
+      sub: { ko: '한국어–프랑스어–영어 회화 교환', en: 'Korean–French–English conversation exchange', fr: 'Échange coréen–français–anglais' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
+        { icon: 'users', label: { ko: '소규모 그룹, 상시 운영', en: 'Small groups, ongoing', fr: 'Petits groupes, en continu' } },
+        { icon: 'check', label: { ko: '사전 조건 없음', en: 'No prerequisites', fr: 'Aucun prérequis' } },
+      ],
+      worksFor: [
+        { ko: '현지 프랑스어/영어 사용자를 만나고 싶은 분', en: 'Anyone wanting to meet local French or English speakers', fr: 'Rencontrer des francophones ou anglophones locaux' },
+        { ko: '사회적인 학습', en: 'Social learning', fr: 'Apprentissage social' },
+        { ko: '모든 수준', en: 'All levels', fr: 'Tous niveaux' },
+      ],
+      worthKnowing: [
+        { ko: '회화 중심 — 정식 수업은 아님', en: 'Focus is conversation — not formal instruction', fr: 'Axé conversation — pas un cours formel' },
+        { ko: '다른 학습과 병행하면 가장 좋음', en: 'Best combined with other study', fr: "Idéal en complément d'autres cours" },
+      ],
+      recommendNote: {
+        ko: 'HAKKYO 참가자들은 교환을 통해 정식 수업만 들을 때보다 실제 환경에서 말하는 게 더 빨리 편해졌다고 많이 말해요.',
+        en: 'Many HAKKYO participants say the exchange helped them feel comfortable speaking in a real environment faster than formal classes alone.',
+        fr: "Beaucoup de participants HAKKYO disent que l'échange les a aidés à parler en situation réelle plus vite que les cours seuls.",
+      },
+    },
+    {
+      name: 'SANA (Government French)',
+      sub: { ko: '무료 전일제 또는 시간제 프랑스어', en: 'Free full or part-time French', fr: 'Français gratuit temps plein ou partiel' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
+        { icon: 'clock', label: { ko: '주간 또는 야간', en: 'Daytime or evening', fr: 'Jour ou soir' } },
+      ],
+      worksFor: [
+        { ko: '체계적인 프랑스어 학습', en: 'Structured French instruction', fr: 'Apprentissage structuré du français' },
+        { ko: '워킹홀리데이·영주권자 (자격 확인)', en: 'Working Holiday and PR holders (check eligibility)', fr: 'PVT et RP (vérifier admissibilité)' },
+        { ko: '직업용 프랑스어 목표', en: 'Targeting professional French', fr: 'Visant le français professionnel' },
+      ],
+      worthKnowing: [
+        { ko: '대기 명단이 길 수 있음', en: 'Waitlists can be long', fr: "Listes d'attente parfois longues" },
+        { ko: '전일제는 상당한 시간 필요', en: 'Full-time requires significant availability', fr: 'Le temps plein demande beaucoup de disponibilité' },
+      ],
+    },
+    {
+      name: 'Concordia CCE / UQAM',
+      sub: { ko: '유료, 유연한 일정', en: 'Paid, flexible schedule', fr: 'Payant, horaire flexible' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$150–500/과목', en: '$150–500/course', fr: '150–500$/cours' } },
+        { icon: 'clock', label: { ko: '야간·주말', en: 'Evening and weekend', fr: 'Soir et week-end' } },
+      ],
+      worksFor: [
+        { ko: '인증 수료증', en: 'Accredited certificates', fr: 'Certificats accrédités' },
+        { ko: '주간에 일하는 야간 학습자', en: 'Evening learners who work daytime', fr: 'Apprenants du soir qui travaillent le jour' },
+      ],
+      worthKnowing: [
+        { ko: '수준에 따라 비용 다름', en: 'Costs vary by level', fr: 'Coûts variables selon le niveau' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '프로그램', en: 'Program', fr: 'Programme' },
+      { ko: '비용', en: 'Cost', fr: 'Coût' },
+      { ko: '형식', en: 'Format', fr: 'Format' },
+      { ko: '수준', en: 'Level', fr: 'Niveau' },
+      { ko: '수료증?', en: 'Certificate?', fr: 'Certificat?' },
+    ],
+    rows: [
+      { name: 'HAKKYO Exchange', cols: ['Free', 'Small group conversation', 'All', false] },
+      { name: 'SANA', cols: ['Free', 'Full-time or part-time', 'Beginner–Advanced', false] },
+      { name: 'Concordia CCE', cols: ['$150–500', 'Evening, weekend', 'Beginner–Advanced', true] },
+      { name: 'UQAM Continuing Ed', cols: ['$150–400', 'Evening, weekend', 'Various', true] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2023년 10월', en: 'Student Oct 2023', fr: 'Étudiant oct. 2023' }, text: { ko: '셋째 주에 HAKKYO 교환을 시작했어요. 생각보다 훨씬 부담이 없었고, 일상 프랑스어에 정말 도움이 됐어요.', en: 'Started HAKKYO exchange in my third week. Much less intimidating than I expected. Really helped with everyday French.', fr: "Commencé l'échange HAKKYO la 3e semaine. Bien moins intimidant que prévu. Très utile pour le français quotidien." }, likes: 27 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 8월', en: 'Working Holiday Aug 2024', fr: 'PVT août 2024' }, text: { ko: 'SANA 대기가 저는 2개월이었어요. 그동안 HAKKYO를 썼는데 회화 연습에는 오히려 더 좋았어요.', en: 'SANA waitlist was 2 months for me. Used HAKKYO in the meantime and it was actually better for conversational practice.', fr: "La liste d'attente SANA était de 2 mois. J'ai utilisé HAKKYO entretemps, meilleur pour la conversation." }, likes: 20 },
+    { flag: '🇫🇷', person: { ko: '프랑스 학생', en: 'French Student', fr: 'Étudiant français' }, text: { ko: 'HAKKYO는 정식 수업의 부담 없이 영어를 연습하기에 좋았어요.', en: 'HAKKYO was good for practicing English without the pressure of a formal class.', fr: "HAKKYO était bien pour pratiquer l'anglais sans la pression d'un cours formel." }, likes: 13 },
+  ],
+  helpLinks: [
+    { label: { ko: 'HAKKYO 프로그램', en: 'HAKKYO programs', fr: 'Programmes HAKKYO' }, url: 'https://hakkyo.ca', domain: 'hakkyo.ca' },
+    { label: { ko: 'SANA 프랑스어 강좌', en: 'SANA French classes', fr: 'Cours de français SANA' }, url: 'https://www.quebec.ca/en/immigration/french-language', domain: 'immigration-quebec.gouv.qc.ca' },
+    { label: { ko: 'Concordia CCE', en: 'Concordia CCE', fr: 'Concordia CCE' }, url: 'https://www.concordia.ca/cce.html', domain: 'concordia.ca' },
+    { label: { ko: 'UQAM 평생교육', en: 'UQAM continuing ed', fr: 'UQAM formation continue' }, url: 'https://www.uqam.ca', domain: 'uqam.ca' },
+  ],
+  faq: [
+    { q: { ko: '몬트리올에서 살려면 프랑스어를 해야 하나요?', en: 'Do I need to speak French to live in Montréal?', fr: 'Faut-il parler français pour vivre à Montréal?' }, a: { ko: '일상생활에는 꼭 필요하진 않아요 — 영어가 널리 쓰여요. 하지만 프랑스어는 더 많은 사회적·직업적 기회를 열어줘요. 많은 이민자가 기초라도 배우면 도움이 된다고 느껴요.', en: 'Not for daily life — English is widely spoken. But French opens up more social and professional opportunities. Many newcomers find it helpful to at least learn basics.', fr: "Pas pour le quotidien — l'anglais est courant. Mais le français ouvre plus de portes sociales et professionnelles. Beaucoup trouvent utile d'apprendre au moins les bases." } },
+    { q: { ko: '프랑스어로 대화가 되기까지 얼마나 걸리나요?', en: 'How long does it take to become conversational in French?', fr: 'Combien de temps pour converser en français?' }, a: { ko: '꾸준히 연습하면 많은 분이 3–6개월에 기초 회화 수준에 도달해요. 매일 노출(TV, 팟캐스트, HAKKYO 교환)이 크게 가속화해요.', en: 'With regular practice, many people reach basic conversational French in 3–6 months. Daily exposure (TV, podcasts, HAKKYO exchange) accelerates this significantly.', fr: "Avec une pratique régulière, beaucoup atteignent un niveau de base en 3–6 mois. L'exposition quotidienne (TV, balados, échange HAKKYO) accélère beaucoup." } },
+    { q: { ko: 'SANA 수업이 정말 무료인가요?', en: 'Are SANA classes really free?', fr: 'Les cours SANA sont-ils vraiment gratuits?' }, a: { ko: '네 — SANA는 자격이 되는 신규 이민자에게 퀘벡 정부가 전액 지원해요. 워킹홀리데이와 일부 학생 허가 소지자가 해당돼요. SANA 웹사이트에서 자격 조건을 확인하세요.', en: 'Yes — SANA is fully subsidized by the Québec government for eligible newcomers. Working Holiday and some student permit holders qualify. Check the eligibility criteria on the SANA website.', fr: "Oui — SANA est entièrement subventionné par le Québec pour les arrivants admissibles. Les titulaires de PVT et certains permis d'études sont admissibles. Vérifiez les critères sur le site SANA." } },
+    { q: { ko: 'HAKKYO 교환과 일반 수업의 차이는 뭔가요?', en: "What's the difference between HAKKYO exchange and a regular class?", fr: "Quelle différence entre l'échange HAKKYO et un cours?" }, a: { ko: 'HAKKYO는 회화 파트너 교환이에요 — 비정형적이고 사회적이며 무료예요. 수업은 구조, 문법, 수료증을 줘요. 많은 분이 둘 다 해요.', en: 'HAKKYO is a conversation partner exchange — unstructured, social, and free. Classes give structure, grammar, and a certificate. Many people do both.', fr: "HAKKYO est un échange de partenaires de conversation — informel, social et gratuit. Les cours offrent structure, grammaire et certificat. Beaucoup font les deux." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: 'HAKKYO', en: 'HAKKYO', fr: 'HAKKYO' }, value: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
+      { label: { ko: 'SANA', en: 'SANA', fr: 'SANA' }, value: { ko: '무료 (자격)', en: 'Free (eligible)', fr: 'Gratuit (admissible)' } },
+      { label: { ko: 'Concordia CCE', en: 'Concordia CCE', fr: 'Concordia CCE' }, value: { ko: '$150–500', en: '$150–500', fr: '150–500$' } },
+      { label: { ko: '수료증 옵션', en: 'Certificate options', fr: 'Certificats' }, value: { ko: '있음', en: 'Yes', fr: 'Oui' } },
+    ],
+    timeline: { ko: '대부분 정착하고 나서 시작해요 — 어떤 분은 첫 주에, 어떤 분은 한두 달 후에.', en: 'Most people start once they feel settled — some in the first week, others after a month or two.', fr: "La plupart commencent une fois installés — certains dès la première semaine, d'autres après un mois ou deux." },
+  },
+}
+
+// ─── TAB 8: Flights ───────────────────────────────────────────────────────────
+
+const FLIGHTS_TAB: TabContent = {
+  id: 'flights',
+  label: { ko: '항공권', en: 'Flights', fr: 'Vols' },
+  hero: {
+    title: { ko: '몬트리올행 항공권 예약하기', en: 'Booking your flight to Montréal', fr: 'Réserver votre vol pour Montréal' },
+    sub: {
+      ko: '몬트리올의 주요 국제공항은 몬트리올-트뤼도(YUL)예요. 서울(ICN)에서 직항이 있어요. 가격은 얼마나 일찍 예약하느냐에 따라 크게 달라져요.',
+      en: 'The main international airport serving Montréal is Montréal-Trudeau (YUL). Direct flights from Seoul (ICN) are available. Prices vary significantly depending on how far in advance you book.',
+      fr: "Le principal aéroport international de Montréal est Montréal-Trudeau (YUL). Des vols directs depuis Séoul (ICN) existent. Les prix varient beaucoup selon l'avance de réservation.",
+    },
+    when: { ko: '출발 60–90일 전 예약 시 가격 좋음', en: 'Book 60–90 days before departure for best prices', fr: 'Réservez 60–90 jours avant pour les meilleurs prix' },
+    cost: { ko: '$750–1,400 (ICN → YUL)', en: '$750–1,400 (ICN → YUL)', fr: '750–1 400$ (ICN → YUL)' },
+    time: { ko: '직항 약 14시간, 경유 18–22시간', en: '~14 hr direct, 18–22 hr with connection', fr: '~14h direct, 18–22h avec escale' },
+    canBeforeArrival: { ko: '네, 당연히 도착 전에', en: 'Yes — this is done before arriving', fr: "Oui — cela se fait avant d'arriver" },
+  },
+  options: [
+    {
+      name: 'Air Canada Direct ICN→YUL',
+      sub: { ko: '직항, 약 14시간', en: 'Non-stop, ~14 hours', fr: 'Sans escale, ~14h' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$800–1,400', en: '$800–1,400', fr: '800–1 400$' } },
+        { icon: 'plane', label: { ko: '직항, 경유 없음', en: 'Direct, no stopover', fr: 'Direct, sans escale' } },
+      ],
+      worksFor: [
+        { ko: '단일 비행을 선호하는 분', en: 'Prefer single flight', fr: 'Préfèrent un seul vol' },
+        { ko: '도착 일정이 빡빡한 분', en: 'Tight arrival schedule', fr: "Horaire d'arrivée serré" },
+        { ko: '짐이 많은 분', en: 'Carrying significant luggage', fr: 'Beaucoup de bagages' },
+      ],
+      worthKnowing: [
+        { ko: '경유 옵션보다 비쌈', en: 'Pricier than connecting options', fr: 'Plus cher que les vols avec escale' },
+        { ko: '좋은 좌석은 일찍 예약', en: 'Book early for best availability', fr: 'Réservez tôt pour la disponibilité' },
+      ],
+      recommendNote: {
+        ko: '직항이면 덜 피곤한 상태로 도착해서 긴 환승 없이 첫날을 시작할 수 있어요. 많은 분들에게는 절약되는 시간이 가격 차이만큼의 가치가 있어요.',
+        en: 'A direct flight means you land fresh and can start your first day without a long layover. For many, the time saved is worth the price difference.',
+        fr: "Un vol direct, c'est arriver reposé et commencer sa première journée sans longue escale. Pour beaucoup, le temps gagné vaut la différence de prix.",
+      },
+    },
+    {
+      name: 'Korean Air / Asiana',
+      sub: { ko: '경유, 18–22시간', en: 'Via stopover, 18–22 hours', fr: 'Avec escale, 18–22h' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$750–1,200', en: '$750–1,200', fr: '750–1 200$' } },
+        { icon: 'plane', label: { ko: '1회 경유', en: '1 stopover', fr: '1 escale' } },
+      ],
+      worksFor: [
+        { ko: '이동 시간에 유연한 분', en: 'Flexible on travel time', fr: 'Flexibles sur la durée' },
+        { ko: '마일리지 적립 회원', en: 'Frequent flyer holders', fr: 'Membres grands voyageurs' },
+        { ko: '예산을 아끼는 분', en: 'Budget-conscious', fr: 'Petit budget' },
+      ],
+      worthKnowing: [
+        { ko: '이동 시간이 늘어남', en: 'Adds travel time', fr: 'Allonge le trajet' },
+        { ko: '환승 시간이 빠듯할 수 있음', en: 'Connection timing can be tight', fr: 'Les correspondances peuvent être serrées' },
+      ],
+    },
+    {
+      name: 'Costco Travel (bundle)',
+      sub: { ko: '항공 + 호텔 패키지', en: 'Flight + hotel package', fr: 'Forfait vol + hôtel' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '시즌에 따라 다름', en: 'Varies by season', fr: 'Selon la saison' } },
+      ],
+      worksFor: [
+        { ko: '숙소와 항공을 함께 예약하는 분', en: 'Booking housing and flights together', fr: 'Réserver logement et vol ensemble' },
+        { ko: 'Costco 회원', en: 'Costco members', fr: 'Membres Costco' },
+      ],
+      worthKnowing: [
+        { ko: '일정 변경 유연성이 적음', en: 'Less flexibility to change plans', fr: 'Moins de flexibilité pour changer' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '옵션', en: 'Option', fr: 'Option' },
+      { ko: '가격대', en: 'Price range', fr: 'Fourchette' },
+      { ko: '경유', en: 'Stopover', fr: 'Escale' },
+      { ko: '소요 시간', en: 'Duration', fr: 'Durée' },
+      { ko: '마일리지', en: 'Loyalty points', fr: 'Points fidélité' },
+    ],
+    rows: [
+      { name: 'Air Canada Direct', cols: ['$800–1,400', false, '~14 hr', true] },
+      { name: 'Korean Air', cols: ['$800–1,200', '1 stop', '18–20 hr', true] },
+      { name: 'Asiana', cols: ['$750–1,100', '1 stop', '20–22 hr', true] },
+      { name: 'Costco bundle', cols: ['Varies', 'Varies', 'Varies', false] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2024년 8월', en: 'Student Aug 2024', fr: 'Étudiant août 2024' }, text: { ko: '8주 전에 Air Canada 직항을 예약했어요. 약 $1,100이었어요. 아침에 도착해서 하루 종일 일을 처리할 수 있었어요.', en: 'Booked Air Canada direct 8 weeks before. Around $1,100. Landed in the morning and had the whole day to sort things out.', fr: "Réservé Air Canada direct 8 semaines avant. ~1 100$. Arrivé le matin, toute la journée pour m'organiser." }, likes: 29 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 3월', en: 'Working Holiday Mar 2024', fr: 'PVT mars 2024' }, text: { ko: '밴쿠버 경유로 대한항공을 탔어요. 더 저렴했지만 총 20시간이었어요. 가격 차이만큼은 가치가 있었어요.', en: 'Took Korean Air with a connection in Vancouver. Cheaper but 20 hours total. Worth it for the price difference.', fr: "Korean Air avec escale à Vancouver. Moins cher mais 20h au total. Ça valait la différence de prix." }, likes: 17 },
+    { flag: '🇰🇷', person: { ko: '영주권', en: 'PR', fr: 'RP' }, text: { ko: '저는 항상 60–90일 전에 예약해요. 그보다 늦으면 가격이 많이 올라가요.', en: 'I always book 60–90 days out. Anything less and the prices jump a lot.', fr: "Je réserve toujours 60–90 jours à l'avance. Moins que ça, les prix grimpent beaucoup." }, likes: 12 },
+  ],
+  helpLinks: [
+    { label: { ko: 'Air Canada', en: 'Air Canada', fr: 'Air Canada' }, url: 'https://www.aircanada.com', domain: 'aircanada.com' },
+    { label: { ko: 'Korean Air', en: 'Korean Air', fr: 'Korean Air' }, url: 'https://www.koreanair.com', domain: 'koreanair.com' },
+    { label: { ko: 'Asiana Airlines', en: 'Asiana Airlines', fr: 'Asiana Airlines' }, url: 'https://flyasiana.com', domain: 'flyasiana.com' },
+    { label: { ko: 'Google Flights', en: 'Google Flights', fr: 'Google Flights' }, url: 'https://www.google.com/flights', domain: 'google.com/flights' },
+  ],
+  faq: [
+    { q: { ko: '직항이 추가 비용만큼의 가치가 있나요?', en: 'Is a direct flight worth the extra cost?', fr: 'Un vol direct vaut-il le coût supplémentaire?' }, a: { ko: '예산과 체력에 달려 있어요. 직항(~14시간)이면 덜 피곤하게 도착하고 첫날을 온전히 쓸 수 있어요. 경유는 $100–300 아끼지만 4–8시간이 늘어나요.', en: 'Depends on your budget and energy. A direct flight (~14 hr) means landing less tired and having a full first day. Connecting flights can save $100–300 but add 4–8 hours.', fr: "Selon le budget et l'énergie. Un vol direct (~14h), c'est arriver moins fatigué avec une journée complète. Avec escale, on économise 100–300$ mais on ajoute 4–8h." } },
+    { q: { ko: '언제 예약하는 게 가장 좋나요?', en: "What's the best time to book?", fr: 'Quel est le meilleur moment pour réserver?' }, a: { ko: '보통 출발 60–90일 전이 가장 저렴해요. 출발 2주 이내 예약은 거의 항상 훨씬 비싸요.', en: 'Prices are typically lowest 60–90 days before departure. Booking within 2 weeks of departure almost always costs significantly more.', fr: "Les prix sont généralement les plus bas 60–90 jours avant. Réserver à moins de 2 semaines coûte presque toujours bien plus cher." } },
+    { q: { ko: '한국 이민자들은 보통 어떤 항공사를 이용하나요?', en: 'What airline do most Korean newcomers use?', fr: 'Quelle compagnie utilisent la plupart des arrivants coréens?' }, a: { ko: 'Air Canada와 대한항공이 둘 다 흔해요. 대한항공은 한국어 서비스 경험이 좋아요. Air Canada는 ICN에서 직항 노선이 더 많아요.', en: 'Air Canada and Korean Air are both common. Korean Air has a strong Korean-language service experience. Air Canada has more direct routing from ICN.', fr: "Air Canada et Korean Air sont tous deux courants. Korean Air offre un excellent service en coréen. Air Canada a plus de vols directs depuis ICN." } },
+    { q: { ko: '도착 시 수하물이 분실되면 어떻게 하나요?', en: 'What should I do if my luggage is lost on arrival?', fr: 'Que faire si mes bagages sont perdus à l\'arrivée?' }, a: { ko: '공항을 나가기 전에 항공사 수하물 데스크에 신고하세요. 탑승권과 수하물 태그를 보관하세요. 대부분의 가방은 24–72시간 내에 배달돼요.', en: "Report to the airline's baggage desk before leaving the airport. Keep your boarding pass and baggage tags. Most bags are delivered within 24–72 hours.", fr: "Signalez-le au comptoir bagages de la compagnie avant de quitter l'aéroport. Gardez carte d'embarquement et étiquettes. La plupart des bagages sont livrés sous 24–72h." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '직항', en: 'Direct flight', fr: 'Vol direct' }, value: { ko: '$800–1,400', en: '$800–1,400', fr: '800–1 400$' } },
+      { label: { ko: '경유', en: 'Via connection', fr: 'Avec escale' }, value: { ko: '$750–1,200', en: '$750–1,200', fr: '750–1 200$' } },
+      { label: { ko: '미리 예약', en: 'Book ahead', fr: 'Réserver tôt' }, value: { ko: '60–90일', en: '60–90 days', fr: '60–90 jours' } },
+      { label: { ko: '비행 시간', en: 'Flight time', fr: 'Durée du vol' }, value: { ko: '14–22시간', en: '14–22 hr', fr: '14–22h' } },
+    ],
+    timeline: { ko: '출발 60–90일 전 예약을 많이 해요. 8월과 12월은 성수기예요.', en: 'Most people book 60–90 days out. August and December are peak season — book earlier then.', fr: "La plupart réservent 60–90 jours à l'avance. Août et décembre sont en haute saison." },
+  },
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
+
+const TABS: TabContent[] = [SIM_TAB, BANK_TAB, TRANSIT_TAB, HOUSING_TAB, SIN_TAB, LICENCE_TAB, LANGUAGE_TAB, FLIGHTS_TAB]
 
 export default function Arriving() {
   const { lang } = useLang()
@@ -1134,144 +1237,159 @@ export default function Arriving() {
     try { return new Set(JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '[]')) }
     catch { return new Set() }
   })
-  const [activeTab, setActiveTab] = useState<TabId>('sim')
+  const [activeTabId, setActiveTabId] = useState<string>('sim')
 
   useEffect(() => {
     try { localStorage.setItem(PROGRESS_KEY, JSON.stringify([...checked])) }
     catch {}
   }, [checked])
 
-  const pct = Math.round((checked.size / 8) * 100)
-  const tabData = TAB_DATA[activeTab]
-  const tabIds = Object.keys(TAB_LABELS) as TabId[]
+  const pct = Math.round((checked.size / TABS.length) * 100)
+  const activeTab = TABS.find(t => t.id === activeTabId) ?? TABS[0]
+
+  const sectionLabel = (ko: string, en: string, fr: string) =>
+    lang === 'ko' ? ko : lang === 'fr' ? fr : en
 
   return (
     <div className="flex min-h-screen">
-      <main className="flex-1 min-w-0 px-6 lg:px-8 pt-12 md:pt-[72px] lg:pt-24 pb-24">
-        <div className="max-w-[680px]">
+      <main className="flex-1 min-w-0 px-6 lg:px-10 pt-12 md:pt-[72px] lg:pt-24 pb-24">
+        <div className="max-w-[900px]">
 
           {/* Page header */}
-          <div className="mb-10">
-            <p className="t-eyebrow mb-3">
-              {lang === 'ko' ? '나의 여정 · 01' : lang === 'fr' ? 'Mon parcours · 01' : 'My Journey · 01'}
+          <div className="mb-8">
+            <p className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-3">
+              {sectionLabel('나의 여정 · 01', 'My Journey · 01', 'Mon parcours · 01')}
             </p>
             <div className="flex items-end justify-between gap-4 flex-wrap">
-              <h1 className="t-page">
-                {lang === 'ko' ? '첫 걸음' : lang === 'fr' ? 'Premiers Pas' : 'First Steps'}
+              <h1 className="text-[32px] font-light tracking-tight text-gray-900 leading-none">
+                {sectionLabel('첫 걸음', 'First Steps', 'Premiers Pas')}
               </h1>
-              <div className="text-right shrink-0 mb-1">
-                <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{checked.size} / 8</p>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  {lang === 'ko' ? '완료' : lang === 'fr' ? 'fait' : 'done'}
-                </p>
+              <div className="text-right shrink-0">
+                <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{checked.size} / {TABS.length}</p>
+                <p className="text-[11px] text-gray-400 mt-1">{sectionLabel('완료', 'done', 'fait')}</p>
               </div>
             </div>
-            <p className="text-[14px] text-gray-400 mt-3 leading-relaxed max-w-[520px]">
-              {lang === 'ko'
-                ? '몇 가지 준비하면 좋은 것들이 있어요. 첫날부터 다 해결할 필요는 없어요.'
-                : lang === 'fr'
-                ? "Quelques choses à régler à l'arrivée. Rien n'est urgent le premier jour."
-                : "A few things to sort out when you arrive. None of it needs to happen on day one."}
+            <p className="text-[13px] text-gray-400 mt-3 leading-relaxed max-w-[520px]">
+              {sectionLabel(
+                '몇 가지 준비하면 좋은 것들이 있어요. 첫날부터 다 해결할 필요는 없어요.',
+                'A few things to sort out when you arrive. None of it needs to happen on day one.',
+                "Quelques choses à régler à l'arrivée. Rien n'est urgent le premier jour.",
+              )}
             </p>
           </div>
 
           {/* Checklist chips */}
-          <div className="mb-8">
-            <p className="t-section mb-3">
-              {lang === 'ko' ? '체크리스트' : lang === 'fr' ? 'Liste' : 'Checklist'}
-            </p>
-            <div className="check-strip">
-              {tabIds.map(id => {
-                const done = checked.has(id)
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setChecked(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })}
-                    className={`check-chip${done ? ' done' : ''}`}
-                  >
-                    <span className={`w-3 h-3 rounded-sm border flex-shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-gray-900 border-gray-900' : 'border-gray-300'}`}>
-                      {done && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                    </span>
-                    {tri(TAB_LABELS[id], lang)}
-                  </button>
-                )
-              })}
-            </div>
+          <div className="check-strip mb-6">
+            {TABS.map(tab => {
+              const done = checked.has(tab.id)
+              return (
+                <button key={tab.id} onClick={() => setChecked(prev => { const n = new Set(prev); n.has(tab.id) ? n.delete(tab.id) : n.add(tab.id); return n })}
+                  className={`check-chip${done ? ' done' : ''}`}>
+                  <span className={`w-3 h-3 rounded-sm border flex-shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-gray-900 border-gray-900' : 'border-gray-300'}`}>
+                    {done && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </span>
+                  {tri(tab.label, lang)}
+                </button>
+              )
+            })}
           </div>
 
-          {/* Tab bar */}
-          <div className="flex gap-1 flex-wrap mb-1">
-            {tabIds.map(id => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
+          {/* Tab navigation */}
+          <div className="flex gap-1 flex-wrap mb-6">
+            {TABS.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTabId(tab.id)}
                 className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors whitespace-nowrap ${
-                  activeTab === id ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                {tri(TAB_LABELS[id], lang)}
+                  activeTabId === tab.id ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                }`}>
+                {tri(tab.label, lang)}
               </button>
             ))}
           </div>
 
-          {/* Active tab content */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden mt-2">
-            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60">
-              <p className="text-[13px] font-medium text-gray-700">{tri(TAB_QUESTIONS[activeTab], lang)}</p>
-            </div>
-            <div className="px-5 py-5">
-              <TopicIntro data={tabData.intro} lang={lang} />
-              <p className="t-section mb-3">
-                {lang === 'ko' ? '선택지' : lang === 'fr' ? 'Options' : 'Your options'}
-              </p>
-              <div className="flex flex-col gap-3">
-                {tabData.options.map((opt, i) => <OptionCard key={i} opt={opt} lang={lang} />)}
-              </div>
-              <CommunityNotes notes={tabData.notes} lang={lang} />
-            </div>
-          </div>
+          {/* Two-column layout: main content + sidebar */}
+          <div className="flex gap-8 items-start">
 
+            {/* Main content — all 7 sections */}
+            <div className="flex-1 min-w-0">
+
+              {/* 1. Hero */}
+              <Hero data={activeTab.hero} lang={lang} />
+
+              {/* 2. Options */}
+              <div className="mb-10">
+                <SectionTitle>{sectionLabel('추천 선택지', 'Recommended options', 'Options recommandées')}</SectionTitle>
+                <div className="flex flex-col gap-4">
+                  {activeTab.options.map((opt, i) => <OptionCard key={i} opt={opt} lang={lang} />)}
+                </div>
+              </div>
+
+              {/* 3. Comparison table */}
+              <div className="mb-10">
+                <SectionTitle>{sectionLabel('비교 표', 'Side-by-side comparison', 'Comparaison')}</SectionTitle>
+                <CompareTableComp table={activeTab.compareTable} lang={lang} />
+              </div>
+
+              {/* 4. Community */}
+              <div className="mb-10">
+                <SectionTitle>{sectionLabel('먼저 경험한 분들의 이야기', 'Community experiences', 'Témoignages')}</SectionTitle>
+                <CommunityNotes notes={activeTab.communityNotes} lang={lang} />
+              </div>
+
+              {/* 5. Helpful links */}
+              <div className="mb-10">
+                <SectionTitle>{sectionLabel('도움이 되는 링크', 'Helpful links', 'Liens utiles')}</SectionTitle>
+                <HelpLinks links={activeTab.helpLinks} lang={lang} />
+              </div>
+
+              {/* 6. FAQ */}
+              <div className="mb-10">
+                <SectionTitle>{sectionLabel('자주 묻는 질문', 'Frequently asked questions', 'Questions fréquentes')}</SectionTitle>
+                <FAQ items={activeTab.faq} lang={lang} />
+              </div>
+
+              {/* 7. Ask community */}
+              <div className="mb-4">
+                <SectionTitle>{sectionLabel('커뮤니티에 질문하기', 'Ask the community', 'Demander à la communauté')}</SectionTitle>
+                <AskCommunity lang={lang} />
+              </div>
+
+            </div>
+
+            {/* Sticky sidebar */}
+            <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
+              <div className="border border-gray-100 rounded-xl p-4 bg-white">
+                <div className="mb-4">
+                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-1">{sectionLabel('현재 주제', 'Current topic', 'Sujet actuel')}</p>
+                  <p className="text-[14px] font-medium text-gray-900">{tri(activeTab.label, lang)}</p>
+                </div>
+                <div className="border-t border-gray-100 pt-3 mb-4">
+                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('빠른 참고', 'Quick facts', 'Infos rapides')}</p>
+                  {activeTab.sidebar.quickFacts.map((f, i) => (
+                    <div key={i} className="flex justify-between items-baseline py-1.5 border-b border-gray-50 last:border-0">
+                      <span className="text-[11px] text-gray-500">{tri(f.label, lang)}</span>
+                      <span className="text-[11px] font-medium text-gray-900 ml-2 text-right">{tri(f.value, lang)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-gray-100 pt-3 mb-4">
+                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('일반적인 시기', 'Estimated timeline', 'Calendrier habituel')}</p>
+                  <p className="text-[11px] text-gray-500 leading-relaxed">{tri(activeTab.sidebar.timeline, lang)}</p>
+                </div>
+                <div className="border-t border-gray-100 pt-3">
+                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('전체 진행률', 'Overall progress', 'Progression')}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-500 tabular-nums">{pct}%</span>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+          </div>
         </div>
       </main>
-
-      {/* Right context panel */}
-      <aside className="hidden xl:block w-72 shrink-0 sticky top-0 h-screen overflow-y-auto border-l border-gray-100 px-5 py-8 bg-white">
-        <div className="ctx-section">
-          <span className="ctx-label">
-            {lang === 'ko' ? '전체 진행률' : lang === 'fr' ? 'Progression' : 'Overall progress'}
-          </span>
-          <div className="flex items-center gap-3 mt-1 mb-4">
-            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
-            </div>
-            <span className="text-[12px] font-medium text-gray-500 tabular-nums">{pct}%</span>
-          </div>
-        </div>
-        {/* Quick timeline */}
-        <div className="border-t border-gray-100 pt-4">
-          <span className="ctx-label">
-            {lang === 'ko' ? '일반적인 순서' : lang === 'fr' ? 'Ordre habituel' : 'Typical order'}
-          </span>
-          {[
-            { day: lang === 'ko' ? '도착 당일' : lang === 'fr' ? "Jour d'arrivée" : 'Arrival day', item: lang === 'ko' ? 'SIM 카드' : lang === 'fr' ? 'Carte SIM' : 'SIM card' },
-            { day: lang === 'ko' ? '2–3일째' : lang === 'fr' ? 'Jours 2–3' : 'Days 2–3', item: lang === 'ko' ? '은행 계좌' : lang === 'fr' ? 'Compte bancaire' : 'Bank account' },
-            { day: lang === 'ko' ? '첫 주' : lang === 'fr' ? '1re semaine' : 'First week', item: lang === 'ko' ? 'SIN 번호' : lang === 'fr' ? 'Numéro NAS' : 'SIN number' },
-            { day: lang === 'ko' ? '첫 달' : lang === 'fr' ? '1er mois' : 'First month', item: lang === 'ko' ? '면허 교환' : lang === 'fr' ? 'Échange permis' : 'Licence exchange' },
-          ].map((row, i) => (
-            <div key={i} className="ctx-row">
-              <span>{row.day}</span>
-              <span className="ctx-val">{row.item}</span>
-            </div>
-          ))}
-          <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
-            {lang === 'ko'
-              ? '이건 많은 분들의 일반적인 순서예요. 본인 상황에 맞게 조정하세요.'
-              : lang === 'fr'
-              ? "C'est l'ordre habituel. Adaptez selon votre situation."
-              : "This is a common order — adjust it to your own situation."}
-          </p>
-        </div>
-      </aside>
     </div>
   )
 }
