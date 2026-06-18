@@ -2162,7 +2162,15 @@ function ApplicationsAdmin() {
   useEffect(() => { load() }, [load])
 
   // Sync notes field when selection changes
-  useEffect(() => { setNotes(selected?.admin_notes ?? '') }, [selected?.id])
+  useEffect(() => {
+    setNotes(selected?.admin_notes ?? '')
+    if (selected && import.meta.env.DEV) {
+      console.group(`[Admin] Selected application: ${selected.name}`)
+      console.log('All fields:', selected)
+      console.log('All keys:', Object.keys(selected as object))
+      console.groupEnd()
+    }
+  }, [selected?.id])
 
   async function updateStatus(id: string, status: ProgramApplicationStatus) {
     setApps(a => a.map(x => x.id === id ? { ...x, status } : x))
@@ -2208,48 +2216,91 @@ function ApplicationsAdmin() {
 
   type ProfileRow = [string, string | null | undefined, 'normal' | 'highlight']
 
+  // Keys explicitly rendered (used to compute the catch-all "Additional Answers" section)
+  const RENDERED_KEYS = new Set([
+    'id', 'created_at', 'updated_at', 'status', 'admin_notes',
+    'name', 'preferred_name', 'program_id', 'program_name',
+    'email', 'phone', 'preferred_contact', 'instagram', 'languages_spoken',
+    'time_in_montreal', 'current_stage', 'current_focus',
+    'korean_level', 'previous_korean_exp', 'interest_in_korean',
+    'first_korean_goal', 'six_month_goal', 'reason_for_joining',
+    'biggest_challenge', 'preferred_environment',
+    'how_found_hakkyo', 'what_interested',
+    'definition_great_class', 'questions_for_hakkyo',
+  ])
+
+  // Human-readable labels for any DB key not explicitly mapped above
+  const KEY_LABEL: Record<string, string> = {
+    nationality: 'Nationality',
+    current_location: 'Current location',
+    speaking_difficulties: 'Speaking difficulties',
+    language_goals: 'Language goals',
+    availability: 'Availability',
+    additional_notes: 'Additional notes',
+    learning_purpose: 'Learning purpose',
+    interests: 'Interests',
+    selected_label: 'Selected program label',
+    total_price: 'Total price',
+    application_type: 'Application type',
+    city: 'City',
+    language_level: 'Language level',
+    referral_source: 'Referral source',
+    message: 'Message',
+    session_id: 'Session ID',
+    track_id: 'Track ID',
+  }
+
   function buildProfileSections(pl: ProgLang): { label: string; rows: (a: ProgramApplication) => ProfileRow[] }[] {
     const langLabel = PROG_LANG_LABEL[pl]
     return [
       {
+        label: 'Program',
+        rows: a => [
+          ['Program',         a.program_name?.includes(':') ? a.program_name.split(':').slice(1).join(':').trim() : (a.program_name ?? null), 'highlight'],
+          ['Program ID',      a.program_id,    'normal'],
+          ['Applied',         a.created_at ? a.created_at.replace('T', ' ').slice(0, 16) : null, 'normal'],
+        ],
+      },
+      {
         label: 'Basic Information',
         rows: a => [
-          ['Email',        a.email,              'normal'],
-          ['Phone',        a.phone,              'normal'],
-          ['Contact via',  a.preferred_contact,  'normal'],
-          ['Instagram',    a.instagram,          'normal'],
-          ['Languages',    a.languages_spoken,   'normal'],
+          ['Email',           a.email,              'normal'],
+          ['Phone',           a.phone,              'normal'],
+          ['Contact via',     a.preferred_contact,  'normal'],
+          ['Instagram',       a.instagram,          'normal'],
+          ['Languages spoken',a.languages_spoken,   'normal'],
+          ['Preferred name',  a.preferred_name,     'normal'],
         ],
       },
       {
         label: 'Montréal Journey',
         rows: a => [
           ['Time in Montréal',     a.time_in_montreal, 'highlight'],
-          ['Stage',                a.current_stage,    'normal'],
+          ['Current stage',        a.current_stage,    'normal'],
           ['Currently focused on', a.current_focus,    'highlight'],
         ],
       },
       {
         label: `${langLabel} Journey`,
         rows: a => [
-          [`${langLabel} level`, a.korean_level ? shortLevel(a.korean_level) : null, 'highlight'],
-          ['Experience',         a.previous_korean_exp,                               'normal'],
-          [`Why ${langLabel}?`,  a.interest_in_korean,                                'normal'],
+          [`${langLabel} level`, a.korean_level ? `${shortLevel(a.korean_level)} — ${a.korean_level}` : null, 'highlight'],
+          ['Previous experience', a.previous_korean_exp, 'normal'],
+          [`Why ${langLabel}?`,   a.interest_in_korean,  'normal'],
         ],
       },
       {
         label: 'Goals',
         rows: a => [
-          [`First thing in ${langLabel}`, a.first_korean_goal,  'normal'],
-          ['In 6 months',                 a.six_month_goal,     'highlight'],
-          ['Why joining',                 a.reason_for_joining, 'highlight'],
+          [`First goal in ${langLabel}`, a.first_korean_goal,  'normal'],
+          ['Goal in 6 months',           a.six_month_goal,     'highlight'],
+          ['Why joining',                a.reason_for_joining, 'highlight'],
         ],
       },
       {
         label: 'Learning Style',
         rows: a => [
           ['Biggest challenge', a.biggest_challenge,     'normal'],
-          ['Environment',       a.preferred_environment, 'normal'],
+          ['Preferred environment', a.preferred_environment, 'normal'],
         ],
       },
       {
@@ -2262,11 +2313,23 @@ function ApplicationsAdmin() {
       {
         label: 'One Last Question',
         rows: a => [
-          ['A great class',    a.definition_great_class, 'normal'],
-          ['Questions for us', a.questions_for_hakkyo,   'normal'],
+          ['What makes a great class', a.definition_great_class, 'normal'],
+          ['Questions for us',         a.questions_for_hakkyo,   'normal'],
         ],
       },
     ]
+  }
+
+  // Catch-all: render any DB field not explicitly mapped above
+  function buildExtraRows(a: ProgramApplication): ProfileRow[] {
+    const raw = a as unknown as Record<string, unknown>
+    return Object.entries(raw)
+      .filter(([k, v]) => !RENDERED_KEYS.has(k) && v != null && String(v).trim() !== '')
+      .map(([k, v]) => {
+        const label = KEY_LABEL[k] ?? k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        return [label, String(v), 'normal'] as ProfileRow
+      })
+      .sort(([a], [b]) => a.localeCompare(b))
   }
 
   return (
@@ -2363,7 +2426,19 @@ function ApplicationsAdmin() {
                     )}
                   </h3>
                   {selected.program_name && (
-                    <p className="text-[11px] text-gray-400 mt-0.5 tracking-wide">{selected.program_name}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5 font-medium">
+                      {selected.program_name.includes(':')
+                        ? selected.program_name.split(':').slice(1).join(':').trim()
+                        : selected.program_name}
+                    </p>
+                  )}
+                  {!!(selected as unknown as Record<string, unknown>)['selected_label'] && (
+                    <p className="text-[11px] text-gray-400 mt-0.5">{String((selected as unknown as Record<string, unknown>)['selected_label'])}</p>
+                  )}
+                  {(selected as unknown as Record<string, unknown>)['total_price'] != null && (
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      ${String((selected as unknown as Record<string, unknown>)['total_price'])}
+                    </p>
                   )}
                 </div>
                 <select
@@ -2432,10 +2507,10 @@ function ApplicationsAdmin() {
                     <p className="text-[9px] font-bold tracking-[0.16em] uppercase text-gray-300 mb-3">{sec.label}</p>
                     <div className="space-y-3">
                       {rows.map(([k, v, weight]) => (
-                        <div key={k} className="grid grid-cols-[130px_1fr] gap-3">
+                        <div key={k} className="grid grid-cols-[160px_1fr] gap-3">
                           <span className="text-[11px] text-gray-400 pt-0.5 leading-snug shrink-0">{k}</span>
                           <span className={[
-                            'leading-relaxed whitespace-pre-wrap',
+                            'leading-relaxed whitespace-pre-wrap break-words',
                             weight === 'highlight' ? 'text-[13px] text-gray-800 font-medium' : 'text-[13px] text-gray-600',
                           ].join(' ')}>
                             {v}
@@ -2446,6 +2521,25 @@ function ApplicationsAdmin() {
                   </div>
                 )
               })}
+
+              {/* Catch-all: any DB field not explicitly mapped */}
+              {(() => {
+                const extra = buildExtraRows(selected)
+                if (extra.length === 0) return null
+                return (
+                  <div>
+                    <p className="text-[9px] font-bold tracking-[0.16em] uppercase text-gray-300 mb-3">Additional Answers</p>
+                    <div className="space-y-3">
+                      {extra.map(([k, v]) => (
+                        <div key={k} className="grid grid-cols-[160px_1fr] gap-3">
+                          <span className="text-[11px] text-gray-400 pt-0.5 leading-snug shrink-0">{k}</span>
+                          <span className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap break-words">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* Admin notes */}
               <div className="pt-4 border-t border-gray-100">
