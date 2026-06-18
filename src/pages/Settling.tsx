@@ -1153,15 +1153,13 @@ export default function Settling() {
 
   return (
     <div className="w-full min-h-screen bg-white pb-24">
-      <div className="max-w-[720px] mx-auto px-4 space-y-10">
+      <div className="max-w-[960px] mx-auto px-6 pt-12 md:pt-[72px] lg:pt-24 space-y-0">
 
         {/* ── HEADER ── */}
-        <section>
-          <div className="mb-1">
-            <h1 className="t-page text-gray-900">
-              {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
-            </h1>
-          </div>
+        <section className="mb-14">
+          <h1 className="t-page text-gray-900 mb-4">
+            {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
+          </h1>
           <p style={{ fontSize: '14px', lineHeight: '1.65' }} className="text-gray-500 max-w-[500px]">
             {t(
               '예산 설정부터 계약, 입주 후 생활까지. 몬트리올에서 집을 구하는 과정을 단계별로 안내합니다.',
@@ -1172,16 +1170,16 @@ export default function Settling() {
         </section>
 
         {/* ── Narrative Anchor ── */}
-        <p style={{ fontSize: '15px', lineHeight: '1.8' }} className="text-gray-400 italic">
+        <p style={{ fontSize: '15px', lineHeight: '1.8' }} className="text-gray-400 italic mb-14">
           {t(
             '동네를 고른다는 건 생활 방식을 고른다는 것과 같아요.',
             'Choosing a neighbourhood is often choosing a way of life.',
-            'Choisir un quartier, c’est souvent choisir un mode de vie.',
+            "Choisir un quartier, c'est souvent choisir un mode de vie.",
           )}
         </p>
 
         {/* ── CHECKLIST ── */}
-        <section>
+        <section className="mb-16">
           <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
             {pct < 100 ? (
               <>
@@ -1266,7 +1264,7 @@ export default function Settling() {
         </section>
 
         {/* ── ESSENTIAL TOOLS ── */}
-        <section ref={toolsRef}>
+        <section ref={toolsRef} className="mb-16">
           <SectionLabel>{t('필수 도구', 'Essential Tools', 'Outils essentiels')}</SectionLabel>
           <p className="text-[13px] text-gray-500 mb-4">
             {t('정착 과정에서 필요한 정보를 단계별로 정리했습니다.', 'Everything you need, organised by step.', 'Toutes les informations dont vous avez besoin, étape par étape.')}
@@ -1294,10 +1292,12 @@ export default function Settling() {
         </section>
 
         {/* ── NEIGHBOURHOOD MAP ── */}
-        <NeighbourhoodMapSection lang={lang} t={t} />
+        <div className="mb-16">
+          <NeighbourhoodMapSection lang={lang} t={t} />
+        </div>
 
         {/* ── HAKKYO CITY ── */}
-        <section>
+        <section className="mb-16">
           <SectionLabel>HAKKYO CITY</SectionLabel>
           <p className="text-[13px] text-gray-500 mb-4">
             {t('집을 구하는 일을 통해 몬트리올이 어떻게 작동하는지 읽어봅니다.', 'Stories that help explain how Montréal works.', 'Des histoires qui aident à comprendre Montréal.')}

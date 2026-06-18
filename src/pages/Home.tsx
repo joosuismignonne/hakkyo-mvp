@@ -62,7 +62,7 @@ function Hero({ lang }: { lang: Lang }) {
   }, [])
 
   return (
-    <section className="pt-8 pb-16 md:pt-12 md:pb-24 animate-fade-up">
+    <section className="pt-12 pb-16 md:pt-[72px] md:pb-24 lg:pt-24 animate-fade-up">
       {/* Date eyebrow */}
       <p className="t-eyebrow mb-7 text-gray-400">
         {todayFull(lang)}
@@ -539,7 +539,7 @@ export default function Home() {
   return (
     <>
       <div className="w-full flex justify-center px-6">
-        <div className="w-full max-w-[880px]">
+        <div className="w-full max-w-[1040px]">
 
           {/* 1 · Hero */}
           <Hero lang={lang} />

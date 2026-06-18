@@ -1784,12 +1784,12 @@ export default function Arriving() {
 
   return (
     <div className="w-full min-h-screen bg-white pb-24">
-      <div className="max-w-[720px] mx-auto px-4 py-8">
+      <div className="max-w-[960px] mx-auto px-6 pt-12 md:pt-[72px] lg:pt-24">
 
         {/* ── Header ── */}
-        <div className="pt-6 pb-10 md:pt-8 md:pb-14">
-          <p className="t-eyebrow text-gray-400 mb-5">{t('나의 여정', 'My Journey', 'Mon parcours')}</p>
-          <h1 className="t-page text-gray-900 mb-5">
+        <div className="mb-14">
+          <p className="t-eyebrow text-gray-400 mb-3">{t('나의 여정', 'My Journey', 'Mon parcours')}</p>
+          <h1 className="t-page text-gray-900 mb-4">
             {t('첫 걸음', 'First Steps', 'Premiers Pas')}
           </h1>
           <p style={{ fontSize: '14px', lineHeight: '1.65' }} className="text-gray-500 max-w-[500px]">
@@ -1802,7 +1802,7 @@ export default function Arriving() {
         </div>
 
         {/* ── Narrative Anchor ── */}
-        <p style={{ fontSize: '15px', lineHeight: '1.8' }} className="text-gray-400 italic mb-10">
+        <p style={{ fontSize: '15px', lineHeight: '1.8' }} className="text-gray-400 italic mb-14">
           {t(
             '아직도 그 날을 기억하는 사람들이 있어요. 처음 항공권을 예약한 날.',
             'Many people still remember the day they booked their flight.',
