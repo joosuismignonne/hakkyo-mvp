@@ -5,7 +5,7 @@
  * i18n:   every string through t() or tri(). Zero hardcoded visible English.
  * Future: CHECKLIST milestone:true flags feed "My Montréal Journey". Keep them.
  */
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 
@@ -14,114 +14,6 @@ import { useLang } from '../context/LangContext'
 type Tri = { ko: string; en: string; fr: string }
 function tri(f: Tri, lang: string): string {
   return lang === 'ko' ? f.ko : lang === 'fr' ? f.fr : f.en
-}
-
-// ─── Tab icons — monochrome SVG, 14×14 ───────────────────────────────────────
-
-function IcoFlight() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 16.5H2"/><path d="M2 10l4.5 1.5L9 5l2 2-2 5 4.5 1.5L17 7l2.5 1-3 7H22"/>
-    </svg>
-  )
-}
-function IcoSIM() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/><path d="M8 6h2v2H8zM14 6h2v2h-2zM8 10h8"/>
-    </svg>
-  )
-}
-function IcoBank() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 22h18M3 10h18M5 6l7-3 7 3M4 10v11M8 10v11M16 10v11M20 10v11"/>
-    </svg>
-  )
-}
-function IcoTransit() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="6" y="4" width="12" height="14" rx="2"/><path d="M6 8h12M6 12h12M9 18l-2 3M15 18l2 3M9 4V2M15 4V2"/>
-    </svg>
-  )
-}
-function IcoBed() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 22v-8M3 14a4 4 0 014-4h10a4 4 0 014 4v8"/><path d="M3 8V5a1 1 0 011-1h16a1 1 0 011 1v9"/>
-      <path d="M3 8h18"/>
-    </svg>
-  )
-}
-function IcoID() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="7" cy="15" r="1.5"/><path d="M12 14h5M12 17h3"/>
-    </svg>
-  )
-}
-function IcoCar() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><path d="M5 17a2 2 0 004 0M15 17a2 2 0 004 0"/>
-      <path d="M5 8h14"/>
-    </svg>
-  )
-}
-function IcoLang() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-    </svg>
-  )
-}
-
-// Transport-specific icons (slightly larger, in cards)
-function IcoMetro() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="6" y="4" width="12" height="14" rx="2"/><path d="M6 8h12M6 12h12M9 18l-2 3M15 18l2 3"/>
-    </svg>
-  )
-}
-function IcoPhone() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>
-    </svg>
-  )
-}
-function IcoBus() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 11V17a2 2 0 002 2h14a2 2 0 002-2v-6M3 11V8a5 5 0 0118 0v3M3 11h18"/>
-      <circle cx="7" cy="19" r="1"/><circle cx="17" cy="19" r="1"/>
-    </svg>
-  )
-}
-function IcoBike() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M12 17l-3-6h6l2 3-5 3zM9 11l3-6M12 5h4"/>
-    </svg>
-  )
-}
-function IcoCarLg() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><path d="M5 17a2 2 0 004 0M15 17a2 2 0 004 0"/><path d="M5 8h14"/>
-    </svg>
-  )
-}
-
-type TransportIconKey = 'metro' | 'phone' | 'bus' | 'bike' | 'car'
-function TransportIcon({ k }: { k: TransportIconKey }) {
-  if (k === 'metro') return <IcoMetro />
-  if (k === 'phone') return <IcoPhone />
-  if (k === 'bus')   return <IcoBus />
-  if (k === 'bike')  return <IcoBike />
-  return <IcoCarLg />
 }
 
 // ─── Progress checklist ───────────────────────────────────────────────────────
@@ -188,22 +80,7 @@ function getJourneyMessage(pct: number, lang: string): string {
   return tri(row, lang)
 }
 
-// ─── Milestone messages (shown briefly on item check) ────────────────────────
-
-const MILESTONE_MESSAGES: Record<string, Tri> = {
-  flight:   { ko: '진짜 가게 되었네요.',                             en: "It's really happening.",                        fr: 'Ça devient réel.'                                    },
-  stay:     { ko: '첫 번째 집이 생겼습니다.',                        en: 'Your first home is waiting.',                   fr: 'Votre premier chez-vous vous attend.'                },
-  sim:      { ko: '이제 현지 번호를 사용할 준비가 되었습니다.',        en: 'You have a local number now.',                  fr: 'Vous avez maintenant un numéro local.'               },
-  bank:     { ko: '몬트리올에서의 금융 생활이 시작됩니다.',            en: 'Your financial life in Montréal begins.',       fr: 'Votre vie financière à Montréal commence.'          },
-  sin:      { ko: '이제 캐나다에서 일할 준비가 되었습니다.',           en: "You're set to work in Canada.",                 fr: 'Vous êtes prêt à travailler au Canada.'              },
-  opus:     { ko: '도시가 당신의 것이 됩니다.',                       en: 'The city is yours to explore.',                 fr: "La ville s'ouvre à vous."                           },
-  licence:  { ko: '몬트리올 밖으로도 자유롭게 나갈 수 있습니다.',     en: 'The city and beyond — you\'re free to move.',  fr: 'La ville et au-delà — vous êtes libre de circuler.' },
-  grocery:  { ko: '여기서의 일상이 시작됩니다.',                      en: 'Daily life here starts with this.',             fr: 'La vie quotidienne commence ici.'                    },
-  exchange: { ko: '언어는 도시로 들어가는 문입니다.',                 en: 'Language is the door into the city.',           fr: "La langue est la porte d'entrée."                   },
-  friend:   { ko: '도시는 결국 사람으로 기억됩니다.',                 en: 'A city is remembered through its people.',      fr: 'Une ville se souvient à travers ses gens.'           },
-}
-
-// ─── Tool data ────────────────────────────────────────────────────────────────
+// ─── SIM providers ────────────────────────────────────────────────────────────
 
 interface SimProvider {
   name: string; price: string; esim: boolean; contract: boolean
@@ -366,6 +243,8 @@ const BANKS: Bank[] = [
   },
 ]
 
+type TransportIconKey = 'metro' | 'phone' | 'bus' | 'bike' | 'car'
+
 interface TransportItem {
   name: Tri; iconKey: TransportIconKey
   what: Tri; where: Tri; cost: Tri; hakkyoNote: Tri; url: string
@@ -493,1251 +372,439 @@ const STAY_OPTIONS: StayOption[] = [
   },
 ]
 
-// ─── SIN Number data ──────────────────────────────────────────────────────────
+// ─── Rating helpers ───────────────────────────────────────────────────────────
 
-const SIN_DATA = {
-  what: {
-    ko: '캐나다에서 일하고 정부 서비스를 이용하기 위해 필요한 9자리 고유 번호입니다.',
-    en: 'A 9-digit number required to work in Canada and access federal government services.',
-    fr: 'Un numéro à 9 chiffres requis pour travailler au Canada et accéder aux services gouvernementaux fédéraux.',
-  },
-  why: {
-    ko: '고용주는 고용 전에 SIN을 요구합니다. 세금 신고, EI, CPP 등 모든 정부 혜택에도 필요합니다.',
-    en: 'Employers require it before hiring you. Also needed for tax filing, EI, CPP, and all federal benefits.',
-    fr: "Les employeurs l'exigent avant l'embauche. Également nécessaire pour les déclarations d'impôts et les prestations fédérales.",
-  },
-  where: {
-    ko: '온라인 신청 (IRCC 포털) 또는 Service Canada 센터 직접 방문.',
-    en: 'Apply online via the IRCC portal, or visit a Service Canada Centre in person.',
-    fr: 'Faites une demande en ligne via le portail IRCC, ou visitez un Centre Service Canada.',
-  },
-  prepare: [
-    { ko: '여권', en: 'Passport', fr: 'Passeport' },
-    { ko: '유효한 취업 또는 학생 비자', en: 'Valid work or study permit', fr: "Permis de travail ou d'études valide" },
-    { ko: '온라인 신청 시: IRCC 계정 필요', en: 'For online: IRCC portal account', fr: 'Pour en ligne : compte du portail IRCC' },
-  ] as Tri[],
-  hakkyoNote: {
-    ko: 'SIN은 도착 후 최대한 빨리 신청하세요. 고용주는 고용 전에 이 번호를 요구합니다. 온라인 신청이 가장 빠릅니다.',
-    en: 'Apply for your SIN as soon as possible after arriving. Employers need it before you start work. Online is fastest.',
-    fr: "Faites une demande de NAS dès que possible après votre arrivée. Les employeurs en ont besoin avant que vous commenciez à travailler. La demande en ligne est la plus rapide.",
-  },
-  url: 'https://www.canada.ca/en/employment-social-development/services/sin.html',
+type RatingKey = 'top' | 'good' | 'ok'
+const RATING_LABELS: Record<RatingKey, string> = { top: 'Top pick', good: 'Good', ok: 'Situational' }
+function RatingBadge({ r }: { r: RatingKey }) {
+  const cls = {
+    top:  'text-[10px] font-bold px-2 py-0.5 rounded bg-gray-900 text-white',
+    good: 'text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600',
+    ok:   'text-[10px] font-bold px-2 py-0.5 rounded bg-yellow-50 text-yellow-800',
+  }[r]
+  return <span className={cls}>{RATING_LABELS[r]}</span>
 }
 
-// ─── Québec Driver's Licence data ─────────────────────────────────────────────
+// ─── SIM panel ───────────────────────────────────────────────────────────────
 
-const LICENCE_DATA = {
-  what: {
-    ko: '퀘벡에서 운전하거나 일상에서 신분증으로 사용하기 위한 주 운전 면허증입니다.',
-    en: "A provincial licence for driving, renting a car, or using as ID in daily Québec life.",
-    fr: 'Un permis provincial pour conduire, louer une voiture ou l\'utiliser comme pièce d\'identité au Québec.',
-  },
-  why: {
-    ko: '퀘벡에서 운전하거나 차를 빌리려면 필요합니다. 은행, 임대 계약 등에서 신분 확인에도 사용됩니다.',
-    en: 'Required if you plan to drive or rent a car in Québec. Also accepted as ID for banking and lease agreements.',
-    fr: "Requis si vous prévoyez de conduire ou de louer une voiture au Québec. Également accepté comme pièce d'identité.",
-  },
-  where: {
-    ko: 'SAAQ (퀘벡 자동차 보험 공사) — 예약 방문 필요.',
-    en: 'SAAQ (Société de l\'assurance automobile du Québec) — appointment required.',
-    fr: 'SAAQ (Société de l\'assurance automobile du Québec) — rendez-vous requis.',
-  },
-  prepare: [
-    { ko: '현재 보유 중인 외국 운전 면허증', en: 'Your current foreign driving licence', fr: 'Votre permis de conduire étranger actuel' },
-    { ko: '여권 또는 퀘벡 주소 증명',        en: 'Passport or proof of Québec address', fr: "Passeport ou preuve d'adresse au Québec" },
-    { ko: '일부 국가는 면허 교환 가능 — 해당 국가 확인 필요', en: 'Some licences can be exchanged — check your country', fr: 'Certains permis peuvent être échangés — vérifiez votre pays' },
-  ] as Tri[],
-  hakkyoNote: {
-    ko: '퀘벡에서 운전할 계획이 없더라도 현지 면허증은 유용한 신분증이 됩니다. 국가에 따라 면허 교환이 가능할 수 있으니 SAAQ에서 확인하세요.',
-    en: "Even if you don't plan to drive, a Québec licence is useful as local ID. Some countries have licence exchange agreements with Québec — check with SAAQ.",
-    fr: "Même si vous ne prévoyez pas de conduire, un permis du Québec est utile comme pièce d'identité locale. Certains pays ont des accords d'échange de permis.",
-  },
-  url: 'https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence',
-}
-
-// ─── Community tips (static; future: pull from Supabase by tag) ──────────────
-
-interface CommunityTip { author: string; text: string }
-const COMMUNITY_TIPS: Record<string, CommunityTip[]> = {
-  flights: [
-    { author: 'Sora',    text: '항공권 예약 버튼을 누르고 10분 동안 화면만 바라봤어요. 정말 가는 건가 싶더라고요.' },
-    { author: 'Min',     text: '경유 시간이 길어도 괜찮았어요. 도착한 순간 모든 게 시작됐으니까요.' },
-  ],
-  sim: [
-    { author: 'Jiyeon',  text: '비행기 타기 전에 Fizz eSIM 미리 설치했어요. 747 버스 탈 때 이미 데이터 연결돼 있었고요.' },
-    { author: 'Taeyang', text: '처음엔 Public Mobile로 시작했다가 한 달 뒤에 Fizz로 갔어요. 가격 차이가 별로 없어서 그냥 Fizz로 시작할 걸 싶었어요.' },
-  ],
-  banking: [
-    { author: 'Haein',   text: 'TD 학생 계좌 스터디 퍼밋이랑 여권만 들고 갔는데 20분 만에 됐어요. 신용 기록 없어도 괜찮았어요.' },
-    { author: 'Joon',    text: 'TD 체킹 계좌 만들고 Scotiabank StartRight 카드도 같이 만들었어요. 한국 크레딧 기록이 없어서 캐나다 크레딧부터 쌓아야 했거든요.' },
-  ],
-  transport: [
-    { author: 'Mirae',   text: '공항에서 747 버스 타고 다운타운까지 왔어요. 50분 걸리는데 카드 대면 바로 됐어요.' },
-    { author: 'Sungmin', text: '플라토에 살면 BIXI 정말 유용해요. 지하철보다 짧은 거리에선 훨씬 빨라요.' },
-  ],
-  stay: [
-    { author: 'Yeonsu',  text: '처음 3주 Airbnb 잡고 그 사이에 Kijiji로 아파트 찾았어요. 생각보다 빨리 구해졌어요.' },
-    { author: 'Clara',   text: 'Facebook Marketplace에서 Mile End 퍼니쉬드 서블렛 봤어요. 프랑스어로 메시지 보냈는데 기본적인 수준이어도 반응이 더 좋았어요.' },
-  ],
-  sin: [
-    { author: 'Jiho',    text: 'Service Canada에 직접 갔어요. 줄이 좀 길었지만 서류만 다 들고 가면 그 자리에서 바로 받아요.' },
-    { author: 'Eunji',   text: '온라인으로 신청하면 우편으로 오는데 2주 정도 걸렸어요. 급하지 않으면 온라인이 편해요.' },
-  ],
-  licence: [
-    { author: 'Minjae',  text: 'SAAQ 가기 전에 예약 꼭 하세요. 안 하면 몇 시간 기다릴 수 있어요.' },
-    { author: 'Soyeon',  text: '한국 면허증 공증 번역이 필요해요. 미리 준비해 가면 한 번에 끝나요.' },
-  ],
-  language: [
-    { author: 'Jiyeon',  text: '2주 차에 언어 교환 나갔어요. 프랑스어 진짜 못 했는데 아무도 신경 안 썼어요. 그냥 말하면 되더라고요.' },
-    { author: 'Minjun',  text: '카페에서 프랑스어로 주문해봤어요. 엉망이었는데도 점원이 같이 웃어줬어요. 그때부터 덜 무서웠어요.' },
-  ],
-}
-
-// ─── Badge colour helper ──────────────────────────────────────────────────────
-
-function badgeStyle(color: string) {
-  const map: Record<string, { bg: string; color: string }> = {
-    blue:   { bg: '#EFF6FF', color: '#1D4ED8' },
-    yellow: { bg: 'var(--y-l)', color: '#92400E' },
-    red:    { bg: '#FEF2F2', color: '#B91C1C' },
-    green:  { bg: '#F0FDF4', color: '#15803D' },
-    gray:   { bg: '#F3F4F6', color: '#374151' },
+function SimPanel({ lang }: { lang: string }) {
+  const ratingOf = (name: string): RatingKey => {
+    if (name === 'Fizz') return 'top'
+    if (name === 'Public Mobile' || name === 'Virgin Plus') return 'good'
+    return 'ok'
   }
-  return map[color] ?? map.gray
-}
-
-// ─── Shared micro-components ──────────────────────────────────────────────────
-
-function ExtLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
-  return <a href={href} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>
-}
-
-function HakkyoNote({ text }: { text: string }) {
-  return (
-    <div className="flex gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--y-l)' }}>
-      <span className="text-[12px] shrink-0 mt-0.5 font-bold" style={{ color: 'var(--y-h)' }}>—</span>
-      <p className="text-[12px] text-amber-900 leading-snug font-medium">{text}</p>
-    </div>
-  )
-}
-
-function PrepareList({ items, lang }: { items: Tri[]; lang: string }) {
-  return (
-    <ul className="space-y-1">
-      {items.map((item, i) => (
-        <li key={i} className="flex items-start gap-2 text-[12px] text-gray-600">
-          <span className="shrink-0 mt-1 w-1 h-1 rounded-full bg-gray-400 inline-block" />
-          {tri(item, lang)}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function CommunityExperience({ section }: { section: string }) {
-  const { t } = useLang()
-  const tips = COMMUNITY_TIPS[section] ?? []
-  if (tips.length === 0) return null
-  return (
-    <div className="border-t border-gray-100 pt-4 space-y-2.5">
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
-        {t('커뮤니티 경험', 'Community Experience', 'Expérience communautaire')}
-      </p>
-      {tips.map((tip, i) => (
-        <div key={i} className="flex gap-2.5">
-          <div
-            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
-            style={{ background: 'var(--y)', color: '#111' }}
-          >
-            {tip.author[0]}
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-gray-700 mb-0.5">{tip.author}</p>
-            <p className="text-[12px] text-gray-500 leading-[1.7]">{tip.text}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function CommunityCTA({ to = '/board' }: { to?: string }) {
-  const { t } = useLang()
-  return (
-    <div className="border-t border-gray-100 pt-4">
-      <p className="text-[13px] font-semibold text-gray-800 mb-1">
-        {t('비슷한 고민을 했던 사람들에게 물어보세요.', 'Ask people who went through the same thing.', 'Demandez à ceux qui sont passés par là.')}
-      </p>
-      <p className="text-[12px] text-gray-400 mb-3">
-        {t('이미 몬트리올에 살고 있는 사람들에게 직접 물어볼 수 있습니다.', 'You can ask people who already live in Montréal.', 'Vous pouvez demander à des personnes qui vivent déjà à Montréal.')}
-      </p>
-      <Link
-        to={to}
-        className="inline-flex items-center px-4 py-2 rounded-lg text-[12px] font-semibold border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-      >
-        {t('커뮤니티에 물어보기 →', 'Ask the community →', 'Demander à la communauté →')}
-      </Link>
-    </div>
-  )
-}
-
-// ─── Action link helpers ──────────────────────────────────────────────────────
-
-function ActionLinks({ label, items }: {
-  label: string
-  items: { name: string; href: string; primary?: boolean }[]
-}) {
-  const cls = (primary?: boolean) =>
-    `inline-flex items-center px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
-      primary ? '' : 'border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-    }`
-  const style = (primary?: boolean) => primary ? { background: 'var(--y)', color: '#111' } : undefined
-
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
   return (
     <div>
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {items.map(item =>
-          item.href.startsWith('/') ? (
-            <Link key={item.name} to={item.href} className={cls(item.primary)} style={style(item.primary)}>
-              {item.name}
-            </Link>
-          ) : (
-            <a key={item.name} href={item.href} target="_blank" rel="noopener noreferrer" className={cls(item.primary)} style={style(item.primary)}>
-              {item.name}
-            </a>
-          )
-        )}
+      <div className="overflow-x-auto">
+        <table className="comp-table">
+          <thead><tr>
+            <th>Provider</th><th>{t('월 요금', 'Price / mo', 'Prix / mois')}</th>
+            <th>{t('추천 대상', 'Best for', 'Idéal pour')}</th>
+            <th>{t('한국에서 구매?', 'Buy from Korea?', 'Achat en Corée?')}</th>
+            <th>eSIM</th><th>{t('평가', 'Rating', 'Note')}</th>
+          </tr></thead>
+          <tbody>
+            {SIM_PROVIDERS.map(p => (
+              <tr key={p.name}>
+                <td className="name-cell">
+                  <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-500 transition-colors">{p.name} ↗</a>
+                </td>
+                <td className="tabular-nums">{p.price}</td>
+                <td className="text-[12px]">{tri(p.bestFor, lang)}</td>
+                <td>{p.esim ? <span className="text-green-700 font-semibold text-[12px]">eSIM ✓</span> : <span className="text-gray-400 text-[12px]">{t('도착 후', 'Must arrive', 'À l\'arrivée')}</span>}</td>
+                <td>{p.esim ? <span className="text-green-700 text-[12px]">✓</span> : <span className="text-gray-300 text-[12px]">✗</span>}</td>
+                <td><RatingBadge r={ratingOf(p.name)} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+        <p className="text-[11px] font-bold text-gray-500 mb-1">{t('HAKKYO 추천', 'HAKKYO recommends', 'HAKKYO recommande')}</p>
+        <p className="text-[12px] text-gray-600 leading-relaxed">{tri(SIM_PROVIDERS[0].hakkyoNote, lang)}</p>
       </div>
     </div>
   )
 }
 
-function ExpandToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
-  const { t } = useLang()
-  return (
-    <button
-      onClick={onToggle}
-      className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-400 hover:text-gray-700 transition-colors"
-    >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-           style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
-      {expanded ? t('접기', 'Collapse', 'Réduire') : t('더 보기', 'More info', 'En savoir plus')}
-    </button>
-  )
-}
+// ─── Bank panel ──────────────────────────────────────────────────────────────
 
-// ─── Shared panel sub-components ─────────────────────────────────────────────
-
-function PanelLabel({ children }: { children: string }) {
-  return (
-    <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-gray-300 mb-2 mt-1">
-      {children}
-    </p>
-  )
-}
-
-function WarnNote({ text }: { text: string }) {
-  return (
-    <div className="flex gap-2.5 rounded-xl px-3 py-2.5 bg-red-50">
-      <span className="text-[12px] shrink-0 mt-0.5 font-bold text-red-400">!</span>
-      <p className="text-[12px] text-red-700 leading-snug">{text}</p>
-    </div>
-  )
-}
-
-function OptionRow({ name, desc, href, primary }: { name: string; desc: string; href: string; primary?: boolean }) {
-  const inner = (
-    <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border transition-colors ${
-      primary
-        ? 'border-amber-200 bg-amber-50 hover:border-amber-300'
-        : 'border-gray-100 bg-white hover:border-gray-200'
-    }`}>
-      <div className="min-w-0">
-        <p className={`text-[13px] font-semibold leading-tight ${primary ? 'text-amber-900' : 'text-gray-800'}`}>{name}</p>
-        <p className="text-[11px] text-gray-400 leading-snug mt-0.5">{desc}</p>
-      </div>
-      <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
-           strokeLinecap="round" className="text-gray-300 shrink-0">
-        <polyline points="6,3 11,8 6,13"/>
-      </svg>
-    </div>
-  )
-  return href.startsWith('/')
-    ? <Link to={href}>{inner}</Link>
-    : <a href={href} target="_blank" rel="noopener noreferrer">{inner}</a>
-}
-
-// ─── Compare card ─────────────────────────────────────────────────────────────
-
-type CompareCardData = {
-  name: string
-  href: string
-  external?: boolean
-  price: string           // e.g. "$30–45/mo"
-  forWho: string          // brief target user description
-  fromKorea: 'yes' | 'partial' | 'no'
-  channels: string        // e.g. "Online · eSIM app"
-  pros: string[]
-  cons: string[]
-  rating: 'top' | 'good' | 'ok'
-  costco?: string
-}
-
-function CompareCard({ d }: { d: CompareCardData }) {
-  const RATING = {
-    top:  { label: 'Top Pick',    style: { background: '#111', color: '#fff' } },
-    good: { label: 'Good option', style: { background: '#f3f4f6', color: '#374151' } },
-    ok:   { label: 'Situational', style: { background: '#fef9c3', color: '#713f12' } },
+function BankPanel({ lang }: { lang: string }) {
+  const ratingOf = (name: string): RatingKey => {
+    if (name === 'TD Bank' || name === 'RBC') return 'top'
+    if (name === 'Scotiabank' || name === 'BMO') return 'good'
+    return 'ok'
   }
-  const KOREA = {
-    yes:     { text: 'From Korea ✓', color: '#166534' },
-    partial: { text: 'Partial ◑',    color: '#92400e' },
-    no:      { text: 'Must arrive ✗', color: '#991b1b' },
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
+  return (
+    <div>
+      <div className="overflow-x-auto">
+        <table className="comp-table">
+          <thead><tr>
+            <th>{t('은행', 'Bank', 'Banque')}</th>
+            <th>{t('최적 대상', 'Best for', 'Idéal pour')}</th>
+            <th>{t('1년 수수료', 'Fee yr 1', 'Frais an 1')}</th>
+            <th>{t('새 이민자 패키지', 'Newcomer pkg', 'Programme nouveaux')}</th>
+            <th>{t('신용 기록 없이 신용카드', 'Credit card w/o history', 'Carte sans historique')}</th>
+            <th>{t('평가', 'Rating', 'Note')}</th>
+          </tr></thead>
+          <tbody>
+            {BANKS.map(b => {
+              const r = ratingOf(b.name)
+              const freeYr1 = b.name === 'RBC' || b.name === 'BMO'
+              const hasPkg  = b.name === 'RBC' || b.name === 'Scotiabank'
+              const hasCCno = b.name === 'RBC' || b.name === 'Scotiabank'
+              return (
+                <tr key={b.name}>
+                  <td className="name-cell">
+                    <a href={b.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-500 transition-colors">{b.name} ↗</a>
+                  </td>
+                  <td className="text-[12px]">{tri(b.badge, lang)}</td>
+                  <td className="text-[12px]">{freeYr1 ? <span className="text-green-700 font-semibold">{t('무료', 'Free', 'Gratuit')}</span> : <span className="text-gray-500">~$16/mo</span>}</td>
+                  <td className="text-[12px]">{hasPkg ? <span className="text-green-700">✓</span> : <span className="text-gray-300">—</span>}</td>
+                  <td className="text-[12px]">{hasCCno ? <span className="text-green-700">✓</span> : <span className="text-gray-300">—</span>}</td>
+                  <td><RatingBadge r={r} /></td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+        <p className="text-[11px] font-bold text-gray-500 mb-1">{t('HAKKYO 추천', 'HAKKYO recommends', 'HAKKYO recommande')}</p>
+        <p className="text-[12px] text-gray-600 leading-relaxed">{tri(BANKS[0].hakkyoNote, lang)}</p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Transport panel ─────────────────────────────────────────────────────────
+
+function TransportPanel({ lang }: { lang: string }) {
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
+  return (
+    <div className="overflow-x-auto">
+      <table className="comp-table">
+        <thead><tr>
+          <th>{t('교통 수단', 'Option', 'Option')}</th>
+          <th>{t('비용', 'Cost', 'Coût')}</th>
+          <th>{t('구매 장소', 'Where to get', 'Où obtenir')}</th>
+          <th>{t('추천 상황', 'Best for', 'Idéal pour')}</th>
+        </tr></thead>
+        <tbody>
+          {TRANSPORT_ITEMS.map(item => (
+            <tr key={item.url}>
+              <td className="name-cell">
+                <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-500 transition-colors">{tri(item.name, lang)} ↗</a>
+              </td>
+              <td className="text-[12px] tabular-nums">{tri(item.cost, lang)}</td>
+              <td className="text-[12px]">{tri(item.where, lang)}</td>
+              <td className="text-[12px] text-gray-500 max-w-[200px]">{tri(item.hakkyoNote, lang)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ─── Housing panel ───────────────────────────────────────────────────────────
+
+function HousingPanel({ lang }: { lang: string }) {
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
+  const ratingOf = (url: string): RatingKey => {
+    if (url.includes('airbnb')) return 'top'
+    if (url.includes('facebook')) return 'good'
+    return 'ok'
   }
-  const r = RATING[d.rating]
-  const k = KOREA[d.fromKorea]
-
-  const linkProps = d.external || !d.href.startsWith('/')
-    ? { href: d.href, target: '_blank', rel: 'noopener noreferrer' }
-    : { href: d.href }
-
   return (
-    <div style={{ border: '1px solid #f3f4f6', borderRadius: 14, padding: '16px 18px', background: '#fff' }}>
-      {/* Top row */}
-      <div className="flex items-start justify-between gap-3 mb-2.5">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 5, padding: '1px 7px', letterSpacing: '0.06em', textTransform: 'uppercase', ...r.style }}>
-              {r.label}
-            </span>
-          </div>
-          <a {...linkProps} className="text-[14px] font-semibold text-gray-900 hover:text-gray-500 transition-colors">
-            {d.name} ↗
-          </a>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-[15px] font-bold text-gray-900 leading-tight">{d.price}</p>
-        </div>
-      </div>
+    <div className="overflow-x-auto">
+      <table className="comp-table">
+        <thead><tr>
+          <th>{t('옵션', 'Option', 'Option')}</th>
+          <th>{t('비용', 'Cost', 'Coût')}</th>
+          <th>{t('추천 기간', 'Good for', 'Idéal pour')}</th>
+          <th>{t('주소 증명', 'Address proof', 'Preuve adresse')}</th>
+          <th>{t('평가', 'Rating', 'Note')}</th>
+        </tr></thead>
+        <tbody>
+          {STAY_OPTIONS.map(s => (
+            <tr key={s.url}>
+              <td className="name-cell">
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-500 transition-colors">{tri(s.name, lang)} ↗</a>
+                <div className="text-[11px] text-gray-400 font-normal mt-0.5">{tri(s.type, lang)}</div>
+              </td>
+              <td className="text-[12px] tabular-nums">{s.priceRange}</td>
+              <td className="text-[12px]">{tri(s.goodFor, lang)}</td>
+              <td className="text-[12px]">{s.url.includes('facebook') ? <span className="text-green-700">✓</span> : <span className="text-gray-300">✗</span>}</td>
+              <td><RatingBadge r={ratingOf(s.url)} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
-      {/* Meta strip */}
-      <div className="flex flex-wrap gap-x-3 gap-y-0.5 pb-3 mb-3" style={{ borderBottom: '1px solid #f3f4f6' }}>
-        <span style={{ fontSize: 11, color: '#6b7280' }}>
-          <span style={{ fontWeight: 600, color: '#374151' }}>For </span>{d.forWho}
-        </span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: k.color }}>{k.text}</span>
-        <span style={{ fontSize: 11, color: '#6b7280' }}>
-          <span style={{ fontWeight: 600, color: '#374151' }}>Via </span>{d.channels}
-        </span>
-        {d.costco && (
-          <span style={{ fontSize: 11, color: '#6b7280' }}>
-            <span style={{ fontWeight: 600, color: '#374151' }}>Costco </span>{d.costco}
-          </span>
-        )}
-      </div>
+// ─── SIN panel ───────────────────────────────────────────────────────────────
 
-      {/* Pros / Cons */}
-      <div className="grid grid-cols-1 gap-0.5">
-        {d.pros.map((p, i) => (
-          <p key={`p${i}`} style={{ fontSize: 12, color: '#374151', lineHeight: 1.55 }}>
-            <span style={{ color: '#16a34a', fontWeight: 700, marginRight: 5 }}>+</span>{p}
-          </p>
-        ))}
-        {d.cons.map((c, i) => (
-          <p key={`c${i}`} style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.55 }}>
-            <span style={{ color: '#dc2626', fontWeight: 700, marginRight: 5 }}>−</span>{c}
-          </p>
-        ))}
+function SINPanel({ lang }: { lang: string }) {
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
+  return (
+    <div>
+      <div className="overflow-x-auto">
+        <table className="comp-table">
+          <thead><tr>
+            <th>{t('방법', 'Method', 'Méthode')}</th>
+            <th>{t('처리 기간', 'Processing', 'Délai')}</th>
+            <th>{t('장소', 'Where', 'Lieu')}</th>
+            <th>{t('비고', 'Note', 'Note')}</th>
+            <th></th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td className="name-cell">{t('Service Canada 직접 방문', 'Visit Service Canada', 'Visiter Service Canada')}</td>
+              <td className="text-green-700 font-semibold text-[12px]">{t('당일', 'Same day', 'Même jour')}</td>
+              <td className="text-[12px]">Service Canada office</td>
+              <td className="text-[12px]">{t('가장 빠름. 여권 + 비자 지참.', 'Fastest. Bring passport + permit.', 'Le plus rapide. Passeport + permis.')}</td>
+              <td><RatingBadge r="top" /></td>
+            </tr>
+            <tr>
+              <td className="name-cell">{t('온라인 신청', 'Apply online', 'Demande en ligne')}</td>
+              <td className="text-[12px] tabular-nums">2–4 {t('주', 'weeks', 'semaines')}</td>
+              <td className="text-[12px]">canada.ca/sin</td>
+              <td className="text-[12px]">{t('가장 쉽지만 느립니다', 'Easiest but slow', 'Le plus simple mais lent')}</td>
+              <td><RatingBadge r="good" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+        <p className="text-[12px] text-gray-600 leading-relaxed">
+          {t(
+            '도착 후 최대한 빨리 Service Canada 사무소를 방문하세요. 여권 + 비자만 있으면 당일 발급됩니다.',
+            'Visit a Service Canada office as soon as you arrive. Bring passport + permit — issued same day.',
+            "Visitez un bureau Service Canada dès votre arrivée. Passeport + permis suffisent — émis le jour même.",
+          )}
+        </p>
       </div>
     </div>
   )
 }
 
-// ─── Tool panels ──────────────────────────────────────────────────────────────
+// ─── Driver's Licence panel ──────────────────────────────────────────────────
 
-function FlightsPanel() {
-  const { lang, t } = useLang()
-  const [expanded, setExpanded] = useState(false)
+function LicencePanel({ lang }: { lang: string }) {
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
   return (
-    <div className="space-y-4">
-      <p className="t-body">
-        {t(
-          '항공권 예약은 몬트리올 이주의 첫 번째 결정입니다. 가격, 도착 시간, 경유 여부를 함께 비교하세요.',
-          'Your flight is the first real commitment. Compare prices, arrival times, and layover options.',
-          "Réserver votre vol est le premier engagement. Comparez prix, horaires et escales.",
-        )}
-      </p>
-
-      {/* Decision cards — always visible */}
-      <div className="space-y-2.5">
-        <CompareCard d={{
-          name: 'Google Flights',
-          href: 'https://www.google.com/travel/flights',
-          external: true,
-          price: t('가격 변동', 'Varies', 'Variable'),
-          forWho: t('모든 사람 — 가격 비교 시작점', 'Everyone — best starting point', 'Tout le monde — meilleur point de départ'),
-          fromKorea: 'yes',
-          channels: t('웹 · 앱', 'Web · App', 'Web · App'),
-          pros: [
-            t('날짜 유연성 비교 달력', 'Flexible date calendar to find cheapest day', 'Calendrier de dates flexibles pour trouver le jour le moins cher'),
-            t('가격 추이 그래프, 가격 알림 설정 가능', 'Price trend graphs + price drop alerts', 'Graphiques de tendances + alertes de baisse de prix'),
-          ],
-          cons: [
-            t('직접 예약 불가 — 항공사 사이트로 이동', 'Cannot book directly — redirects to airline', 'Impossible de réserver directement — redirige vers la compagnie'),
-          ],
-          rating: 'top',
-        }} />
-        <CompareCard d={{
-          name: 'Skyscanner',
-          href: 'https://www.skyscanner.ca',
-          external: true,
-          price: t('가격 변동', 'Varies', 'Variable'),
-          forWho: t('월별 최저가 찾는 사람', 'Anyone finding the cheapest month to travel', "Ceux qui cherchent le mois le moins cher pour voyager"),
-          fromKorea: 'yes',
-          channels: t('웹 · 앱', 'Web · App', 'Web · App'),
-          pros: [
-            t('전체 월 최저가 보기 가능', 'View cheapest prices across a whole month', 'Voir les prix les moins chers sur tout un mois'),
-            t('여러 항공사 동시 비교', 'Compares many airlines at once', 'Compare de nombreuses compagnies en même temps'),
-          ],
-          cons: [
-            t('일부 링크가 제3자 사이트로 이동', 'Some links go to third-party booking sites', 'Certains liens mènent à des sites tiers'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Kayak',
-          href: 'https://www.kayak.ca',
-          external: true,
-          price: t('가격 변동', 'Varies', 'Variable'),
-          forWho: t('가격 예측이 필요한 사람', 'Anyone who wants a price forecast before booking', 'Ceux qui veulent une prévision de prix avant de réserver'),
-          fromKorea: 'yes',
-          channels: t('웹 · 앱', 'Web · App', 'Web · App'),
-          pros: [
-            t('"지금 살까 기다릴까" 가격 예측 기능', '"Buy now or wait" price prediction feature', 'Fonctionnalité de prévision "acheter maintenant ou attendre"'),
-          ],
-          cons: [
-            t('예측이 항상 정확하지는 않음', 'Predictions are not always accurate', 'Les prévisions ne sont pas toujours exactes'),
-          ],
-          rating: 'good',
-        }} />
-      </div>
-
-      <WarnNote text={t(
-        '흔한 실수: 심야 도착 항공편 선택 후 당일 처리할 일이 없어서 하루 낭비. 첫날은 낮에 도착해서 바로 움직이는 게 좋습니다.',
-        'Common mistake: choosing a late-night flight and losing your first day. Arrive during the day so you can start moving immediately.',
-        'Erreur fréquente : choisir un vol de nuit et perdre votre première journée. Arrivez en journée pour commencer directement.',
-      )} />
-
-      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
-
-      {/* Educational content — collapsed */}
-      {expanded && (
-        <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('언제 예약할까요', 'When to book', 'Quand réserver')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '출발 6–8주 전 예약이 가격 안정 구간입니다', en: '6–8 weeks before departure is the sweet spot for stable prices', fr: "Réserver 6–8 semaines à l'avance offre les prix les plus stables" },
-              { ko: '화·수요일 검색 시 가격이 낮은 경향이 있습니다', en: 'Searching on Tuesday or Wednesday often shows lower prices', fr: 'Chercher le mardi ou mercredi affiche souvent des prix plus bas' },
-              { ko: '성수기(6–8월, 12월)는 2–3개월 전 예약 권장', en: 'Peak season (Jun–Aug, Dec): book 2–3 months in advance', fr: "Haute saison (juin–août, déc.) : réservez 2–3 mois à l'avance" },
-            ]} />
-          </div>
-          <div>
-            <PanelLabel>{t('직항 vs 경유', 'Direct vs layover', 'Direct ou escale')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '인천(ICN) → 몬트리올(YUL) 직항: 약 14시간, 대한항공·에어캐나다 운항', en: 'ICN → YUL direct: ~14h, Korean Air or Air Canada', fr: 'ICN → YUL direct : ~14h, Korean Air ou Air Canada' },
-              { ko: '토론토·밴쿠버 경유: 2–5시간 추가, 하지만 더 저렴한 경우 많음', en: 'Via Toronto or Vancouver: 2–5 extra hours, often cheaper', fr: 'Via Toronto ou Vancouver : 2–5 heures de plus, souvent moins cher' },
-              { ko: '경유 시 수하물 재수속 여부 반드시 확인', en: 'For layovers, confirm whether you need to recheck your luggage', fr: 'Pour les escales, vérifiez si vous devez récupérer vos bagages' },
-            ]} />
-          </div>
-          <div>
-            <PanelLabel>{t('도착 시간 팁', 'Arrival time tips', "Conseils d'arrivée")}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '오전 도착 추천 — 당일 은행 방문·SIM 개통 가능', en: 'Morning arrival recommended — you can visit a bank and set up SIM the same day', fr: 'Arriver le matin est recommandé — vous pouvez aller à la banque le jour même' },
-              { ko: '심야 도착 시 택시/Uber 또는 747 버스 이용. 지하철은 자정 이후 운행 없음', en: 'Late night arrival: use taxi/Uber or the 747 bus. Metro does not run after midnight', fr: 'Arrivée tardive : taxi/Uber ou bus 747. Le métro ne fonctionne pas après minuit' },
-            ]} />
-          </div>
-          <CommunityExperience section="flights" />
-          <CommunityCTA />
-        </div>
-      )}
+    <div className="overflow-x-auto">
+      <table className="comp-table">
+        <thead><tr><th>{t('항목', 'Item', 'Élément')}</th><th>{t('내용', 'Details', 'Détails')}</th></tr></thead>
+        <tbody>
+          <tr>
+            <td className="name-cell">{t('교환 가능?', 'Exchangeable?', 'Échangeable?')}</td>
+            <td className="text-[12px]">{t('한국 면허 → 퀘벡 면허 (시험 없음)', 'Korean licence → Québec licence (no tests)', 'Permis coréen → Québec (sans examens)')}</td>
+          </tr>
+          <tr>
+            <td className="name-cell">{t('필요 서류', 'Documents', 'Documents')}</td>
+            <td className="text-[12px]">{t('여권 + 한국 면허증 + 공증 번역본', 'Passport + Korean licence + certified translation', 'Passeport + permis coréen + traduction certifiée')}</td>
+          </tr>
+          <tr>
+            <td className="name-cell">{t('신청 장소', 'Where', 'Lieu')}</td>
+            <td className="text-[12px]">{t('SAAQ 사무소 (예약 필수)', 'SAAQ office (appointment required)', 'Bureau SAAQ (rendez-vous obligatoire)')}</td>
+          </tr>
+          <tr>
+            <td className="name-cell">{t('신청 기한', 'Deadline', 'Délai')}</td>
+            <td className="text-[12px] text-amber-700 font-medium">{t('도착 후 3개월 이내', 'Within 3 months of arrival', "Dans les 3 mois suivant l'arrivée")}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   )
 }
 
-function SIMPanel() {
-  const { lang, t } = useLang()
-  const [expanded, setExpanded] = useState(false)
+// ─── Language panel ──────────────────────────────────────────────────────────
+
+function LanguagePanel({ lang }: { lang: string }) {
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
+  const programs = [
+    { name: 'HAKKYO', type: t('언어 교환', 'Language exchange', 'Échange linguistique'), langs: 'Korean · French · English', cost: t('무료', 'Free', 'Gratuit'), format: t('소규모 그룹', 'Small group', 'Petit groupe'), url: '/programs', rating: 'top' as RatingKey },
+    { name: 'SANA (OQLF)', type: t('공식 프랑스어 과정', 'Official French', 'Français officiel'), langs: 'French', cost: t('무료', 'Free', 'Gratuit'), format: t('풀타임 · 파트타임', 'Full / part-time', 'Temps plein/partiel'), url: 'https://www.immigration-quebec.gouv.qc.ca/fr/langue-francaise/apprendre-mieux/cours-francais.html', rating: 'top' as RatingKey },
+    { name: 'Concordia CCE', type: t('성인 교육', 'Continuing ed.', 'Formation continue'), langs: 'French · English', cost: '$150–500', format: t('강의실 · 온라인', 'Class / online', 'Classe / en ligne'), url: 'https://www.concordia.ca/cce.html', rating: 'good' as RatingKey },
+  ]
   return (
-    <div className="space-y-4">
-      <p className="t-body">
-        {t(
-          '도착 당일 SIM을 개통하세요. eSIM이면 공항에서 바로 가능합니다.',
-          'Set up your SIM on arrival day. eSIM means you can do it before you even leave the airport.',
-          "Activez votre SIM dès l'arrivée. L'eSIM se configure avant même de quitter l'aéroport.",
-        )}
-      </p>
-
-      {/* Decision cards — always visible */}
-      <div className="space-y-2.5">
-        <CompareCard d={{
-          name: 'Fizz',
-          href: 'https://fizz.ca',
-          external: true,
-          price: '$30–45/mo',
-          forWho: t('신규 이민자, eSIM 사용자 — 첫 달 최추천', 'New arrivals, eSIM users — best for first month', 'Nouveaux arrivants, utilisateurs eSIM — meilleur choix initial'),
-          fromKorea: 'yes',
-          channels: t('온라인 전용 · eSIM', 'Online only · eSIM', 'En ligne uniquement · eSIM'),
-          pros: [
-            t('eSIM — 공항 도착 전 설정 가능', 'eSIM — set up before you land', 'eSIM — configurez avant d\'atterrir'),
-            t('약정 없음, 월별 유연한 변경 가능', 'No contract, change plan monthly', 'Sans contrat, changez de forfait mensuellement'),
-            t('친구 추천 시 크레딧 제공', 'Referral credits available', 'Crédits de parrainage disponibles'),
-          ],
-          cons: [
-            t('고객 서비스 온라인 전용 (전화 없음)', 'Customer service online only — no phone support', 'Service client en ligne uniquement — pas de support téléphonique'),
-            t('도심 외 지역 커버리지 약함', 'Coverage weaker outside city core', 'Couverture plus faible hors du centre-ville'),
-          ],
-          rating: 'top',
-        }} />
-        <CompareCard d={{
-          name: 'Public Mobile',
-          href: 'https://www.publicmobile.ca',
-          external: true,
-          price: '$15–34/mo',
-          forWho: t('장기 사용 예정인 예산 중시 사용자', 'Budget-focused users staying 6+ months', 'Utilisateurs axés sur le budget restant 6 mois+'),
-          fromKorea: 'yes',
-          channels: t('온라인 전용 · eSIM', 'Online only · eSIM', 'En ligne uniquement · eSIM'),
-          pros: [
-            t('캐나다에서 가장 저렴한 요금제 중 하나', 'One of the cheapest plans in Canada', "L'un des forfaits les moins chers au Canada"),
-            t('3·6개월마다 자동 할인 누적', 'Auto discounts after 3 and 6 months', 'Réductions automatiques après 3 et 6 mois'),
-          ],
-          cons: [
-            t('전화 고객 서비스 없음', 'No phone customer support', 'Pas de support client par téléphone'),
-            t('커버리지가 Telus/Rogers보다 제한적', 'Coverage more limited than Telus/Rogers', 'Couverture plus limitée que Telus/Rogers'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Freedom Mobile',
-          href: 'https://www.freedommobile.ca',
-          external: true,
-          price: '$25–55/mo',
-          forWho: t('학생, 무제한 데이터 필요자', 'Students, users who need unlimited data', 'Étudiants, utilisateurs ayant besoin de données illimitées'),
-          fromKorea: 'partial',
-          channels: t('온라인 · 매장 · eSIM', 'Online · Store · eSIM', 'En ligne · Boutique · eSIM'),
-          pros: [
-            t('학생 할인 제공', 'Student discounts available', 'Réductions étudiants disponibles'),
-            t('무제한 데이터 요금제 있음', 'Unlimited data plans available', 'Forfaits données illimitées disponibles'),
-          ],
-          cons: [
-            t('도시 외 지역 커버리지 약함', 'Weak coverage outside major cities', 'Couverture faible hors des grandes villes'),
-            t('로밍 옵션 제한적', 'Limited roaming options', 'Options de roaming limitées'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Koodo',
-          href: 'https://www.koodomobile.com',
-          external: true,
-          price: '$40–65/mo',
-          forWho: t('안정성과 가격의 균형을 원하는 사람', 'Users wanting balance of reliability and price', 'Ceux qui veulent un équilibre entre fiabilité et prix'),
-          fromKorea: 'yes',
-          channels: t('온라인 · 매장 · eSIM', 'Online · Store · eSIM', 'En ligne · Boutique · eSIM'),
-          pros: [
-            t('Telus 네트워크 품질 (캐나다 최고)', 'Telus network quality (best in Canada)', 'Qualité réseau Telus (meilleur au Canada)'),
-            t('eSIM 지원, 공항 도착 전 설정 가능', 'eSIM supported, set up before arrival', 'eSIM disponible, configurez avant l\'arrivée'),
-          ],
-          cons: [
-            t('Fizz/Public Mobile보다 비쌈', 'More expensive than Fizz or Public Mobile', 'Plus cher que Fizz ou Public Mobile'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Bell · Rogers · Telus',
-          href: 'https://www.bell.ca',
-          external: true,
-          price: '$55–90+/mo',
-          forWho: t('최고 커버리지가 필요한 사람, 비즈니스 사용자', 'Users needing the best coverage, business users', 'Utilisateurs ayant besoin de la meilleure couverture, professionnels'),
-          fromKorea: 'partial',
-          channels: t('온라인 · 매장', 'Online · Store', 'En ligne · Boutique'),
-          pros: [
-            t('캐나다 최고 네트워크 커버리지', 'Best network coverage in Canada', 'Meilleure couverture réseau au Canada'),
-            t('매장 방문 지원 가능', 'In-person store support available', 'Support en boutique disponible'),
-          ],
-          cons: [
-            t('가장 비쌈 — 신규 이민자에게 불필요', 'Most expensive — unnecessary for newcomers', 'Le plus cher — inutile pour les nouveaux arrivants'),
-            t('약정 계약 조건 반드시 확인', 'Contract terms — read carefully', 'Conditions du contrat — lisez attentivement'),
-          ],
-          rating: 'ok',
-        }} />
-      </div>
-
-      <WarnNote text={t(
-        '흔한 실수: 공항 내 통신사에서 비싼 요금제 가입. 공항을 벗어난 뒤 온라인 또는 시내 매장에서 가입하면 더 저렴합니다.',
-        'Common mistake: signing up with a carrier kiosk at the airport. Getting online or visiting a store in the city is almost always cheaper.',
-        "Erreur fréquente : s'inscrire au kiosque de l'aéroport. Passer par internet ou une boutique en ville est presque toujours moins cher.",
-      )} />
-
-      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
-
-      {expanded && (
-        <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('eSIM vs 실물 SIM', 'eSIM vs physical SIM', 'eSIM ou SIM physique')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: 'eSIM: 공항 도착 전 설정 가능, 기기 호환 여부 사전 확인 필요', en: 'eSIM: Set up before landing, check device compatibility in advance', fr: "eSIM : Configurez avant d'atterrir, vérifiez la compatibilité de l'appareil" },
-              { ko: '실물 SIM: 편의점·통신사 매장에서 구매, 즉시 사용', en: 'Physical SIM: Available at convenience stores or carrier shops, instant use', fr: 'SIM physique : Disponible en dépanneur ou boutique opérateur, utilisation immédiate' },
-              { ko: 'Fizz, Public Mobile, Koodo는 eSIM 지원', en: 'Fizz, Public Mobile, Koodo support eSIM', fr: "Fizz, Public Mobile, Koodo supportent l'eSIM" },
-            ]} />
-          </div>
-          <div>
-            <PanelLabel>{t('가입 전 확인 사항', 'Before you sign up', 'Avant de vous inscrire')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '데이터 무제한 여부 확인 (실제 무제한인지, 속도 제한인지)', en: "Check if 'unlimited' data is truly unlimited or speed-throttled after a cap", fr: "Vérifiez si les données 'illimitées' sont vraiment illimitées ou bridées" },
-              { ko: '장기 계약 vs 월 단위 요금제 — 처음엔 유연한 월정액 추천', en: 'Long-term contract vs. monthly plan — flexible monthly recommended at first', fr: 'Contrat long terme vs mensuel — optez pour le mensuel au début' },
-              { ko: '국제전화 포함 여부 확인', en: 'Check if international calling is included', fr: 'Vérifiez si les appels internationaux sont inclus' },
-            ]} />
-          </div>
-          <CommunityExperience section="sim" />
-          <CommunityCTA />
-        </div>
-      )}
+    <div className="overflow-x-auto">
+      <table className="comp-table">
+        <thead><tr>
+          <th>{t('프로그램', 'Program', 'Programme')}</th>
+          <th>{t('종류', 'Type', 'Type')}</th>
+          <th>{t('언어', 'Language', 'Langue')}</th>
+          <th>{t('비용', 'Cost', 'Coût')}</th>
+          <th>{t('형식', 'Format', 'Format')}</th>
+          <th>{t('평가', 'Rating', 'Note')}</th>
+        </tr></thead>
+        <tbody>
+          {programs.map(p => (
+            <tr key={p.name}>
+              <td className="name-cell">
+                {p.url.startsWith('/')
+                  ? <Link to={p.url} className="hover:text-gray-500 transition-colors">{p.name} ↗</Link>
+                  : <a href={p.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-500 transition-colors">{p.name} ↗</a>}
+              </td>
+              <td className="text-[12px]">{p.type}</td>
+              <td className="text-[12px]">{p.langs}</td>
+              <td className="text-[12px] font-medium">{p.cost}</td>
+              <td className="text-[12px]">{p.format}</td>
+              <td><RatingBadge r={p.rating} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
 
-function BankingPanel() {
-  const { lang, t } = useLang()
-  const [expanded, setExpanded] = useState(false)
+// ─── Flights panel ────────────────────────────────────────────────────────────
+
+function FlightsPanel({ lang }: { lang: string }) {
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
+  const options = [
+    { name: 'Air Canada (ICN→YUL direct)', price: '$800–1,400', stopover: t('없음', 'None', 'Aucune'), duration: '~14h', note: t('직항 — 가장 편리함', 'Direct — most convenient', 'Direct — le plus pratique'), rating: 'top' as RatingKey },
+    { name: 'Korean Air / Asiana', price: '$750–1,200', stopover: t('경유 1회', '1 stop', '1 escale'), duration: '18–22h', note: t('가격 대비 우수', 'Good value', 'Bon rapport qualité-prix'), rating: 'good' as RatingKey },
+    { name: 'Costco Travel', price: t('번들 할인', 'Bundle discount', 'Réduction forfait'), stopover: t('다양', 'Varies', 'Variable'), duration: '—', note: t('항공 + 호텔 번들', 'Flight + hotel bundle', 'Vol + hôtel'), rating: 'ok' as RatingKey },
+  ]
   return (
-    <div className="space-y-4">
-      <p className="t-body">
-        {t(
-          '도착 후 첫 주 안에 은행 계좌를 여세요. 이민자 전용 패키지가 있는 은행부터 시작하세요.',
-          'Open a bank account in your first week. Start with banks that have newcomer packages — no Canadian credit history needed.',
-          "Ouvrez un compte bancaire dans votre première semaine. Commencez par les banques avec forfaits nouvel arrivant.",
-        )}
-      </p>
-
-      {/* Decision cards — always visible */}
-      <div className="space-y-2.5">
-        <CompareCard d={{
-          name: 'TD StartRight',
-          href: 'https://www.td.com/ca/en/personal-banking/solutions/new-to-canada',
-          external: true,
-          price: t('1년 무료 → $16/월', '1 yr free → $16/mo', '1 an gratuit → 16 $/mois'),
-          forWho: t('신규 이민자 — 캐나다 신용 기록 없어도 OK', 'New arrivals — no Canadian credit history needed', 'Nouveaux arrivants — sans historique de crédit canadien'),
-          fromKorea: 'no',
-          channels: t('지점 방문 필요 (예약 온라인)', 'Branch visit required (book online)', 'Visite en succursale requise (réservez en ligne)'),
-          pros: [
-            t('이민자 패키지 — 신용 기록 없이 신용카드 발급 가능', 'Newcomer package — credit card without Canadian history', 'Forfait nouvel arrivant — carte de crédit sans historique canadien'),
-            t('1년간 수수료 면제', '1 year fee waiver', '1 an de frais bancaires gratuits'),
-            t('영어·한국어 서비스 가능한 지점 있음', 'Some branches offer Korean language service', 'Certaines succursales offrent un service en coréen'),
-          ],
-          cons: [
-            t('1년 후 월 $16 수수료 (최소 잔액 유지 시 면제)', 'After 1yr: $16/mo fee (waived with minimum balance)', "Après 1 an : 16 $/mois (exonéré avec solde minimum)"),
-            t('캐나다 도착 후에만 개설 가능', 'Can only be opened after arriving in Canada', 'Peut uniquement être ouvert après l\'arrivée au Canada'),
-          ],
-          rating: 'top',
-        }} />
-        <CompareCard d={{
-          name: 'Scotiabank StartRight',
-          href: 'https://www.scotiabank.com/ca/en/personal/bank-accounts/chequing-accounts/startright.html',
-          external: true,
-          price: t('1년 무료 → $15.95/월', '1 yr free → $15.95/mo', '1 an gratuit → 15,95 $/mois'),
-          forWho: t('신규 이민자, 혜택 비교 원하는 사람', 'New arrivals who want to compare packages', 'Nouveaux arrivants voulant comparer les forfaits'),
-          fromKorea: 'no',
-          channels: t('지점 방문 필요 (예약 온라인)', 'Branch visit required (book online)', 'Visite en succursale requise (réservez en ligne)'),
-          pros: [
-            t('이민자 패키지 — TD와 유사한 혜택', 'Newcomer package — similar benefits to TD', 'Forfait nouvel arrivant — avantages similaires à TD'),
-            t('Scene+ 포인트 리워드 프로그램', 'Scene+ rewards program', 'Programme de récompenses Scene+'),
-          ],
-          cons: [
-            t('1년 후 수수료 발생', 'Fee applies after 1 year', 'Des frais s\'appliquent après 1 an'),
-            t('캐나다 도착 후에만 개설 가능', 'Can only be opened after arriving in Canada', 'Peut uniquement être ouvert après l\'arrivée au Canada'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Desjardins',
-          href: 'https://www.desjardins.com',
-          external: true,
-          price: '$0–10/mo',
-          forWho: t('퀘벡 장기 거주 예정자, 프랑스어 사용자', 'Long-term Québec residents, French speakers', 'Résidents à long terme au Québec, francophones'),
-          fromKorea: 'no',
-          channels: t('지점 방문 필요', 'Branch visit required', 'Visite en succursale requise'),
-          pros: [
-            t('퀘벡 전역 ATM 네트워크', 'Large ATM network across Québec', 'Grand réseau de guichets automatiques au Québec'),
-            t('퀘벡 지역 사회 밀착형 협동조합', 'Québec-rooted cooperative, community focus', 'Coopérative ancrée au Québec, axée sur la communauté'),
-            t('낮은 월 수수료', 'Low monthly fees', 'Frais mensuels bas'),
-          ],
-          cons: [
-            t('영어 서비스 제한적', 'Limited English-language service', 'Service en anglais limité'),
-            t('이민자 전용 패키지 없음', 'No dedicated newcomer package', 'Pas de forfait dédié aux nouveaux arrivants'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'RBC Royal Bank',
-          href: 'https://www.rbcroyalbank.com',
-          external: true,
-          price: '$11–30/mo',
-          forWho: t('대형 은행 선호자, 전국 지점 필요자', 'Preference for big banks, need national branches', 'Préférence pour les grandes banques, besoin de succursales nationales'),
-          fromKorea: 'no',
-          channels: t('온라인 · 지점', 'Online · Branch', 'En ligne · Succursale'),
-          pros: [
-            t('캐나다 최대 은행 — 전국 지점 네트워크', "Canada's largest bank — national branch network", 'Plus grande banque du Canada — réseau national de succursales'),
-            t('다국어 서비스 제공', 'Multilingual service available', 'Service multilingue disponible'),
-          ],
-          cons: [
-            t('이민자 전용 패키지 없음', 'No dedicated newcomer package', 'Pas de forfait dédié aux nouveaux arrivants'),
-            t('월 수수료 바로 부과', 'Monthly fees apply from day one', 'Frais mensuels dès le premier jour'),
-          ],
-          rating: 'ok',
-        }} />
-      </div>
-
-      <WarnNote text={t(
-        '흔한 실수: 은행 계좌 없이 현금만 들고 다니기. 캐나다는 e-Transfer 및 Interac 결제가 일상이라 계좌 없으면 불편합니다.',
-        'Common mistake: relying on cash only. Canada runs on e-Transfer and Interac — a bank account is essential from day one.',
-        'Erreur fréquente : se fier uniquement aux espèces. Le Canada fonctionne avec e-Transfer et Interac — un compte est essentiel dès le premier jour.',
-      )} />
-
-      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
-
-      {expanded && (
-        <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('필요 서류', 'What to bring', 'Documents requis')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '여권 (필수)', en: 'Passport (required)', fr: 'Passeport (obligatoire)' },
-              { ko: '비자 또는 이민 서류 (영주권, 학생비자, 워홀 등)', en: 'Visa or immigration document (PR, study permit, work permit, etc.)', fr: "Visa ou document d'immigration (RP, permis d'études, permis de travail, etc.)" },
-              { ko: '캐나다 주소 (임시 주소도 가능)', en: 'Canadian address (temporary address is fine)', fr: 'Adresse canadienne (une adresse temporaire est acceptée)' },
-              { ko: 'SIN 없어도 개설 가능 — 나중에 제출 가능', en: 'SIN not required to open — you can provide it later', fr: 'NAS non requis pour ouvrir — vous pouvez le fournir plus tard' },
-            ]} />
-          </div>
-          <div>
-            <PanelLabel>{t('직불카드 vs 신용카드', 'Debit vs credit card', 'Débit vs carte de crédit')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '캐나다 직불카드는 Interac 시스템 — 한국 카드와 다름', en: 'Canadian debit uses Interac — different from Korean systems', fr: 'Le débit canadien utilise Interac — différent des systèmes coréens' },
-              { ko: '신용카드는 신용 기록 없이 처음엔 발급 어려움 — 보안 신용카드(Secured Card) 고려', en: 'Credit cards are hard to get without credit history — consider a secured credit card', fr: "Les cartes de crédit sans historique sont difficiles à obtenir — envisagez une carte sécurisée" },
-              { ko: 'TD, Scotia 이민자 패키지는 신용 기록 없이 신용카드 발급 가능', en: 'TD and Scotia newcomer packages offer credit cards without Canadian credit history', fr: 'Les forfaits TD et Scotia offrent des cartes de crédit sans historique canadien' },
-            ]} />
-          </div>
-          <CommunityExperience section="banking" />
-          <CommunityCTA />
-        </div>
-      )}
+    <div className="overflow-x-auto">
+      <table className="comp-table">
+        <thead><tr>
+          <th>{t('항공편', 'Option', 'Option')}</th>
+          <th>{t('가격 (ICN→YUL)', 'Price (ICN→YUL)', 'Prix (ICN→YUL)')}</th>
+          <th>{t('경유', 'Stopover', 'Escale')}</th>
+          <th>{t('소요 시간', 'Duration', 'Durée')}</th>
+          <th>{t('비고', 'Note', 'Note')}</th>
+          <th>{t('평가', 'Rating', 'Note')}</th>
+        </tr></thead>
+        <tbody>
+          {options.map(o => (
+            <tr key={o.name}>
+              <td className="name-cell">{o.name}</td>
+              <td className="text-[12px] tabular-nums">{o.price}</td>
+              <td className="text-[12px]">{o.stopover}</td>
+              <td className="text-[12px] tabular-nums">{o.duration}</td>
+              <td className="text-[12px]">{o.note}</td>
+              <td><RatingBadge r={o.rating} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
 
-function TransportPanel() {
-  const { lang, t } = useLang()
-  const [expanded, setExpanded] = useState(false)
-  return (
-    <div className="space-y-4">
-      <p className="t-body">
-        {t(
-          '몬트리올 지하철(STM)과 버스로 대부분의 일상이 해결됩니다. OPUS 카드를 먼저 챙기세요.',
-          "Montreal's STM metro and bus network covers most of daily life. Get your OPUS card first.",
-          "Le réseau STM (métro et bus) couvre la majorité du quotidien à Montréal. Procurez-vous d'abord une carte OPUS.",
-        )}
-      </p>
+// ─── Tab definitions ──────────────────────────────────────────────────────────
 
-      {/* Decision cards — always visible */}
-      <div className="space-y-2.5">
-        <CompareCard d={{
-          name: 'STM — OPUS Card',
-          href: 'https://www.stm.info',
-          external: true,
-          price: t('월 $100 또는 $3.75/회', '$100/mo or $3.75/trip', '100 $/mois ou 3,75 $/trajet'),
-          forWho: t('일상 통근자 — 매달 사용하면 무조건 이득', 'Daily commuters — always worth it if used monthly', 'Navetteurs quotidiens — toujours rentable si utilisé mensuellement'),
-          fromKorea: 'no',
-          channels: t('지하철역 자판기 · 온라인', 'Metro station machines · Online', 'Machines des stations de métro · En ligne'),
-          pros: [
-            t('월정기권 = 무제한 탑승 (지하철 + 버스)', 'Monthly pass = unlimited metro + bus rides', 'Passe mensuelle = trajets illimités (métro + bus)'),
-            t('학생 할인 약 30% (학생증 필요)', 'Student discount ~30% (valid student ID required)', 'Réduction étudiant ~30 % (carte étudiante valide requise)'),
-            t('747 공항 버스도 OPUS 사용 가능', '747 airport bus accepts OPUS', 'Le bus 747 accepte la carte OPUS'),
-          ],
-          cons: [
-            t('카드 구매는 현장에서만 가능 ($6)', 'Card must be purchased on-site ($6)', 'La carte doit être achetée sur place (6 $)'),
-            t('자정 이후 지하철 운행 없음', 'Metro does not run after midnight', 'Le métro ne fonctionne pas après minuit'),
-          ],
-          rating: 'top',
-        }} />
-        <CompareCard d={{
-          name: '747 Airport Bus',
-          href: 'https://www.stm.info/en/info/networks/bus/shuttle/more-about-747-YUL-Aeroport-P-E-Trudeau-Montreal-shuttle',
-          external: true,
-          price: '$11',
-          forWho: t('공항 도착자 — 택시보다 저렴한 첫 이동 수단', 'Airport arrivals — cheap alternative to taxi', "Arrivants à l'aéroport — alternative bon marché au taxi"),
-          fromKorea: 'no',
-          channels: t('OPUS 카드 또는 현금', 'OPUS card or cash', 'Carte OPUS ou espèces'),
-          pros: [
-            t('24시간 운행 — 야간 도착도 OK', 'Runs 24/7 — late night arrivals OK', 'Fonctionne 24h/24 — les arrivées nocturnes sont OK'),
-            t('택시($40–55)보다 훨씬 저렴', 'Much cheaper than taxi ($40–55)', 'Beaucoup moins cher que le taxi (40–55 $)'),
-          ],
-          cons: [
-            t('짐이 많으면 불편 — 이사 짐은 Uber 추천', 'Inconvenient with heavy luggage — use Uber for moving bags', "Peu pratique avec beaucoup de bagages — utilisez Uber si vous avez beaucoup de valises"),
-            t('다운타운까지 약 45–60분', 'About 45–60 min to downtown', 'Environ 45–60 minutes jusqu\'au centre-ville'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'BIXI',
-          href: 'https://bixi.com',
-          external: true,
-          price: t('연간 $15 또는 $1.25 + $0.15/분', '$15/yr or $1.25 unlock + $0.15/min', '15 $/an ou 1,25 $ déverrouillage + 0,15 $/min'),
-          forWho: t('봄~가을 활동적인 이동 선호자', 'Active users, spring to fall only', 'Utilisateurs actifs, printemps à automne seulement'),
-          fromKorea: 'yes',
-          channels: t('앱 등록 (공항에서도 가능)', 'App registration (possible from airport)', "Inscription via l'app (possible depuis l'aéroport)"),
-          pros: [
-            t('연간 $15 — 몬트리올 최고 가성비 이동 수단', 'Annual $15 — best value transit in Montréal', 'Annuel 15 $ — le meilleur rapport qualité-prix à Montréal'),
-            t('한국에서 앱으로 미리 등록 가능', 'Can register in advance from Korea', 'Peut s\'inscrire à l\'avance depuis la Corée'),
-          ],
-          cons: [
-            t('5월–11월만 운영 — 겨울 없음', 'May–November only — not available in winter', 'Mai–novembre seulement — pas disponible en hiver'),
-            t('헬멧 미제공', 'Helmets not provided', 'Casques non fournis'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Communauto',
-          href: 'https://www.communauto.com',
-          external: true,
-          price: t('$15–100/회 (사용량 따라)', '$15–100/use depending on trip', '15–100 $/utilisation selon le trajet'),
-          forWho: t('가끔 차가 필요한 사람 — 이사, 장보기, 나들이', 'Occasional car users — moving, groceries, day trips', 'Utilisateurs occasionnels — déménagement, courses, sorties'),
-          fromKorea: 'yes',
-          channels: t('온라인 등록 (한국에서 가능)', 'Online registration (possible from Korea)', "Inscription en ligne (possible depuis la Corée)"),
-          pros: [
-            t('자동차 소유 없이 필요할 때만 사용', 'No car ownership needed — use only when needed', 'Pas de voiture nécessaire — utilisez seulement quand vous en avez besoin'),
-            t('시간 단위 또는 일 단위 대여', 'Hourly or daily rental', 'Location à l\'heure ou à la journée'),
-            t('한국에서 미리 계정 만들기 가능', 'Can create account from Korea in advance', 'Peut créer un compte depuis la Corée à l\'avance'),
-          ],
-          cons: [
-            t('피크 시간대 차량 없을 수도 있음', 'Cars may not be available during peak hours', 'Voitures peut-être indisponibles aux heures de pointe'),
-            t('퀘벡 면허 필요 (최소 전환 필요)', 'Requires Québec licence (need to transfer)', 'Nécessite un permis québécois (transfert nécessaire)'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Turo',
-          href: 'https://turo.com/ca/en',
-          external: true,
-          price: t('$40–100+/일', '$40–100+/day', '40–100+ $/jour'),
-          forWho: t('하루~며칠 차가 필요한 사람, 렌터카 대안', 'Users needing a car for a day or few days, rental car alternative', 'Utilisateurs ayant besoin d\'une voiture pour 1–3 jours, alternative à la location'),
-          fromKorea: 'yes',
-          channels: t('앱 전용', 'App only', 'App uniquement'),
-          pros: [
-            t('렌터카 회사보다 평균 30% 저렴', '~30% cheaper than traditional rental agencies', '~30 % moins cher que les agences de location traditionnelles'),
-            t('다양한 차량 선택 (전기차 포함)', 'Wide vehicle selection including EVs', 'Large sélection de véhicules dont des véhicules électriques'),
-          ],
-          cons: [
-            t('차량 품질이 오너마다 다름', 'Vehicle quality varies by owner', 'La qualité du véhicule varie selon le propriétaire'),
-            t('반납 장소가 오너 위치에 따라 불편할 수 있음', 'Return location may be inconvenient', 'Le lieu de retour peut être peu pratique'),
-          ],
-          rating: 'ok',
-        }} />
-      </div>
+type TabId = 'sim' | 'bank' | 'transport' | 'housing' | 'sin' | 'licence' | 'language' | 'flights'
 
-      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
-
-      {expanded && (
-        <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('OPUS 카드 사용법', 'Using the OPUS card', "Utiliser la carte OPUS")}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: 'OPUS 카드: 지하철역 자판기에서 $6에 구매, 충전식', en: 'OPUS card: Buy at metro station machines for $6, then load trips or passes', fr: 'Carte OPUS : achetez aux machines des stations de métro pour 6 $, puis rechargez' },
-              { ko: '학생 할인: 유효한 학생증 소지 시 약 30% 할인', en: 'Student discount: ~30% off with valid student ID', fr: 'Réduction étudiant : ~30 % de rabais avec une carte étudiante valide' },
-            ]} />
-          </div>
-          <div>
-            <PanelLabel>{t('공항에서 시내로', 'Airport to city', "De l'aéroport à la ville")}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '747 버스: OPUS 카드 또는 현금 $11, 24시간 운행', en: '747 bus: OPUS card or $11 cash, runs 24/7', fr: 'Bus 747 : carte OPUS ou 11 $ en espèces, 24h/24' },
-              { ko: 'Uber/Taxi: 약 $40–55, 야간에는 이 방법이 편리함', en: 'Uber/Taxi: ~$40–55, best option late at night', fr: 'Uber/Taxi : ~40–55 $, meilleure option en soirée' },
-            ]} />
-          </div>
-          <CommunityExperience section="transport" />
-          <CommunityCTA />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function StayPanel() {
-  const { lang, t } = useLang()
-  const [expanded, setExpanded] = useState(false)
-  return (
-    <div className="space-y-4">
-      <p className="t-body">
-        {t(
-          '처음 1–2주는 Airbnb나 단기 서블렛으로 시작하세요. 도시를 파악한 뒤 장기 숙소를 결정하는 게 훨씬 낫습니다.',
-          'Start with Airbnb or a short sublet for the first 1–2 weeks. You will make better long-term housing decisions once you know the city.',
-          "Commencez par un Airbnb ou une sous-location pour les 1–2 premières semaines. Vous prendrez de meilleures décisions une fois la ville mieux connue.",
-        )}
-      </p>
-
-      {/* Decision cards — always visible */}
-      <div className="space-y-2.5">
-        <CompareCard d={{
-          name: 'Airbnb',
-          href: 'https://www.airbnb.ca',
-          external: true,
-          price: t('$60–150/박 또는 $1,200–2,500/월', '$60–150/night or $1,200–2,500/mo', '60–150 $/nuit ou 1 200–2 500 $/mois'),
-          forWho: t('첫 2주 — 한국에서 예약 가능, 즉시 입주', 'First 2 weeks — book from Korea, move in immediately', '2 premières semaines — réservez depuis la Corée, emménagez immédiatement'),
-          fromKorea: 'yes',
-          channels: t('온라인 · 앱', 'Online · App', 'En ligne · App'),
-          pros: [
-            t('한국에서 예약 확정 가능 — 도착 전 안심', 'Fully confirmed from Korea — peace of mind before arrival', 'Réservation confirmée depuis la Corée — tranquillité avant l\'arrivée'),
-            t('가구 완비, 즉시 입주', 'Fully furnished, move in immediately', 'Entièrement meublé, emménagez immédiatement'),
-            t('리뷰로 품질 확인 가능', 'Reviews let you verify quality in advance', 'Les avis vous permettent de vérifier la qualité à l\'avance'),
-          ],
-          cons: [
-            t('장기 거주 시 비쌈 — 2주 이상은 다른 옵션 추천', 'Expensive for long-term — look elsewhere after 2 weeks', 'Cher pour le long terme — cherchez autre chose après 2 semaines'),
-            t('수수료가 표시 가격의 15–20% 추가', 'Service fees add 15–20% on top of listed price', 'Frais de service 15–20 % en plus du prix affiché'),
-          ],
-          rating: 'top',
-        }} />
-        <CompareCard d={{
-          name: 'Facebook Marketplace',
-          href: 'https://www.facebook.com/marketplace',
-          external: true,
-          price: t('$500–1,200/월 (서블렛)', '$500–1,200/mo (sublet)', '500–1 200 $/mois (sous-location)'),
-          forWho: t('예산 중시자, 현지인 네트워크 있는 사람', 'Budget hunters, those with local contacts', 'Chasseurs de bonnes affaires, ceux ayant des contacts locaux'),
-          fromKorea: 'partial',
-          channels: t('앱 · 웹 (한국에서 문의 가능)', 'App · Web (can contact from Korea)', 'App · Web (contact possible depuis la Corée)'),
-          pros: [
-            t('Airbnb보다 훨씬 저렴', 'Much cheaper than Airbnb', 'Beaucoup moins cher qu\'Airbnb'),
-            t('실제 동네 사람들과 직접 연결', 'Direct connection with real locals', 'Connexion directe avec de vrais locaux'),
-          ],
-          cons: [
-            t('사기 위험 있음 — 선불 요구 시 절대 거절', 'Scam risk — never pay upfront without verification', 'Risque d\'arnaque — ne jamais payer à l\'avance sans vérification'),
-            t('프랑스어로 메시지 보내야 응답률 높음', 'Response rates higher if you message in French', 'Meilleur taux de réponse si vous écrivez en français'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Kijiji',
-          href: 'https://www.kijiji.ca',
-          external: true,
-          price: t('$600–1,500/월 (방 임대)', '$600–1,500/mo (room rental)', '600–1 500 $/mois (location de chambre)'),
-          forWho: t('방 임대 또는 하우스메이트 원하는 사람', 'Room hunters or those wanting a housemate setup', 'Chercheurs de chambre ou de colocation'),
-          fromKorea: 'partial',
-          channels: t('웹 · 앱', 'Web · App', 'Web · App'),
-          pros: [
-            t('다양한 방 임대 및 하우스메이트 옵션', 'Wide variety of room rentals and housemate options', 'Grande variété de locations de chambres et options de colocation'),
-            t('비교적 저렴', 'Relatively affordable', 'Relativement abordable'),
-          ],
-          cons: [
-            t('품질 편차 큼 — 방문 전 사진만 믿지 말 것', 'Quality varies — do not rely on photos alone', 'La qualité varie — ne vous fiez pas uniquement aux photos'),
-            t('응답이 느릴 수 있음', 'Responses can be slow', 'Les réponses peuvent être lentes'),
-          ],
-          rating: 'good',
-        }} />
-      </div>
-
-      <WarnNote text={t(
-        '흔한 실수: 온라인 사진만 보고 장기 계약 체결. 직접 방문 전 최소 1주일은 단기 숙소에서 지내며 동네를 파악하세요.',
-        'Common mistake: signing a long-term lease from photos alone. Stay short-term for at least a week and visit in person first.',
-        'Erreur fréquente : signer un bail à long terme sur la base des photos seulement. Restez en location courte durée au moins une semaine et visitez en personne.',
-      )} />
-
-      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
-
-      {expanded && (
-        <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('단기 vs 장기', 'Short-term vs long-term', 'Court terme vs long terme')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '처음 2주: 단기 숙소로 동네 탐색 후 결정', en: 'First 2 weeks: Use short-term to explore neighbourhoods before committing', fr: 'Les 2 premières semaines : logement temporaire pour explorer les quartiers' },
-              { ko: '장기 임대: 보증금 + 1달치 월세 필요, 신분증·레퍼런스 요구됨', en: 'Long-term rental: Requires deposit + 1 month rent, plus ID and references', fr: "Location longue durée : dépôt + 1 mois de loyer, pièce d'identité et références requises" },
-              { ko: '퀘벡 임대차법: 7월 1일 이사 시즌, 계약 주의', en: 'Quebec lease law: July 1 is peak moving season — plan contracts carefully', fr: 'Bail au Québec : le 1er juillet est la saison des déménagements — planifiez soigneusement' },
-            ]} />
-          </div>
-          <CommunityExperience section="stay" />
-          <CommunityCTA />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function SINPanel() {
-  const { lang, t } = useLang()
-  const [expanded, setExpanded] = useState(false)
-  return (
-    <div className="space-y-4">
-      <p className="t-body">
-        {t(
-          'SIN(사회보험번호)은 일을 하거나 세금 신고를 위해 반드시 필요합니다. 온라인으로 신청하면 2주 내 수령합니다.',
-          'Your SIN (Social Insurance Number) is required to work and file taxes. Apply online and receive it by mail in about 2 weeks.',
-          "Le NAS est requis pour travailler et déclarer vos impôts. Faites la demande en ligne pour le recevoir par courrier en ~2 semaines.",
-        )}
-      </p>
-
-      {/* Decision cards — always visible */}
-      <div className="space-y-2.5">
-        <CompareCard d={{
-            name: t('온라인 신청 — Service Canada', 'Apply Online — Service Canada', 'Demande en ligne — Service Canada'),
-            href: 'https://www.canada.ca/en/employment-social-development/services/sin/apply.html',
-            external: true,
-            price: t('무료', 'Free', 'Gratuit'),
-            forWho: t('모든 이민자 — 가장 빠르고 편한 방법', 'All newcomers — fastest and most convenient', 'Tous les nouveaux arrivants — méthode la plus rapide et pratique'),
-            fromKorea: 'no',
-            channels: t('government.ca 웹사이트', 'government.ca website', 'Site web gouvernement.ca'),
-            pros: [
-              t('약 2주 내 우편 수령', 'Received by mail in ~2 weeks', 'Reçu par courrier en ~2 semaines'),
-              t('줄 서기 없음 — 언제나 신청 가능', 'No queue — apply anytime', 'Pas de file — faites la demande à tout moment'),
-              t('필요 서류: 여권 + 비자/이민 서류만', 'Documents needed: passport + visa/immigration doc only', "Documents requis : passeport + visa/document d'immigration uniquement"),
-            ],
-            cons: [
-              t('카드 수령까지 2주 대기 — 급하면 직접 방문', 'Takes ~2 weeks — if urgent, visit in person', 'Prend ~2 semaines — si urgent, visitez en personne'),
-              t('캐나다 도착 후에만 신청 가능', 'Can only apply after arriving in Canada', "Peut uniquement être demandé après l'arrivée au Canada"),
-            ],
-            rating: 'top',
-          }} />
-          <CompareCard d={{
-            name: t('Service Canada 방문 (당일 발급)', 'Service Canada Office — Same Day', 'Bureau Service Canada — le jour même'),
-            href: 'https://www.servicecanada.gc.ca/tbsc-fsco/sc-hme.jsp?lang=eng',
-            external: true,
-            price: t('무료', 'Free', 'Gratuit'),
-            forWho: t('즉시 SIN이 필요한 사람 (당장 취업 등)', 'Anyone who needs SIN immediately (starting work soon)', "Toute personne ayant besoin du NAS immédiatement (début d'emploi imminent)"),
-            fromKorea: 'no',
-            channels: t('직접 방문 — 예약 강력 권장', 'In-person visit — appointment strongly recommended', 'Visite en personne — rendez-vous fortement recommandé'),
-            pros: [
-              t('당일 확인서 발급 — 즉시 고용주에 제출 가능', 'Same-day confirmation letter — provide to employer immediately', 'Lettre de confirmation le jour même — fournissez à votre employeur immédiatement'),
-            ],
-            cons: [
-              t('예약 없이 방문 시 2–3시간 대기', 'Walk-in: 2–3 hour wait without appointment', "Sans RDV : 2–3 heures d'attente"),
-              t('예약이 몇 주 후일 수도 있음', 'Appointment slots may be weeks away', 'Les créneaux de rendez-vous peuvent être dans plusieurs semaines'),
-            ],
-            rating: 'good',
-          }} />
-      </div>
-
-      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
-
-      {expanded && (
-        <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('신청 전 준비', 'Before you apply', 'Avant de faire la demande')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '여권 + 비자/이민 서류 스캔 파일 준비', en: 'Have scans of your passport and immigration document ready', fr: "Préparez les scans de votre passeport et de votre document d'immigration" },
-              { ko: '캐나다 주소 필요 (임시 주소 가능)', en: 'Canadian mailing address required (temporary is fine)', fr: 'Adresse postale canadienne requise (temporaire acceptée)' },
-            ]} />
-          </div>
-          <div>
-            <PanelLabel>{t('SIN 사용 주의사항', 'Using your SIN safely', 'Utiliser votre NAS en sécurité')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: 'SIN은 고용주, 은행, 세금 신고에만 제공', en: 'Share SIN only with your employer, bank, and tax authorities', fr: 'Ne partagez votre NAS que avec votre employeur, banque et autorités fiscales' },
-              { ko: '절대 이메일·채팅으로 공유하지 마세요', en: 'Never share it via email or chat', fr: 'Ne le partagez jamais par e-mail ou messagerie' },
-            ]} />
-          </div>
-          <CommunityExperience section="sin" />
-          <CommunityCTA />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function DriverLicencePanel() {
-  const { lang, t } = useLang()
-  const [expanded, setExpanded] = useState(false)
-  return (
-    <div className="space-y-4">
-      <p className="t-body">
-        {t(
-          '퀘벡 면허 전환은 도착 후 90일 내에 시작하세요. 한국 면허 소지자는 필기·실기 시험 없이 전환 가능합니다.',
-          'Start your Québec licence transfer within 90 days of arrival. Korean licence holders can convert without written or road tests.',
-          "Commencez le transfert de votre permis québécois dans les 90 jours suivant votre arrivée. Les titulaires d'un permis coréen peuvent le convertir sans examen.",
-        )}
-      </p>
-
-      {/* Decision cards — always visible */}
-      <div className="space-y-2.5">
-        <CompareCard d={{
-          name: 'SAAQ — Permis de conduire',
-          href: 'https://saaq.gouv.qc.ca/en/drivers-licences/obtain-drivers-licence',
-          external: true,
-          price: '$27–35',
-          forWho: t('한국 면허 소지자 — 필기·실기 시험 없이 전환 가능', 'Korean licence holders — transfer without written or road test', "Titulaires d'un permis coréen — transfert sans examen écrit ni pratique"),
-          fromKorea: 'no',
-          channels: t('직접 방문 필수 — 예약 온라인', 'In-person visit required — book appointment online', 'Visite en personne requise — réservez en ligne'),
-          pros: [
-            t('한국 면허 소지자: 필기·실기 시험 면제', 'Korean licence: no written or road test required', 'Permis coréen : aucun examen écrit ou pratique requis'),
-            t('시력 검사는 현장에서 가능 (~$15)', 'Vision test available on-site (~$15)', 'Test de vision disponible sur place (~15 $)'),
-            t('당일 임시 허가증 발급, 플라스틱 카드 우편 수령', 'Temporary permit same day, plastic card by mail', 'Permis temporaire le jour même, carte plastique par courrier'),
-          ],
-          cons: [
-            t('90일 기한 엄수 필요 — 놓치면 시험 다시 봐야 함', '90-day deadline is strict — miss it and you must test', 'Délai de 90 jours strict — passé ce délai, vous devez repasser les examens'),
-            t('공증 번역본 필요 (공인 번역사)', 'Certified translation of Korean licence required', 'Traduction certifiée du permis coréen requise'),
-            t('예약 없이 방문 시 2–3시간 대기', 'Walk-in without appointment: 2–3 hour wait', 'Sans rendez-vous : 2–3 heures d\'attente'),
-          ],
-          rating: 'top',
-        }} />
-      </div>
-
-      <WarnNote text={t(
-        '흔한 실수: 90일 기한을 놓쳐 필기·실기 시험을 다시 봐야 하는 경우. 달력에 꼭 표시해두세요.',
-        'Common mistake: missing the 90-day window and having to take written and road tests from scratch. Put a reminder in your calendar.',
-        'Erreur fréquente : rater la fenêtre de 90 jours et devoir repasser les examens. Mettez un rappel dans votre calendrier.',
-      )} />
-
-      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
-
-      {expanded && (
-        <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('필요 서류', 'What to bring', 'Documents à apporter')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '한국 운전면허증 원본 + 공증 번역본', en: "Korean driver's licence (original) + certified translation", fr: 'Permis de conduire coréen (original) + traduction certifiée' },
-              { ko: '여권', en: 'Passport', fr: 'Passeport' },
-              { ko: '퀘벡 거주 증빙 (임시 주소 가능)', en: 'Proof of Québec address (temporary is fine)', fr: "Preuve d'adresse québécoise (temporaire acceptée)" },
-              { ko: '시력 검사 ($15 내외, SAAQ 방문 시 현장 가능)', en: 'Vision test (~$15, can be done on-site at SAAQ)', fr: 'Test de vision (~15 $, peut être effectué sur place à la SAAQ)' },
-            ]} />
-          </div>
-          <CommunityExperience section="licence" />
-          <CommunityCTA />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function LanguagePanel() {
-  const { lang, t } = useLang()
-  const [expanded, setExpanded] = useState(false)
-  return (
-    <div className="space-y-4">
-      <p className="t-body">
-        {t(
-          '몬트리올에서는 프랑스어가 일상입니다. HAKKYO 언어 교환으로 실생활 표현부터 시작하세요.',
-          'French is part of daily life in Montréal. Start with HAKKYO language exchange for real-world phrases.',
-          "Le français fait partie du quotidien à Montréal. Commencez par l'échange linguistique HAKKYO pour les expressions de la vie réelle.",
-        )}
-      </p>
-
-      {/* Decision cards — always visible */}
-      <div className="space-y-2.5">
-        <CompareCard d={{
-          name: t('HAKKYO 언어 교환', 'HAKKYO Language Exchange', 'Échange linguistique HAKKYO'),
-          href: '/programs?type=language-exchange',
-          external: false,
-          price: t('무료', 'Free', 'Gratuit'),
-          forWho: t('현지 친구를 사귀며 배우고 싶은 사람', 'Anyone who wants to learn while making local friends', 'Toute personne voulant apprendre tout en se faisant des amis locaux'),
-          fromKorea: 'no',
-          channels: t('HAKKYO 앱 · 몬트리올 현장', 'HAKKYO app · In-person Montréal', 'App HAKKYO · En personne à Montréal'),
-          pros: [
-            t('실생활 표현 + 현지 친구 사귀기', 'Real-world phrases + meet locals', 'Expressions réelles + rencontrer des locaux'),
-            t('한국어·영어·프랑스어 동시 교환', 'Korean / English / French all exchanged', 'Coréen / anglais / français tous échangés'),
-            t('소규모 그룹 — 덜 두렵고 더 효과적', 'Small groups — less intimidating, more effective', 'Petits groupes — moins intimidant, plus efficace'),
-          ],
-          cons: [
-            t('스케줄이 정해져 있어 유연성 제한', 'Fixed schedule — less flexible than self-study', 'Horaire fixe — moins flexible que l\'auto-apprentissage'),
-          ],
-          rating: 'top',
-        }} />
-        <CompareCard d={{
-          name: t('HAKKYO 프랑스어 수업', 'HAKKYO French Classes', 'Cours de français HAKKYO'),
-          href: '/programs?language=french',
-          external: false,
-          price: t('무료–소액', 'Free–low cost', 'Gratuit–faible coût'),
-          forWho: t('퀘벡 취업·임대·생활을 위해 프랑스어 필요한 사람', 'Anyone needing French for Québec jobs, rentals, and daily life', 'Toute personne ayant besoin du français pour l\'emploi, le logement et la vie quotidienne'),
-          fromKorea: 'no',
-          channels: t('몬트리올 현장', 'In-person Montréal', 'En personne à Montréal'),
-          pros: [
-            t('초급부터 중급까지 단계별 진행', 'Structured beginner to intermediate levels', 'Niveaux structurés du débutant à l\'intermédiaire'),
-            t('퀘벡 일상 프랑스어 중심', 'Focus on everyday Québec French', 'Axé sur le français québécois du quotidien'),
-          ],
-          cons: [
-            t('도착 후에만 참여 가능', 'In-person only — must be in Montréal', 'En personne uniquement — doit être à Montréal'),
-          ],
-          rating: 'good',
-        }} />
-        <CompareCard d={{
-          name: 'Alliance Française Montréal',
-          href: 'https://www.alliance-francaise.ca/montreal',
-          external: true,
-          price: '$200–500/학기',
-          forWho: t('공식 자격증이 필요한 사람 (DELF 등)', 'Anyone needing official certification (DELF etc.)', 'Toute personne ayant besoin d\'une certification officielle (DELF, etc.)'),
-          fromKorea: 'partial',
-          channels: t('온라인 등록 · 몬트리올 현장', 'Online registration · In-person Montréal', 'Inscription en ligne · En personne à Montréal'),
-          pros: [
-            t('레벨별 공식 수업 및 자격증 제공', 'Official level-based courses and certifications', 'Cours et certifications officiels par niveau'),
-          ],
-          cons: [
-            t('비용이 높음', 'More expensive', 'Plus cher'),
-          ],
-          rating: 'ok',
-        }} />
-        <CompareCard d={{
-          name: 'McGill Continuing Education',
-          href: 'https://www.mcgill.ca/continuingstudies',
-          external: true,
-          price: '$150–400/수업',
-          forWho: t('저렴한 저녁 수업 원하는 직장인', 'Working adults wanting affordable evening classes', 'Actifs souhaitant des cours du soir abordables'),
-          fromKorea: 'partial',
-          channels: t('온라인 등록 · 몬트리올 현장', 'Online registration · In-person Montréal', 'Inscription en ligne · En personne à Montréal'),
-          pros: [
-            t('다양한 언어 — 프랑스어, 영어, 스페인어 등', 'Multiple languages — French, English, Spanish, and more', 'Plusieurs langues — français, anglais, espagnol et plus'),
-            t('저렴한 저녁 수업', 'Affordable evening schedules', 'Cours du soir abordables'),
-          ],
-          cons: [
-            t('HAKKYO보다 현지 네트워크 형성 어려움', 'Less community networking than HAKKYO', 'Moins de réseautage communautaire que HAKKYO'),
-          ],
-          rating: 'ok',
-        }} />
-      </div>
-
-      <ExpandToggle expanded={expanded} onToggle={() => setExpanded(e => !e)} />
-
-      {expanded && (
-        <div className="space-y-4 pt-2">
-          <div>
-            <PanelLabel>{t('어떤 언어부터 시작할까요', 'Which language to start with', 'Par quelle langue commencer')}</PanelLabel>
-            <PrepareList lang={lang} items={[
-              { ko: '프랑스어: 퀘벡 취업·임대·행정에 필수, 기초부터 시작해도 충분', en: 'French: Essential for Québec jobs, rentals, and admin — even basics open doors', fr: "Français : essentiel pour l'emploi, la location et l'administration au Québec — même les bases aident" },
-              { ko: '영어: 비즈니스·다운타운에서 주로 사용, 몬트리올은 이중언어 도시', en: 'English: Used in business and downtown — Montréal is bilingual', fr: 'Anglais : utilisé en affaires et au centre-ville — Montréal est bilingue' },
-              { ko: '언어 교환: 실생활 표현 + 현지 친구 사귀기, 가장 빠른 방법', en: 'Language exchange: Real-world phrases + local friendships, fastest learning path', fr: 'Échange linguistique : expressions réelles + amitiés locales, la voie la plus rapide' },
-            ]} />
-          </div>
-          <CommunityExperience section="language" />
-          <CommunityCTA />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Tool tabs ────────────────────────────────────────────────────────────────
-
-const TOOL_TABS: Array<{ id: string; icon: React.ReactNode } & Tri> = [
-  { id: 'flights',   icon: <IcoFlight />,  ko: '항공편',         en: 'Flights',              fr: 'Vols'              },
-  { id: 'sim',       icon: <IcoSIM />,     ko: '유심 카드',      en: 'SIM Cards',            fr: 'Cartes SIM'        },
-  { id: 'banking',   icon: <IcoBank />,    ko: '은행',           en: 'Banking',              fr: 'Banque'            },
-  { id: 'transport', icon: <IcoTransit />, ko: '교통',           en: 'Transport',            fr: 'Transport'         },
-  { id: 'stay',      icon: <IcoBed />,     ko: '첫 숙소',        en: 'First Stay',           fr: 'Premier Logement'  },
-  { id: 'sin',       icon: <IcoID />,      ko: 'SIN Number',     en: 'SIN Number',           fr: 'NAS'               },
-  { id: 'licence',   icon: <IcoCar />,     ko: '운전 면허증',    en: "Driver's Licence",     fr: 'Permis de conduire'},
-  { id: 'language',  icon: <IcoLang />,    ko: '언어',           en: 'Language',             fr: 'Langue'            },
+const TABS: Array<{
+  id: TabId
+  label: Tri
+  question: Tri
+  Panel: React.FC<{ lang: string }>
+}> = [
+  { id: 'sim',       Panel: SimPanel,       label: { ko: 'SIM 카드',     en: 'SIM Card',    fr: 'Carte SIM'  }, question: { ko: '어느 통신사가 나에게 맞나요?',             en: 'Which provider is right for me?',          fr: 'Quel fournisseur me convient?'            } },
+  { id: 'bank',      Panel: BankPanel,      label: { ko: '은행',         en: 'Bank',        fr: 'Banque'     }, question: { ko: '어느 은행에서 계좌를 개설할까요?',          en: 'Which bank should I open?',                fr: 'Quelle banque ouvrir?'                    } },
+  { id: 'transport', Panel: TransportPanel, label: { ko: '교통',         en: 'Transport',   fr: 'Transport'  }, question: { ko: '어떻게 이동하나요?',                      en: 'How do I get around?',                     fr: 'Comment me déplacer?'                    } },
+  { id: 'housing',   Panel: HousingPanel,   label: { ko: '임시 거처',     en: 'Housing',     fr: 'Logement'   }, question: { ko: '처음 몇 주는 어디서 지내나요?',           en: 'Where do I stay first?',                   fr: 'Où loger en premier?'                    } },
+  { id: 'sin',       Panel: SINPanel,       label: { ko: 'SIN',          en: 'SIN',         fr: 'NAS'        }, question: { ko: 'SIN 번호를 어떻게 받나요?',               en: 'How do I get my SIN?',                     fr: 'Comment obtenir mon NAS?'                } },
+  { id: 'licence',   Panel: LicencePanel,   label: { ko: '운전 면허',     en: "Driver's",    fr: 'Permis'     }, question: { ko: '한국 면허를 어떻게 교환하나요?',           en: 'How do I convert my licence?',             fr: 'Comment convertir mon permis?'           } },
+  { id: 'language',  Panel: LanguagePanel,  label: { ko: '언어 프로그램', en: 'Language',    fr: 'Langue'     }, question: { ko: '어떤 언어 프로그램이 있나요?',             en: 'Which language program fits me?',          fr: 'Quel programme linguistique me convient?' } },
+  { id: 'flights',   Panel: FlightsPanel,   label: { ko: '항공편',       en: 'Flights',     fr: 'Vols'       }, question: { ko: '어떻게 항공편을 예약하나요?',             en: 'How do I book my flight?',                 fr: 'Comment réserver mon vol?'               } },
 ]
 
-// Maps each checklist item to the Essential Tools tab it should open
-const CHECKLIST_TAB_MAP: Record<string, string> = {
-  flight:   'flights',
-  stay:     'stay',
-  sim:      'sim',
-  bank:     'banking',
-  sin:      'sin',
-  opus:     'transport',
-  licence:  'licence',
-  exchange: 'language',
+// ─── Context panel ────────────────────────────────────────────────────────────
+
+function ContextPanel({ tabId, lang, pct }: { tabId: TabId; lang: string; pct: number }) {
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
+
+  const budgets: Record<TabId, React.ReactNode> = {
+    sim: (<>
+      <div className="ctx-row"><span>Fizz (basic)</span><span className="ctx-val">$25/mo</span></div>
+      <div className="ctx-row"><span>Fizz (50 GB)</span><span className="ctx-val">$35/mo</span></div>
+      <div className="ctx-row"><span>Public Mobile</span><span className="ctx-val">$15/mo</span></div>
+      <div className="ctx-row"><span>Bell / Telus</span><span className="ctx-val">$55+/mo</span></div>
+    </>),
+    bank: (<>
+      <div className="ctx-row"><span>{t('입출금 계좌', 'Chequing', 'Compte chèques')}</span><span className="ctx-val">{t('무료~$16/mo', '$0–16/mo', '0–16$/mois')}</span></div>
+      <div className="ctx-row"><span>{t('신용카드 (1년)', 'Credit card yr1', 'Carte crédit an1')}</span><span className="ctx-val">{t('무료 (RBC/BMO)', 'Free (RBC/BMO)', 'Gratuit (RBC/BMO)')}</span></div>
+    </>),
+    transport: (<>
+      <div className="ctx-row"><span>{t('STM 월정액', 'STM monthly', 'Mensuel STM')}</span><span className="ctx-val">$97/mo</span></div>
+      <div className="ctx-row"><span>{t('학생 할인', 'Student rate', 'Tarif étudiant')}</span><span className="ctx-val">$56/mo</span></div>
+      <div className="ctx-row"><span>BIXI (seasonal)</span><span className="ctx-val">$27/mo</span></div>
+      <div className="ctx-row"><span>{t('공항 → 시내 (747)', 'Airport bus (747)', 'Aéroport (747)')}</span><span className="ctx-val">$11</span></div>
+    </>),
+    housing: (<>
+      <div className="ctx-row"><span>Airbnb (2 {t('주', 'weeks', 'sem.')})</span><span className="ctx-val">~$800</span></div>
+      <div className="ctx-row"><span>{t('호스텔 (2주)', 'Hostel (2 weeks)', 'Auberge (2 sem.)')}</span><span className="ctx-val">~$400</span></div>
+      <div className="ctx-row"><span>{t('단기 임대 (1개월)', 'Sublet (1 month)', 'Sous-location (1 mois)')}</span><span className="ctx-val">~$900</span></div>
+    </>),
+    sin: (<>
+      <div className="ctx-row"><span>{t('직접 방문', 'In-person', 'En personne')}</span><span className="ctx-val">{t('당일', 'Same day', 'Même jour')}</span></div>
+      <div className="ctx-row"><span>{t('온라인', 'Online', 'En ligne')}</span><span className="ctx-val">2–4 {t('주', 'weeks', 'semaines')}</span></div>
+    </>),
+    licence: (<>
+      <div className="ctx-row"><span>{t('신청 기한', 'Deadline', 'Délai')}</span><span className="ctx-val">{t('3개월', '3 months', '3 mois')}</span></div>
+    </>),
+    language: (<>
+      <div className="ctx-row"><span>HAKKYO</span><span className="ctx-val">{t('무료', 'Free', 'Gratuit')}</span></div>
+      <div className="ctx-row"><span>SANA</span><span className="ctx-val">{t('무료', 'Free', 'Gratuit')}</span></div>
+      <div className="ctx-row"><span>Concordia CCE</span><span className="ctx-val">$150–500</span></div>
+    </>),
+    flights: (<>
+      <div className="ctx-row"><span>{t('직항 (ICN→YUL)', 'Direct (ICN→YUL)', 'Direct (ICN→YUL)')}</span><span className="ctx-val">$800–1,400</span></div>
+      <div className="ctx-row"><span>{t('경유', 'Via stopover', 'Via escale')}</span><span className="ctx-val">$750–1,200</span></div>
+    </>),
+  }
+
+  const tips: Record<TabId, string> = {
+    sim:       t('비행기 안에서 Fizz eSIM을 개통하세요. 착륙 즉시 연결됩니다.', 'Activate Fizz eSIM on the plane. Connected the moment you land.', "Activez l'eSIM Fizz dans l'avion. Connecté dès l'atterrissage."),
+    bank:      t('주소 증명으로 Airbnb 확인서도 대부분 인정됩니다.', 'Airbnb confirmation is accepted as address proof at most banks.', "La confirmation Airbnb est acceptée comme preuve d'adresse."),
+    transport: t('747번 버스를 타세요 — $11, 신용카드 결제 가능, 24시간 운행.', 'Take the 747 bus — $11, accepts credit card, runs 24/7.', "Prenez le 747 — 11$, carte de crédit acceptée, 24h/24."),
+    housing:   t('Airbnb 주소는 은행 계좌 개설 시 주소 증명이 안 될 수 있습니다.', 'Airbnb addresses may not be accepted for banking — use sublet if possible.', "L'adresse Airbnb peut ne pas être acceptée pour la banque."),
+    sin:       t('Service Canada 방문은 예약 없이도 가능합니다.', 'Service Canada walk-ins are accepted — no appointment needed.', 'Service Canada accepte les visites sans rendez-vous.'),
+    licence:   t('SAAQ는 예약 필수입니다. 미리 온라인으로 예약하세요.', 'SAAQ requires an appointment — book online in advance.', 'SAAQ exige un rendez-vous — réservez en ligne à l\'avance.'),
+    language:  t('HAKKYO 언어 교환부터 시작하세요. 무료이고, 원어민을 만날 수 있습니다.', 'Start with HAKKYO exchange — free, meet native speakers.', 'Commencez par l\'échange HAKKYO — gratuit, rencontrez des locuteurs natifs.'),
+    flights:   t('출발 60~90일 전 예약 시 가격이 가장 낮습니다.', 'Book 60–90 days before departure for the best prices.', 'Réservez 60–90 jours avant le départ pour les meilleurs prix.'),
+  }
+
+  return (
+    <aside className="hidden xl:block w-72 shrink-0 sticky top-0 h-screen overflow-y-auto border-l border-gray-100 px-5 py-8 bg-white">
+      <div className="mb-6">
+        <span className="ctx-label">{t('이 섹션', 'This section', 'Cette section')}</span>
+        <p className="text-[13px] font-medium text-gray-900">
+          {tri(TABS.find(tb => tb.id === tabId)!.label, lang)}
+        </p>
+      </div>
+      <div className="border-t border-gray-100 pt-4 ctx-section">
+        <span className="ctx-label">{t('참고 비용', 'Reference costs', 'Coûts de référence')}</span>
+        {budgets[tabId]}
+      </div>
+      <div className="border-t border-gray-100 pt-4 ctx-section">
+        <span className="ctx-label">{t('팁', 'Tip', 'Conseil')}</span>
+        <div className="ctx-note">{tips[tabId]}</div>
+      </div>
+      <div className="border-t border-gray-100 pt-4">
+        <span className="ctx-label">{t('전체 진행률', 'Overall progress', 'Progression')}</span>
+        <div className="flex items-center gap-3 mt-1">
+          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="text-[12px] font-medium text-gray-500 tabular-nums">{pct}%</span>
+        </div>
+      </div>
+    </aside>
+  )
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -1748,262 +815,98 @@ export default function Arriving() {
     try { return new Set(JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '[]')) }
     catch { return new Set() }
   })
-  const [activeTab, setActiveTab] = useState('flights')
-  const [flash, setFlash] = useState<{ msg: string; visible: boolean } | null>(null)
-  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const toolsRef = useRef<HTMLDivElement>(null)
+  const [activeTab, setActiveTab] = useState<TabId>('sim')
 
   useEffect(() => {
     try { localStorage.setItem(PROGRESS_KEY, JSON.stringify([...checked])) }
     catch {}
   }, [checked])
 
-  function showFlash(msg: string) {
-    if (flashTimer.current) clearTimeout(flashTimer.current)
-    setFlash({ msg, visible: true })
-    flashTimer.current = setTimeout(() => {
-      setFlash(f => f ? { ...f, visible: false } : null)
-      flashTimer.current = setTimeout(() => setFlash(null), 350)
-    }, 2500)
-  }
-
   function toggle(id: string) {
-    const willCheck = !checked.has(id)
     setChecked(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
-    if (willCheck) {
-      const m = MILESTONE_MESSAGES[id]
-      if (m) showFlash(tri(m, lang))
-    }
   }
 
   const pct = Math.round((checked.size / CHECKLIST.length) * 100)
+  const activeTabDef = TABS.find(tb => tb.id === activeTab)!
 
   return (
-    <div className="w-full min-h-screen bg-white pb-24">
-      <div className="max-w-[960px] mx-auto px-6 pt-12 md:pt-[72px] lg:pt-24">
+    <div className="flex min-h-screen">
+      <main className="flex-1 min-w-0 px-6 lg:px-8 pt-12 md:pt-[72px] lg:pt-24 pb-24">
+        <div className="max-w-[720px]">
 
-        {/* ── Header ── */}
-        <div className="mb-14">
-          <p className="t-eyebrow text-gray-400 mb-3">{t('나의 여정', 'My Journey', 'Mon parcours')}</p>
-          <h1 className="t-page text-gray-900 mb-4">
-            {t('첫 걸음', 'First Steps', 'Premiers Pas')}
-          </h1>
-          <p style={{ fontSize: '14px', lineHeight: '1.65' }} className="text-gray-500 max-w-[500px]">
-            {t(
-              '몬트리올 도착 전후로 필요한 모든 것을 한 곳에서.',
-              'Everything you need to move to Montréal — without opening 20 other tabs.',
-              "Tout ce qu'il vous faut pour vous installer à Montréal.",
-            )}
-          </p>
-        </div>
-
-        {/* ── Narrative Anchor ── */}
-        <p style={{ fontSize: '15px', lineHeight: '1.8' }} className="text-gray-400 italic mb-14">
-          {t(
-            '아직도 그 날을 기억하는 사람들이 있어요. 처음 항공권을 예약한 날.',
-            'Many people still remember the day they booked their flight.',
-            'Beaucoup se souviennent encore du jour où ils ont réservé leur vol.',
-          )}
-        </p>
-
-        {/* ── Progress Tracker ── */}
-        <div className="border border-gray-200 rounded-2xl px-5 py-5 mb-4 bg-white">
-          <div className="flex items-center justify-between mb-3">
-            <h2 style={{ fontSize: "17px" }} className="font-bold text-gray-900">
-              {t('나의 몬트리올 준비', 'Your Montréal Progress', 'Votre Progression')}
-            </h2>
-            {/* Human-readable count instead of large % */}
-            <span className="text-[12px] text-gray-400 shrink-0">
-              {checked.size} / {CHECKLIST.length} {t('완료', 'done', 'fait')}
-            </span>
-          </div>
-
-          <p className="text-[12px] text-gray-400 mb-3 leading-snug">
-            {getJourneyMessage(pct, lang)}
-          </p>
-
-          <div className="h-[2px] bg-gray-100 rounded-full mb-4 overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${pct}%`, background: 'var(--y)' }}
-            />
-          </div>
-
-          {/* Milestone flash */}
-          <div
-            style={{
-              maxHeight: flash ? 44 : 0,
-              opacity: flash?.visible ? 1 : 0,
-              marginBottom: flash ? 12 : 0,
-              overflow: 'hidden',
-              transition: 'max-height 0.25s ease, opacity 0.35s ease, margin-bottom 0.25s ease',
-            }}
-          >
-            {flash && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium" style={{ background: 'var(--y-l)', color: '#92400E' }}>
-                <span className="text-[12px] font-bold" style={{ color: 'var(--y-h)' }}>→</span>
-                <span>{flash.msg}</span>
+          {/* Page header */}
+          <div className="mb-10">
+            <p className="t-eyebrow mb-3">{t('나의 여정 · 01', 'My Journey · 01', 'Mon parcours · 01')}</p>
+            <div className="flex items-end justify-between gap-4 flex-wrap">
+              <h1 className="t-page">{t('첫 걸음', 'First Steps', 'Premiers Pas')}</h1>
+              <div className="text-right shrink-0 mb-1">
+                <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{checked.size} / {CHECKLIST.length}</p>
+                <p className="text-[11px] text-gray-400 mt-1">{t('완료', 'done', 'fait')}</p>
               </div>
-            )}
-          </div>
-
-          {/* Two-column grid on sm+, single column on mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5">
-            {CHECKLIST.map(item => {
-              const isDone = checked.has(item.id)
-              const tabTarget = CHECKLIST_TAB_MAP[item.id]
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    toggle(item.id)
-                    if (tabTarget) {
-                      setActiveTab(tabTarget)
-                      setTimeout(() => {
-                        toolsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                      }, 50)
-                    }
-                  }}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors hover:bg-gray-50 group"
-                >
-                  <span className="shrink-0 w-4 flex items-center justify-center">
-                    {isDone ? (
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--y-h)' }}>
-                        <polyline points="1.5,6 4.5,9 10.5,3"/>
-                      </svg>
-                    ) : (
-                      <span className="w-3 h-3 rounded-sm border border-gray-300 inline-block" />
-                    )}
-                  </span>
-                  <span className={`text-[13px] flex-1 ${isDone ? 'text-gray-400' : 'text-gray-700'}`}>
-                    {tri(item, lang)}
-                  </span>
-                  {/* subtle hint that item links to a guide */}
-                  {tabTarget && !isDone && (
-                    <span className="text-[10px] text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      →
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* ── Completion note — editorial, shown only at 100% ── */}
-        {pct === 100 && (
-          <div className="border border-gray-200 rounded-2xl px-5 py-5 mb-6 bg-white">
-            <p className="text-[14px] font-semibold text-gray-900 mb-3">
-              {t('몬트리올에 도착하셨네요.', 'You\'ve arrived in Montréal.', 'Vous êtes arrivé·e à Montréal.')}
-            </p>
-            <p className="text-[13px] text-gray-500 leading-[1.85] mb-4">
-              {t(
-                '집을 구하고,\n사람을 만나고,\n언어를 배우며,\n\n이 도시를 조금씩 알아갈 차례입니다.',
-                "Find a home,\nmeet people,\nlearn the language,\n\nand get to know this city, one step at a time.",
-                "Trouvez un logement,\nrencontrez des gens,\napprenez la langue,\n\net découvrez cette ville, pas à pas.",
-              ).split('\n').map((line, i) => (
-                <span key={i}>{line}{i < 4 ? <br /> : null}</span>
-              ))}
-            </p>
-
-            <div className="border-t border-gray-100 pt-4">
-              <p className="text-[13px] font-semibold text-gray-800 mb-1">
-                {t('학교 친구들아, 모여라!', 'Meet people in Montréal', 'Rencontrez des gens à Montréal')}
-              </p>
-              <p className="text-[12px] text-gray-400 mb-4">
-                {t(
-                  '한국어 · 영어 · 프랑스어 · 언어 교환',
-                  'Korean · English · French · Language exchange',
-                  'Coréen · Anglais · Français · Échange linguistique',
-                )}
-              </p>
-              <Link
-                to="/programs"
-                className="inline-flex items-center gap-1 text-[13px] font-semibold text-gray-900 hover:opacity-70 transition-opacity"
-              >
-                <span
-                  className="inline-flex items-center px-3 py-1.5 rounded-lg text-[12px] font-bold mr-1"
-                  style={{ background: 'var(--y)', color: '#111' }}
-                >
-                  →
-                </span>
-                {t('프로그램 보기', 'Browse Programs', 'Voir les programmes')}
-              </Link>
             </div>
+            <p className="text-[14px] text-gray-400 mt-3 leading-relaxed max-w-[520px]">
+              {t(
+                '몬트리올 도착 전후로 필요한 모든 것을 한 곳에서.',
+                'Everything you need to move to Montréal — without opening 20 other tabs.',
+                "Tout ce qu'il vous faut pour vous installer à Montréal.",
+              )}
+            </p>
           </div>
-        )}
 
-        {/* ── Essential Tools ── */}
-        <div className="border-t border-gray-100 mt-14 mb-14" />
-        <div className="mb-8" ref={toolsRef}>
-          <p className="t-eyebrow text-gray-400 mb-4">{t('필수 가이드', 'Essential Guides', 'Guides essentiels')}</p>
-          <h2 className="t-section text-gray-900 mb-3">
-            {t('필수 도구', 'Essential Tools', 'Outils Essentiels')}
-          </h2>
-          <p style={{ fontSize: '16px', lineHeight: '1.7' }} className="text-gray-500 mb-8 max-w-[480px]">
-            {t(
-              '링크 목록이 아닌, 결정을 내리는 데 필요한 모든 정보.',
-              'Everything you need to make decisions — not just a list of links.',
-              "Tout ce qu'il faut pour décider — pas seulement une liste de liens.",
-            )}
-          </p>
-
-          {/* Tab navigation — segmented, horizontal scroll on mobile */}
-          <div className="overflow-x-auto pb-1 -mx-1 px-1 mb-8">
-            <div className="flex gap-2 min-w-max">
-              {TOOL_TABS.map(tab => {
-                const active = activeTab === tab.id
+          {/* Checklist strip */}
+          <div className="mb-10">
+            <p className="t-section mb-4">{t('체크리스트', 'Checklist', 'Liste de vérification')}</p>
+            <div className="check-strip">
+              {CHECKLIST.map(item => {
+                const done = checked.has(item.id)
                 return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className="flex items-center gap-2 text-[13px] font-semibold px-4 py-2.5 rounded-2xl border transition-all whitespace-nowrap"
-                    style={active
-                      ? { background: '#111', borderColor: '#111', color: '#fff' }
-                      : { background: '#fafafa', borderColor: '#E5E7EB', color: '#6B7280' }}
-                  >
-                    <span style={{ opacity: active ? 0.8 : 0.5 }}>{tab.icon}</span>
-                    {tri(tab, lang)}
+                  <button key={item.id} onClick={() => toggle(item.id)} className={`check-chip${done ? ' done' : ''}`}>
+                    <span className={`w-3 h-3 rounded-sm border flex-shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-gray-900 border-gray-900' : 'border-gray-300'}`}>
+                      {done && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </span>
+                    <span className="label">{tri(item, lang)}</span>
                   </button>
                 )
               })}
             </div>
+            {pct > 0 && <p className="text-[12px] text-gray-400 mt-3">{getJourneyMessage(pct, lang)}</p>}
           </div>
 
-          <div className="rounded-2xl border border-gray-100 px-6 py-7 md:px-8 md:py-9 bg-white">
-            {activeTab === 'flights'   && <FlightsPanel />}
-            {activeTab === 'sim'       && <SIMPanel />}
-            {activeTab === 'banking'   && <BankingPanel />}
-            {activeTab === 'transport' && <TransportPanel />}
-            {activeTab === 'stay'      && <StayPanel />}
-            {activeTab === 'sin'       && <SINPanel />}
-            {activeTab === 'licence'   && <DriverLicencePanel />}
-            {activeTab === 'language'  && <LanguagePanel />}
+          {/* Decision tools */}
+          <div>
+            <p className="t-section mb-4">{t('결정 도구', 'Decision tools', 'Outils de décision')}</p>
+            <div className="flex gap-1 overflow-x-auto pb-1 mb-0 scrollbar-hide flex-wrap md:flex-nowrap">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'bg-gray-900 text-white'
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  {tri(tab.label, lang)}
+                </button>
+              ))}
+            </div>
+            <div className="border border-gray-200 rounded-xl overflow-hidden mt-2">
+              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+                <p className="text-[13px] font-medium text-gray-700">{tri(activeTabDef.question, lang)}</p>
+              </div>
+              <div className="px-5 py-5">
+                <activeTabDef.Panel lang={lang} />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* ── CTA ── */}
-        <div className="border border-gray-200 rounded-2xl px-6 py-6 text-center">
-          <p className="text-[16px] font-bold text-gray-900 mb-1">
-            {t('비슷한 고민을 했던 사람들에게 물어보세요.', 'Ask people who went through the same thing.', 'Demandez à ceux qui sont passés par là.')}
-          </p>
-          <p className="text-[13px] text-gray-500 mb-4">
-            {t(
-              '이미 몬트리올에 살고 있는 사람들에게 직접 물어보세요.',
-              'Ask people who have already made the move.',
-              'Demandez à ceux qui ont déjà fait le déménagement.',
-            )}
-          </p>
-          <Link to="/board" className="inline-flex items-center gap-2 btn-yellow rounded-xl px-6 py-2.5 text-[14px] font-bold">
-            {t('커뮤니티에 물어보기 →', 'Ask the community →', 'Demander à la communauté →')}
-          </Link>
         </div>
-
-      </div>
+      </main>
+      <ContextPanel tabId={activeTab} lang={lang} pct={pct} />
     </div>
   )
 }

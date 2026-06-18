@@ -66,8 +66,8 @@
 
   /* Hero — homepage main title */
   .t-hero {
-    font-size: clamp(42px, 5.5vw, 68px);
-    font-weight: 700;
+    font-size: clamp(36px, 4vw, 52px);
+    font-weight: 300;
     letter-spacing: -0.03em;
     line-height: 1.05;
     color: #111;
@@ -75,20 +75,21 @@
 
   /* Page title — per-page h1 */
   .t-page {
-    font-size: clamp(28px, 3.5vw, 40px);
-    font-weight: 600;
+    font-size: 32px;
+    font-weight: 300;
     letter-spacing: -0.02em;
-    line-height: 1.15;
+    line-height: 1.2;
     color: #111;
   }
 
   /* Section heading — h2-level within a page */
   .t-section {
-    font-size: clamp(17px, 2vw, 22px);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
-    color: #111;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    line-height: 1.2;
   }
 
   /* Card / item title */
@@ -121,6 +122,47 @@
     text-transform: uppercase;
     color: #9ca3af;
   }
+
+  /* Comparison table */
+  .comp-table { width: 100%; border-collapse: collapse; }
+  .comp-table th {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #9ca3af; padding: 7px 12px; text-align: left;
+    border-bottom: 1px solid #e5e7eb; white-space: nowrap;
+  }
+  .comp-table td {
+    padding: 10px 12px; border-bottom: 1px solid #f3f4f6;
+    font-size: 13px; color: #374151; vertical-align: top;
+  }
+  .comp-table tr:hover td { background: #fafafa; }
+  .comp-table td.name-cell { font-weight: 600; color: #111827; white-space: nowrap; }
+
+  /* Context panel */
+  .ctx-section { margin-bottom: 20px; }
+  .ctx-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #9ca3af; margin-bottom: 8px; display: block;
+  }
+  .ctx-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; color: #4b5563; padding: 5px 0; border-bottom: 1px solid #f3f4f6;
+  }
+  .ctx-val { font-weight: 600; color: #111827; }
+  .ctx-note {
+    font-size: 11px; color: #6b7280; padding: 6px 8px;
+    background: #f9fafb; border-radius: 4px; margin-bottom: 5px; line-height: 1.4;
+  }
+
+  /* Checklist strip */
+  .check-strip { display: flex; gap: 6px; flex-wrap: wrap; }
+  .check-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border: 1px solid #e5e7eb; border-radius: 20px;
+    font-size: 12px; color: #374151; cursor: pointer; transition: all 0.15s;
+    background: white; user-select: none;
+  }
+  .check-chip:hover { border-color: #9ca3af; }
+  .check-chip.done { background: #f9fafb; color: #9ca3af; border-color: #f3f4f6; }
 
   /* ─── Layout ─────────────────────────────────────────────────────────────*/
 

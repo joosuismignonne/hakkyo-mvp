@@ -1124,6 +1124,88 @@ function ToolPanel({ id, lang, t }: { id: string; lang: string; t: (ko: string, 
   return null
 }
 
+// ─── Neighbourhood comparison matrix ──────────────────────────────────────────
+
+interface MatrixHood {
+  name: string
+  tagline: { ko: string; en: string; fr: string }
+  rent: string
+  rentColor: 'hi' | 'md' | 'lo'
+  metro: 1|2|3|4|5; students: 1|2|3|4|5; families: 1|2|3|4|5
+  french: 1|2|3|4|5; nightlife: 1|2|3|4|5; walkability: 1|2|3|4|5
+  badge?: string; badgeCls?: string
+}
+
+const MATRIX_HOODS: MatrixHood[] = [
+  { name: 'Plateau', tagline: { ko: '활기차고 트렌디', en: 'Vibrant, trendy', fr: 'Vibrant et tendance' }, rent: '$1,350–1,600', rentColor: 'hi', metro: 3, students: 5, families: 3, french: 4, nightlife: 5, walkability: 5, badge: 'Popular', badgeCls: 'bg-blue-50 text-blue-700' },
+  { name: 'Mile End', tagline: { ko: '창의적이고 조용한', en: 'Creative, quiet', fr: 'Créatif et calme' }, rent: '$1,400–1,700', rentColor: 'hi', metro: 3, students: 5, families: 4, french: 3, nightlife: 3, walkability: 5, badge: 'Expats ↑', badgeCls: 'bg-purple-50 text-purple-700' },
+  { name: 'Verdun', tagline: { ko: '조용하고 강변', en: 'Quiet, riverside', fr: 'Calme, bord du fleuve' }, rent: '$850–1,100', rentColor: 'lo', metro: 4, students: 3, families: 5, french: 5, nightlife: 2, walkability: 4, badge: 'Budget', badgeCls: 'bg-green-50 text-green-700' },
+  { name: 'CDN–NDG', tagline: { ko: '한인 커뮤니티', en: 'Korean community', fr: 'Communauté coréenne' }, rent: '$1,100–1,400', rentColor: 'md', metro: 5, students: 4, families: 5, french: 4, nightlife: 2, walkability: 5, badge: '한인 ↑', badgeCls: 'bg-yellow-50 text-yellow-800' },
+  { name: 'Downtown', tagline: { ko: '중심가, 분주함', en: 'Central, busy', fr: 'Central, animé' }, rent: '$1,600–2,200', rentColor: 'hi', metro: 5, students: 5, families: 2, french: 3, nightlife: 5, walkability: 5 },
+  { name: 'Rosemont', tagline: { ko: '가족 친화적', en: 'Family-friendly', fr: 'Familial' }, rent: '$1,050–1,350', rentColor: 'md', metro: 4, students: 3, families: 5, french: 5, nightlife: 2, walkability: 4, badge: 'Families', badgeCls: 'bg-orange-50 text-orange-700' },
+]
+
+function DotScore({ score }: { score: number }) {
+  return (
+    <span className="flex gap-0.5 items-center">
+      {[1,2,3,4,5].map(i => (
+        <span key={i} className={`inline-block w-1.5 h-1.5 rounded-full ${i <= score ? 'bg-gray-800' : 'bg-gray-200'}`} />
+      ))}
+    </span>
+  )
+}
+
+function NeighbourhoodMatrix({ lang }: { lang: string }) {
+  const t = (ko: string, en: string, fr: string) => lang === 'ko' ? ko : lang === 'fr' ? fr : en
+  const rentCls = { hi: 'text-red-600 font-semibold', md: 'text-amber-600 font-semibold', lo: 'text-green-600 font-semibold' }
+  return (
+    <div className="overflow-x-auto">
+      <table className="comp-table">
+        <thead>
+          <tr>
+            <th>{t('동네', 'Neighbourhood', 'Quartier')}</th>
+            <th>{t('월세 (1BR)', 'Rent (1BR)', 'Loyer (1ch.)')}</th>
+            <th>Metro</th>
+            <th>{t('학생', 'Students', 'Étudiants')}</th>
+            <th>{t('가족', 'Families', 'Familles')}</th>
+            <th>{t('프랑스어', 'French', 'Français')}</th>
+            <th>{t('나이트라이프', 'Nightlife', 'Vie nocturne')}</th>
+            <th>{t('도보성', 'Walk', 'Marchabilité')}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {MATRIX_HOODS.map(h => (
+            <tr key={h.name}>
+              <td className="name-cell">
+                {h.name}
+                <div className="text-[11px] text-gray-400 font-normal mt-0.5">{tri(h.tagline, lang)}</div>
+              </td>
+              <td className={`text-[12px] tabular-nums ${rentCls[h.rentColor]}`}>{h.rent}</td>
+              <td><DotScore score={h.metro} /></td>
+              <td><DotScore score={h.students} /></td>
+              <td><DotScore score={h.families} /></td>
+              <td><DotScore score={h.french} /></td>
+              <td><DotScore score={h.nightlife} /></td>
+              <td><DotScore score={h.walkability} /></td>
+              <td>
+                {h.badge && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${h.badgeCls}`}>{h.badge}</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="flex gap-4 mt-3 text-[11px] text-gray-400">
+        <span><span className="inline-flex gap-0.5">{[1,2,3,4,5].map(i => <span key={i} className="inline-block w-1.5 h-1.5 rounded-full bg-gray-800"/>)}</span> {t('매우 좋음', 'Excellent', 'Excellent')}</span>
+        <span><span className="inline-flex gap-0.5">{[1,2,3].map(i => <span key={i} className={`inline-block w-1.5 h-1.5 rounded-full ${i<=3?'bg-gray-800':'bg-gray-200'}`}/>)}<span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-200"/><span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-200"/></span> {t('보통', 'Average', 'Moyen')}</span>
+        <span><span className="inline-flex gap-0.5">{[1].map(i => <span key={i} className="inline-block w-1.5 h-1.5 rounded-full bg-gray-800"/>)}<span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-200"/><span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-200"/><span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-200"/><span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-200"/></span> {t('낮음', 'Low', 'Faible')}</span>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Settling() {
@@ -1152,20 +1234,18 @@ export default function Settling() {
   const ctaCls = 'inline-flex items-center text-[12px] font-semibold text-gray-500 hover:text-gray-800 transition-colors'
 
   return (
-    <div className="w-full min-h-screen bg-white pb-24">
-      <div className="max-w-[960px] mx-auto px-6 pt-12 md:pt-[72px] lg:pt-24 space-y-0">
+    <div className="flex min-h-screen">
+      <main className="flex-1 min-w-0 pb-24">
+      <div className="max-w-[720px] mx-auto px-6 pt-12 md:pt-[72px] lg:pt-24">
 
         {/* ── HEADER ── */}
         <section className="mb-14">
+          <p className="t-eyebrow mb-3">{t('나의 여정 · 02', 'My Journey · 02', 'Mon parcours · 02')}</p>
           <h1 className="t-page text-gray-900 mb-4">
             {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
           </h1>
-          <p style={{ fontSize: '14px', lineHeight: '1.65' }} className="text-gray-500 max-w-[500px]">
-            {t(
-              '예산 설정부터 계약, 입주 후 생활까지. 몬트리올에서 집을 구하는 과정을 단계별로 안내합니다.',
-              'From setting a budget to signing a lease and settling in. A step-by-step guide to finding a home in Montréal.',
-              'Du budget à la signature du bail et à l\'installation. Un guide étape par étape pour trouver un logement à Montréal.',
-            )}
+          <p className="text-[14px] text-gray-400 mt-3 leading-relaxed max-w-[520px]">
+            {t('예산 설정부터 계약, 입주 후 생활까지. 몬트리올에서 집을 구하는 과정을 단계별로 안내합니다.', 'From setting a budget to signing a lease and settling in. A step-by-step guide to finding a home in Montréal.', "Du budget à la signature du bail et à l'installation. Guide étape par étape.")}
           </p>
         </section>
 
@@ -1263,6 +1343,15 @@ export default function Settling() {
           </div>
         </section>
 
+        {/* ── NEIGHBOURHOOD COMPARISON ── */}
+        <section className="mb-16">
+          <p className="t-section mb-2">{t('동네 비교', 'Neighbourhood Comparison', 'Comparaison des quartiers')}</p>
+          <p className="text-[13px] text-gray-500 mb-4">
+            {t('각 동네의 월세, 교통, 분위기를 한눈에 비교해보세요.', 'Compare rent, transit, and vibe across neighbourhoods at a glance.', 'Comparez loyer, transport et ambiance des quartiers en un coup d\'œil.')}
+          </p>
+          <NeighbourhoodMatrix lang={lang} />
+        </section>
+
         {/* ── ESSENTIAL TOOLS ── */}
         <section ref={toolsRef} className="mb-16">
           <SectionLabel>{t('필수 도구', 'Essential Tools', 'Outils essentiels')}</SectionLabel>
@@ -1320,6 +1409,27 @@ export default function Settling() {
         </section>
 
       </div>
+      </main>
+      <aside className="hidden xl:block w-72 shrink-0 sticky top-0 h-screen overflow-y-auto border-l border-gray-100 px-5 py-8 bg-white">
+        <div className="ctx-section">
+          <span className="ctx-label">{t('이사 시즌', 'Move-in season', 'Saison de déménagement')}</span>
+          <div className="ctx-note">{t('7월 1일은 몬트리올의 이사의 날입니다. 4월~6월에 매물이 가장 많습니다.', "July 1 is Montréal's moving day. Listings peak in April–June.", "Le 1er juillet est le jour de déménagement. Les annonces sont au maximum en avril–juin.")}</div>
+        </div>
+        <div className="border-t border-gray-100 pt-4 ctx-section">
+          <span className="ctx-label">{t('평균 월세 (1BR)', 'Avg rent (1BR)', 'Loyer moyen (1ch.)')}</span>
+          {MATRIX_HOODS.map(h => (
+            <div key={h.name} className="ctx-row">
+              <span>{h.name}</span>
+              <span className="ctx-val">{h.rent.split('–')[0]}</span>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-gray-100 pt-4">
+          <span className="ctx-label">{t('임대 주의사항', 'Lease reminders', 'Rappels de bail')}</span>
+          <div className="ctx-note">{t('퀘벡 임대는 12개월 기본입니다. 집주인은 90일 전에 갱신 거절을 통보해야 합니다.', 'Quebec leases are 12 months. Landlord must give 90 days notice to not renew.', 'Les baux québécois sont de 12 mois. Le propriétaire doit donner 90 jours de préavis.')}</div>
+          <div className="ctx-note">{t('신용 기록이 없다면 보증인을 요청하세요.', 'No credit history? Ask for a co-signer option.', 'Pas d\'historique de crédit? Demandez une caution.')}</div>
+        </div>
+      </aside>
     </div>
   )
 }
