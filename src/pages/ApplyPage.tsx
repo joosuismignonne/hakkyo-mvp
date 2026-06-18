@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ChevronLeft, Check, ArrowRight, ChevronDown } from 'lucide-react'
-import { getTrackById, submitProgramApplication } from '../lib/db'
+import { getTrackById, submitSimpleApplication } from '../lib/db'
+import { useLang } from '../context/LangContext'
 import { trackEvent } from '../lib/analytics'
 import type { ProgramTrack } from '../types'
 
-// ── The application page is permanently trilingual.
-//    The site language toggle does NOT affect this page.
-//    Every text element always shows: French (primary) → English → Korean.
+// ── UI language follows the site language selected by the user.
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Program language detection
@@ -545,26 +544,13 @@ function buildSteps(pl: ProgLang): StepConfig[] {
 // ──────────────────────────────────────────────────────────────────────────────
 
 const SECTION_BG: Record<string, string> = {
-  // S01 — A blank page. Arrival. White silence.
-  basic: '#ffffff',
-
-  // S02 — A quiet Montréal morning. Pale sky above, warm stone below.
-  montreal: 'linear-gradient(180deg, #cddde8 0%, #d8e4e8 28%, #e4e8e2 56%, #ece8de 82%, #f0ece4 100%)',
-
-  // S03 — A path into the distance. Warm dust, open air, movement.
-  language: 'linear-gradient(168deg, #f0ede8 0%, #e6e0d8 46%, #dbd4ca 100%)',
-
-  // S04 — A horizon. Cool sky, warm earth. A future not yet reached.
-  goals: 'linear-gradient(180deg, #bfcedb 0%, #cbd6e2 20%, #d3dce6 42%, #dfe3e6 62%, #e8e6de 82%, #eceadf 100%)',
-
-  // S05 — A warm interior. Amber light. A desk by a window.
-  learning: 'linear-gradient(154deg, #f4e8d2 0%, #eedfca 50%, #e8d6bc 100%)',
-
-  // S06 — A shared table. The warmest moment. Conversation.
-  hakkyo: 'linear-gradient(148deg, #f0dece 0%, #e8d0be 46%, #e0c6b0 100%)',
-
-  // S07 — Late afternoon. Long shadows. A pause before leaving.
-  last: 'linear-gradient(180deg, #ece6dc 0%, #e4ddd0 30%, #ddd5c8 64%, #d8cfc0 100%)',
+  basic:    '#FAFAFA',
+  montreal: 'linear-gradient(180deg, #F7FAFC 0%, #EEF4F7 100%)',
+  language: 'linear-gradient(180deg, #FFFCF5 0%, #F8F0DF 100%)',
+  goals:    'linear-gradient(180deg, #FFFCF5 0%, #F8F0DF 100%)',
+  learning: 'linear-gradient(180deg, #F8FBF7 0%, #EEF5EC 100%)',
+  hakkyo:   'linear-gradient(180deg, #F8FBF7 0%, #EEF5EC 100%)',
+  last:     '#FFFFFF',
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -589,48 +575,49 @@ export function shortLevel(raw: string): string {
 // Trilingual display components
 // ──────────────────────────────────────────────────────────────────────────────
 
-function Heading3({ t }: { t: T3 }) {
+function Heading3({ t, lang }: { t: T3; lang: string }) {
   return (
     <div className="mb-3">
-      <h2 className="text-[26px] md:text-[30px] font-light text-gray-900 leading-tight">{t.fr}</h2>
-      <p className="text-[14px] text-gray-500 leading-snug mt-2">{t.en}</p>
-      <p className="text-[13px] text-gray-500 leading-snug mt-1">{t.ko}</p>
+      <h2 className="text-[26px] md:text-[30px] font-light text-gray-900 leading-tight">
+        {lang === 'ko' ? t.ko : lang === 'fr' ? t.fr : t.en}
+      </h2>
     </div>
   )
 }
 
-function Sub3({ t }: { t: T3 }) {
+function Sub3({ t, lang }: { t: T3; lang: string }) {
   return (
     <div className="mb-8">
-      <p className="text-[13px] text-gray-600 leading-relaxed">{t.fr}</p>
-      <p className="text-[12px] text-gray-500 leading-relaxed mt-1.5">{t.en}</p>
-      <p className="text-[11px] text-gray-500 leading-relaxed mt-1">{t.ko}</p>
+      <p className="text-[13px] text-gray-500 leading-relaxed">
+        {lang === 'ko' ? t.ko : lang === 'fr' ? t.fr : t.en}
+      </p>
     </div>
   )
 }
 
-function Label3({ t }: { t: T3 }) {
+function Label3({ t, lang }: { t: T3; lang: string }) {
   return (
     <div className="mb-2">
-      <p className="text-[12px] text-gray-700 font-medium leading-snug">{t.fr}</p>
-      <p className="text-[11px] text-gray-500 leading-snug mt-1">{t.en}</p>
-      <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{t.ko}</p>
+      <p className="text-[12px] text-gray-700 font-medium leading-snug">
+        {lang === 'ko' ? t.ko : lang === 'fr' ? t.fr : t.en}
+      </p>
     </div>
   )
 }
 
-function SectionPill3({ label }: { label: T3 }) {
+function SectionPill3({ label, lang }: { label: T3; lang: string }) {
   return (
     <div className="mb-6">
-      <p className="text-[10px] font-bold tracking-[0.16em] uppercase text-gray-700">{label.fr}</p>
-      <p className="text-[9px] tracking-[0.12em] uppercase text-gray-500 mt-1">{label.en} · {label.ko}</p>
+      <p className="text-[10px] font-bold tracking-[0.16em] uppercase text-gray-500">
+        {lang === 'ko' ? label.ko : lang === 'fr' ? label.fr : label.en}
+      </p>
     </div>
   )
 }
 
 function RadioBtn({
-  option, index, selected, onClick,
-}: { option: RadioOption; index: number; selected: boolean; onClick: () => void }) {
+  option, index, selected, onClick, lang,
+}: { option: RadioOption; index: number; selected: boolean; onClick: () => void; lang: string }) {
   return (
     <button
       type="button"
@@ -647,8 +634,9 @@ function RadioBtn({
         {String.fromCharCode(65 + index)}
       </span>
       <span className="flex-1 min-w-0">
-        <span className="block text-[14px] leading-snug">{option.fr}</span>
-        <span className={['block text-[12px] mt-1 leading-snug', selected ? 'opacity-60' : 'text-gray-500'].join(' ')}>{option.en} · {option.ko}</span>
+        <span className="block text-[14px] leading-snug">
+          {lang === 'ko' ? option.ko : lang === 'fr' ? option.fr : option.en}
+        </span>
       </span>
       {selected && <Check size={13} className="ml-auto shrink-0 mt-1" />}
     </button>
@@ -661,7 +649,7 @@ function RadioBtn({
 // Profile summary panel
 // ──────────────────────────────────────────────────────────────────────────────
 
-function ProfileSummary({ draft, step, pl }: { draft: Draft; step: number; pl: ProgLang }) {
+function ProfileSummary({ draft, step, pl, lang, sectionTitle, emptyText }: { draft: Draft; step: number; pl: ProgLang; lang: string; sectionTitle: string; emptyText: string }) {
   const ln          = PROG_LANG_NAMES[pl]
   const displayName = draft.preferred_name?.trim() || draft.name?.trim()
   const level       = draft.korean_level ? shortLevel(draft.korean_level) : null
@@ -675,17 +663,11 @@ function ProfileSummary({ draft, step, pl }: { draft: Draft; step: number; pl: P
   return (
     <div className="pt-1">
       <div className="mb-6">
-        <p className="text-[11px] font-semibold text-gray-700 leading-tight mb-0.5">Votre profil HAKKYO</p>
-        <p className="text-[9px] text-gray-400 leading-tight mb-0.5">Your HAKKYO Profile</p>
-        <p className="text-[9px] text-gray-300 leading-tight">나의 HAKKYO 프로필</p>
+        <p className="text-[10px] font-bold tracking-[0.16em] uppercase text-gray-400 leading-tight">{sectionTitle}</p>
       </div>
       <div className="h-px bg-gray-100 mb-5" />
       {(!hasContent || step < 1) ? (
-        <div className="space-y-0.5">
-          <p className="text-[11px] text-gray-300 leading-relaxed">Vos réponses apparaîtront ici au fur et à mesure.</p>
-          <p className="text-[10px] text-gray-300 leading-relaxed">Your answers will appear here as you go.</p>
-          <p className="text-[9px] text-gray-300 leading-relaxed">답변이 여기에 나타납니다.</p>
-        </div>
+        <p className="text-[11px] text-gray-300 leading-relaxed">{emptyText}</p>
       ) : (
         <div className="space-y-4">
           {displayName && <p className="text-[14px] font-medium text-gray-700 leading-tight">{displayName}</p>}
@@ -770,6 +752,19 @@ export default function ApplyPage() {
   }, [draft, id])
 
   // Compute program language and steps after program loads
+  const { lang } = useLang()
+
+  // Section title for sidebar based on current step section
+  const SECTION_TITLE_MAP: Record<string, { ko: string; en: string; fr: string }> = {
+    basic:    { ko: '기본 정보', en: 'Basic Information', fr: 'Informations personnelles' },
+    montreal: { ko: '몬트리올 여정', en: 'Montréal Journey', fr: 'Votre parcours à Montréal' },
+    language: { ko: '언어 여정', en: 'Language Journey', fr: 'Votre parcours linguistique' },
+    goals:    { ko: '나의 목표', en: 'Your Goals', fr: 'Vos objectifs' },
+    learning: { ko: '학습 스타일', en: 'Learning Style', fr: "Façon d'apprendre" },
+    hakkyo:   { ko: 'HAKKYO', en: 'About HAKKYO', fr: 'À propos de HAKKYO' },
+    last:     { ko: '마지막 단계', en: 'Final Step', fr: 'Dernière étape' },
+  }
+
   const progLang = useMemo(() => detectProgLang(program), [program])
   const STEPS    = useMemo(() => buildSteps(progLang), [progLang])
   const SECTIONS = useMemo(() => buildSections(progLang), [progLang])
@@ -816,37 +811,49 @@ export default function ApplyPage() {
 
   async function submit() {
     if (!draft.name?.trim() || !draft.email?.trim()) {
-      setError("Le nom et l'adresse courriel sont requis.\nName and email are required.\n이름과 이메일은 필수 항목입니다.")
+      setError(lang === 'ko' ? '이름과 이메일은 필수 항목입니다.' : lang === 'fr' ? "Le nom et l'adresse courriel sont requis." : 'Name and email are required.')
       return
     }
     setSubmitting(true)
     setError('')
     try {
-      await submitProgramApplication({
-        program_id:             id ?? null,
-        program_name:           program ? `${progLang}:${program.name_en || program.name_fr || program.name_ko}` : null,
-        name:                   draft.name?.trim() ?? '',
-        preferred_name:         draft.preferred_name?.trim() || null,
-        email:                  draft.email?.trim() ?? '',
-        phone:                  draft.phone?.trim() || null,
-        preferred_contact:      draft.preferred_contact || null,
-        languages_spoken:       draft.languages_spoken?.trim() || null,
-        instagram:              draft.instagram?.trim() || null,
-        time_in_montreal:       draft.time_in_montreal || null,
-        current_stage:          draft.current_stage || null,
-        current_focus:          draft.current_focus?.trim() || null,
-        previous_korean_exp:    draft.previous_korean_exp?.trim() || null,
-        korean_level:           draft.korean_level || null,
-        interest_in_korean:     draft.interest_in_korean?.trim() || null,
-        reason_for_joining:     draft.reason_for_joining?.trim() || null,
-        first_korean_goal:      draft.first_korean_goal?.trim() || null,
-        six_month_goal:         draft.six_month_goal?.trim() || null,
-        biggest_challenge:      draft.biggest_challenge?.trim() || null,
-        preferred_environment:  draft.preferred_environment || null,
-        how_found_hakkyo:       draft.how_found_hakkyo || null,
-        what_interested:        draft.what_interested?.trim() || null,
-        definition_great_class: draft.definition_great_class?.trim() || null,
-        questions_for_hakkyo:   draft.questions_for_hakkyo?.trim() || null,
+      // Build labeled answer list from all filled draft fields
+      const FIELD_LABELS: Record<string, string> = {
+        name: 'Name', preferred_name: 'Preferred name',
+        email: 'Email', phone: 'Phone', instagram: 'Instagram',
+        preferred_contact: 'Contact preference', languages_spoken: 'Languages spoken',
+        time_in_montreal: 'Time in Montréal', current_stage: 'Stage of life',
+        current_focus: 'Currently focused on',
+        korean_level: 'Language level', previous_korean_exp: 'Previous experience',
+        interest_in_korean: 'Why this language',
+        first_korean_goal: 'First goal', six_month_goal: 'Goal in 6 months',
+        reason_for_joining: 'Why joining HAKKYO',
+        biggest_challenge: 'Biggest learning challenge',
+        preferred_environment: 'Preferred learning environment',
+        how_found_hakkyo: 'How found us', what_interested: 'What interested you',
+        definition_great_class: 'What makes a great class',
+        questions_for_hakkyo: 'Questions for HAKKYO',
+      }
+      const answers = Object.entries(draft)
+        .filter(([, v]) => v?.trim())
+        .map(([k, v], i) => ({
+          label: FIELD_LABELS[k] ?? k.replace(/_/g, ' '),
+          value: v,
+          order: i + 1,
+          type: 'text',
+        }))
+      const programLabel = program
+        ? (lang === 'ko' ? program.name_ko : lang === 'fr' ? program.name_fr : program.name_en) || program.name_en || program.name_ko || null
+        : null
+      await submitSimpleApplication({
+        trackId:        id ?? null,
+        selectedLabel:  programLabel,
+        totalPrice:     null,
+        name:           draft.name?.trim() ?? '',
+        email:          draft.email?.trim() ?? '',
+        phone:          draft.phone?.trim() || '',
+        instagram:      draft.instagram?.trim() || '',
+        answers,
       })
       if (id) { try { localStorage.removeItem(DRAFT_KEY(id)) } catch {} }
       setDone(true)
@@ -875,21 +882,18 @@ export default function ApplyPage() {
           <Check size={18} className="text-white" />
         </div>
         <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300 mb-5">HAKKYO</p>
-        <h1 className="text-2xl font-light text-gray-900 mb-0.5">Candidature reçue.</h1>
-        <p className="text-[14px] text-gray-400 mb-0.5">Application received.</p>
-        <p className="text-[12px] text-gray-300 mb-8">지원서가 접수되었습니다.</p>
-        <p className="text-[13px] text-gray-500 leading-relaxed max-w-xs mb-1">
-          {firstName ? `Merci, ${firstName}.` : 'Merci.'}{' '}
-          Nous lisons chaque candidature personnellement et vous répondrons dans les prochains jours.
-        </p>
-        <p className="text-[11px] text-gray-400 leading-relaxed max-w-xs mb-0.5">
-          We read every application personally and will be in touch within a few days.
-        </p>
-        <p className="text-[10px] text-gray-300 leading-relaxed max-w-xs mb-8">
-          모든 지원서를 직접 검토하며, 며칠 내로 연락드리겠습니다.
+        <h1 className="text-2xl font-light text-gray-900 mb-6">
+          {lang === 'ko' ? '지원서가 접수되었습니다.' : lang === 'fr' ? 'Candidature reçue.' : 'Application received.'}
+        </h1>
+        <p className="text-[13px] text-gray-500 leading-relaxed max-w-xs mb-8">
+          {lang === 'ko'
+            ? `${firstName ? firstName + ', ' : ''}모든 지원서를 직접 검토하며, 며칠 내로 연락드리겠습니다.`
+            : lang === 'fr'
+            ? `${firstName ? `Merci, ${firstName}. ` : 'Merci. '}Nous lisons chaque candidature personnellement et vous répondrons dans les prochains jours.`
+            : `${firstName ? `Thank you, ${firstName}. ` : ''}We read every application personally and will be in touch within a few days.`}
         </p>
         <Link to="/programs" className="text-[12px] text-gray-400 hover:text-gray-700 transition-colors underline underline-offset-4">
-          Retour aux programmes · Back to programs · 프로그램으로 돌아가기
+          {lang === 'ko' ? '프로그램으로 돌아가기' : lang === 'fr' ? 'Retour aux programmes' : 'Back to programs'}
         </Link>
       </div>
     )
@@ -897,7 +901,6 @@ export default function ApplyPage() {
 
   // ── Welcome ──
   if (isWelcome) {
-    const ln          = PROG_LANG_NAMES[progLang]
     const programName = program ? (program.name_fr || program.name_en || program.name_ko) : null
     const hasDraft    = Object.keys(draft).length > 0
     return (
@@ -910,45 +913,32 @@ export default function ApplyPage() {
             <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-300 mb-6">{programName}</p>
           )}
           <div className="mb-8">
-            <h1 className="text-[32px] md:text-[38px] font-light text-gray-900 leading-tight">Bienvenue à HAKKYO</h1>
-            <p className="text-[16px] text-gray-400 leading-tight mt-1">Welcome to HAKKYO</p>
-            <p className="text-[13px] text-gray-300 leading-tight mt-0.5">HAKKYO에 오신 것을 환영합니다.</p>
+            <h1 className="text-[32px] md:text-[38px] font-light text-gray-900 leading-tight">
+              {lang === 'ko' ? 'HAKKYO 신청서' : lang === 'fr' ? 'Candidature HAKKYO' : 'HAKKYO Application'}
+            </h1>
           </div>
-          <div className="mb-8 space-y-5">
-            <div>
-              <p className="text-[14px] text-gray-600 leading-relaxed">
-                HAKKYO est un espace pour apprendre {PROG_LANG_ARTICLE[progLang]} {ln.fr},<br />
-                rencontrer des gens<br />
-                et mieux comprendre Montréal.
-              </p>
-              <p className="text-[12px] text-gray-400 leading-relaxed mt-2">
-                HAKKYO is a place to learn {ln.en},<br />
-                meet people,<br />
-                and better understand Montréal.
-              </p>
-              <p className="text-[10px] text-gray-300 leading-relaxed mt-1.5">
-                HAKKYO는 {ln.ko}를 배우고, 사람을 만나고,<br />
-                몬트리올을 이해하는 공간입니다.
-              </p>
-            </div>
-            <div className="border-t border-gray-100 pt-4">
-              <p className="text-[13px] text-gray-500">Cette candidature prend environ 5 à 10 minutes.</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">This application takes approximately 5–10 minutes.</p>
-              <p className="text-[10px] text-gray-300 mt-0.5">이 신청서는 약 5~10분 정도 소요됩니다.</p>
-            </div>
+          <div className="mb-8">
+            <p className="text-[14px] text-gray-500 leading-relaxed">
+              {lang === 'ko'
+                ? '수업을 더 잘 준비하기 위해 몇 가지 질문을 드립니다. 약 5분 정도 걸립니다.'
+                : lang === 'fr'
+                ? 'Quelques questions pour mieux préparer votre parcours. Environ 5 minutes.'
+                : 'A few questions to help us prepare the right experience for you. About 5 minutes.'}
+            </p>
           </div>
           {hasDraft && (
-            <p className="text-[11px] text-gray-400 mb-5">↩ Brouillon enregistré · Saved draft · 저장된 임시 지원서</p>
+            <p className="text-[11px] text-gray-400 mb-5">
+              ↩ {lang === 'ko' ? '저장된 임시 지원서' : lang === 'fr' ? 'Brouillon enregistré' : 'Saved draft'}
+            </p>
           )}
           <div>
             <button
               onClick={() => transition(() => setStep(0))}
               className="inline-flex items-center gap-2 bg-gray-900 text-white rounded-xl px-6 py-3.5 text-[15px] font-light hover:bg-gray-700 transition-colors"
             >
-              Commencer
+              {lang === 'ko' ? '시작하기' : lang === 'fr' ? 'Commencer' : 'Start'}
               <ArrowRight size={15} className="shrink-0" />
             </button>
-            <p className="text-[12px] text-gray-400 mt-2">Begin · 시작하기</p>
           </div>
         </div>
       </div>
@@ -1031,41 +1021,36 @@ export default function ApplyPage() {
       >
         <div className="h-0.5 bg-gray-900 w-full mb-8 rounded-full" />
         <button onClick={back} className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-700 transition-colors mb-8">
-          <ChevronLeft size={13} /> Retour · Back · 뒤로
+          <ChevronLeft size={13} />
+          {lang === 'ko' ? '뒤로' : lang === 'fr' ? 'Retour' : 'Back'}
         </button>
         <div className="mb-8">
-          <h2 className="text-2xl font-light text-gray-900">Votre profil HAKKYO</h2>
-          <p className="text-[14px] text-gray-400 mt-0.5">Your HAKKYO Profile</p>
-          <p className="text-[12px] text-gray-300 mt-0.5">나의 HAKKYO 프로필</p>
-          <div className="mt-4 space-y-0.5">
-            <p className="text-[12px] text-gray-400">Prenez un moment pour relire vos réponses.</p>
-            <p className="text-[11px] text-gray-300">Take a moment to review before submitting.</p>
-            <p className="text-[10px] text-gray-300">제출 전에 답변을 한 번 더 확인해 주세요.</p>
-          </div>
+          <h2 className="text-2xl font-light text-gray-900">
+            {lang === 'ko' ? '나의 HAKKYO 프로필' : lang === 'fr' ? 'Votre profil HAKKYO' : 'Your HAKKYO Profile'}
+          </h2>
+          <p className="text-[13px] text-gray-400 mt-2">
+            {lang === 'ko' ? '제출 전에 답변을 한 번 더 확인해 주세요.' : lang === 'fr' ? 'Prenez un moment pour relire vos réponses.' : 'Take a moment to review before submitting.'}
+          </p>
         </div>
         <div className="space-y-3 mb-10">
           {reviewSections.map(sec => sec.rows.length > 0 && (
             <div key={sec.label.fr} className="border border-gray-100 rounded-xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 bg-gray-50/60">
-                <div>
-                  <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-700">{sec.label.fr}</p>
-                  <p className="text-[9px] tracking-[0.10em] uppercase text-gray-400">{sec.label.en}</p>
-                  <p className="text-[8px] tracking-[0.08em] uppercase text-gray-300">{sec.label.ko}</p>
-                </div>
+                <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-600">
+                  {lang === 'ko' ? sec.label.ko : lang === 'fr' ? sec.label.fr : sec.label.en}
+                </p>
                 <button
                   onClick={() => transition(() => setStep(sec.firstStep))}
                   className="text-[11px] text-gray-400 hover:text-gray-700 transition-colors shrink-0 ml-4"
                 >
-                  Modifier · Edit · 수정
+                  {lang === 'ko' ? '수정' : lang === 'fr' ? 'Modifier' : 'Edit'}
                 </button>
               </div>
               <div className="px-4 py-3 space-y-3">
                 {sec.rows.map(row => (
                   <div key={row.q.fr} className="grid grid-cols-[160px_1fr] gap-3">
-                    <span className="shrink-0">
-                      <span className="block text-[11px] text-gray-600">{row.q.fr}</span>
-                      <span className="block text-[9px] text-gray-400">{row.q.en}</span>
-                      <span className="block text-[8px] text-gray-300">{row.q.ko}</span>
+                    <span className="shrink-0 text-[11px] text-gray-600 leading-snug">
+                      {lang === 'ko' ? row.q.ko : lang === 'fr' ? row.q.fr : row.q.en}
                     </span>
                     <span className="text-[13px] text-gray-700 leading-snug whitespace-pre-wrap">{row.a}</span>
                   </div>
@@ -1084,17 +1069,19 @@ export default function ApplyPage() {
             disabled={submitting}
             className="w-full bg-gray-900 text-white rounded-xl py-4 text-[15px] font-light hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
-            {submitting ? 'Envoi en cours…' : 'Soumettre ma candidature'}
+            {submitting
+              ? (lang === 'ko' ? '제출 중...' : lang === 'fr' ? 'Envoi en cours…' : 'Submitting...')
+              : (lang === 'ko' ? '지원서 제출' : lang === 'fr' ? 'Soumettre ma candidature' : 'Submit application')}
           </button>
-          {!submitting && (
-            <p className="text-[12px] text-gray-400 text-center mt-2">Submit application · 지원서 제출</p>
-          )}
+
         </div>
-        <div className="text-center mt-4 space-y-0.5">
-          <p className="text-[11px] text-gray-400">Nous lisons chaque candidature personnellement et vous répondrons dans les prochains jours.</p>
-          <p className="text-[10px] text-gray-300">We review every application personally and follow up within a few days.</p>
-          <p className="text-[9px] text-gray-300">모든 지원서를 직접 검토하며, 며칠 내로 연락드리겠습니다.</p>
-        </div>
+        <p className="text-[11px] text-gray-400 text-center mt-4 leading-relaxed">
+          {lang === 'ko'
+            ? '모든 지원서를 직접 검토하며, 며칠 내로 연락드리겠습니다.'
+            : lang === 'fr'
+            ? 'Nous lisons chaque candidature personnellement et vous répondrons dans les prochains jours.'
+            : 'We review every application personally and follow up within a few days.'}
+        </p>
       </div>
     )
   }
@@ -1121,9 +1108,17 @@ export default function ApplyPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 shrink-0">
         <button onClick={back} className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-700 transition-colors">
-          <ChevronLeft size={13} /> Retour · Back · 뒤로
+          <ChevronLeft size={13} />
+          {lang === 'ko' ? '뒤로' : lang === 'fr' ? 'Retour' : 'Back'}
         </button>
-        <span className="text-[11px] text-gray-300 tracking-wide">{stepNum} / {TOTAL}</span>
+        <div className="text-right">
+          <span className="text-[11px] text-gray-400 tabular-nums">{stepNum} / {TOTAL}</span>
+          {secMeta && (
+            <p className="text-[10px] text-gray-300 mt-0.5">
+              {lang === 'ko' ? secMeta.label.ko : lang === 'fr' ? secMeta.label.fr : secMeta.label.en}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
@@ -1133,9 +1128,9 @@ export default function ApplyPage() {
           style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.14s ease' }}
         >
           <div className="max-w-xl w-full mx-auto">
-            {secMeta && <SectionPill3 label={secMeta.label} />}
-            <Heading3 t={s.heading} />
-            {s.subheading ? <Sub3 t={s.subheading} /> : <div className="mb-8" />}
+            {secMeta && <SectionPill3 label={secMeta.label} lang={lang} />}
+            <Heading3 t={s.heading} lang={lang} />
+{s.subheading ? <Sub3 t={s.subheading} lang={lang} /> : <div className="mb-8" />}
 
             <div className="space-y-6">
               {s.fields.map((field, fi) => {
@@ -1144,13 +1139,14 @@ export default function ApplyPage() {
                 if (field.type === 'radio') {
                   return (
                     <div key={field.key}>
-                      {field.label && <Label3 t={field.label} />}
+                      {field.label && <Label3 t={field.label} lang={lang} />}
                       <div className="space-y-2 mt-3">
                         {(field.options ?? []).map((opt, oi) => (
                           <RadioBtn
                             key={opt.fr}
                             option={opt}
                             index={oi}
+                            lang={lang}
                             selected={value === opt.fr}
                             onClick={() => handleRadioSelect(field.key, opt.fr, !!field.autoAdvance)}
                           />
@@ -1163,7 +1159,7 @@ export default function ApplyPage() {
                 if (field.type === 'textarea') {
                   return (
                     <div key={field.key}>
-                      {field.label && <Label3 t={field.label} />}
+                      {field.label && <Label3 t={field.label} lang={lang} />}
                       <textarea
                         ref={fi === 0 ? (el => { if (el) firstInputRef.current = el }) : undefined}
                         rows={4}
@@ -1178,7 +1174,7 @@ export default function ApplyPage() {
 
                 return (
                   <div key={field.key}>
-                    {field.label && <Label3 t={field.label} />}
+                    {field.label && <Label3 t={field.label} lang={lang} />}
                     <input
                       ref={fi === 0 ? (el => { if (el) firstInputRef.current = el }) : undefined}
                       type={field.type}
@@ -1199,21 +1195,21 @@ export default function ApplyPage() {
                   onClick={advance}
                   className="inline-flex items-center gap-2 bg-gray-900 text-white rounded-xl px-6 py-3.5 text-[15px] font-light hover:bg-gray-700 transition-colors"
                 >
-                  {step === TOTAL - 1 ? 'Vérifier' : 'Continuer'}
+                  {step === TOTAL - 1
+                    ? (lang === 'ko' ? '검토하기' : lang === 'fr' ? 'Vérifier' : 'Review')
+                    : (lang === 'ko' ? '계속' : lang === 'fr' ? 'Continuer' : 'Continue')}
                   <ArrowRight size={15} className="shrink-0" />
                 </button>
                 <span className="text-[11px] text-gray-300 hidden sm:inline">
                   <kbd className="border border-gray-200 rounded px-1 py-0.5 text-[9px] font-mono">Enter</kbd>
                 </span>
               </div>
-              <p className="text-[12px] text-gray-400 mt-2">
-                {step === TOTAL - 1 ? 'Review · 검토하기' : 'Continue · 계속'}
-              </p>
+
             </div>
 
             {!s.fields.some(f => f.required) && step > 1 && (
               <button onClick={advance} className="mt-3 text-[11px] text-gray-400 hover:text-gray-600 transition-colors text-left">
-                Passer <span className="text-gray-300">· Skip · 건너뛰기</span>
+                {lang === 'ko' ? '건너뛰기' : lang === 'fr' ? 'Passer' : 'Skip'}
               </button>
             )}
 
@@ -1226,7 +1222,15 @@ export default function ApplyPage() {
                   </div>
                   <ChevronDown size={14} className={['text-gray-300 transition-transform', summaryOpen ? 'rotate-180' : ''].join(' ')} />
                 </button>
-                {summaryOpen && <div className="mt-4"><ProfileSummary draft={draft} step={step} pl={progLang} /></div>}
+                {summaryOpen && (
+                  <div className="mt-4">
+                    {(() => {
+                      const _t = lang === 'ko' ? (SECTION_TITLE_MAP[s?.section ?? 'basic']?.ko ?? 'HAKKYO') : lang === 'fr' ? (SECTION_TITLE_MAP[s?.section ?? 'basic']?.fr ?? 'HAKKYO') : (SECTION_TITLE_MAP[s?.section ?? 'basic']?.en ?? 'HAKKYO')
+                      const _e = lang === 'ko' ? '답변이 여기에 나타납니다.' : lang === 'fr' ? 'Vos réponses apparaîtront ici.' : 'Your answers will appear here.'
+                      return <ProfileSummary draft={draft} step={step} pl={progLang} lang={lang} sectionTitle={_t} emptyText={_e} />
+                    })()}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1234,7 +1238,11 @@ export default function ApplyPage() {
 
         {/* Desktop sidebar */}
         <aside className="hidden lg:flex flex-col w-56 xl:w-60 border-l border-black/5 bg-white/70 backdrop-blur-sm px-5 py-10 shrink-0 overflow-y-auto">
-          <ProfileSummary draft={draft} step={step} pl={progLang} />
+          {(() => {
+            const _t = lang === 'ko' ? (SECTION_TITLE_MAP[s?.section ?? 'basic']?.ko ?? 'HAKKYO') : lang === 'fr' ? (SECTION_TITLE_MAP[s?.section ?? 'basic']?.fr ?? 'HAKKYO') : (SECTION_TITLE_MAP[s?.section ?? 'basic']?.en ?? 'HAKKYO')
+            const _e = lang === 'ko' ? '답변이 여기에 나타납니다.' : lang === 'fr' ? 'Vos réponses apparaîtront ici.' : 'Your answers will appear here.'
+            return <ProfileSummary draft={draft} step={step} pl={progLang} lang={lang} sectionTitle={_t} emptyText={_e} />
+          })()}
         </aside>
       </div>
     </div>
