@@ -69,6 +69,8 @@ interface FAQItem {
 interface SidebarData {
   quickFacts: Array<{ label: Tri; value: Tri }>
   timeline: Tri
+  nextStepId?: string
+  nextStepLabel?: Tri
 }
 
 interface TabContent {
@@ -392,6 +394,8 @@ const SIM_TAB: TabContent = {
       { label: { ko: '설정 시간', en: 'Setup time', fr: 'Temps' }, value: { ko: '5분–1시간', en: '5 min–1 hr', fr: '5 min–1h' } },
     ],
     timeline: { ko: '대부분 비행기 탑승 전날 또는 도착 당일에 해결해요.', en: 'Most people handle this the day before their flight or on arrival day.', fr: "La plupart règlent ça la veille du vol ou le jour d'arrivée." },
+    nextStepId: 'bank',
+    nextStepLabel: { ko: '은행 계좌 열기', en: 'Open a bank account', fr: 'Ouvrir un compte bancaire' },
   },
 }
 
@@ -530,6 +534,8 @@ const BANK_TAB: TabContent = {
       { label: { ko: '소요 시간', en: 'Time', fr: 'Durée' }, value: { ko: '약 1시간', en: '~1 hour', fr: '~1 heure' } },
     ],
     timeline: { ko: '대부분 도착 2–3일 후에 방문해요. 임시 주소(에어비앤비)로도 개설 가능해요.', en: 'Most people visit within days 2–3 of arrival. An Airbnb address is usually accepted.', fr: "La plupart visitent 2–3 jours après l'arrivée. L'adresse Airbnb est généralement acceptée." },
+    nextStepId: 'sin',
+    nextStepLabel: { ko: 'SIN 번호 신청하기', en: 'Apply for SIN', fr: 'Demander un NAS' },
   },
 }
 
@@ -660,6 +666,8 @@ const TRANSIT_TAB: TabContent = {
       { label: { ko: 'BIXI 월', en: 'BIXI monthly', fr: 'BIXI mensuel' }, value: { ko: '$27 (시즌)', en: '$27 (seasonal)', fr: '27$ (saison)' } },
     ],
     timeline: { ko: '공항에서 시내까지 747 버스, 그 다음 날 OPUS 카드 구매 추천.', en: 'Take the 747 bus from the airport. Pick up an OPUS card the next day.', fr: "Prenez le 747 depuis l'aéroport. Achetez une carte OPUS le lendemain." },
+    nextStepId: 'housing',
+    nextStepLabel: { ko: '장기 주거 찾기', en: 'Find long-term housing', fr: 'Trouver un logement à long terme' },
   },
 }
 
@@ -795,6 +803,8 @@ const HOUSING_TAB: TabContent = {
       { label: { ko: '임대 시작', en: 'Lease start', fr: 'Début du bail' }, value: { ko: '보통 7월 1일', en: 'Typically July 1', fr: 'Souvent 1er juillet' } },
     ],
     timeline: { ko: '도착 전 에어비앤비 2–3주 예약. 도착 후 2–4주 내에 장기 아파트 계약.', en: 'Book 2–3 weeks of Airbnb before arriving. Find a permanent apartment within 2–4 weeks of arrival.', fr: "Réservez 2–3 semaines sur Airbnb avant d'arriver. Trouvez un appartement permanent dans les 2–4 semaines." },
+    nextStepId: 'insurance',
+    nextStepLabel: { ko: '세입자 보험 가입하기', en: 'Get tenant insurance', fr: "Souscrire une assurance locataire" },
   },
 }
 
@@ -892,6 +902,8 @@ const SIN_TAB: TabContent = {
       { label: { ko: '서류', en: 'Documents', fr: 'Documents' }, value: { ko: '여권 + 허가증', en: 'Passport + permit', fr: 'Passeport + permis' } },
     ],
     timeline: { ko: '대부분 도착 첫 주에 해결해요. 취업 전에 꼭 필요해요.', en: 'Most people do this in their first week. Required before starting any work.', fr: 'La plupart le font la première semaine. Nécessaire avant tout emploi.' },
+    nextStepId: 'transit',
+    nextStepLabel: { ko: '대중교통 / OPUS 카드', en: 'Transit / OPUS card', fr: 'Transport / Carte OPUS' },
   },
 }
 
@@ -990,6 +1002,8 @@ const LICENCE_TAB: TabContent = {
       { label: { ko: 'SAAQ 수수료', en: 'SAAQ fee', fr: 'Frais SAAQ' }, value: { ko: '~$30–100', en: '~$30–100', fr: '~30–100$' } },
     ],
     timeline: { ko: '보통 첫 1–3개월 이내에 해요. 당장 운전하지 않는다면 서두를 필요 없어요.', en: "Most people do this within their first 1–3 months. No rush if you're not driving immediately.", fr: "La plupart le font dans les 1–3 premiers mois. Pas urgent si vous ne conduisez pas tout de suite." },
+    nextStepId: 'language',
+    nextStepLabel: { ko: '언어 프로그램 & 커뮤니티', en: 'Language & community', fr: 'Langue & communauté' },
   },
 }
 
@@ -1224,12 +1238,582 @@ const FLIGHTS_TAB: TabContent = {
       { label: { ko: '비행 시간', en: 'Flight time', fr: 'Durée du vol' }, value: { ko: '14–22시간', en: '14–22 hr', fr: '14–22h' } },
     ],
     timeline: { ko: '출발 60–90일 전 예약을 많이 해요. 8월과 12월은 성수기예요.', en: 'Most people book 60–90 days out. August and December are peak season — book earlier then.', fr: "La plupart réservent 60–90 jours à l'avance. Août et décembre sont en haute saison." },
+    nextStepId: 'airport',
+    nextStepLabel: { ko: '공항 도착 & 입국 심사', en: 'Airport arrival & customs', fr: "Arrivée & douanes" },
+  },
+}
+
+// ─── NEW TAB: Airport arrival ─────────────────────────────────────────────────
+
+const AIRPORT_TAB: TabContent = {
+  id: 'airport',
+  label: { ko: '공항 도착', en: 'Airport arrival', fr: 'Arrivée aéroport' },
+  hero: {
+    title: { ko: '몬트리올 트뤼도(YUL) 도착 후', en: 'Arriving at Montréal-Trudeau (YUL)', fr: "Arriver à Montréal-Trudeau (YUL)" },
+    sub: {
+      ko: '비행기에서 내리면 입국 심사를 통과하고, 세관 신고를 하고, 수하물을 찾은 다음 시내로 이동해요. 첫 발걸음이지만, 잘 알고 가면 30–60분이면 통과할 수 있어요.',
+      en: "Once off the plane you'll clear immigration, complete a customs declaration, collect luggage, and get to the city. Knowing what to expect makes this a 30–60 minute process.",
+      fr: "À la sortie de l'avion, vous passez l'immigration, remplissez la déclaration douanière, récupérez vos bagages et rejoignez la ville. Bien préparé, c'est 30–60 minutes.",
+    },
+    when: { ko: '도착 당일', en: 'Arrival day', fr: "Jour d'arrivée" },
+    cost: { ko: '입국 무료, 시내 이동 $11–50', en: 'Entry free; downtown $11–50', fr: 'Entrée gratuite; centre-ville 11–50$' },
+    time: { ko: '입국 심사 + 세관 30–60분', en: 'Immigration + customs 30–60 min', fr: 'Immigration + douanes 30–60 min' },
+    canBeforeArrival: { ko: 'ArriveCAN 앱 사전 준비 권장', en: 'Prepare ArriveCAN info in advance', fr: 'Préparez ArriveCAN à l\'avance' },
+  },
+  options: [
+    {
+      name: 'STM 747 Express Bus',
+      sub: { ko: 'YUL → 다운타운, 24시간 운행', en: 'YUL to downtown, runs 24/7', fr: 'YUL au centre-ville, 24/7' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$11 정액 (신용카드 가능)', en: '$11 flat (credit card accepted)', fr: '11$ forfait (carte acceptée)' } },
+        { icon: 'clock', label: { ko: '20–30분 간격', en: 'Every 20–30 min', fr: 'Toutes les 20–30 min' } },
+        { icon: 'bus', label: { ko: 'OPUS 카드 없이 탑승 가능', en: 'No OPUS card needed', fr: 'Sans carte OPUS' } },
+      ],
+      worksFor: [
+        { ko: '혼자 여행하는 분', en: 'Solo travellers', fr: 'Voyageurs seuls' },
+        { ko: '짐이 적은 분', en: 'Light baggage', fr: 'Peu de bagages' },
+        { ko: '예산을 아끼고 싶은 분', en: 'Budget-conscious', fr: 'Petit budget' },
+      ],
+      worthKnowing: [
+        { ko: '교통 상황에 따라 45–70분 소요', en: '45–70 min total depending on traffic', fr: '45–70 min selon la circulation' },
+        { ko: '종착지는 Berri-UQAM 지하철역', en: 'Terminus at Berri-UQAM metro', fr: 'Terminus à Berri-UQAM' },
+      ],
+      recommendNote: {
+        ko: '신용카드로 바로 탈 수 있어요 — OPUS 카드가 필요 없어요. 도착 당일 공항에서 시내로 가는 가장 쉬운 방법이에요.',
+        en: 'You can board with a credit card — no OPUS needed. This is the simplest way to get downtown on arrival day.',
+        fr: "On peut monter avec une carte de crédit — sans OPUS. C'est le moyen le plus simple pour le centre-ville à l'arrivée.",
+      },
+    },
+    {
+      name: 'Taxi / Rideshare',
+      sub: { ko: '공항 → 시내 정액 요금', en: 'Flat-rate airport to downtown', fr: 'Tarif forfaitaire aéroport → centre' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$50–55 정액 (팁 별도)', en: '~$50–55 flat (tip extra)', fr: '~50–55$ forfait (pourboire en plus)' } },
+        { icon: 'clock', label: { ko: '30–45분', en: '30–45 min', fr: '30–45 min' } },
+      ],
+      worksFor: [
+        { ko: '짐이 많은 분', en: 'Heavy luggage', fr: 'Beaucoup de bagages' },
+        { ko: '그룹 여행', en: 'Group travel', fr: 'Voyage en groupe' },
+        { ko: '도착 시간이 늦은 분', en: 'Late night arrival', fr: 'Arrivée tardive' },
+      ],
+      worthKnowing: [
+        { ko: '일부 택시는 신용카드를 안 받음 — 현금 준비 권장', en: 'Some taxis do not accept cards — have cash ready', fr: 'Certains taxis refusent la carte — prévoyez du liquide' },
+        { ko: 'Uber/Lyft는 YUL에서 운행 가능', en: 'Uber/Lyft operate at YUL', fr: 'Uber/Lyft disponibles à YUL' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '방법', en: 'Option', fr: 'Option' },
+      { ko: '비용', en: 'Cost', fr: 'Coût' },
+      { ko: '소요 시간', en: 'Time', fr: 'Durée' },
+      { ko: '24시간', en: '24/7', fr: '24/7' },
+      { ko: '신용카드', en: 'Credit card', fr: 'Carte de crédit' },
+    ],
+    rows: [
+      { name: '747 Express Bus', cols: ['$11', '45–70 min', true, true] },
+      { name: 'Taxi', cols: ['~$50–55', '30–45 min', true, 'Sometimes'] },
+      { name: 'Uber/Lyft', cols: ['~$45–60', '30–45 min', true, true] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2024년 9월', en: 'Student Sept 2024', fr: 'Étudiant sept. 2024' }, text: { ko: '747 버스가 생각보다 훨씬 쉬웠어요. 카드로 탔고 지하철역에서 바로 내렸어요. OPUS는 다음 날 샀어요.', en: 'The 747 bus was way easier than I expected. Paid by card and stepped off at a metro station. Got an OPUS the next day.', fr: "Le 747 était bien plus simple que prévu. Payé par carte et descendu à un métro. OPUS le lendemain." }, likes: 33 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 5월', en: 'Working Holiday May 2024', fr: 'PVT mai 2024' }, text: { ko: '짐이 많아서 Uber를 탔어요. ~$50 나왔는데 셋이서 나눴어요. 나쁘지 않았어요.', en: 'Had a lot of luggage so took Uber. About $50 — split three ways. Not bad.', fr: "Beaucoup de bagages donc Uber. ~50$ — partagé à trois. Pas mal." }, likes: 19 },
+    { flag: '🇰🇷', person: { ko: '영주권자 · 2023년 11월', en: 'PR Nov 2023', fr: 'RP nov. 2023' }, text: { ko: '세관 신고서를 미리 작성해두면 훨씬 빨라요. 줄에서 작성하려면 시간이 배로 걸려요.', en: 'Fill out your customs declaration on the plane — it goes much faster. Writing it in line takes twice as long.', fr: "Remplissez la déclaration douanière dans l'avion — ça va bien plus vite. Faire la queue pour l'écrire, c'est le double de temps." }, likes: 25 },
+  ],
+  helpLinks: [
+    { label: { ko: 'YUL 공항 안내', en: 'YUL Airport guide', fr: 'Guide aéroport YUL' }, url: 'https://www.admtl.com/en/flights/arriving', domain: 'admtl.com' },
+    { label: { ko: 'STM 747 버스 정보', en: 'STM 747 bus info', fr: 'Info bus STM 747' }, url: 'https://www.stm.info/en/info/networks/bus/express-shuttle/route-747-yul-aeroport-montreal-trudeau-downtown', domain: 'stm.info' },
+    { label: { ko: '캐나다 세관 신고', en: 'Canada customs declaration', fr: 'Déclaration douanière Canada' }, url: 'https://www.cbsa-asfc.gc.ca/travel-voyage/dc-ed-eng.html', domain: 'cbsa-asfc.gc.ca' },
+  ],
+  faq: [
+    { q: { ko: '공항에서 입국 심사까지 얼마나 걸리나요?', en: 'How long does immigration take at YUL?', fr: "Combien de temps pour l'immigration à YUL?" }, a: { ko: '성수기에는 30–60분, 비수기에는 더 빨라요. 한국 여권은 자동 입국 심사대(e-gates)를 쓸 수 있어서 빨라요.', en: 'During peak season 30–60 min; faster off-peak. Korean passport holders can use e-gates which speeds things up.', fr: "Haute saison 30–60 min; plus rapide hors saison. Les passeports coréens peuvent utiliser les e-gates." } },
+    { q: { ko: '세관에서 신고해야 하는 것은 무엇인가요?', en: 'What do I need to declare at customs?', fr: "Que dois-je déclarer à la douane?" }, a: { ko: 'CAD $10,000 이상 현금, 음식, 식물, 동물 제품 등이요. 모르면 신고하는 게 안 하는 것보다 나아요.', en: 'Cash over CAD $10,000, food, plants, animal products. When in doubt, declare — the penalty for non-declaration is worse.', fr: "Liquide > 10 000$ CAD, aliments, plantes, produits animaux. Dans le doute, déclarez — la pénalité est pire." } },
+    { q: { ko: 'WiFi가 없으면 공항에서 어떻게 하나요?', en: 'What if I have no data or WiFi at the airport?', fr: "Et si je n'ai pas de données à l'aéroport?" }, a: { ko: 'YUL에는 무료 WiFi가 있어요. 연결해서 숙소에 연락하거나 지도를 확인하세요.', en: 'YUL has free WiFi. Connect to it to reach your accommodation or check maps.', fr: "YUL a le WiFi gratuit. Connectez-vous pour joindre votre hébergement ou consulter les cartes." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '747 버스 요금', en: '747 bus fare', fr: 'Tarif bus 747' }, value: { ko: '$11 (카드 가능)', en: '$11 (card OK)', fr: '11$ (carte OK)' } },
+      { label: { ko: '택시 정액', en: 'Taxi flat rate', fr: 'Taxi forfait' }, value: { ko: '~$50–55', en: '~$50–55', fr: '~50–55$' } },
+      { label: { ko: '공항 WiFi', en: 'Airport WiFi', fr: 'WiFi aéroport' }, value: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
+      { label: { ko: '입국 심사', en: 'Immigration', fr: 'Immigration' }, value: { ko: '30–60분', en: '30–60 min', fr: '30–60 min' } },
+    ],
+    timeline: { ko: '비행기에서 세관 신고서 미리 작성. 747 버스로 시내 이동. 다음 날 OPUS 카드 구매.', en: 'Fill customs form on plane. Take 747 to downtown. Get OPUS card next day.', fr: "Remplissez le formulaire dans l'avion. 747 vers le centre-ville. Carte OPUS le lendemain." },
+    nextStepId: 'temp_stay',
+    nextStepLabel: { ko: '임시 숙소 정착', en: 'Settle into temp housing', fr: "S'installer dans le logement temporaire" },
+  },
+}
+
+// ─── NEW TAB: Temporary stay ──────────────────────────────────────────────────
+
+const TEMP_STAY_TAB: TabContent = {
+  id: 'temp_stay',
+  label: { ko: '임시 숙소', en: 'Temp housing', fr: 'Logement temp.' },
+  hero: {
+    title: { ko: '도착 후 첫 2–4주 머물 곳', en: 'Where to stay for your first 2–4 weeks', fr: 'Où loger les 2–4 premières semaines' },
+    sub: {
+      ko: '대부분 영구 아파트를 찾는 동안 임시 거처에 머물러요. 이 주소는 은행 계좌 개설에도 쓸 수 있어요. 아파트 찾기는 현지에서 직접 보는 게 원격으로 찾는 것보다 훨씬 효과적이에요.',
+      en: 'Most people stay in temporary housing while searching for a permanent apartment. This address can also be used for opening a bank account. Apartment hunting is much more effective in person.',
+      fr: "La plupart logent en hébergement temporaire en cherchant un appartement. Cette adresse sert aussi pour le compte bancaire. La recherche est bien plus efficace sur place.",
+    },
+    when: { ko: '도착 전 예약 권장', en: 'Book before you arrive', fr: "Réservez avant d'arriver" },
+    cost: { ko: '2주에 $400–1,400', en: '$400–1,400 for 2 weeks', fr: '400–1 400$ pour 2 semaines' },
+    time: { ko: '2–4주', en: '2–4 weeks', fr: '2–4 semaines' },
+    canBeforeArrival: { ko: '네, 도착 전 예약 가능', en: 'Yes, book before arriving', fr: "Oui, réservez avant d'arriver" },
+  },
+  options: [
+    {
+      name: 'Airbnb',
+      sub: { ko: '독립된 공간, 유연한 날짜, 은행 주소로 사용 가능', en: 'Private space, flexible dates, usable as banking address', fr: 'Espace privé, dates flexibles, adresse bancaire' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '2주에 ~$800–1,400', en: '~$800–1,400 for 2 weeks', fr: '~800–1 400$ / 2 sem.' } },
+        { icon: 'building', label: { ko: '은행 주소 증빙으로 인정', en: 'Address accepted at banks', fr: 'Adresse acceptée en banque' } },
+      ],
+      worksFor: [
+        { ko: '프라이버시가 필요한 분', en: 'Those wanting private space', fr: 'Ceux qui veulent l\'intimité' },
+        { ko: '은행 계좌 주소가 필요한 분', en: 'Need address for banking', fr: 'Adresse pour le compte bancaire' },
+        { ko: '일정 연장이 필요할 수 있는 분', en: 'May need to extend stay', fr: 'Pourraient prolonger le séjour' },
+      ],
+      worthKnowing: [
+        { ko: '호스텔보다 비쌈', en: 'More expensive than hostels', fr: 'Plus cher que les auberges' },
+        { ko: '예약 확인 이메일이 주소 증빙으로 인정됨', en: 'Booking confirmation accepted as proof of address', fr: "Courriel de confirmation accepté comme preuve d'adresse" },
+      ],
+      recommendNote: {
+        ko: '에어비앤비 주소는 대부분의 은행에서 계좌 개설 시 주소 증빙으로 받아줘요.',
+        en: 'Your Airbnb address is accepted by most banks when opening an account — no permanent address needed yet.',
+        fr: "L'adresse Airbnb est acceptée par la plupart des banques pour ouvrir un compte.",
+      },
+    },
+    {
+      name: 'Hostel',
+      sub: { ko: '저렴한 옵션', en: 'Budget option', fr: 'Option économique' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$35–60/박', en: '~$35–60/night', fr: '~35–60$/nuit' } },
+      ],
+      worksFor: [
+        { ko: '예산을 아끼는 분', en: 'Budget-conscious', fr: 'Petit budget' },
+        { ko: '다른 이민자를 만나고 싶은 분', en: 'Meeting other newcomers', fr: "Rencontrer d'autres arrivants" },
+      ],
+      worthKnowing: [
+        { ko: '공용 공간, 개인 금고 필수', en: 'Shared spaces — use a locker', fr: 'Espaces partagés — utilisez un casier' },
+        { ko: '일부 은행에서 주소 증빙 불가', en: 'Address may not be accepted for banking', fr: "L'adresse peut ne pas être acceptée en banque" },
+      ],
+    },
+    {
+      name: 'Facebook / Kijiji 단기 서블렛',
+      sub: { ko: '가구 포함 단기 임대', en: 'Short-term furnished sublet', fr: 'Sous-location meublée court terme' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$700–1,200/월', en: '~$700–1,200/mo', fr: '~700–1 200$/mois' } },
+      ],
+      worksFor: [
+        { ko: '1–2개월 더 머무는 분', en: 'Staying 1–2 months', fr: 'Séjour de 1–2 mois' },
+        { ko: '에어비앤비보다 저렴하게', en: 'Lower cost than Airbnb', fr: "Moins cher qu'Airbnb" },
+      ],
+      worthKnowing: [
+        { ko: '원격으로 잡기 어려움 — 사기 주의', en: 'Hard to arrange remotely — watch for scams', fr: 'Difficile à distance — attention aux arnaques' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '옵션', en: 'Option', fr: 'Option' },
+      { ko: '2주 비용', en: '2-week cost', fr: 'Coût 2 sem.' },
+      { ko: '주소 증빙', en: 'Address proof', fr: "Preuve d'adresse" },
+      { ko: '미리 예약', en: 'Book ahead', fr: 'Réserver tôt' },
+    ],
+    rows: [
+      { name: 'Airbnb', cols: ['~$800–1,400', true, true] },
+      { name: 'Hostel', cols: ['~$400–600', false, true] },
+      { name: 'Sublet', cols: ['~$600–900', true, false] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2024년 8월', en: 'Student Aug 2024', fr: 'Étudiant août 2024' }, text: { ko: '오기 전에 에어비앤비를 3주 예약했어요. 도착 3일째에 그 주소로 은행 계좌 열었고 문제없었어요.', en: 'Booked 3 weeks of Airbnb before coming. Used that address for my bank account on day 3. No issues at all.', fr: "Réservé 3 semaines sur Airbnb. Utilisé l'adresse pour mon compte au 3e jour. Aucun problème." }, likes: 28 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 3월', en: 'Working Holiday Mar 2024', fr: 'PVT mars 2024' }, text: { ko: '호스텔에 일주일 있으면서 Facebook에서 한 달짜리 서블렛 찾았어요. 더 빨리 이웃들을 알게 됐어요.', en: 'Stayed at a hostel for one week and found a 1-month sublet on Facebook. Got to know the neighbourhood faster.', fr: "Auberge une semaine puis sous-loc 1 mois sur Facebook. J'ai vite connu le quartier." }, likes: 17 },
+  ],
+  helpLinks: [
+    { label: { ko: 'Airbnb 몬트리올', en: 'Airbnb Montréal', fr: 'Airbnb Montréal' }, url: 'https://www.airbnb.ca/montreal', domain: 'airbnb.ca' },
+    { label: { ko: 'Kijiji 몬트리올 임대', en: 'Kijiji Montréal rentals', fr: 'Kijiji locations Montréal' }, url: 'https://www.kijiji.ca', domain: 'kijiji.ca' },
+  ],
+  faq: [
+    { q: { ko: '영구 주소 없이 은행 계좌를 열 수 있나요?', en: 'Can I open a bank account without a permanent address?', fr: "Puis-je ouvrir un compte sans adresse permanente?" }, a: { ko: '네 — 에어비앤비 예약 확인서가 대부분 은행에서 주소 증빙으로 인정돼요. 호스텔 확인서도 될 수 있어요.', en: 'Yes — an Airbnb confirmation is accepted at most banks. A hostel confirmation may also work — call ahead to confirm.', fr: "Oui — une confirmation Airbnb est acceptée dans la plupart des banques. Vérifiez par téléphone pour l'auberge." } },
+    { q: { ko: '임시 숙소 기간은 얼마나 잡아야 하나요?', en: 'How long should I book temporary housing?', fr: 'Combien de temps réserver le logement temporaire?' }, a: { ko: '2–3주가 기본이에요. 아파트 찾는 데 2–4주가 더 필요할 수 있으니 연장이 가능한 숙소를 고르세요.', en: '2–3 weeks is a common baseline. Apartment hunting can take another 2–4 weeks, so choose somewhere with extension flexibility.', fr: "2–3 semaines en général. La recherche peut prendre 2–4 semaines de plus — choisissez un logement extensible." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: 'Airbnb 2주', en: 'Airbnb 2 weeks', fr: 'Airbnb 2 sem.' }, value: { ko: '~$800–1,400', en: '~$800–1,400', fr: '~800–1 400$' } },
+      { label: { ko: '호스텔 2주', en: 'Hostel 2 weeks', fr: 'Auberge 2 sem.' }, value: { ko: '~$400–600', en: '~$400–600', fr: '~400–600$' } },
+      { label: { ko: '은행 주소 증빙', en: 'Bank address proof', fr: 'Preuve adresse banque' }, value: { ko: 'Airbnb 확인서', en: 'Airbnb confirm', fr: 'Confirm. Airbnb' } },
+    ],
+    timeline: { ko: '도착 전 2–3주 예약. 도착 후 2–4주 내에 장기 아파트를 찾아요.', en: 'Book 2–3 weeks before arriving. Find a permanent apartment within 2–4 weeks of arrival.', fr: "Réservez 2–3 semaines avant. Trouvez un appartement dans les 2–4 semaines." },
+    nextStepId: 'sim',
+    nextStepLabel: { ko: 'SIM 카드 / 전화 요금제', en: 'SIM card / phone plan', fr: 'Carte SIM / forfait' },
+  },
+}
+
+// ─── NEW TAB: Long-term housing ───────────────────────────────────────────────
+
+const LONG_HOUSING_TAB: TabContent = {
+  id: 'housing',
+  label: { ko: '장기 주거', en: 'Long-term housing', fr: 'Logement à long terme' },
+  hero: {
+    title: { ko: '몬트리올에서 아파트 구하기', en: 'Finding an apartment in Montréal', fr: 'Trouver un appartement à Montréal' },
+    sub: {
+      ko: '퀘벡의 임대 규칙은 다른 주와 달라요. 보증금을 요구하면 위법이에요. 대부분의 임대는 첫 달 월세만 내요. 직접 보는 것이 원격으로 찾는 것보다 훨씬 효과적이에요.',
+      en: "Québec rental rules differ from other provinces. Demanding a security deposit is illegal. Most leases require only first month's rent. Apartment hunting in person is far more effective than remote searching.",
+      fr: "La location au Québec diffère des autres provinces. Exiger un dépôt de garantie est illégal. La plupart des baux demandent seulement le premier mois. Chercher sur place est bien plus efficace.",
+    },
+    when: { ko: '임시 숙소 도착 후 2–4주', en: '2–4 weeks after arriving in temp housing', fr: '2–4 semaines après le logement temporaire' },
+    cost: { ko: '$700–1,800/월 (원베드 기준)', en: '$700–1,800/mo (1 bedroom)', fr: '700–1 800$/mois (1 chambre)' },
+    time: { ko: '검색 2–4주, 계약 당일', en: '2–4 weeks searching, lease signing same day', fr: '2–4 semaines de recherche, bail signé le jour même' },
+    canBeforeArrival: { ko: '원격 계약은 사기 위험 — 직접 보는 것을 권장', en: 'Remote signing is risky — strongly recommend viewing in person', fr: 'Signer à distance est risqué — fortement recommandé en personne' },
+  },
+  options: [
+    {
+      name: 'Facebook Groups',
+      sub: { ko: '"Logements/Appartements Montréal" 등 현지 그룹', en: '"Logements/Appartements Montréal" and Korean community groups', fr: "Groupes « Logements/Appartements Montréal »" },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '무료 검색', en: 'Free to search', fr: 'Recherche gratuite' } },
+        { icon: 'users', label: { ko: '한국 커뮤니티 그룹도 있음', en: 'Korean community groups available', fr: 'Groupes coréens disponibles' } },
+      ],
+      worksFor: [
+        { ko: '서블렛, 임시 임대', en: 'Sublets and short-term rentals', fr: 'Sous-locations et locations courtes' },
+        { ko: '룸메이트를 찾는 분', en: 'Looking for roommates', fr: 'Cherchant colocataires' },
+        { ko: '이미 알고 있는 동네', en: 'Specific neighbourhoods you know', fr: 'Quartiers ciblés' },
+      ],
+      worthKnowing: [
+        { ko: '방문 전 절대 돈을 보내지 마세요', en: 'Never send money before viewing', fr: "Ne jamais envoyer d'argent avant de visiter" },
+        { ko: '가격이 너무 싸거나 집주인이 해외에 있으면 사기일 가능성이 높음', en: 'Too-cheap listings or overseas landlords are often scams', fr: 'Prix trop bas ou propriétaire à l\'étranger = souvent arnaque' },
+      ],
+      recommendNote: {
+        ko: '많은 한국인 이민자가 Facebook의 한인 커뮤니티 그룹을 통해 아파트를 찾아요. 직접 보거나 영상통화 후 계약하세요.',
+        en: 'Many Korean newcomers find apartments through Korean community groups on Facebook. Always view in person or video call before signing.',
+        fr: "Beaucoup de Coréens trouvent via les groupes Facebook coréens. Toujours visiter ou appel vidéo avant de signer.",
+      },
+    },
+    {
+      name: 'Kijiji / Rentals.ca',
+      sub: { ko: '아파트 매물 전문 플랫폼', en: 'Apartment listing platforms', fr: 'Plateformes de petites annonces' },
+      meta: [
+        { icon: 'world', label: { ko: 'kijiji.ca · rentals.ca', en: 'kijiji.ca · rentals.ca', fr: 'kijiji.ca · rentals.ca' } },
+      ],
+      worksFor: [
+        { ko: '다양한 가격대', en: 'Wide price range', fr: 'Large gamme de prix' },
+        { ko: '정규 임대 계약', en: 'Standard lease agreements', fr: 'Baux standards' },
+      ],
+      worthKnowing: [
+        { ko: '직접 보기 전 예약 금지', en: 'Do not commit before viewing', fr: 'Ne pas s\'engager avant de visiter' },
+      ],
+    },
+    {
+      name: 'Centris / Zumper / PadMapper',
+      sub: { ko: '공식 부동산 플랫폼', en: 'Professional listing platforms', fr: 'Plateformes immobilières professionnelles' },
+      meta: [
+        { icon: 'world', label: { ko: 'centris.ca · zumper.com', en: 'centris.ca · zumper.com', fr: 'centris.ca · zumper.com' } },
+      ],
+      worksFor: [
+        { ko: '더 많은 정규 임대 계약', en: 'More formal lease agreements', fr: 'Plus de baux formels' },
+        { ko: '지도 기반 검색', en: 'Map-based searching', fr: 'Recherche par carte' },
+      ],
+      worthKnowing: [
+        { ko: '중개 수수료 있을 수 있음', en: 'May involve agent fees', fr: "Possibles frais d'agence" },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '플랫폼', en: 'Platform', fr: 'Plateforme' },
+      { ko: '무료 검색', en: 'Free search', fr: 'Recherche gratuite' },
+      { ko: '서블렛', en: 'Sublets', fr: 'Sous-locations' },
+      { ko: '정규 계약', en: 'Formal lease', fr: 'Bail formel' },
+      { ko: '한국어 커뮤니티', en: 'Korean community', fr: 'Communauté coréenne' },
+    ],
+    rows: [
+      { name: 'Facebook Groups', cols: [true, true, false, true] },
+      { name: 'Kijiji', cols: [true, true, true, false] },
+      { name: 'Rentals.ca', cols: [true, false, true, false] },
+      { name: 'Centris', cols: [true, false, true, false] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 4월', en: 'Working Holiday Apr 2024', fr: 'PVT avr. 2024' }, text: { ko: 'Facebook 한인 커뮤니티 그룹에서 찾았어요. 한국어로 소통할 수 있어서 계약 내용도 잘 이해했어요.', en: 'Found mine through a Korean Facebook group. Being able to communicate in Korean helped me understand the lease terms.', fr: "Trouvé via un groupe Facebook coréen. Communiquer en coréen m'a aidé à comprendre le bail." }, likes: 31 },
+    { flag: '🇰🇷', person: { ko: '학생 · 2023년 9월', en: 'Student Sept 2023', fr: 'Étudiant sept. 2023' }, text: { ko: '퀘벡에서는 보증금을 요구하면 불법이라는 걸 나중에 알았어요. 처음에는 몰라서 요구에 응할 뻔했어요.', en: "Learned later that security deposits are illegal in Québec. I almost paid one because I didn't know.", fr: "J'ai appris plus tard que le dépôt de garantie est illégal au Québec. J'ai failli en payer un par ignorance." }, likes: 27 },
+    { flag: '🇰🇷', person: { ko: '영주권자 · 2024년 1월', en: 'PR Jan 2024', fr: 'RP janv. 2024' }, text: { ko: '7월 1일 전에 계약하면 선택지가 훨씬 많아요. 1월은 매물이 정말 적어요.', en: 'Signing before July 1 gives you way more options. January is very slim pickings.', fr: "Signer avant le 1er juillet donne bien plus de choix. Janvier, c'est vraiment peu d'offres." }, likes: 22 },
+  ],
+  helpLinks: [
+    { label: { ko: 'Kijiji 몬트리올 임대', en: 'Kijiji Montréal rentals', fr: 'Kijiji locations Montréal' }, url: 'https://www.kijiji.ca', domain: 'kijiji.ca' },
+    { label: { ko: 'Rentals.ca', en: 'Rentals.ca', fr: 'Rentals.ca' }, url: 'https://www.rentals.ca', domain: 'rentals.ca' },
+    { label: { ko: 'Centris.ca', en: 'Centris.ca', fr: 'Centris.ca' }, url: 'https://www.centris.ca', domain: 'centris.ca' },
+    { label: { ko: '퀘벡 임차인 권리 (TAL)', en: 'Québec tenant rights (TAL)', fr: 'Droits locataires Québec (TAL)' }, url: 'https://www.tal.gouv.qc.ca/en', domain: 'tal.gouv.qc.ca' },
+  ],
+  faq: [
+    { q: { ko: '퀘벡에서 보증금을 내야 하나요?', en: 'Do I need to pay a security deposit in Québec?', fr: 'Dois-je payer un dépôt de garantie au Québec?' }, a: { ko: '아니요 — 퀘벡에서 집주인은 마지막 달 월세 또는 보증금을 요구할 수 없어요. 첫 달 월세만 내는 것이 정상이에요.', en: "No — in Québec, landlords cannot demand last month's rent or a security deposit. First month only is the norm.", fr: "Non — au Québec, le propriétaire ne peut pas exiger le dernier mois ni un dépôt. Le premier mois seulement est la norme." } },
+    { q: { ko: '신용 조회가 없으면 아파트를 빌릴 수 있나요?', en: 'Can I rent without a Canadian credit history?', fr: 'Puis-je louer sans historique de crédit canadien?' }, a: { ko: '어려울 수 있지만 불가능하지 않아요. 추천서, 고용 증명서, 은행 잔액 증명서를 준비하세요. 일부 집주인은 신용 조회를 요구하지 않아요.', en: 'Harder but not impossible. Prepare reference letters, proof of employment or enrollment, and bank statements. Some landlords do not require a credit check.', fr: "Plus difficile mais pas impossible. Préparez des lettres de référence, preuve d'emploi/inscription, relevés bancaires. Certains propriétaires ne vérifient pas le crédit." } },
+    { q: { ko: '아파트 사기를 어떻게 피하나요?', en: 'How do I avoid apartment scams?', fr: 'Comment éviter les arnaques immobilières?' }, a: { ko: '방문 전 돈을 보내지 마세요. 해외에 있는 집주인, 너무 싼 가격, 계약서 없는 요청, 영상통화 거부는 사기 신호예요.', en: "Never send money before viewing. Red flags: overseas landlord, price too low, no lease, refuses video call.", fr: "Ne jamais envoyer d'argent avant de visiter. Signaux d'alarme : propriétaire à l'étranger, prix trop bas, sans bail, refuse un appel vidéo." } },
+    { q: { ko: '이사하기 가장 좋은 시기는 언제인가요?', en: 'When is the best time to move in Montréal?', fr: 'Quel est le meilleur moment pour déménager à Montréal?' }, a: { ko: '7월 1일은 몬트리올의 "이사의 날"로 대부분의 임대가 바뀌어요. 봄(4–6월)에 계약하면 선택지가 가장 많아요.', en: "July 1 is Montréal's unofficial \"moving day\" when most leases turn over. Spring (April–June) is when listings peak.", fr: "Le 1er juillet est le « jour du déménagement » à Montréal. Le printemps (avril–juin) offre le plus d'annonces." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '1인실 월세', en: '1-bedroom avg', fr: 'Loyer 1 chambre' }, value: { ko: '$900–1,500/월', en: '$900–1,500/mo', fr: '900–1 500$/mois' } },
+      { label: { ko: '보증금', en: 'Security deposit', fr: 'Dépôt de garantie' }, value: { ko: '불법 (퀘벡)', en: 'Illegal (Québec)', fr: 'Illégal (Québec)' } },
+      { label: { ko: '이사의 날', en: 'Moving day', fr: 'Jour déménagement' }, value: { ko: '7월 1일', en: 'July 1', fr: '1er juillet' } },
+      { label: { ko: '임대 기간', en: 'Lease term', fr: 'Durée du bail' }, value: { ko: '보통 1년', en: 'Usually 1 year', fr: 'Généralement 1 an' } },
+    ],
+    timeline: { ko: '임시 숙소 도착 후 2–4주 안에 장기 아파트를 구하는 것이 일반적이에요.', en: 'Most people find a long-term apartment within 2–4 weeks of arriving in temp housing.', fr: "La plupart trouvent un appartement 2–4 semaines après le logement temporaire." },
+    nextStepId: 'insurance',
+    nextStepLabel: { ko: '세입자 보험 가입하기', en: 'Get tenant insurance', fr: "Souscrire une assurance locataire" },
+  },
+}
+
+// ─── NEW TAB: Tenant insurance ────────────────────────────────────────────────
+
+const INSURANCE_TAB: TabContent = {
+  id: 'insurance',
+  label: { ko: '세입자 보험', en: 'Tenant insurance', fr: 'Assurance locataire' },
+  hero: {
+    title: { ko: '세입자 보험: 집을 구하면 바로 가입해요', en: 'Tenant insurance: get it when you sign your lease', fr: "Assurance locataire : souscrivez dès la signature du bail" },
+    sub: {
+      ko: '퀘벡에서 세입자 보험은 법적 의무는 아니에요. 하지만 많은 집주인이 입주 전 보험 증명서를 요구해요. 화재, 수해 피해, 민사 배상, 도난 시 세간 보호를 해줘요.',
+      en: "Tenant insurance is not legally required in Québec, but many landlords require proof before handing over keys. It covers personal belongings, civil liability, and temporary living expenses after fire or water damage.",
+      fr: "L'assurance locataire n'est pas obligatoire au Québec, mais beaucoup de propriétaires exigent une preuve avant les clés. Elle couvre vos biens, la responsabilité civile et les frais temporaires après sinistre.",
+    },
+    when: { ko: '계약 서명 직후 또는 입주 전', en: 'Right after signing your lease or before move-in', fr: 'Juste après la signature du bail ou avant l\'emménagement' },
+    cost: { ko: '$15–30/월 (커버리지에 따라)', en: '$15–30/mo depending on coverage', fr: '15–30$/mois selon la couverture' },
+    time: { ko: '온라인 15–30분', en: '15–30 min online', fr: '15–30 min en ligne' },
+    canBeforeArrival: { ko: '입주 주소가 있으면 가능', en: 'Yes, once you have your apartment address', fr: 'Oui, une fois l\'adresse de l\'appartement connue' },
+  },
+  options: [
+    {
+      name: 'Sonnet / Square One',
+      sub: { ko: '100% 온라인, 빠른 가입', en: '100% online, fast to set up', fr: '100% en ligne, rapide' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$15–25/월', en: '~$15–25/mo', fr: '~15–25$/mois' } },
+        { icon: 'clock', label: { ko: '15분 이내 보험 증명서', en: 'Proof of insurance in 15 min', fr: "Preuve d'assurance en 15 min" } },
+        { icon: 'world', label: { ko: '영어 온라인 서비스', en: 'English online service', fr: 'Service en ligne anglais' } },
+      ],
+      worksFor: [
+        { ko: '집주인이 빨리 증명서를 요구할 때', en: 'Landlord needs proof quickly', fr: 'Le propriétaire veut la preuve vite' },
+        { ko: '온라인 처리를 선호하는 분', en: 'Prefer to handle everything online', fr: 'Préfèrent tout faire en ligne' },
+      ],
+      worthKnowing: [
+        { ko: '커버리지를 꼼꼼히 읽어보세요 — 저렴한 플랜은 수해 피해나 자전거 도난이 제외될 수 있어요', en: 'Read coverage carefully — cheap plans may exclude water damage or bicycle theft', fr: 'Lisez bien la couverture — les plans bon marché peuvent exclure dégâts d\'eau ou vol de vélo' },
+      ],
+      recommendNote: {
+        ko: '집주인이 입주 전날 증명서를 요구하면 Sonnet이나 Square One으로 당일 처리가 가능해요.',
+        en: "If a landlord asks for proof the day before move-in, Sonnet or Square One can issue it same day.",
+        fr: "Si le propriétaire demande la preuve la veille, Sonnet ou Square One peuvent l'émettre le jour même.",
+      },
+    },
+    {
+      name: 'Desjardins / Intact',
+      sub: { ko: '대형 보험사, 프랑스어 서비스 강함', en: 'Major insurers, strong French service', fr: 'Grands assureurs, excellent service français' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$20–35/월', en: '~$20–35/mo', fr: '~20–35$/mois' } },
+        { icon: 'phone', label: { ko: '전화 또는 지점 방문', en: 'Phone or in-person', fr: 'Téléphone ou en personne' } },
+      ],
+      worksFor: [
+        { ko: '은행과 보험을 합산하고 싶은 분 (번들 할인)', en: 'Want to bundle with banking (bundle discount)', fr: 'Voulant combiner avec la banque (rabais)' },
+        { ko: '프랑스어로 설명받고 싶은 분', en: 'Want explanation in French', fr: 'Veulent des explications en français' },
+      ],
+      worthKnowing: [
+        { ko: 'Desjardins는 은행 계좌 있으면 할인 가능', en: 'Desjardins may offer discount if you have their bank account', fr: 'Desjardins peut offrir un rabais si vous avez leur compte' },
+      ],
+    },
+    {
+      name: 'TD / RBC / BMO Insurance',
+      sub: { ko: '기존 은행에서 보험 추가', en: 'Add insurance through your existing bank', fr: 'Assurance via votre banque existante' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '~$20–40/월', en: '~$20–40/mo', fr: '~20–40$/mois' } },
+      ],
+      worksFor: [
+        { ko: '이미 TD/RBC/BMO 계좌가 있는 분', en: 'Already banking with TD/RBC/BMO', fr: 'Déjà avec TD/RBC/BMO' },
+        { ko: '합산 청구를 선호하는 분', en: 'Prefer consolidated billing', fr: 'Préfèrent la facturation groupée' },
+      ],
+      worthKnowing: [
+        { ko: '같은 은행 계좌 번들로 할인되는 경우 있음', en: 'May receive a bundle discount with your bank account', fr: 'Peut bénéficier d\'un rabais combiné avec le compte' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '보험사', en: 'Provider', fr: 'Assureur' },
+      { ko: '월 비용', en: 'Monthly cost', fr: 'Coût mensuel' },
+      { ko: '온라인 가입', en: 'Online signup', fr: 'Inscription en ligne' },
+      { ko: '수해 포함', en: 'Water damage', fr: 'Dégâts d\'eau' },
+      { ko: '배상 책임', en: 'Liability', fr: 'Responsabilité' },
+    ],
+    rows: [
+      { name: 'Sonnet', cols: ['~$15–25/mo', true, 'Optional', true] },
+      { name: 'Square One', cols: ['~$15–25/mo', true, 'Optional', true] },
+      { name: 'Desjardins', cols: ['~$20–35/mo', 'Partial', true, true] },
+      { name: 'Intact', cols: ['~$20–35/mo', 'Partial', true, true] },
+      { name: 'TD/RBC/BMO', cols: ['~$20–40/mo', 'Partial', true, true] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '학생 · 2024년 9월', en: 'Student Sept 2024', fr: 'Étudiant sept. 2024' }, text: { ko: '집주인이 계약서에 서명하기 전에 보험 증명서를 요구했어요. Sonnet으로 20분 만에 처리했어요.', en: 'My landlord required proof of insurance before signing the lease. Sorted it through Sonnet in 20 minutes.', fr: "Mon propriétaire exigeait la preuve avant la signature. Réglé avec Sonnet en 20 minutes." }, likes: 24 },
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 6월', en: 'Working Holiday June 2024', fr: 'PVT juin 2024' }, text: { ko: '가장 저렴한 플랜을 골랐다가 수해 피해가 포함 안 됐다는 걸 나중에 알았어요. 잘 확인해보세요.', en: "I chose the cheapest plan and later found out water damage wasn't covered. Read carefully.", fr: "J'ai pris le plan le moins cher et appris plus tard que les dégâts d'eau n'étaient pas couverts. Lisez bien." }, likes: 19 },
+    { flag: '🇰🇷', person: { ko: '영주권자 · 2024년 3월', en: 'PR Mar 2024', fr: 'RP mars 2024' }, text: { ko: 'TD 계좌랑 번들로 할인받았어요. 한 곳에서 관리하는 게 편해요.', en: "Got a bundle discount with my TD account. Managing it all in one place is convenient.", fr: "Rabais groupé avec mon compte TD. Tout gérer au même endroit, c'est pratique." }, likes: 12 },
+  ],
+  helpLinks: [
+    { label: { ko: 'Sonnet 보험', en: 'Sonnet Insurance', fr: 'Assurance Sonnet' }, url: 'https://www.sonnet.ca', domain: 'sonnet.ca' },
+    { label: { ko: 'Square One 보험', en: 'Square One Insurance', fr: 'Assurance Square One' }, url: 'https://www.squareoneinsurance.ca', domain: 'squareoneinsurance.ca' },
+    { label: { ko: 'Desjardins 보험', en: 'Desjardins Insurance', fr: 'Assurance Desjardins' }, url: 'https://www.desjardins.com', domain: 'desjardins.com' },
+    { label: { ko: 'Beneva 보험', en: 'Beneva Insurance', fr: 'Assurance Beneva' }, url: 'https://www.beneva.ca', domain: 'beneva.ca' },
+  ],
+  faq: [
+    { q: { ko: '세입자 보험은 퀘벡에서 법적 의무인가요?', en: 'Is tenant insurance legally required in Québec?', fr: "L'assurance locataire est-elle obligatoire au Québec?" }, a: { ko: '법적으로는 의무가 아니에요. 하지만 많은 집주인이 임대 계약 조건으로 요구해요. 집주인의 건물 보험은 세입자 물건에는 적용 안 돼요.', en: "Not legally mandatory. But many landlords require it as a condition of the lease. The landlord's building insurance does not cover your belongings.", fr: "Pas légalement obligatoire. Mais beaucoup de propriétaires l'exigent dans le bail. L'assurance du propriétaire ne couvre pas vos biens." } },
+    { q: { ko: '보험에 가입하려면 어떤 정보가 필요한가요?', en: 'What information do I need to get insured?', fr: "Quelles informations pour s'assurer?" }, a: { ko: '주소, 입주 날짜, 아파트 유형, 세간 가치 추정액, 배상 책임 한도, 이전 청구 이력이 필요해요.', en: 'Address, move-in date, apartment type, estimated value of belongings, liability coverage amount, and any prior claims.', fr: "Adresse, date d'emménagement, type d'appartement, valeur estimée des biens, montant de responsabilité, sinistres antérieurs." } },
+    { q: { ko: '자전거 도난도 보험으로 보장되나요?', en: 'Does tenant insurance cover bicycle theft?', fr: "L'assurance couvre-t-elle le vol de vélo?" }, a: { ko: '플랜에 따라 달라요. 가입 전 자전거 도난 포함 여부와 실내/실외 보관 조건을 꼭 확인하세요.', en: 'Depends on the plan. Always confirm bicycle theft coverage and whether the bike needs to be stored indoors.', fr: "Ça dépend du plan. Vérifiez toujours si le vol de vélo est couvert et les conditions de stockage." } },
+    { q: { ko: '한국어로 보험 설명을 받을 수 있나요?', en: 'Can I get help with insurance in Korean?', fr: "Puis-je obtenir de l'aide en coréen pour l'assurance?" }, a: { ko: '일부 보험 브로커는 한국어 서비스를 제공해요. HAKKYO 커뮤니티에서 한국어 가능 브로커를 추천받을 수 있어요. (한국어 지원 브로커 정보: 추후 업데이트 예정)', en: 'Some insurance brokers offer Korean-language service. The HAKKYO community may be able to refer you to a Korean-speaking broker. (Korean support broker info: to be added)', fr: "Certains courtiers offrent le service en coréen. La communauté HAKKYO peut vous référer un courtier coréanophone. (Info à ajouter)" } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '월 비용', en: 'Monthly cost', fr: 'Coût mensuel' }, value: { ko: '$15–30', en: '$15–30', fr: '15–30$' } },
+      { label: { ko: '법적 의무', en: 'Legally required', fr: 'Légalement obligatoire' }, value: { ko: '아니요 (집주인 요구 가능)', en: 'No (landlord may require)', fr: 'Non (propriétaire peut exiger)' } },
+      { label: { ko: '주요 보험사', en: 'Top providers', fr: 'Principaux assureurs' }, value: { ko: 'Sonnet, Desjardins, Intact', en: 'Sonnet, Desjardins, Intact', fr: 'Sonnet, Desjardins, Intact' } },
+      { label: { ko: '가입 시간', en: 'Time to sign up', fr: 'Temps pour souscrire' }, value: { ko: '15–30분', en: '15–30 min', fr: '15–30 min' } },
+    ],
+    timeline: { ko: '계약 서명 직후 또는 입주 직전에 가입하세요. 온라인 가입 시 당일 증명서 발급 가능해요.', en: "Get insured right after signing your lease or before move-in. Online providers issue proof the same day.", fr: "Souscrivez juste après la signature ou avant l'emménagement. Les assureurs en ligne émettent la preuve le jour même." },
+    nextStepId: 'hydro',
+    nextStepLabel: { ko: 'Hydro-Québec & 인터넷 설치', en: 'Hydro-Québec & internet setup', fr: 'Hydro-Québec & internet' },
+  },
+}
+
+// ─── NEW TAB: Hydro-Québec & Internet ────────────────────────────────────────
+
+const HYDRO_TAB: TabContent = {
+  id: 'hydro',
+  label: { ko: 'Hydro & 인터넷', en: 'Hydro & internet', fr: 'Hydro & internet' },
+  hero: {
+    title: { ko: 'Hydro-Québec & 인터넷 설치하기', en: 'Setting up Hydro-Québec & internet', fr: 'Ouvrir Hydro-Québec & internet' },
+    sub: {
+      ko: 'Hydro-Québec는 퀘벡의 전기 공급사예요. 아파트를 계약했다면 입주 전에 본인 명의로 계정을 개설해야 해요. 일부 임대 계약에는 Hydro가 포함돼 있으니 먼저 확인하세요.',
+      en: "Hydro-Québec is the provincial electricity provider. If you rent an apartment that isn't all-inclusive, you'll need to open an account in your name before or on move-in day. Check your lease first.",
+      fr: "Hydro-Québec est le fournisseur d'électricité provincial. Si votre loyer n'est pas tout inclus, ouvrez un compte à votre nom avant ou le jour de l'emménagement. Vérifiez d'abord votre bail.",
+    },
+    when: { ko: '입주 날짜에 맞춰', en: 'Around your move-in date', fr: "Autour de la date d'emménagement" },
+    cost: { ko: 'Hydro: $30–80/월 (사용량에 따라) | 인터넷: $40–80/월', en: 'Hydro: $30–80/mo (usage-based) | Internet: $40–80/mo', fr: 'Hydro : 30–80$/mois (selon usage) | Internet : 40–80$/mois' },
+    time: { ko: 'Hydro 계정 개설: 15분 (온라인)', en: 'Hydro account: 15 min online', fr: 'Compte Hydro : 15 min en ligne' },
+    canBeforeArrival: { ko: '입주 주소가 있으면 가능', en: 'Yes, once you have your apartment address', fr: "Oui, avec l'adresse de l'appartement" },
+  },
+  options: [
+    {
+      name: 'Hydro-Québec account',
+      sub: { ko: '온라인 또는 전화로 개설', en: 'Open online or by phone', fr: 'Ouvrir en ligne ou par téléphone' },
+      topPick: true,
+      meta: [
+        { icon: 'world', label: { ko: 'hydroquebec.com', en: 'hydroquebec.com', fr: 'hydroquebec.com' } },
+        { icon: 'clock', label: { ko: '15분 온라인', en: '15 min online', fr: '15 min en ligne' } },
+        { icon: 'id', label: { ko: '이름, 주소, 입주 날짜 필요', en: 'Name, address, move-in date needed', fr: "Nom, adresse, date d'emménagement" } },
+      ],
+      worksFor: [
+        { ko: '임대 계약에 Hydro가 포함되지 않은 분', en: 'Lease does not include Hydro', fr: 'Bail sans Hydro inclus' },
+      ],
+      worthKnowing: [
+        { ko: '임대 계약에 Hydro가 포함되면 개설 불필요 — 계약서를 먼저 확인하세요', en: 'If your lease includes Hydro, you do not need to open an account — check first', fr: 'Si le bail inclut Hydro, pas besoin d\'ouvrir un compte — vérifiez d\'abord' },
+        { ko: '퀘벡의 겨울 난방은 전기를 많이 써요 — 12–2월에 청구서가 높아요', en: 'Québec winters use a lot of electricity for heating — bills spike Dec–Feb', fr: 'Les hivers québécois consomment beaucoup en chauffage — factures élevées déc.–févr.' },
+      ],
+      recommendNote: {
+        ko: '계약서에 "Hydro-Québec 포함" 문구가 없으면 본인 명의로 개설해야 해요. 입주 당일에 개설하면 돼요.',
+        en: 'If your lease does not say "Hydro included," you need an account in your name. You can open it on move-in day.',
+        fr: 'Si le bail ne dit pas « Hydro inclus », ouvrez un compte. Vous pouvez le faire le jour de l\'emménagement.',
+      },
+    },
+    {
+      name: 'Videotron (Internet)',
+      sub: { ko: '퀘벡 지역 통신사, 강한 프랑스어 서비스', en: 'Québec-based provider, strong French service', fr: 'Fournisseur québécois, service français fort' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$55–80/월', en: '$55–80/mo', fr: '55–80$/mois' } },
+        { icon: 'wifi', label: { ko: '광케이블, 안정적', en: 'Cable fibre, reliable', fr: 'Câble fibre, fiable' } },
+      ],
+      worksFor: [
+        { ko: '안정적인 고속 인터넷', en: 'Stable high-speed internet', fr: 'Internet rapide et stable' },
+        { ko: '몬트리올 시내 대부분 지역 서비스', en: 'Available in most Montréal areas', fr: 'Disponible dans la plupart des quartiers' },
+      ],
+      worthKnowing: [
+        { ko: '장기 계약 시 초기 프로모션 가격 있음', en: 'Promotional pricing available with contracts', fr: 'Prix promo avec contrat disponible' },
+      ],
+    },
+    {
+      name: 'Fizz / TekSavvy (Internet)',
+      sub: { ko: '저렴한 인터넷 옵션', en: 'Budget internet options', fr: "Options internet économiques" },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$40–60/월', en: '$40–60/mo', fr: '40–60$/mois' } },
+        { icon: 'wifi', label: { ko: '같은 망, 더 저렴', en: 'Same network, lower price', fr: 'Même réseau, prix plus bas' } },
+      ],
+      worksFor: [
+        { ko: '예산을 아끼고 싶은 분', en: 'Budget-conscious', fr: 'Petit budget' },
+        { ko: '계약 없이 더 저렴하게', en: 'Lower price without long-term contract', fr: 'Moins cher sans engagement' },
+      ],
+      worthKnowing: [
+        { ko: 'Fizz는 Videotron 망 사용, 신뢰도 비슷', en: 'Fizz uses Videotron network, similar reliability', fr: 'Fizz utilise le réseau Videotron, fiabilité similaire' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '서비스', en: 'Service', fr: 'Service' },
+      { ko: '월 비용', en: 'Monthly cost', fr: 'Coût mensuel' },
+      { ko: '계약 필요', en: 'Contract', fr: 'Contrat' },
+      { ko: '서비스 언어', en: 'Language', fr: 'Langue' },
+    ],
+    rows: [
+      { name: 'Hydro-Québec', cols: ['$30–80 (usage)', 'No', 'FR/EN'] },
+      { name: 'Videotron (internet)', cols: ['$55–80/mo', 'Optional', 'FR/EN'] },
+      { name: 'Bell (internet)', cols: ['$60–90/mo', 'Optional', 'FR/EN'] },
+      { name: 'Fizz (internet)', cols: ['$40–60/mo', 'No', 'FR/EN'] },
+      { name: 'TekSavvy (internet)', cols: ['$40–60/mo', 'No', 'FR/EN'] },
+    ],
+  },
+  communityNotes: [
+    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2024년 8월', en: 'Working Holiday Aug 2024', fr: 'PVT août 2024' }, text: { ko: '이사 당일 Hydro 계정을 온라인으로 열었어요. 15분이면 됐어요. Fizz 인터넷은 기사 와서 설치하는 데 3일 걸렸어요.', en: 'Opened my Hydro account online on move-in day. Took 15 minutes. Fizz internet took 3 days for a technician visit.', fr: "Compte Hydro en ligne le jour de l'emménagement. 15 minutes. Internet Fizz : 3 jours pour le technicien." }, likes: 21 },
+    { flag: '🇰🇷', person: { ko: '학생 · 2024년 1월', en: 'Student Jan 2024', fr: 'Étudiant janv. 2024' }, text: { ko: '1월에 Hydro 청구서가 $90 나왔어요. 퀘벡 겨울 난방이 비싸요. 에너지 절약에 신경 쓰세요.', en: 'My January Hydro bill was $90. Quebec winters are heating-heavy. Worth being mindful of energy use.', fr: "Ma facture Hydro de janvier était 90$. Les hivers québécois chauffent beaucoup. Faites attention à l'énergie." }, likes: 18 },
+  ],
+  helpLinks: [
+    { label: { ko: 'Hydro-Québec 계정 개설', en: 'Open Hydro-Québec account', fr: 'Ouvrir compte Hydro-Québec' }, url: 'https://www.hydroquebec.com/residential/customer-space/new-customer.html', domain: 'hydroquebec.com' },
+    { label: { ko: 'Videotron 인터넷', en: 'Videotron internet', fr: 'Internet Videotron' }, url: 'https://www.videotron.com', domain: 'videotron.com' },
+    { label: { ko: 'Fizz 인터넷', en: 'Fizz internet', fr: 'Internet Fizz' }, url: 'https://fizz.ca', domain: 'fizz.ca' },
+    { label: { ko: 'TekSavvy 인터넷', en: 'TekSavvy internet', fr: 'Internet TekSavvy' }, url: 'https://www.teksavvy.com', domain: 'teksavvy.com' },
+  ],
+  faq: [
+    { q: { ko: '임대 계약에 Hydro가 포함됐는지 어떻게 알 수 있나요?', en: 'How do I know if my lease includes Hydro?', fr: 'Comment savoir si mon bail inclut Hydro?' }, a: { ko: '임대 계약서에 "Hydro inclus" 또는 "all-inclusive" 문구를 찾아보세요. 없으면 집주인에게 직접 확인하세요.', en: 'Look for "Hydro inclus" or "all-inclusive" in your lease. If not mentioned, ask your landlord directly.', fr: 'Cherchez « Hydro inclus » ou « tout inclus » dans le bail. Sinon, demandez directement au propriétaire.' } },
+    { q: { ko: '인터넷 설치까지 얼마나 걸리나요?', en: 'How long does internet setup take?', fr: "Combien de temps pour l'installation internet?" }, a: { ko: '기사 방문이 필요한 경우 2–5일 걸려요. 이사 날짜에 맞춰 미리 신청하세요. Fizz나 TekSavvy는 기존 케이블 배선이 있으면 더 빠를 수 있어요.', en: 'If a technician is needed, allow 2–5 days. Book before your move-in date. Fizz and TekSavvy can be faster if existing wiring is in place.', fr: "Si un technicien est nécessaire, prévoyez 2–5 jours. Commandez avant votre emménagement. Fizz et TekSavvy peuvent être plus rapides." } },
+    { q: { ko: 'Hydro 계정 개설에 어떤 정보가 필요한가요?', en: 'What do I need to open a Hydro-Québec account?', fr: 'Que faut-il pour ouvrir un compte Hydro-Québec?' }, a: { ko: '이름, 새 주소, 입주 날짜, 연락처(전화번호, 이메일)가 필요해요. hydroquebec.com에서 온라인으로 개설할 수 있어요.', en: 'Your name, new address, move-in date, and contact info (phone, email). Open it online at hydroquebec.com.', fr: "Votre nom, nouvelle adresse, date d'emménagement, coordonnées. Ouvrez le compte en ligne sur hydroquebec.com." } },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: 'Hydro 월 평균', en: 'Hydro avg/mo', fr: 'Hydro moy/mois' }, value: { ko: '$40–80', en: '$40–80', fr: '40–80$' } },
+      { label: { ko: '인터넷', en: 'Internet', fr: 'Internet' }, value: { ko: '$40–80/월', en: '$40–80/mo', fr: '40–80$/mois' } },
+      { label: { ko: 'Hydro 개설', en: 'Hydro setup', fr: 'Hydro ouverture' }, value: { ko: '온라인 15분', en: '15 min online', fr: '15 min en ligne' } },
+      { label: { ko: '인터넷 설치', en: 'Internet install', fr: 'Installation internet' }, value: { ko: '2–5일', en: '2–5 days', fr: '2–5 jours' } },
+    ],
+    timeline: { ko: '이사 당일 Hydro 계정을 개설하고, 입주 날짜에 맞춰 인터넷 설치를 미리 예약하세요.', en: "Open your Hydro account on move-in day and pre-book internet installation to match your move-in date.", fr: "Ouvrez le compte Hydro le jour de l'emménagement et pré-réservez l'internet pour cette date." },
+    nextStepId: 'licence',
+    nextStepLabel: { ko: '퀘벡 운전면허 교환', en: 'Québec driver licence exchange', fr: 'Échange permis de conduire Québec' },
   },
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-const TABS: TabContent[] = [SIM_TAB, BANK_TAB, TRANSIT_TAB, HOUSING_TAB, SIN_TAB, LICENCE_TAB, LANGUAGE_TAB, FLIGHTS_TAB]
+const TABS: TabContent[] = [
+  FLIGHTS_TAB,
+  AIRPORT_TAB,
+  TEMP_STAY_TAB,
+  SIM_TAB,
+  BANK_TAB,
+  SIN_TAB,
+  TRANSIT_TAB,
+  LONG_HOUSING_TAB,
+  INSURANCE_TAB,
+  HYDRO_TAB,
+  LICENCE_TAB,
+  LANGUAGE_TAB,
+]
 
 export default function Arriving() {
   const { lang } = useLang()
@@ -1237,7 +1821,7 @@ export default function Arriving() {
     try { return new Set(JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '[]')) }
     catch { return new Set() }
   })
-  const [activeTabId, setActiveTabId] = useState<string>('sim')
+  const [activeTabId, setActiveTabId] = useState<string>('flights')
 
   useEffect(() => {
     try { localStorage.setItem(PROGRESS_KEY, JSON.stringify([...checked])) }
@@ -1375,7 +1959,7 @@ export default function Arriving() {
                   <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('일반적인 시기', 'Estimated timeline', 'Calendrier habituel')}</p>
                   <p className="text-[11px] text-gray-500 leading-relaxed">{tri(activeTab.sidebar.timeline, lang)}</p>
                 </div>
-                <div className="border-t border-gray-100 pt-3">
+                <div className="border-t border-gray-100 pt-3 mb-4">
                   <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('전체 진행률', 'Overall progress', 'Progression')}</p>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -1384,6 +1968,18 @@ export default function Arriving() {
                     <span className="text-[11px] font-medium text-gray-500 tabular-nums">{pct}%</span>
                   </div>
                 </div>
+                {activeTab.sidebar.nextStepId && activeTab.sidebar.nextStepLabel && (
+                  <div className="border-t border-gray-100 pt-3">
+                    <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('다음 단계', 'Next step', 'Prochaine étape')}</p>
+                    <button
+                      onClick={() => setActiveTabId(activeTab.sidebar.nextStepId!)}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-gray-900 text-white rounded-lg text-[12px] font-medium hover:bg-gray-700 transition-colors"
+                    >
+                      <span>{tri(activeTab.sidebar.nextStepLabel, lang)}</span>
+                      <i className="ti ti-arrow-right text-[14px]" aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
               </div>
             </aside>
 
