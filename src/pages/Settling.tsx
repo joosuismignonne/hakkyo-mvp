@@ -69,6 +69,13 @@ function IcoTransit() {
     </svg>
   )
 }
+function IcoSearch() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  )
+}
 
 // ─── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -119,6 +126,7 @@ const TOOL_TABS: Array<{ id: string; icon: React.ReactNode } & Tri> = [
   { id: 'internet',  icon: <IcoWifi />,    ko: '인터넷',      en: 'Internet',      fr: 'Internet'     },
   { id: 'insurance', icon: <IcoShield />,  ko: '보험',        en: 'Insurance',     fr: 'Assurance'    },
   { id: 'transit',   icon: <IcoTransit />, ko: '교통',        en: 'Transit',       fr: 'Transport'    },
+  { id: 'listings',  icon: <IcoSearch />,  ko: '매물 찾기',   en: 'Find listings', fr: 'Trouver' },
 ]
 
 // ─── Neighbourhood data ───────────────────────────────────────────────────────
@@ -1160,6 +1168,164 @@ function ToolPanel({ id, lang, t }: { id: string; lang: string; t: (ko: string, 
             <span className="text-[12px] text-gray-500 text-right">{tri(row.note, lang)}</span>
           </div>
         ))}
+      </div>
+    </div>
+  )
+
+  if (id === 'listings') return (
+    <div className="space-y-5">
+      <p className="text-[13px] text-gray-700 leading-relaxed">
+        {t(
+          'Facebook 한인 그룹 + Kijiji + DuProprio를 동시에 보는 것이 가장 빠르게 찾는 방법이에요. 보증금 요구는 퀘벡법상 불법이에요.',
+          'Checking Korean Facebook groups + Kijiji + DuProprio simultaneously is the fastest approach. Security deposits are illegal under Québec law.',
+          'Combiner groupes Facebook coréens + Kijiji + DuProprio est l\'approche la plus rapide. Le dépôt de garantie est illégal au Québec.',
+        )}
+      </p>
+
+      {/* Facebook groups */}
+      <div>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+          {t('Facebook 그룹', 'Facebook Groups', 'Groupes Facebook')}
+        </p>
+        <div className="space-y-1.5">
+          {[
+            {
+              name: t('한인 몬트리올 커뮤니티', 'Korean Montreal Community', 'Communauté coréenne Montréal'),
+              note: t('한국어 소통 · 한인 직거래 매물', 'Korean-language listings & tips', 'Annonces coréennes'),
+              url: 'https://www.facebook.com/groups/montrealkoreancommunity',
+            },
+            {
+              name: 'Logement / Appartement à Montréal',
+              note: t('현지 프랑스어 그룹 · 저렴한 매물 많음', 'Local French group · many affordable listings', 'Groupe local · annonces abordables'),
+              url: 'https://www.facebook.com/groups/logementmontreal',
+            },
+            {
+              name: 'Montréal Housing / Appartements',
+              note: t('영어 그룹 · 유학생·워홀 이용 많음', 'English group · popular with students & WHV', 'Groupe anglais · étudiants & PVT'),
+              url: 'https://www.facebook.com/groups/search/results/?q=montreal%20housing%20appartements',
+            },
+            {
+              name: t('FB Marketplace — 몬트리올 임대', 'FB Marketplace — Montréal rentals', 'FB Marketplace — locations Montréal'),
+              note: t('개인 직거래 · 중개 없음', 'Owner-direct · no agent', 'Direct propriétaire · sans agent'),
+              url: 'https://www.facebook.com/marketplace/montreal/propertyrentals',
+            },
+          ].map(g => (
+            <a key={g.url} href={g.url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F0F4FF] hover:bg-[#E3EAFF] transition-colors no-underline group">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#1877F2" className="shrink-0">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold text-gray-900 truncate">{g.name}</p>
+                <p className="text-[10px] text-gray-500">{g.note}</p>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 group-hover:stroke-gray-600 transition-colors">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+              </svg>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Listing platforms grid */}
+      <div>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+          {t('매물 플랫폼', 'Listing platforms', 'Plateformes d\'annonces')}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { name: 'Kijiji', tag: t('캐나다 최대 무료 광고', "Canada's largest classifieds", "Plus grand site d'annonces"), hint: '$700–2,500', url: 'https://www.kijiji.ca/b-apartments-condos/ville-de-montreal/c37l80002a10', color: '#3B6AF0' },
+            { name: 'DuProprio', tag: t('집주인 직거래', 'Owner-direct', 'Sans intermédiaire'), hint: '$900–2,000', url: 'https://duproprio.com/en/to-rent/apartment/search?is_for_rent=1&cities[]=10', color: '#E35B1A' },
+            { name: 'Centris', tag: t('퀘벡 공인 중개사 플랫폼', 'Official QC broker platform', 'Courtiers agréés du Québec'), hint: '$1,000–3,000', url: 'https://www.centris.ca/en/properties~for-rent~montreal', color: '#BF0000' },
+            { name: 'Rentals.ca', tag: t('전국 임대 전문', 'Canada-wide rentals', 'Location nationale'), hint: '$800–2,200', url: 'https://rentals.ca/montreal', color: '#00875A' },
+            { name: 'Zumper', tag: t('지도 기반 검색', 'Map-based search', 'Recherche par carte'), hint: '$900–2,500', url: 'https://www.zumper.com/apartments-for-rent/montreal-qc', color: '#6B21A8' },
+            { name: 'PadMapper', tag: t('Kijiji+Zumper 통합', 'Kijiji + Zumper aggregator', 'Agrégateur Kijiji + Zumper'), hint: '$700–2,500', url: 'https://www.padmapper.com/apartments/montreal-qc', color: '#0F766E' },
+          ].map(p => (
+            <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer"
+              className="group flex flex-col border border-gray-100 rounded-xl overflow-hidden hover:border-gray-200 hover:shadow-sm transition-all bg-white no-underline">
+              <div className="h-0.5 w-full" style={{ background: p.color }} />
+              <div className="p-2.5 flex-1 flex flex-col">
+                <div className="flex items-start justify-between mb-1">
+                  <span className="text-[12px] font-semibold text-gray-900">{p.name}</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5 group-hover:stroke-gray-500 transition-colors">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+                  </svg>
+                </div>
+                <p className="text-[10px] text-gray-400 leading-snug flex-1">{p.tag}</p>
+                <p className="text-[10px] font-medium text-gray-500 mt-2">{p.hint}/mo</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Realtor section */}
+      <div>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+          {t('공인 부동산 중개인 (리얼터)', 'Licensed Real Estate Brokers', 'Courtiers immobiliers agréés')}
+        </p>
+        <div className="space-y-1.5">
+          {[
+            {
+              name: t('OACIQ — 퀘벡 공인 중개인 찾기', 'OACIQ — Find a licensed broker', 'OACIQ — Trouver un courtier agréé'),
+              note: t('"Korean" 언어 필터로 한국어 가능 중개인 검색', 'Filter by "Korean" language to find Korean-speaking brokers', 'Filtrer par langue « coréen »'),
+              url: 'https://www.oaciq.com/en/pages/find-a-broker',
+            },
+            {
+              name: 'RE/MAX Québec',
+              note: t('퀘벡 최대 부동산 에이전시 · 한국어 가능 에이전트 있음', 'Largest QC agency · has Korean-speaking agents', 'Grande agence QC · agents coréanophones disponibles'),
+              url: 'https://www.remax-quebec.com/en/find-a-broker/',
+            },
+            {
+              name: 'Royal LePage',
+              note: t('전국 에이전시 · 에이전트 직접 연결', 'National agency · direct agent contact', 'Agence nationale · contact direct avec l\'agent'),
+              url: 'https://www.royallepage.ca/en/find-an-agent/',
+            },
+          ].map(r => (
+            <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors no-underline group">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold text-gray-900 truncate">{r.name}</p>
+                <p className="text-[10px] text-gray-500">{r.note}</p>
+              </div>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 group-hover:stroke-gray-500 transition-colors">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+              </svg>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Key rules */}
+      <div className="px-3 py-3 rounded-xl bg-amber-50 border border-amber-100">
+        <p className="text-[11px] font-semibold text-amber-800 mb-1.5">
+          {t('⚠️ 퀘벡 임대 핵심 규칙', '⚠️ Key Québec rental rules', '⚠️ Règles essentielles Québec')}
+        </p>
+        <ul className="space-y-1">
+          {(lang === 'ko' ? [
+            '보증금 요구 = 불법 (퀘벡 민법). 첫 달 월세만 정상',
+            '계약은 반드시 표준 임대 양식 (Bail standard) 사용',
+            '방문 전 절대 돈 보내지 마세요 — 한인 그룹 내에서도 사기 존재',
+            '7월 1일 이전 계약 시 매물이 가장 많음 (몬트리올 이사의 날)',
+          ] : lang === 'fr' ? [
+            'Dépôt de garantie = illégal au Québec. Seulement le premier mois.',
+            'Utilisez toujours le bail standard du Québec',
+            'Ne jamais envoyer d\'argent avant de visiter — arnaques même en groupes',
+            'Avant le 1er juillet = plus de choix (jour du déménagement à Montréal)',
+          ] : [
+            'Security deposit = illegal under Québec law. First month only.',
+            'Always use the official Québec standard lease (Bail standard)',
+            'Never send money before viewing — scams exist even in community groups',
+            'Sign before July 1 for the most listings (Montréal moving day)',
+          ]).map((rule, i) => (
+            <li key={i} className="text-[11px] text-amber-700 flex items-start gap-1.5">
+              <span className="shrink-0 mt-0.5">·</span>{rule}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   )
