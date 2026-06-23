@@ -212,6 +212,121 @@ function CommunityNotes({ notes, lang }: { notes: CommunityNote[]; lang: string 
   )
 }
 
+// ─── Live Kijiji listings ─────────────────────────────────────────────────────
+
+interface KijijiListing {
+  title: string
+  link: string
+  price: string | null
+  image: string | null
+  pubDate: string
+  location: string | null
+}
+
+function HousingListings({ lang }: { lang: string }) {
+  const [listings, setListings] = React.useState<KijijiListing[]>([])
+  const [state, setState] = React.useState<'loading' | 'ok' | 'error'>('loading')
+  const [updatedAt, setUpdatedAt] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    fetch('/api/listings')
+      .then(r => r.json())
+      .then(d => {
+        setListings(d.items ?? [])
+        setUpdatedAt(d.updatedAt ?? null)
+        setState(d.items?.length > 0 ? 'ok' : 'error')
+      })
+      .catch(() => setState('error'))
+  }, [])
+
+  const label = {
+    heading: { ko: 'Kijiji 실시간 매물', en: 'Live Kijiji listings', fr: 'Annonces Kijiji en direct' },
+    updated: { ko: '업데이트', en: 'Updated', fr: 'Mis à jour' },
+    viewAll: { ko: '전체 매물 보기 →', en: 'View all listings →', fr: 'Voir toutes les annonces →' },
+    noPrice: { ko: '가격 문의', en: 'Price on request', fr: 'Prix sur demande' },
+    loading: { ko: '매물 불러오는 중…', en: 'Loading listings…', fr: 'Chargement des annonces…' },
+    error: { ko: '매물을 불러오지 못했어요. Kijiji에서 직접 확인하세요.', en: "Couldn't load listings. Check Kijiji directly.", fr: "Impossible de charger les annonces. Consultez Kijiji directement." },
+  }
+
+  const t = (k: keyof typeof label) => tri(label[k], lang)
+
+  if (state === 'loading') {
+    return (
+      <div className="flex items-center gap-2 py-6 text-[12px] text-gray-400">
+        <span className="inline-block w-3 h-3 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
+        {t('loading')}
+      </div>
+    )
+  }
+
+  if (state === 'error') {
+    return (
+      <p className="text-[12px] text-gray-400 py-2">{t('error')}</p>
+    )
+  }
+
+  const formatDate = (d: string) => {
+    try { return new Date(d).toLocaleDateString(lang === 'ko' ? 'ko-KR' : lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', day: 'numeric' }) }
+    catch { return d }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-[11px] text-gray-500">
+            {updatedAt ? `${t('updated')} ${formatDate(updatedAt)}` : t('heading')}
+          </span>
+        </div>
+        <a
+          href="https://www.kijiji.ca/b-apartments-condos/ville-de-montreal/c37l80002a10"
+          target="_blank" rel="noopener noreferrer"
+          className="text-[11px] text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          {t('viewAll')}
+        </a>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {listings.map((l, i) => (
+          <a
+            key={i}
+            href={l.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block border border-gray-100 rounded-xl overflow-hidden hover:border-gray-300 hover:shadow-sm transition-all bg-white no-underline"
+          >
+            {l.image ? (
+              <div className="h-28 overflow-hidden bg-gray-50">
+                <img src={l.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+              </div>
+            ) : (
+              <div className="h-28 bg-gray-50 flex items-center justify-center">
+                <i className="ti ti-building text-[24px] text-gray-200" />
+              </div>
+            )}
+            <div className="p-3">
+              <p className="text-[13px] font-bold text-gray-900 mb-0.5">
+                {l.price ?? t('noPrice')}
+              </p>
+              <p className="text-[11px] text-gray-500 leading-snug line-clamp-2">{l.title}</p>
+              {l.location && (
+                <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                  <i className="ti ti-map-pin text-[10px]" />
+                  {l.location}
+                </p>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Help links ───────────────────────────────────────────────────────────────
+
 function HelpLinks({ links, lang }: { links: HelpLink[]; lang: string }) {
   return (
     <div className="flex flex-col gap-2">
@@ -2093,7 +2208,15 @@ export default function Arriving() {
                 <CommunityNotes notes={activeTab.communityNotes} lang={lang} />
               </div>
 
-              {/* 5. Helpful links */}
+              {/* 5a. Live listings (housing tab only) */}
+              {activeTab.id === 'housing' && (
+                <div className="mb-10">
+                  <SectionTitle>{sectionLabel('Kijiji 실시간 매물', 'Live Kijiji listings', 'Annonces Kijiji en direct')}</SectionTitle>
+                  <HousingListings lang={lang} />
+                </div>
+              )}
+
+              {/* 5b. Helpful links */}
               <div className="mb-10">
                 <SectionTitle>{sectionLabel('도움이 되는 링크', 'Helpful links', 'Liens utiles')}</SectionTitle>
                 <HelpLinks links={activeTab.helpLinks} lang={lang} />
