@@ -271,25 +271,57 @@ function MontrealMap({
       className="w-full h-full"
       aria-label="Montréal neighbourhood map"
     >
-      {/* Island silhouette */}
+      <defs>
+        {/* Island drop shadow */}
+        <filter id="isle-shadow" x="-8%" y="-8%" width="116%" height="116%">
+          <feDropShadow dx="0" dy="1" stdDeviation="3" floodColor="#7BA4C8" floodOpacity="0.18"/>
+        </filter>
+        {/* Subtle water texture */}
+        <pattern id="water-dots" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+          <circle cx="7" cy="7" r="0.7" fill="#B8CEDF" opacity="0.6"/>
+        </pattern>
+        {/* Active pin glow */}
+        <filter id="pin-shadow" x="-60%" y="-60%" width="220%" height="220%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" floodColor="#1E293B" floodOpacity="0.35"/>
+        </filter>
+      </defs>
+
+      {/* ── Water background ── */}
+      <rect width="400" height="300" fill="#DDE9F5"/>
+      <rect width="400" height="300" fill="url(#water-dots)"/>
+
+      {/* River name */}
+      <text x="200" y="291" textAnchor="middle" fontSize="7.5" fill="#A0BCE0"
+        fontFamily="system-ui,-apple-system,sans-serif" letterSpacing="2.5" fontWeight="500">
+        ST. LAWRENCE RIVER
+      </text>
+
+      {/* ── Island silhouette ── */}
       <path
         d="M 80 195 C 70 170 75 130 90 105 C 110 75 145 58 185 52
            C 225 46 270 55 300 72 C 330 90 345 118 348 148
            C 352 178 340 208 320 228 C 300 248 270 258 240 262
            C 210 267 178 262 155 252 C 130 242 108 230 95 215 Z"
-        fill="#F8F8F8"
-        stroke="#E0E0E0"
-        strokeWidth="1.5"
+        fill="#F4F8FC"
+        stroke="#BACFE6"
+        strokeWidth="1"
+        filter="url(#isle-shadow)"
       />
 
-      <text x="188" y="278" textAnchor="middle" fontSize="8" fill="#BDBDBD" fontFamily="sans-serif" letterSpacing="1">
-        ST. LAWRENCE RIVER
-      </text>
+      {/* ── Green areas (parks / Mont Royal) ── */}
+      <ellipse cx="200" cy="136" rx="26" ry="20" fill="#D6EBCF" opacity="0.55"/>
+      <ellipse cx="200" cy="136" rx="17" ry="12" fill="#C4E0BB" opacity="0.5"/>
 
+      {/* ── Lachine Canal ── */}
+      <path
+        d="M 84 207 Q 110 222 145 218 Q 162 215 170 207"
+        fill="none" stroke="#A8C8E4" strokeWidth="2.5" strokeLinecap="round" opacity="0.65"
+      />
+
+      {/* ── Neighbourhood markers ── */}
       {HOODS.map(hood => {
         const isActive = selected === hood.id
         const count = commentCounts[hood.id] ?? 0
-
         return (
           <g
             key={hood.id}
@@ -299,37 +331,43 @@ function MontrealMap({
             aria-label={hood.name}
             aria-pressed={isActive}
           >
-            {/* Hit area */}
-            <circle cx={hood.x} cy={hood.y} r="16" fill="transparent" />
+            {/* Wide hit area */}
+            <circle cx={hood.x} cy={hood.y} r="22" fill="transparent"/>
 
-            {/* Pin */}
+            {/* Active: outer pulse rings */}
+            {isActive && (
+              <>
+                <circle cx={hood.x} cy={hood.y} r="15" fill="none" stroke="#1E293B" strokeWidth="1" opacity="0.10"/>
+                <circle cx={hood.x} cy={hood.y} r="10" fill="none" stroke="#1E293B" strokeWidth="1.5" opacity="0.20"/>
+              </>
+            )}
+
+            {/* Main dot */}
             <circle
               cx={hood.x}
               cy={hood.y}
-              r={isActive ? 7 : 5}
-              fill={isActive ? '#111111' : '#9CA3AF'}
-              stroke={isActive ? '#111111' : '#ffffff'}
-              strokeWidth={isActive ? 0 : 1.5}
-              style={{ transition: 'all 0.15s ease' }}
+              r={isActive ? 5.5 : 4}
+              fill={isActive ? '#1E293B' : '#8BA5C0'}
+              stroke="#FFFFFF"
+              strokeWidth="2"
+              style={{
+                filter: isActive ? 'url(#pin-shadow)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
             />
-
-            {/* Yellow ring when selected */}
-            {isActive && (
-              <circle cx={hood.x} cy={hood.y} r="11" fill="none" stroke="var(--y)" strokeWidth="2" />
-            )}
 
             {/* Comment count badge */}
             {count > 0 && (
               <g>
-                <circle cx={hood.x + 9} cy={hood.y - 9} r="6.5" fill="#111111" />
+                <circle cx={hood.x + 8} cy={hood.y - 8} r="5.5" fill="#1E293B" stroke="#FFFFFF" strokeWidth="1.5"/>
                 <text
-                  x={hood.x + 9}
-                  y={hood.y - 6}
+                  x={hood.x + 8}
+                  y={hood.y - 5.5}
                   textAnchor="middle"
-                  fontSize="6"
+                  fontSize="5.5"
                   fontWeight="700"
-                  fill="#ffffff"
-                  fontFamily="sans-serif"
+                  fill="#FFFFFF"
+                  fontFamily="system-ui,-apple-system,sans-serif"
                   style={{ userSelect: 'none' }}
                 >
                   {count > 9 ? '9+' : count}
@@ -337,17 +375,20 @@ function MontrealMap({
               </g>
             )}
 
-            {/* Label */}
+            {/* Label — white halo + coloured text via paintOrder */}
             <text
               x={hood.x}
               y={hood.y - 16}
               textAnchor="middle"
               fontSize={isActive ? '7.5' : '6.5'}
               fontWeight={isActive ? '700' : '500'}
-              fill={isActive ? '#111111' : '#6B7280'}
-              fontFamily="sans-serif"
-              letterSpacing="0.3"
-              style={{ userSelect: 'none', transition: 'all 0.15s ease' }}
+              stroke="rgba(244,248,252,0.98)"
+              strokeWidth="3.5"
+              strokeLinejoin="round"
+              fill={isActive ? '#1E293B' : '#5B7898'}
+              fontFamily="system-ui,-apple-system,sans-serif"
+              letterSpacing="0.4"
+              style={{ paintOrder: 'stroke fill', userSelect: 'none', transition: 'all 0.15s ease' }}
             >
               {hood.label.split(' ').map((word, wi) => (
                 <tspan key={wi} x={hood.x} dy={wi === 0 ? 0 : 8}>{word}</tspan>
@@ -357,7 +398,9 @@ function MontrealMap({
         )
       })}
 
-      <text x="320" y="288" textAnchor="end" fontSize="7" fill="#D1D5DB" fontFamily="sans-serif">
+      {/* Credit */}
+      <text x="370" y="291" textAnchor="end" fontSize="6.5" fill="#A0BCE0"
+        fontFamily="system-ui,-apple-system,sans-serif" letterSpacing="0.3">
         Montréal Island
       </text>
     </svg>
