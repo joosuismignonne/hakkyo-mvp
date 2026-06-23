@@ -311,55 +311,95 @@ const SIM_TAB: TabContent = {
   },
   options: [
     {
-      name: 'Fizz',
-      sub: { ko: '저렴하고 앱으로 관리, eSIM 지원', en: 'Affordable, app-managed, eSIM-ready', fr: 'Abordable, géré par appli, eSIM' },
+      name: '한국에서 미리 — Airalo eSIM',
+      sub: { ko: '출국 전 앱으로 캐나다 eSIM 구매 · 가장 편리한 방법', en: 'Buy a Canada eSIM from Korea before you fly — most convenient', fr: "Acheter une eSIM Canada depuis la Corée avant le vol — plus pratique" },
       topPick: true,
       meta: [
-        { icon: 'currency-dollar', label: { ko: '$25–35/월', en: '$25–35/mo', fr: '25–35$/mois' } },
-        { icon: 'device-mobile', label: { ko: 'eSIM 지원', en: 'eSIM available', fr: 'eSIM dispo' } },
-        { icon: 'plane', label: { ko: '도착 전 개통 가능', en: 'Set up before arrival', fr: 'Avant arrivée' } },
+        { icon: 'currency-dollar', label: { ko: '$5–20 (7–30일 데이터 전용)', en: '$5–20 for 7–30 day data', fr: '5–20$ pour 7–30 jours data' } },
+        { icon: 'plane', label: { ko: '출국 전 한국에서 구매·설치', en: 'Install in Korea before departure', fr: 'Installer en Corée avant le départ' } },
+        { icon: 'device-mobile', label: { ko: '앱에서 QR 코드로 설치', en: 'Installed via QR code in the app', fr: 'Installé via QR code dans l\'appli' } },
       ],
       worksFor: [
-        { ko: '대부분의 분들', en: 'Most people', fr: 'La plupart des gens' },
-        { ko: '앱으로 직접 관리하고 싶은 분', en: 'Those who prefer managing things in an app', fr: "Ceux qui aiment tout gérer dans une appli" },
+        { ko: '첫 1–4주 데이터만 필요한 분', en: 'First 1–4 weeks, data only needed', fr: 'Premiers 1–4 semaines, données seulement' },
+        { ko: '도착 즉시 인터넷을 원하는 분', en: 'Want internet the second you land', fr: "Internet dès l'atterrissage" },
+        { ko: '캐나다 번호가 당장 필요없는 분', en: 'No Canadian number needed immediately', fr: 'Numéro canadien pas encore nécessaire' },
       ],
       worthKnowing: [
-        { ko: '고객 지원은 앱/온라인 위주', en: 'Support is app/online based', fr: 'Support surtout par appli/en ligne' },
-        { ko: '한국어 지원은 없음', en: 'No Korean-language support', fr: 'Pas de support en coréen' },
+        { ko: '통화/문자는 안 됨 — 데이터 전용, 카카오톡은 사용 가능', en: 'Data only — no calls/texts, but KakaoTalk works', fr: 'Données seulement — pas d\'appels/SMS, mais KakaoTalk fonctionne' },
+        { ko: '한국 통신사(SKT·KT·LG) 국제 로밍 eSIM도 있지만 일 요금 높음', en: 'Korean carrier (SKT/KT/LG) international eSIM exist but daily fee is high', fr: 'Les eSIM internationales coréennes (SKT/KT/LG) existent mais cher/jour' },
       ],
       recommendNote: {
-        ko: '많은 분들이 비행기 타기 전에 Fizz eSIM을 개통해 두고, 도착하자마자 바로 데이터를 써요.',
-        en: 'Many set up a Fizz eSIM before their flight so they have data the moment they land.',
-        fr: "Beaucoup activent une eSIM Fizz avant le vol pour avoir des données dès l'atterrissage.",
+        ko: 'Airalo 앱에서 "Canada" 검색 → 원하는 기간 선택 → 결제 → QR 코드로 설치. 10분이면 끝나요. 캐나다에 도착하자마자 자동으로 현지 망에 연결돼요.',
+        en: 'Search "Canada" in the Airalo app → pick a plan → pay → install via QR. Takes 10 minutes. Connects automatically when you land.',
+        fr: 'Cherchez « Canada » dans Airalo → choisissez un plan → payez → installez via QR. 10 minutes. Connexion automatique à l\'atterrissage.',
       },
     },
     {
+      name: 'Fizz (캐나다 현지 월정액)',
+      sub: { ko: '저렴하고 앱으로 관리, eSIM 지원 — 장기 체류에 추천', en: 'Affordable app-managed Canadian plan, eSIM — recommended for longer stays', fr: 'Forfait canadien géré par appli, eSIM — recommandé pour séjours longs' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$25–35/월 (통화+문자+데이터)', en: '$25–35/mo (calls+texts+data)', fr: '25–35$/mois (appels+SMS+données)' } },
+        { icon: 'device-mobile', label: { ko: 'eSIM 지원', en: 'eSIM available', fr: 'eSIM dispo' } },
+        { icon: 'plane', label: { ko: '한국에서 미리 개통 가능', en: 'Can set up from Korea', fr: 'Activation possible depuis la Corée' } },
+      ],
+      worksFor: [
+        { ko: '대부분의 분들 (1개월 이상 체류)', en: 'Most people (staying 1+ months)', fr: 'La plupart (séjour 1 mois+)' },
+        { ko: '캐나다 번호가 필요한 분 (은행·취업)', en: 'Need a Canadian number (banking, jobs)', fr: 'Besoin d\'un numéro canadien (banque, emploi)' },
+      ],
+      worthKnowing: [
+        { ko: '고객 지원은 앱/채팅 위주 — 한국어 없음', en: 'Support is app/chat — no Korean', fr: 'Support par appli/chat — pas de coréen' },
+        { ko: '한국에서 eSIM 개통 시 캐나다 주소가 필요할 수 있음', en: 'May need a Canadian address to activate eSIM from Korea', fr: 'Peut nécessiter une adresse canadienne pour activer l\'eSIM depuis la Corée' },
+      ],
+      recommendNote: {
+        ko: '많은 분들이 Airalo로 첫 2주를 버티고 정착 후 Fizz로 갈아타요. Fizz는 캐나다 번호가 생겨요.',
+        en: 'Many use Airalo for the first 2 weeks, then switch to Fizz once settled. Fizz gives you a Canadian number.',
+        fr: 'Beaucoup utilisent Airalo les 2 premières semaines, puis passent à Fizz. Fizz donne un numéro canadien.',
+      },
+    },
+    {
+      name: 'Costco Mobile 키오스크',
+      sub: { ko: '몬트리올 Costco 매장 내 이동통신 카운터 — 직원이 직접 설명', en: 'In-store counter at Montréal Costco — staff walk you through setup', fr: "Comptoir en magasin au Costco Montréal — personnel vous guide" },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: 'Fido/Koodo/Rogers 요금', en: 'Fido/Koodo/Rogers pricing', fr: 'Tarifs Fido/Koodo/Rogers' } },
+        { icon: 'building-store', label: { ko: '직접 방문 (Costco 회원증 필요)', en: 'In-person (Costco membership)', fr: 'En magasin (carte Costco requise)' } },
+      ],
+      worksFor: [
+        { ko: '직접 설명받고 싶은 분', en: 'Want in-person guidance', fr: 'Préfèrent être guidés en personne' },
+        { ko: 'Costco 회원인 분', en: 'Costco members', fr: 'Membres Costco' },
+        { ko: '여러 요금제를 비교하고 싶은 분', en: 'Want to compare plans side by side', fr: 'Veulent comparer les forfaits en personne' },
+      ],
+      worthKnowing: [
+        { ko: 'Costco 회원증이 있어야 들어갈 수 있어요', en: 'Costco membership required to enter', fr: 'Carte Costco requise pour entrer' },
+        { ko: '한국어 직원이 있을 수 있어요 — 방문 전 전화로 확인', en: 'Korean-speaking staff sometimes available — call ahead', fr: 'Personnel coréanophone parfois disponible — appelez avant' },
+      ],
+    },
+    {
+      name: 'Koodo / Fido / Virgin Plus',
+      sub: { ko: '중간 가격대, 시내 매장에서 개통', en: 'Mid-range, set up at any city store', fr: 'Milieu de gamme, activation en boutique' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$30–50/월', en: '$30–50/mo', fr: '30–50$/mois' } },
+        { icon: 'device-mobile', label: { ko: 'eSIM + 물리 SIM', en: 'eSIM + physical SIM', fr: 'eSIM + SIM physique' } },
+      ],
+      worksFor: [
+        { ko: '매장에서 직접 개통하고 싶은 분', en: 'Prefer in-store activation', fr: 'Préfèrent l\'activation en boutique' },
+        { ko: '중간 가격대를 원하는 분', en: 'Mid-range budget', fr: 'Budget intermédiaire' },
+      ],
+      worthKnowing: [
+        { ko: 'Koodo는 Telus 망, Fido는 Rogers 망 사용', en: 'Koodo uses Telus network, Fido uses Rogers', fr: 'Koodo sur réseau Telus, Fido sur Rogers' },
+      ],
+    },
+    {
       name: 'Public Mobile',
-      sub: { ko: '가장 저렴한 장기 옵션', en: 'Cheapest for longer stays', fr: 'Le moins cher pour longs séjours' },
+      sub: { ko: '가장 저렴한 장기 옵션 — 온라인만 운영', en: 'Cheapest for longer stays — online only', fr: 'Le moins cher pour longs séjours — en ligne seulement' },
       meta: [
         { icon: 'currency-dollar', label: { ko: '$15–25/월', en: '$15–25/mo', fr: '15–25$/mois' } },
-        { icon: 'device-mobile', label: { ko: '물리 SIM', en: 'Physical SIM', fr: 'SIM physique' } },
+        { icon: 'world', label: { ko: '온라인 전용', en: 'Online only', fr: 'En ligne seulement' } },
       ],
       worksFor: [
         { ko: '예산을 아끼는 장기 체류자', en: 'Budget-conscious long stays', fr: 'Longs séjours à petit budget' },
       ],
       worthKnowing: [
-        { ko: 'eSIM 미지원, 도착 후 개통', en: 'No eSIM, set up after arrival', fr: "Pas d'eSIM, activation après arrivée" },
-        { ko: '데이터 속도는 중간 수준', en: 'Moderate data speed', fr: 'Vitesse de données moyenne' },
-      ],
-    },
-    {
-      name: 'Bell / Rogers (airport)',
-      sub: { ko: '준비 없이 도착해도 공항에서 바로', en: 'Right at the airport, no prep', fr: "Direct à l'aéroport, sans préparation" },
-      meta: [
-        { icon: 'currency-dollar', label: { ko: '$55–80/월', en: '$55–80/mo', fr: '55–80$/mois' } },
-        { icon: 'bolt', label: { ko: '빠른 속도', en: 'Fast speeds', fr: 'Vitesse rapide' } },
-      ],
-      worksFor: [
-        { ko: '미리 준비하지 못하고 도착한 분', en: 'No-prep arrivals', fr: 'Arrivées sans préparation' },
-      ],
-      worthKnowing: [
-        { ko: '월 요금이 가장 비쌈', en: 'Most expensive monthly', fr: 'Le forfait le plus cher' },
+        { ko: 'eSIM 지원 없음 — SIM 카드를 우편 수령 또는 편의점 구매', en: 'No eSIM — get SIM card by mail or at a convenience store', fr: 'Pas d\'eSIM — SIM par courrier ou en dépanneur' },
       ],
     },
   ],
@@ -373,10 +413,11 @@ const SIM_TAB: TabContent = {
       { ko: '적합한 분', en: 'Best for', fr: 'Idéal pour' },
     ],
     rows: [
-      { name: 'Fizz', cols: ['$25–35', true, true, 'Good', 'Most people'] },
+      { name: 'Airalo (eSIM)', cols: ['$5–20', true, true, 'Good', 'First 1–4 weeks'] },
+      { name: 'Fizz', cols: ['$25–35', true, true, 'Good', 'Most people (1mo+)'] },
+      { name: 'Koodo / Fido', cols: ['$30–50', true, 'Partial', 'Good', 'In-store setup'] },
       { name: 'Public Mobile', cols: ['$15–25', false, false, 'Moderate', 'Budget long stays'] },
-      { name: 'Virgin Plus', cols: ['$30–45', true, true, 'Good', 'Mid-range'] },
-      { name: 'Bell airport', cols: ['$55–80', true, true, 'Excellent', 'No-prep arrivals'] },
+      { name: 'Bell / Rogers', cols: ['$55–80', true, true, 'Excellent', 'Airport, no prep'] },
     ],
   },
   communityNotes: [
@@ -385,9 +426,12 @@ const SIM_TAB: TabContent = {
     { flag: '🇨🇦', person: { ko: '한국계 캐나다인', en: 'Korean-Canadian', fr: 'Coréen-Canadien' }, text: { ko: '공항에서 급하게 Bell을 샀는데 비싸더라고요. 다음엔 미리 eSIM 준비하라고 말해주고 싶어요.', en: 'I grabbed a Bell SIM at the airport in a rush — pricey. Next time, prep an eSIM ahead.', fr: "J'ai pris une SIM Bell à l'aéroport en vitesse — cher. La prochaine fois, une eSIM à l'avance." }, likes: 14 },
   ],
   helpLinks: [
+    { label: { ko: 'Airalo — 한국에서 캐나다 eSIM 구매', en: 'Airalo — buy Canada eSIM from Korea', fr: 'Airalo — acheter eSIM Canada depuis la Corée' }, url: 'https://www.airalo.com/canada-esim', domain: 'airalo.com' },
     { label: { ko: 'Fizz — 요금제 및 가격', en: 'Fizz — Plans and pricing', fr: 'Fizz — Forfaits et prix' }, url: 'https://fizz.ca', domain: 'fizz.ca' },
+    { label: { ko: 'Koodo Mobile — 요금제', en: 'Koodo Mobile — Plans', fr: 'Koodo Mobile — Forfaits' }, url: 'https://www.koodomobile.com', domain: 'koodomobile.com' },
+    { label: { ko: 'Fido — 요금제', en: 'Fido — Plans', fr: 'Fido — Forfaits' }, url: 'https://www.fido.ca', domain: 'fido.ca' },
+    { label: { ko: 'Virgin Plus — 요금제', en: 'Virgin Plus — Plans', fr: 'Virgin Plus — Forfaits' }, url: 'https://www.virginplus.ca', domain: 'virginplus.ca' },
     { label: { ko: 'Public Mobile — 요금제', en: 'Public Mobile — Plans', fr: 'Public Mobile — Forfaits' }, url: 'https://www.publicmobile.ca', domain: 'publicmobile.ca' },
-    { label: { ko: 'CRTC 무선 소비자 가이드', en: 'CRTC wireless consumer guide', fr: 'Guide CRTC du consommateur sans fil' }, url: 'https://crtc.gc.ca', domain: 'crtc.gc.ca' },
   ],
   faq: [
     { q: { ko: '도착해서 한국 SIM을 그대로 써도 되나요?', en: 'Can I use my Korean SIM when I arrive?', fr: "Puis-je utiliser ma SIM coréenne à l'arrivée?" }, a: { ko: '한국 SIM은 로밍으로 작동하지만 데이터가 하루 $10–20 정도 들어요. 대부분 금방 캐나다 SIM으로 바꿔요.', en: 'A Korean SIM works on roaming but data costs $10–20/day. Most people switch quickly.', fr: 'Une SIM coréenne fonctionne en itinérance mais les données coûtent 10–20$/jour. La plupart changent vite.' } },
@@ -893,12 +937,14 @@ const SIN_TAB: TabContent = {
     { flag: '🇨🇦', person: { ko: '한국계 캐나다인', en: 'Korean-Canadian', fr: 'Coréen-Canadien' }, text: { ko: '대부분의 사무소는 예약 없이 가도 돼요. 저는 한 번도 예약이 필요했던 적이 없어요.', en: "Walk-in is fine at most offices. I've never needed an appointment.", fr: "Sans rendez-vous dans la plupart des bureaux. Je n'ai jamais eu besoin d'en prendre un." }, likes: 12 },
   ],
   helpLinks: [
-    { label: { ko: 'Service Canada 사무소 찾기', en: 'Service Canada office locator', fr: 'Localisateur de bureaux Service Canada' }, url: 'https://www.canada.ca/en/employment-social-development/corporate/portfolio/service-canada/office-locations.html', domain: 'canada.ca' },
-    { label: { ko: '온라인으로 SIN 신청', en: 'Apply for SIN online', fr: 'Demander un NAS en ligne' }, url: 'https://www.canada.ca/en/employment-social-development/services/sin/apply.html', domain: 'canada.ca' },
-    { label: { ko: 'SIN 정보 안내', en: 'SIN information guide', fr: "Guide d'information NAS" }, url: 'https://www.canada.ca/en/employment-social-development/services/sin.html', domain: 'canada.ca' },
+    { label: { ko: '📍 Service Canada — 다운타운 (Guy-Concordia)', en: '📍 Service Canada — Downtown (Guy-Concordia)', fr: '📍 Service Canada — Centre-ville (Guy-Concordia)' }, url: 'https://www.google.com/maps/search/Service+Canada+1000+De+La+Gauchetière+Montreal', domain: 'maps.google.com' },
+    { label: { ko: '📍 Service Canada — 몬트리올 노스', en: '📍 Service Canada — Montréal North', fr: '📍 Service Canada — Montréal-Nord' }, url: 'https://www.google.com/maps/search/Service+Canada+5400+Boul+Henri-Bourassa+Montreal', domain: 'maps.google.com' },
+    { label: { ko: '📍 Service Canada — 코트-데-네쥬 (CDN)', en: '📍 Service Canada — Côte-des-Neiges (CDN)', fr: '📍 Service Canada — Côte-des-Neiges' }, url: 'https://www.google.com/maps/search/Service+Canada+3500+Queen+Mary+Road+Montreal', domain: 'maps.google.com' },
+    { label: { ko: 'Service Canada 사무소 전체 목록 + 운영시간', en: 'All Service Canada offices + hours', fr: 'Tous les bureaux Service Canada + heures' }, url: 'https://www.canada.ca/en/employment-social-development/corporate/portfolio/service-canada/office-locations.html', domain: 'canada.ca' },
+    { label: { ko: '온라인으로 SIN 신청하기', en: 'Apply for SIN online', fr: 'Demander un NAS en ligne' }, url: 'https://www.canada.ca/en/employment-social-development/services/sin/apply.html', domain: 'canada.ca' },
   ],
   faq: [
-    { q: { ko: '몬트리올에서 가장 가까운 Service Canada는 어디인가요?', en: 'Where is the nearest Service Canada office in Montréal?', fr: 'Où est le bureau Service Canada le plus proche?' }, a: { ko: '몬트리올에 여러 사무소가 있어요. 다운타운 근처(Guy-Concordia 지역)가 편리해요. 전체 목록과 운영 시간은 canada.ca/service-canada에서 확인하세요.', en: 'There are several offices in Montréal. The one near downtown (Guy-Concordia area) is convenient. Check canada.ca/service-canada for the full list and hours.', fr: "Plusieurs bureaux à Montréal. Celui près du centre-ville (secteur Guy-Concordia) est pratique. Liste et horaires sur canada.ca/service-canada." } },
+    { q: { ko: '몬트리올 Service Canada 위치는 어디인가요?', en: 'Where are Service Canada offices in Montréal?', fr: 'Où sont les bureaux Service Canada à Montréal?' }, a: { ko: '주요 지점: ① 다운타운 — 1000 De La Gauchetière W (Guy-Concordia 근처) ② CDN — 3500 Queen Mary Rd ③ 몬트리올 노스 — 5400 Henri-Bourassa Blvd. 위 링크에서 Google 지도로 바로 확인할 수 있어요. 운영 시간은 월–금 8:30–16:00 (지점마다 상이).', en: 'Key locations: ① Downtown — 1000 De La Gauchetière W (near Guy-Concordia) ② CDN — 3500 Queen Mary Rd ③ Montréal North — 5400 Henri-Bourassa Blvd. Click the map links above to open in Google Maps. Hours: Mon–Fri 8:30–16:00 (varies by location).', fr: "Principaux bureaux : ① Centre-ville — 1000 De La Gauchetière O (près Guy-Concordia) ② CDN — 3500 Queen Mary ③ Mtl-Nord — 5400 Henri-Bourassa. Cliquez les liens ci-dessus pour Google Maps. Heures : lun–ven 8h30–16h (variable)." } },
     { q: { ko: 'SIN 없이 일하면 어떻게 되나요?', en: 'What happens if I work without a SIN?', fr: 'Que se passe-t-il si je travaille sans NAS?' }, a: { ko: '고용주는 첫 급여일 전에 SIN을 요구해야 해요. SIN을 기다리는 동안 일을 시작하고 며칠 안에 제출할 수 있어요.', en: 'Employers are required to ask for a SIN before your first payday. You can start work while waiting for your SIN and provide it within a few days.', fr: "L'employeur doit demander le NAS avant la première paie. Vous pouvez commencer en attendant et le fournir sous quelques jours." } },
     { q: { ko: 'SIN이 세금 번호와 같은 건가요?', en: 'Is a SIN the same as a tax ID?', fr: 'Le NAS est-il un identifiant fiscal?' }, a: { ko: '네, SIN은 고용, 세금 신고, 일부 정부 혜택에 쓰여요. 민감한 개인정보이니 비공개로 보관하세요.', en: 'Yes — your SIN is used for employment, tax returns, and some government benefits. Keep it private — it\'s sensitive personal information.', fr: "Oui — le NAS sert à l'emploi, aux déclarations et à certaines prestations. Gardez-le confidentiel — c'est une donnée sensible." } },
     { q: { ko: '영구 주소가 없어도 신청할 수 있나요?', en: 'Can I apply before I have a permanent address?', fr: "Puis-je demander sans adresse permanente?" }, a: { ko: '네. 임시 주소(에어비앤비, 호스텔)도 SIN 신청에 사용할 수 있어요.', en: 'Yes. A temporary address (Airbnb, hostel) is acceptable for the SIN application.', fr: "Oui. Une adresse temporaire (Airbnb, auberge) est acceptée pour la demande de NAS." } },
@@ -1355,9 +1401,11 @@ const AIRPORT_TAB: TabContent = {
     { flag: '🇰🇷', person: { ko: '영주권자 · 2023년 11월', en: 'PR Nov 2023', fr: 'RP nov. 2023' }, text: { ko: '세관 신고서를 미리 작성해두면 훨씬 빨라요. 줄에서 작성하려면 시간이 배로 걸려요.', en: 'Fill out your customs declaration on the plane — it goes much faster. Writing it in line takes twice as long.', fr: "Remplissez la déclaration douanière dans l'avion — ça va bien plus vite. Faire la queue pour l'écrire, c'est le double de temps." }, likes: 25 },
   ],
   helpLinks: [
-    { label: { ko: 'YUL 공항 안내', en: 'YUL Airport guide', fr: 'Guide aéroport YUL' }, url: 'https://www.admtl.com/en/flights/arriving', domain: 'admtl.com' },
-    { label: { ko: 'STM 747 버스 정보', en: 'STM 747 bus info', fr: 'Info bus STM 747' }, url: 'https://www.stm.info/en/info/networks/bus/express-shuttle/route-747-yul-aeroport-montreal-trudeau-downtown', domain: 'stm.info' },
-    { label: { ko: '캐나다 세관 신고', en: 'Canada customs declaration', fr: 'Déclaration douanière Canada' }, url: 'https://www.cbsa-asfc.gc.ca/travel-voyage/dc-ed-eng.html', domain: 'cbsa-asfc.gc.ca' },
+    { label: { ko: 'YUL 공항 도착 안내', en: 'YUL Airport arrival guide', fr: 'Guide arrivée aéroport YUL' }, url: 'https://www.admtl.com/en/flights/arriving', domain: 'admtl.com' },
+    { label: { ko: 'STM 747 버스 — 노선 및 시간표', en: 'STM 747 bus — route & schedule', fr: 'STM 747 — trajet et horaires' }, url: 'https://www.stm.info/en/info/networks/bus/express-shuttle/route-747-yul-aeroport-montreal-trudeau-downtown', domain: 'stm.info' },
+    { label: { ko: 'Uber — 공항 픽업 예약', en: 'Uber — book a ride from YUL', fr: "Uber — réserver depuis YUL" }, url: 'https://www.uber.com/ca/en/ride/', domain: 'uber.com' },
+    { label: { ko: 'Lyft — 공항 픽업 예약', en: 'Lyft — book a ride from YUL', fr: "Lyft — réserver depuis YUL" }, url: 'https://www.lyft.com', domain: 'lyft.com' },
+    { label: { ko: '캐나다 세관 신고 가이드', en: 'Canada customs declaration guide', fr: 'Guide déclaration douanière Canada' }, url: 'https://www.cbsa-asfc.gc.ca/travel-voyage/dc-ed-eng.html', domain: 'cbsa-asfc.gc.ca' },
   ],
   faq: [
     { q: { ko: '공항에서 입국 심사까지 얼마나 걸리나요?', en: 'How long does immigration take at YUL?', fr: "Combien de temps pour l'immigration à YUL?" }, a: { ko: '성수기에는 30–60분, 비수기에는 더 빨라요. 한국 여권은 자동 입국 심사대(e-gates)를 쓸 수 있어서 빨라요.', en: 'During peak season 30–60 min; faster off-peak. Korean passport holders can use e-gates which speeds things up.', fr: "Haute saison 30–60 min; plus rapide hors saison. Les passeports coréens peuvent utiliser les e-gates." } },
