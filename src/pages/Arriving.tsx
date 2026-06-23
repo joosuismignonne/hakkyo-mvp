@@ -212,111 +212,179 @@ function CommunityNotes({ notes, lang }: { notes: CommunityNote[]; lang: string 
   )
 }
 
-// ─── Live Kijiji listings ─────────────────────────────────────────────────────
+// ─── Housing platform search tiles ────────────────────────────────────────────
 
-interface KijijiListing {
+interface SearchPlatform {
+  name: string
+  tag: Tri
+  url: string
+  color: string   // tailwind bg class for accent bar
+  icon: string    // tabler icon name
+  priceHint: Tri
+}
+
+const SEARCH_PLATFORMS: SearchPlatform[] = [
+  {
+    name: 'Kijiji',
+    tag: { ko: '캐나다 최대 무료 광고', en: "Canada's largest classifieds", fr: 'Plus grand site d\'annonces' },
+    url: 'https://www.kijiji.ca/b-apartments-condos/ville-de-montreal/c37l80002a10',
+    color: 'bg-[#3B6AF0]',
+    icon: 'ti-layout-grid',
+    priceHint: { ko: '$700–2,500/월', en: '$700–2,500/mo', fr: '700–2 500$/mois' },
+  },
+  {
+    name: 'DuProprio',
+    tag: { ko: '집주인 직거래 · 중개 수수료 없음', en: 'Owner-direct · no agent fee', fr: 'Sans intermédiaire · sans commission' },
+    url: 'https://duproprio.com/en/to-rent/apartment/search?is_for_rent=1&cities[]=10',
+    color: 'bg-[#E35B1A]',
+    icon: 'ti-home',
+    priceHint: { ko: '$900–2,000/월', en: '$900–2,000/mo', fr: '900–2 000$/mois' },
+  },
+  {
+    name: 'FB Marketplace',
+    tag: { ko: '현지인 직거래 · 저렴한 매물', en: 'Local listings · budget options', fr: 'Annonces locales · abordable' },
+    url: 'https://www.facebook.com/marketplace/montreal/propertyrentals',
+    color: 'bg-[#1877F2]',
+    icon: 'ti-brand-facebook',
+    priceHint: { ko: '$600–1,800/월', en: '$600–1,800/mo', fr: '600–1 800$/mois' },
+  },
+  {
+    name: 'Centris',
+    tag: { ko: '퀘벡 공인 중개사 공식 플랫폼', en: 'Official Québec broker platform', fr: 'Plateforme officielle des courtiers QC' },
+    url: 'https://www.centris.ca/en/properties~for-rent~montreal',
+    color: 'bg-[#BF0000]',
+    icon: 'ti-building-skyscraper',
+    priceHint: { ko: '$1,000–3,000/월', en: '$1,000–3,000/mo', fr: '1 000–3 000$/mois' },
+  },
+  {
+    name: 'Rentals.ca',
+    tag: { ko: '전국 임대 전문 플랫폼', en: 'Canada-wide rental platform', fr: 'Plateforme nationale de location' },
+    url: 'https://rentals.ca/montreal',
+    color: 'bg-[#00875A]',
+    icon: 'ti-key',
+    priceHint: { ko: '$800–2,200/월', en: '$800–2,200/mo', fr: '800–2 200$/mois' },
+  },
+  {
+    name: 'Zumper',
+    tag: { ko: '지도 기반 검색', en: 'Map-based search', fr: 'Recherche par carte' },
+    url: 'https://www.zumper.com/apartments-for-rent/montreal-qc',
+    color: 'bg-[#6B21A8]',
+    icon: 'ti-map-search',
+    priceHint: { ko: '$900–2,500/월', en: '$900–2,500/mo', fr: '900–2 500$/mois' },
+  },
+]
+
+interface LiveListing {
   title: string
   link: string
   price: string | null
   image: string | null
   pubDate: string
   location: string | null
+  source: string
 }
 
 function HousingListings({ lang }: { lang: string }) {
-  const [listings, setListings] = React.useState<KijijiListing[]>([])
-  const [state, setState] = React.useState<'loading' | 'ok' | 'error'>('loading')
+  const [live, setLive] = React.useState<LiveListing[]>([])
+  const [liveState, setLiveState] = React.useState<'loading' | 'ok' | 'none'>('loading')
   const [updatedAt, setUpdatedAt] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     fetch('/api/listings')
       .then(r => r.json())
       .then(d => {
-        setListings(d.items ?? [])
-        setUpdatedAt(d.updatedAt ?? null)
-        setState(d.items?.length > 0 ? 'ok' : 'error')
+        if (d.items?.length > 0) {
+          setLive(d.items)
+          setUpdatedAt(d.updatedAt ?? null)
+          setLiveState('ok')
+        } else {
+          setLiveState('none')
+        }
       })
-      .catch(() => setState('error'))
+      .catch(() => setLiveState('none'))
   }, [])
 
-  const label = {
-    heading: { ko: 'Kijiji 실시간 매물', en: 'Live Kijiji listings', fr: 'Annonces Kijiji en direct' },
-    updated: { ko: '업데이트', en: 'Updated', fr: 'Mis à jour' },
-    viewAll: { ko: '전체 매물 보기 →', en: 'View all listings →', fr: 'Voir toutes les annonces →' },
-    noPrice: { ko: '가격 문의', en: 'Price on request', fr: 'Prix sur demande' },
-    loading: { ko: '매물 불러오는 중…', en: 'Loading listings…', fr: 'Chargement des annonces…' },
-    error: { ko: '매물을 불러오지 못했어요. Kijiji에서 직접 확인하세요.', en: "Couldn't load listings. Check Kijiji directly.", fr: "Impossible de charger les annonces. Consultez Kijiji directement." },
-  }
-
-  const t = (k: keyof typeof label) => tri(label[k], lang)
-
-  if (state === 'loading') {
-    return (
-      <div className="flex items-center gap-2 py-6 text-[12px] text-gray-400">
-        <span className="inline-block w-3 h-3 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
-        {t('loading')}
-      </div>
-    )
-  }
-
-  if (state === 'error') {
-    return (
-      <p className="text-[12px] text-gray-400 py-2">{t('error')}</p>
-    )
-  }
+  const searchNow: Tri = { ko: '지금 검색 →', en: 'Search now →', fr: 'Rechercher →' }
+  const liveLabel: Tri = { ko: '실시간 매물', en: 'Live listings', fr: 'Annonces en direct' }
+  const updLabel: Tri = { ko: '업데이트', en: 'Updated', fr: 'Mis à jour' }
+  const noPriceLabel: Tri = { ko: '가격 문의', en: 'Ask for price', fr: 'Prix sur demande' }
 
   const formatDate = (d: string) => {
-    try { return new Date(d).toLocaleDateString(lang === 'ko' ? 'ko-KR' : lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', day: 'numeric' }) }
-    catch { return d }
+    try {
+      return new Date(d).toLocaleDateString(
+        lang === 'ko' ? 'ko-KR' : lang === 'fr' ? 'fr-CA' : 'en-CA',
+        { month: 'short', day: 'numeric' }
+      )
+    } catch { return d }
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-[11px] text-gray-500">
-            {updatedAt ? `${t('updated')} ${formatDate(updatedAt)}` : t('heading')}
-          </span>
+    <div className="space-y-6">
+      {/* Live listings strip (shown only if API succeeded) */}
+      {liveState === 'ok' && live.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
+              <span className="text-[11px] text-gray-500">
+                {tri(liveLabel, lang)}{updatedAt ? ` · ${tri(updLabel, lang)} ${formatDate(updatedAt)}` : ''}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {live.map((l, i) => (
+              <a
+                key={i}
+                href={l.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block border border-gray-100 rounded-xl overflow-hidden hover:border-gray-300 hover:shadow-sm transition-all bg-white no-underline"
+              >
+                {l.image ? (
+                  <div className="h-28 overflow-hidden bg-gray-50">
+                    <img src={l.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                  </div>
+                ) : (
+                  <div className="h-28 bg-gray-50 flex items-center justify-center">
+                    <i className="ti ti-building text-[28px] text-gray-200" />
+                  </div>
+                )}
+                <div className="p-3">
+                  <p className="text-[13px] font-bold text-gray-900 mb-0.5">{l.price ?? tri(noPriceLabel, lang)}</p>
+                  <p className="text-[11px] text-gray-500 leading-snug line-clamp-2">{l.title}</p>
+                  {l.location && (
+                    <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                      <i className="ti ti-map-pin text-[10px]" />{l.location}
+                    </p>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
-        <a
-          href="https://www.kijiji.ca/b-apartments-condos/ville-de-montreal/c37l80002a10"
-          target="_blank" rel="noopener noreferrer"
-          className="text-[11px] text-gray-500 hover:text-gray-800 transition-colors"
-        >
-          {t('viewAll')}
-        </a>
-      </div>
+      )}
 
-      <div className="grid grid-cols-2 gap-3">
-        {listings.map((l, i) => (
+      {/* Platform search tiles — always visible */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {SEARCH_PLATFORMS.map(p => (
           <a
-            key={i}
-            href={l.link}
+            key={p.name}
+            href={p.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block border border-gray-100 rounded-xl overflow-hidden hover:border-gray-300 hover:shadow-sm transition-all bg-white no-underline"
+            className="group flex flex-col border border-gray-100 rounded-xl overflow-hidden hover:border-gray-200 hover:shadow-md transition-all bg-white no-underline"
           >
-            {l.image ? (
-              <div className="h-28 overflow-hidden bg-gray-50">
-                <img src={l.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+            <div className={`h-1 w-full ${p.color}`} />
+            <div className="p-3 flex-1 flex flex-col">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[13px] font-semibold text-gray-900">{p.name}</span>
+                <i className={`ti ${p.icon} text-[15px] text-gray-300 group-hover:text-gray-500 transition-colors mt-0.5`} />
               </div>
-            ) : (
-              <div className="h-28 bg-gray-50 flex items-center justify-center">
-                <i className="ti ti-building text-[24px] text-gray-200" />
+              <p className="text-[10px] text-gray-400 leading-snug flex-1">{tri(p.tag, lang)}</p>
+              <div className="mt-2.5 flex items-center justify-between">
+                <span className="text-[10px] font-medium text-gray-500">{tri(p.priceHint, lang)}</span>
+                <span className="text-[10px] text-gray-400 group-hover:text-gray-700 transition-colors">{tri(searchNow, lang)}</span>
               </div>
-            )}
-            <div className="p-3">
-              <p className="text-[13px] font-bold text-gray-900 mb-0.5">
-                {l.price ?? t('noPrice')}
-              </p>
-              <p className="text-[11px] text-gray-500 leading-snug line-clamp-2">{l.title}</p>
-              {l.location && (
-                <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
-                  <i className="ti ti-map-pin text-[10px]" />
-                  {l.location}
-                </p>
-              )}
             </div>
           </a>
         ))}
@@ -2208,10 +2276,10 @@ export default function Arriving() {
                 <CommunityNotes notes={activeTab.communityNotes} lang={lang} />
               </div>
 
-              {/* 5a. Live listings (housing tab only) */}
+              {/* 5a. Platform search + live listings (housing tab only) */}
               {activeTab.id === 'housing' && (
                 <div className="mb-10">
-                  <SectionTitle>{sectionLabel('Kijiji 실시간 매물', 'Live Kijiji listings', 'Annonces Kijiji en direct')}</SectionTitle>
+                  <SectionTitle>{sectionLabel('플랫폼별 매물 검색', 'Search by platform', 'Chercher par plateforme')}</SectionTitle>
                   <HousingListings lang={lang} />
                 </div>
               )}
