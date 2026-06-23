@@ -5,7 +5,8 @@
  * Each of 8 tabs is a complete decision page with 7 sections + sticky sidebar.
  * i18n: every visible string through tri(). Three languages inline (ko/en/fr).
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 
 // ─── i18n types + helper ──────────────────────────────────────────────────────
@@ -214,14 +215,22 @@ function CommunityNotes({ notes, lang }: { notes: CommunityNote[]; lang: string 
 function HelpLinks({ links, lang }: { links: HelpLink[]; lang: string }) {
   return (
     <div className="flex flex-col gap-2">
-      {links.map((l, i) => (
-        <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg border border-gray-100 text-[12px] text-gray-600 hover:bg-gray-100 transition-colors no-underline">
-          <i className="ti ti-external-link text-[14px] text-gray-400" aria-hidden="true" />
-          <span className="flex-1">{tri(l.label, lang)}</span>
-          <span className="text-[10px] text-gray-400">{l.domain}</span>
-        </a>
-      ))}
+      {links.map((l, i) => {
+        const cls = "flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg border border-gray-100 text-[12px] text-gray-600 hover:bg-gray-100 transition-colors no-underline"
+        const icon = l.url.startsWith('/') ? 'ti-arrow-right' : 'ti-external-link'
+        const inner = (
+          <>
+            <i className={`ti ${icon} text-[14px] text-gray-400`} aria-hidden="true" />
+            <span className="flex-1">{tri(l.label, lang)}</span>
+            <span className="text-[10px] text-gray-400">{l.domain}</span>
+          </>
+        )
+        return l.url.startsWith('/') ? (
+          <Link key={i} to={l.url} className={cls}>{inner}</Link>
+        ) : (
+          <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
+        )
+      })}
     </div>
   )
 }
@@ -1026,9 +1035,32 @@ const LANGUAGE_TAB: TabContent = {
   },
   options: [
     {
-      name: 'HAKKYO Language Exchange',
-      sub: { ko: '한국어–프랑스어–영어 회화 교환', en: 'Korean–French–English conversation exchange', fr: 'Échange coréen–français–anglais' },
+      name: 'HAKKYO 프로그램 (유료 수업)',
+      sub: { ko: '한국어·영어·불어 정규 수업 — 레벨별 소규모 클래스', en: 'Korean, English & French classes — small group, levelled', fr: 'Cours coréen, anglais, français — petits groupes par niveau' },
       topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '수업별 요금 상이', en: 'Fee varies by program', fr: 'Tarif variable selon programme' } },
+        { icon: 'users', label: { ko: '소규모 그룹', en: 'Small group classes', fr: 'Petits groupes' } },
+        { icon: 'building', label: { ko: '몬트리올 오프라인', en: 'In-person Montréal', fr: 'En présentiel Montréal' } },
+      ],
+      worksFor: [
+        { ko: '한국어를 배우거나 가르치고 싶은 분', en: 'Learn or practice Korean in Montréal', fr: 'Apprendre ou pratiquer le coréen à Montréal' },
+        { ko: '영어·불어를 체계적으로 배우고 싶은 분', en: 'Structured English or French learning', fr: 'Apprentissage structuré anglais ou français' },
+        { ko: '커뮤니티 기반의 소규모 환경을 원하는 분', en: 'Community-based small class environment', fr: 'Environnement communautaire en petit groupe' },
+      ],
+      worthKnowing: [
+        { ko: '프로그램 일정과 가격은 /programs 페이지에서 확인', en: 'Schedule and pricing on the /programs page', fr: 'Planning et tarifs sur la page /programs' },
+      ],
+      recommendNote: {
+        ko: 'HAKKYO는 무료 언어 교환 외에도 한국어·영어·불어 유료 클래스를 운영해요. 수업 일정은 프로그램 페이지에서 확인하세요.',
+        en: 'HAKKYO runs paid Korean, English and French classes alongside the free exchange. Check the programs page for current schedules.',
+        fr: "HAKKYO propose des cours payants de coréen, anglais et français en plus de l'échange gratuit. Consultez la page programmes.",
+      },
+    },
+    {
+      name: 'HAKKYO Language Exchange',
+      sub: { ko: '한국어–프랑스어–영어 회화 교환 (무료)', en: 'Korean–French–English conversation exchange (free)', fr: 'Échange coréen–français–anglais (gratuit)' },
+      topPick: false,
       meta: [
         { icon: 'currency-dollar', label: { ko: '무료', en: 'Free', fr: 'Gratuit' } },
         { icon: 'users', label: { ko: '소규모 그룹, 상시 운영', en: 'Small groups, ongoing', fr: 'Petits groupes, en continu' } },
@@ -1103,7 +1135,7 @@ const LANGUAGE_TAB: TabContent = {
     { flag: '🇫🇷', person: { ko: '프랑스 학생', en: 'French Student', fr: 'Étudiant français' }, text: { ko: 'HAKKYO는 정식 수업의 부담 없이 영어를 연습하기에 좋았어요.', en: 'HAKKYO was good for practicing English without the pressure of a formal class.', fr: "HAKKYO était bien pour pratiquer l'anglais sans la pression d'un cours formel." }, likes: 13 },
   ],
   helpLinks: [
-    { label: { ko: 'HAKKYO 프로그램', en: 'HAKKYO programs', fr: 'Programmes HAKKYO' }, url: 'https://hakkyo.ca', domain: 'hakkyo.ca' },
+    { label: { ko: 'HAKKYO 프로그램 (한국어·영어·불어 수업)', en: 'HAKKYO programs — Korean, English, French classes', fr: 'Programmes HAKKYO — cours coréen, anglais, français' }, url: '/programs', domain: 'hakkyo-mtl.vercel.app' },
     { label: { ko: 'SANA 프랑스어 강좌', en: 'SANA French classes', fr: 'Cours de français SANA' }, url: 'https://www.quebec.ca/en/immigration/french-language', domain: 'immigration-quebec.gouv.qc.ca' },
     { label: { ko: 'Concordia CCE', en: 'Concordia CCE', fr: 'Concordia CCE' }, url: 'https://www.concordia.ca/cce.html', domain: 'concordia.ca' },
     { label: { ko: 'UQAM 평생교육', en: 'UQAM continuing ed', fr: 'UQAM formation continue' }, url: 'https://www.uqam.ca', domain: 'uqam.ca' },
@@ -1822,6 +1854,7 @@ export default function Arriving() {
     catch { return new Set() }
   })
   const [activeTabId, setActiveTabId] = useState<string>('flights')
+  const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     try { localStorage.setItem(PROGRESS_KEY, JSON.stringify([...checked])) }
@@ -1867,7 +1900,11 @@ export default function Arriving() {
             {TABS.map(tab => {
               const done = checked.has(tab.id)
               return (
-                <button key={tab.id} onClick={() => setChecked(prev => { const n = new Set(prev); n.has(tab.id) ? n.delete(tab.id) : n.add(tab.id); return n })}
+                <button key={tab.id} onClick={() => {
+                  setChecked(prev => { const n = new Set(prev); n.has(tab.id) ? n.delete(tab.id) : n.add(tab.id); return n })
+                  setActiveTabId(tab.id)
+                  setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+                }}
                   className={`check-chip${done ? ' done' : ''}`}>
                   <span className={`w-3 h-3 rounded-sm border flex-shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-gray-900 border-gray-900' : 'border-gray-300'}`}>
                     {done && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -1881,7 +1918,10 @@ export default function Arriving() {
           {/* Tab navigation */}
           <div className="flex gap-1 flex-wrap mb-6">
             {TABS.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTabId(tab.id)}
+              <button key={tab.id} onClick={() => {
+                setActiveTabId(tab.id)
+                setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+              }}
                 className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors whitespace-nowrap ${
                   activeTabId === tab.id ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                 }`}>
@@ -1891,7 +1931,7 @@ export default function Arriving() {
           </div>
 
           {/* Two-column layout: main content + sidebar */}
-          <div className="flex gap-8 items-start">
+          <div ref={contentRef} className="flex gap-8 items-start">
 
             {/* Main content — all 7 sections */}
             <div className="flex-1 min-w-0">
