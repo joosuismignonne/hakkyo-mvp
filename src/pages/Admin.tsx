@@ -2135,84 +2135,228 @@ function getProgLangFromApp(app: ProgramApplication, tracksMap: Map<string, Prog
   return 'korean'
 }
 
+// Unified application row — merges `applications` + `program_applications`
+type UnifiedApp = {
+  _source: 'applications' | 'program_applications'
+  id: string
+  created_at: string
+  name: string
+  email: string
+  phone?: string | null
+  instagram?: string | null
+  status: string
+  program_name?: string | null
+  program_id?: string | null
+  selected_label?: string | null
+  total_price?: number | null
+  application_type?: string | null
+  // program_applications specific
+  preferred_name?: string | null
+  preferred_contact?: string | null
+  languages_spoken?: string | null
+  time_in_montreal?: string | null
+  current_stage?: string | null
+  current_focus?: string | null
+  korean_level?: string | null
+  previous_korean_exp?: string | null
+  interest_in_korean?: string | null
+  reason_for_joining?: string | null
+  first_korean_goal?: string | null
+  six_month_goal?: string | null
+  biggest_challenge?: string | null
+  preferred_environment?: string | null
+  how_found_hakkyo?: string | null
+  what_interested?: string | null
+  definition_great_class?: string | null
+  questions_for_hakkyo?: string | null
+  admin_notes?: string | null
+  // answers fetched from application_answers for `applications` rows
+  answers?: AnswerRow[]
+}
+
 function ApplicationsAdmin() {
-  const [apps,         setApps]         = useState<ProgramApplication[]>([])
+  const [apps,         setApps]         = useState<UnifiedApp[]>([])
   const [tracksMap,    setTracksMap]    = useState<Map<string, ProgramTrack>>(new Map())
-  const [selected,     setSelected]     = useState<ProgramApplication | null>(null)
+  const [selected,     setSelected]     = useState<UnifiedApp | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [err,          setErr]          = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | ProgramApplicationStatus>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [searchQuery,  setSearchQuery]  = useState('')
   const [notes,        setNotes]        = useState('')
   const [notesSaving,  setNotesSaving]  = useState(false)
 
-  const load = useCallback(() =>
-    Promise.all([getProgramApplications(), getTracks('program')])
-      .then(([fetched, tracks]) => {
-        setApps(fetched)
-        setTracksMap(new Map(tracks.map(t => [t.id, t])))
-        setSelected(prev => {
-          if (!prev) return prev
-          return fetched.find(a => a.id === prev.id) ?? prev
-        })
+  const load = useCallback(async () => {
+    setLoading(true)
+    setErr('')
+    try {
+      const [programApps, legacyAppsResult, answersResult, tracks] = await Promise.all([
+        getProgramApplications(),
+        supabase!.from('applications').select('*').order('created_at', { ascending: false }),
+        supabase!.from('application_answers').select('*').order('question_order_snapshot', { ascending: true }),
+        getTracks('program'),
+      ])
+
+      if (legacyAppsResult.error) {
+        console.error('[Admin] applications fetch error:', legacyAppsResult.error)
+      }
+      if (answersResult.error) {
+        console.error('[Admin] application_answers fetch error:', answersResult.error)
+      }
+
+      const allAnswers: AnswerRow[] = (answersResult.data ?? []) as AnswerRow[]
+      const answersByAppId: Record<string, AnswerRow[]> = {}
+      for (const row of allAnswers) {
+        const key = row.application_id
+        if (!key) continue
+        if (!answersByAppId[key]) answersByAppId[key] = []
+        answersByAppId[key].push(row)
+      }
+
+      const fromLegacy: UnifiedApp[] = ((legacyAppsResult.data ?? []) as Application[]).map(a => ({
+        _source: 'applications' as const,
+        id: a.id,
+        created_at: a.created_at ?? '',
+        name: a.name,
+        email: a.email,
+        phone: a.phone,
+        instagram: a.instagram,
+        status: a.status ?? 'pending',
+        program_id: a.track_id ?? a.session_id ?? null,
+        program_name: a.selected_label ?? null,
+        selected_label: a.selected_label,
+        total_price: a.total_price,
+        application_type: a.application_type ?? null,
+        answers: answersByAppId[a.id] ?? [],
+      }))
+
+      const fromProgram: UnifiedApp[] = programApps.map(a => ({
+        _source: 'program_applications' as const,
+        id: a.id,
+        created_at: a.created_at,
+        name: a.name,
+        email: a.email,
+        phone: a.phone,
+        instagram: a.instagram,
+        status: a.status,
+        program_id: a.program_id,
+        program_name: a.program_name,
+        preferred_name: a.preferred_name,
+        preferred_contact: a.preferred_contact,
+        languages_spoken: a.languages_spoken,
+        time_in_montreal: a.time_in_montreal,
+        current_stage: a.current_stage,
+        current_focus: a.current_focus,
+        korean_level: a.korean_level,
+        previous_korean_exp: a.previous_korean_exp,
+        interest_in_korean: a.interest_in_korean,
+        reason_for_joining: a.reason_for_joining,
+        first_korean_goal: a.first_korean_goal,
+        six_month_goal: a.six_month_goal,
+        biggest_challenge: a.biggest_challenge,
+        preferred_environment: a.preferred_environment,
+        how_found_hakkyo: a.how_found_hakkyo,
+        what_interested: a.what_interested,
+        definition_great_class: a.definition_great_class,
+        questions_for_hakkyo: a.questions_for_hakkyo,
+        admin_notes: a.admin_notes,
+      }))
+
+      // Merge: deduplicate by id (program_applications take priority if same id)
+      const seenIds = new Set<string>()
+      const merged: UnifiedApp[] = []
+      for (const a of [...fromProgram, ...fromLegacy]) {
+        if (!seenIds.has(a.id)) {
+          seenIds.add(a.id)
+          merged.push(a)
+        }
+      }
+      // Sort newest first
+      merged.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+
+      setApps(merged)
+      setTracksMap(new Map(tracks.map(t => [t.id, t])))
+      setSelected(prev => {
+        if (!prev) return prev
+        return merged.find(a => a.id === prev.id) ?? prev
       })
-      .catch(e => setErr(e.message))
-      .finally(() => setLoading(false))
-  , [])
-  useEffect(() => { load() }, [load])
+    } catch (e: unknown) {
+      console.error('[Admin] load error:', e)
+      setErr((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+  useEffect(() => { void load() }, [load])
 
   // Sync notes field when selection changes
   useEffect(() => {
     setNotes(selected?.admin_notes ?? '')
     if (selected && import.meta.env.DEV) {
-      console.group(`[Admin] Selected application: ${selected.name}`)
+      console.group(`[Admin] Selected application: ${selected.name} (${selected._source})`)
       console.log('All fields:', selected)
-      console.log('All keys:', Object.keys(selected as object))
       console.groupEnd()
     }
   }, [selected?.id])
 
-  async function updateStatus(id: string, status: ProgramApplicationStatus) {
+  async function updateStatus(id: string, status: string, source: UnifiedApp['_source']) {
     setApps(a => a.map(x => x.id === id ? { ...x, status } : x))
     if (selected?.id === id) setSelected(s => s ? { ...s, status } : s)
-    try { await updateProgramApplicationStatus(id, status) }
-    catch (e: unknown) { setErr((e as Error).message); await load() }
+    try {
+      if (source === 'program_applications') {
+        await updateProgramApplicationStatus(id, status as ProgramApplicationStatus)
+      } else {
+        const { error } = await supabase!.from('applications').update({ status }).eq('id', id)
+        if (error) throw error
+      }
+    } catch (e: unknown) { setErr((e as Error).message); await load() }
   }
 
   async function saveNotes() {
     if (!selected) return
     setNotesSaving(true)
     try {
-      await updateProgramApplicationNotes(selected.id, notes)
+      if (selected._source === 'program_applications') {
+        await updateProgramApplicationNotes(selected.id, notes)
+      } else {
+        const { error } = await supabase!.from('applications').update({ admin_notes: notes }).eq('id', selected.id)
+        if (error) throw error
+      }
       setApps(a => a.map(x => x.id === selected.id ? { ...x, admin_notes: notes } : x))
       setSelected(s => s ? { ...s, admin_notes: notes } : s)
     } catch (e: unknown) { setErr((e as Error).message) }
     finally { setNotesSaving(false) }
   }
 
-  const statusColor = (s: ProgramApplicationStatus) =>
+  const statusColor = (s: string) =>
     s === 'enrolled'        ? 'bg-green-100 text-green-700'   :
     s === 'accepted'        ? 'bg-blue-100 text-blue-700'     :
+    s === 'confirmed'       ? 'bg-blue-100 text-blue-700'     :
     s === 'cancelled'       ? 'bg-red-50 text-red-500'        :
+    s === 'rejected'        ? 'bg-red-50 text-red-500'        :
     s === 'payment_pending' ? 'bg-amber-100 text-amber-700'   :
     s === 'waitlist'        ? 'bg-orange-100 text-orange-600' :
     s === 'reviewing'       ? 'bg-purple-100 text-purple-700' :
+    s === 'contacted'       ? 'bg-teal-50 text-teal-600'      :
+    s === 'pending'         ? 'bg-gray-100 text-gray-500'     :
     'bg-gray-100 text-gray-500'
 
-  // shortLevel imported from ApplyPage handles all languages
+  // Collect all unique statuses across both tables for the filter bar
+  const allStatuses = Array.from(new Set(apps.map(a => a.status))).sort()
 
   const visible = apps
     .filter(a => statusFilter === 'all' || a.status === statusFilter)
     .filter(a => {
       const q = searchQuery.trim().toLowerCase()
       if (!q) return true
-      return [a.name, a.email, a.phone, a.program_name, a.korean_level, a.time_in_montreal, a.interest_in_korean]
+      return [a.name, a.email, a.phone, a.instagram, a.program_name, a.selected_label,
+              a.application_type, a.korean_level, a.time_in_montreal, a.interest_in_korean]
         .some(f => (f ?? '').toLowerCase().includes(q))
     })
 
   if (loading) return <Spinner />
 
-  const STATUSES: ProgramApplicationStatus[] = ['new','reviewing','accepted','waitlist','payment_pending','enrolled','cancelled']
+  const PROGRAM_APP_STATUSES: ProgramApplicationStatus[] = ['new','reviewing','accepted','waitlist','payment_pending','enrolled','cancelled']
+  const LEGACY_APP_STATUSES = ['pending','contacted','confirmed','waitlist','rejected']
 
   type ProfileRow = [string, string | null | undefined, 'normal' | 'highlight']
 
@@ -2338,14 +2482,14 @@ function ApplicationsAdmin() {
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">{visible.length} application{visible.length !== 1 ? 's' : ''}</p>
+        <p className="text-sm text-gray-500">{visible.length} of {apps.length} application{apps.length !== 1 ? 's' : ''}</p>
         <div className="flex flex-wrap items-center gap-1">
-          {(['all', ...STATUSES] as const).map(f => (
-            <button key={f} onClick={() => setStatusFilter(f as 'all' | ProgramApplicationStatus)}
+          {(['all', ...allStatuses]).map(f => (
+            <button key={f} onClick={() => setStatusFilter(f)}
               className={['px-2.5 py-1 rounded text-[11px] font-semibold transition-colors capitalize',
                 statusFilter === f ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
               ].join(' ')}>
-              {f.replace('_', ' ')}
+              {f.replace(/_/g, ' ')}
             </button>
           ))}
         </div>
@@ -2378,13 +2522,18 @@ function ApplicationsAdmin() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${a._source === 'program_applications' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
+                          {a._source === 'program_applications' ? 'Program' : a.application_type ?? 'Application'}
+                        </span>
+                      </div>
                       <p className="font-medium text-sm text-gray-900 leading-tight">
                         {a.name}{a.preferred_name ? ` · ${a.preferred_name}` : ''}
                       </p>
                       <p className="text-[11px] text-gray-400 mt-0.5 truncate">{a.email}</p>
                     </div>
                     <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${statusColor(a.status)}`}>
-                      {a.status.replace('_',' ')}
+                      {a.status.replace(/_/g,' ')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -2398,6 +2547,9 @@ function ApplicationsAdmin() {
                     )}
                     {a.time_in_montreal && (
                       <span className="text-[11px] text-gray-400">{a.time_in_montreal}</span>
+                    )}
+                    {a.program_name && !a.korean_level && (
+                      <span className="text-[11px] text-gray-400 truncate max-w-[120px]">{a.program_name}</span>
                     )}
                   </div>
                   {a.created_at && (
@@ -2443,12 +2595,16 @@ function ApplicationsAdmin() {
                 </div>
                 <select
                   value={selected.status}
-                  onChange={e => updateStatus(selected.id, e.target.value as ProgramApplicationStatus)}
+                  onChange={e => updateStatus(selected.id, e.target.value, selected._source)}
                   className="border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold bg-white text-gray-700 shrink-0"
                 >
-                  {STATUSES.map(s => (
-                    <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                  {(selected._source === 'program_applications' ? PROGRAM_APP_STATUSES : LEGACY_APP_STATUSES).map(s => (
+                    <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
                   ))}
+                  {/* Always include current status so it doesn't disappear */}
+                  {!(selected._source === 'program_applications' ? PROGRAM_APP_STATUSES : LEGACY_APP_STATUSES).includes(selected.status as never) && (
+                    <option value={selected.status}>{selected.status.replace(/_/g, ' ')}</option>
+                  )}
                 </select>
               </div>
 
@@ -2456,7 +2612,7 @@ function ApplicationsAdmin() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {selected.korean_level && (
                   <div className="bg-white rounded-lg px-3 py-2.5 border border-gray-100">
-                    <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">{PROG_LANG_LABEL[getProgLangFromApp(selected, tracksMap)]}</p>
+                    <p className="text-[9px] font-bold tracking-[0.14em] uppercase text-gray-300 mb-1">{PROG_LANG_LABEL[getProgLangFromApp(selected as unknown as ProgramApplication, tracksMap)]}</p>
                     <p className="text-[12px] font-medium text-gray-700 leading-tight">{shortLevel(selected.korean_level)}</p>
                   </div>
                 )}
@@ -2499,32 +2655,75 @@ function ApplicationsAdmin() {
 
             {/* Sectioned profile */}
             <div className="p-5 space-y-6 overflow-y-auto max-h-[540px]">
-              {buildProfileSections(getProgLangFromApp(selected, tracksMap)).map(sec => {
-                const rows = sec.rows(selected).filter(([, v]) => v?.toString().trim())
-                if (rows.length === 0) return null
-                return (
-                  <div key={sec.label}>
-                    <p className="text-[9px] font-bold tracking-[0.16em] uppercase text-gray-300 mb-3">{sec.label}</p>
-                    <div className="space-y-3">
-                      {rows.map(([k, v, weight]) => (
-                        <div key={k} className="grid grid-cols-[160px_1fr] gap-3">
-                          <span className="text-[11px] text-gray-400 pt-0.5 leading-snug shrink-0">{k}</span>
-                          <span className={[
-                            'leading-relaxed whitespace-pre-wrap break-words',
-                            weight === 'highlight' ? 'text-[13px] text-gray-800 font-medium' : 'text-[13px] text-gray-600',
-                          ].join(' ')}>
-                            {v}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+
+              {/* Source badge + type */}
+              <div className="flex items-center gap-2">
+                <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-1 rounded ${selected._source === 'program_applications' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
+                  {selected._source === 'program_applications' ? 'Program Application' : selected.application_type ?? 'Application'}
+                </span>
+                {selected.selected_label && (
+                  <span className="text-[11px] text-gray-400">{selected.selected_label}</span>
+                )}
+                {selected.total_price != null && (
+                  <span className="text-[11px] text-gray-400">${selected.total_price}</span>
+                )}
+              </div>
+
+              {/* For applications table: show application_answers */}
+              {selected._source === 'applications' && (selected.answers ?? []).length > 0 && (
+                <div>
+                  <p className="text-[9px] font-bold tracking-[0.16em] uppercase text-gray-300 mb-3">Submitted Answers</p>
+                  <div className="space-y-3">
+                    {(selected.answers ?? []).map((ans, i) => (
+                      <div key={ans.id ?? i} className="grid grid-cols-[160px_1fr] gap-3">
+                        <span className="text-[11px] text-gray-400 pt-0.5 leading-snug shrink-0">
+                          {ans.question_label_snapshot ?? `Answer ${i + 1}`}
+                        </span>
+                        <span className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap break-words">
+                          {ans.answer}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                )
-              })}
+                </div>
+              )}
+              {selected._source === 'applications' && (selected.answers ?? []).length === 0 && (
+                <div>
+                  <p className="text-[9px] font-bold tracking-[0.16em] uppercase text-gray-300 mb-1">Submitted Answers</p>
+                  <p className="text-[12px] text-gray-300">No answers in application_answers for this submission.</p>
+                </div>
+              )}
+
+              {/* For program_applications: show structured profile */}
+              {selected._source === 'program_applications' && (() => {
+                const asPa = selected as unknown as ProgramApplication
+                return buildProfileSections(getProgLangFromApp(asPa, tracksMap)).map(sec => {
+                  const rows = sec.rows(asPa).filter(([, v]) => v?.toString().trim())
+                  if (rows.length === 0) return null
+                  return (
+                    <div key={sec.label}>
+                      <p className="text-[9px] font-bold tracking-[0.16em] uppercase text-gray-300 mb-3">{sec.label}</p>
+                      <div className="space-y-3">
+                        {rows.map(([k, v, weight]) => (
+                          <div key={k} className="grid grid-cols-[160px_1fr] gap-3">
+                            <span className="text-[11px] text-gray-400 pt-0.5 leading-snug shrink-0">{k}</span>
+                            <span className={[
+                              'leading-relaxed whitespace-pre-wrap break-words',
+                              weight === 'highlight' ? 'text-[13px] text-gray-800 font-medium' : 'text-[13px] text-gray-600',
+                            ].join(' ')}>
+                              {v}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
 
               {/* Catch-all: any DB field not explicitly mapped */}
-              {(() => {
-                const extra = buildExtraRows(selected)
+              {selected._source === 'program_applications' && (() => {
+                const extra = buildExtraRows(selected as unknown as ProgramApplication)
                 if (extra.length === 0) return null
                 return (
                   <div>
