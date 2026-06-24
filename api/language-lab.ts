@@ -80,13 +80,21 @@ export default async function handler(req: Request): Promise<Response> {
     bytes[i] = binaryString.charCodeAt(i)
   }
 
-  const ext = mime_type === 'audio/mpeg' ? 'mp3'
-    : mime_type === 'audio/wav' ? 'wav'
-    : mime_type === 'audio/mp4' || mime_type === 'audio/x-m4a' ? 'm4a'
-    : mime_type === 'audio/webm' ? 'webm'
+  // m4a files may arrive as audio/mp4 or video/mp4 from the browser
+  const isM4a = mime_type?.includes('mp4') || mime_type?.includes('m4a')
+  const ext = mime_type?.includes('wav') ? 'wav'
+    : mime_type?.includes('mpeg') || mime_type?.includes('mp3') ? 'mp3'
+    : mime_type?.includes('webm') ? 'webm'
+    : isM4a ? 'm4a'
     : 'mp3'
 
-  const audioBlob = new Blob([bytes], { type: mime_type || 'audio/mpeg' })
+  // Whisper needs a recognised audio MIME type
+  const safeType = ext === 'wav' ? 'audio/wav'
+    : ext === 'mp3' ? 'audio/mpeg'
+    : ext === 'webm' ? 'audio/webm'
+    : 'audio/mp4'
+
+  const audioBlob = new Blob([bytes], { type: safeType })
 
   // 1. Whisper transcription
   const whisperForm = new FormData()
@@ -103,7 +111,9 @@ export default async function handler(req: Request): Promise<Response> {
     })
     if (!whisperRes.ok) {
       const err = await whisperRes.text()
-      return new Response(JSON.stringify({ error: 'Whisper failed', detail: err }), { status: 502, headers: CORS })
+      let msg = 'Whisper failed'
+      try { const j = JSON.parse(err); msg = j?.error?.message ?? msg } catch {}
+      return new Response(JSON.stringify({ error: msg, detail: err }), { status: 502, headers: CORS })
     }
     const whisperData = await whisperRes.json() as { text: string }
     transcript = whisperData.text?.trim() ?? ''
