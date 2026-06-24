@@ -139,7 +139,7 @@ const JOURNEY: JourneyItem[] = [
                       icon: IconLiving,     emoji: '🌱', ko: '몬트리올 라이프', en: 'Life in Montréal', fr: 'La Vie à Montréal'   },
 ]
 
-const JOURNEY_MOBILE = JOURNEY.filter(j => j.to !== '/settling')
+const JOURNEY_MOBILE = JOURNEY
 
 const LANGS: { code: Lang; label: string }[] = [
   { code: 'ko', label: 'KO' },
@@ -341,7 +341,7 @@ function MobileBottomNav() {
   const { pathname } = useLocation()
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-stretch">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-stretch overflow-x-auto">
       {JOURNEY_MOBILE.map(j => {
         const active = isJourneyActive(j, pathname)
         const Icon = j.icon
@@ -349,8 +349,8 @@ function MobileBottomNav() {
           <Link
             key={j.to}
             to={j.to}
-            className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors"
-            style={{ color: active ? '#111' : '#d1d5db' }}
+            className="flex flex-col items-center justify-center py-2 gap-0.5 transition-colors shrink-0"
+            style={{ color: active ? '#111' : '#d1d5db', minWidth: '56px', flex: '1 0 56px' }}
           >
             <Icon active={active} />
             <span style={{ fontSize: '9px', fontWeight: active ? 700 : 500 }}>{j.en}</span>
