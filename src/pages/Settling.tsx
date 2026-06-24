@@ -1336,6 +1336,18 @@ function ToolPanel({ id, lang, t }: { id: string; lang: string; t: (ko: string, 
   return null
 }
 
+const TOOL_COMPLETION: Record<string, { headline: Tri; body: Tri }> = {
+  budget:   { headline: { ko: '예산이 생기면 선택이 쉬워집니다.', en: 'A budget makes every choice easier.', fr: 'Un budget simplifie chaque choix.' }, body: { ko: '월세 범위를 알면 동네 선택도 빨라지고, 불필요한 매물 구경도 줄어들어요.', en: 'Knowing your rent range narrows the neighbourhood search and saves time.', fr: 'Connaître votre fourchette de loyer accélère le choix du quartier.' } },
+  hood:     { headline: { ko: '동네를 고른다는 건 생활 방식을 고른다는 거예요.', en: 'Choosing a neighbourhood is choosing a lifestyle.', fr: 'Choisir un quartier, c\'est choisir un mode de vie.' }, body: { ko: '지하철 거리, 카페 분위기, 조용함의 정도 — 어떤 동네가 당신에게 맞는지 느낌이 오나요?', en: 'Metro distance, café culture, noise levels — can you feel which neighbourhood fits?', fr: 'Distance du métro, cafés, calme — sentez-vous quel quartier vous correspond ?' } },
+  visits:   { headline: { ko: '방문이 곧 계약의 시작입니다.', en: 'A visit is the beginning of a lease.', fr: 'Une visite, c\'est le début d\'un bail.' }, body: { ko: '아파트는 사진과 다를 수 있어요. 직접 가서 창문, 환기, 층간 소음을 확인하세요.', en: 'Apartments look different in photos. Check the windows, ventilation, and noise in person.', fr: 'Les appartements paraissent différents en photos. Vérifiez les fenêtres et le bruit sur place.' } },
+  lease:    { headline: { ko: '계약서에 서명했습니다.', en: 'Lease signed.', fr: 'Bail signé.' }, body: { ko: '퀘벡 표준 임대 계약서, 보증금 없음, 12개월 기본. 이제 이사 준비를 할 차례예요.', en: 'Standard lease, no deposit, 12 months. Time to plan the move.', fr: 'Bail standard, sans dépôt, 12 mois. Il est temps de planifier le déménagement.' } },
+  hydro:    { headline: { ko: '전기와 난방, 준비됐습니다.', en: 'Electricity and heat — sorted.', fr: 'Électricité et chauffage — c\'est réglé.' }, body: { ko: '몬트리올 겨울은 춥지만, Hydro-Québec 계좌 하나로 따뜻하게 날 수 있어요.', en: 'Montréal winters are cold, but a Hydro account keeps you warm.', fr: 'Les hivers montréalais sont froids, mais un compte Hydro vous garde au chaud.' } },
+  internet: { headline: { ko: '이제 연결됩니다.', en: 'You\'re connected now.', fr: 'Vous êtes connecté·e maintenant.' }, body: { ko: '인터넷 없는 집은 집이 아니에요. Videotron, Bell, Fizz 중 하나 골랐으면 됐어요.', en: 'A home without internet isn\'t quite a home. Pick one provider and you\'re set.', fr: 'Un logement sans internet n\'est pas vraiment chez soi. Un fournisseur, et c\'est parti.' } },
+  insurance:{ headline: { ko: '짐이 보호됩니다.', en: 'Your belongings are protected.', fr: 'Vos affaires sont protégées.' }, body: { ko: '월 $15–25, 그 이상의 안심을 살 수 있어요. 화재, 절도, 수해 — 어떤 상황에도 대비됐어요.', en: '$15–25/month. Fire, theft, water damage — whatever happens, you\'re covered.', fr: '15–25$/mois. Incendie, vol, dégât des eaux — quoi qu\'il arrive, vous êtes couvert·e.' } },
+  transit:  { headline: { ko: 'OPUS 하나로 몬트리올 전체를 이동합니다.', en: 'One OPUS card. All of Montréal.', fr: 'Une carte OPUS. Tout Montréal.' }, body: { ko: '지하철, 버스, 자전거 — 차 없이도 도시 구석구석 갈 수 있어요.', en: 'Metro, bus, bike — no car needed to reach every corner of the city.', fr: 'Métro, bus, vélo — pas besoin de voiture pour explorer tous les coins de la ville.' } },
+  listings: { headline: { ko: '좋은 집은 빠르게 사라져요.', en: 'Good apartments go fast.', fr: 'Les bons appartements partent vite.' }, body: { ko: 'Facebook 한인 그룹, Kijiji, DuProprio를 동시에 보세요. 마음에 드는 게 나오면 바로 연락하세요.', en: 'Check Korean Facebook groups, Kijiji, and DuProprio at the same time. When you see something you like — message immediately.', fr: 'Consultez les groupes Facebook coréens, Kijiji et DuProprio en même temps. Un coup de cœur — contactez immédiatement.' } },
+}
+
 // ─── Neighbourhood comparison matrix ──────────────────────────────────────────
 
 interface MatrixHood {
@@ -1590,6 +1602,15 @@ export default function Settling() {
           <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
             <ToolPanel id={activeTab} lang={lang} t={t} />
           </div>
+          {TOOL_COMPLETION[activeTab] && (() => {
+            const c = TOOL_COMPLETION[activeTab]
+            return (
+              <div className="mt-3 rounded-2xl bg-gray-900 text-white px-5 py-5">
+                <p className="text-[15px] font-semibold leading-snug mb-2">{tri(c.headline, lang)}</p>
+                <p className="text-[12px] text-gray-300 leading-relaxed">{tri(c.body, lang)}</p>
+              </div>
+            )
+          })()}
         </section>
 
         {/* ── NEIGHBOURHOOD MAP ── */}

@@ -74,6 +74,11 @@ interface SidebarData {
   nextStepLabel?: Tri
 }
 
+interface CompletionCard {
+  headline: Tri
+  body: Tri
+}
+
 interface TabContent {
   id: string
   label: Tri
@@ -84,6 +89,7 @@ interface TabContent {
   helpLinks: HelpLink[]
   faq: FAQItem[]
   sidebar: SidebarData
+  completionCard: CompletionCard
 }
 
 // ─── Reusable components ───────────────────────────────────────────────────────
@@ -633,6 +639,10 @@ const SIM_TAB: TabContent = {
     nextStepId: 'bank',
     nextStepLabel: { ko: '은행 계좌 열기', en: 'Open a bank account', fr: 'Ouvrir un compte bancaire' },
   },
+  completionCard: {
+    headline: { ko: '도착 첫날부터 연결됩니다.', en: 'Connected from day one.', fr: 'Connecté·e dès le premier jour.' },
+    body: { ko: '유심 하나로 지도도 보고, 연락도 되고, 몬트리올을 탐색할 준비가 됐어요.', en: 'One SIM card. Maps, messages, and Montréal — all ready to go.', fr: 'Une carte SIM. Cartes, messages, Montréal — tout est prêt.' },
+  },
 }
 
 // ─── TAB 2: Bank ──────────────────────────────────────────────────────────────
@@ -773,6 +783,10 @@ const BANK_TAB: TabContent = {
     nextStepId: 'sin',
     nextStepLabel: { ko: 'SIN 번호 신청하기', en: 'Apply for SIN', fr: 'Demander un NAS' },
   },
+  completionCard: {
+    headline: { ko: '몬트리올에서 돈을 쓸 준비가 됐습니다.', en: 'Ready to spend money in Montréal.', fr: 'Prêt·e à dépenser à Montréal.' },
+    body: { ko: '계좌가 생기면 카드도 생기고, 신용 기록도 쌓이기 시작해요. 캐나다 생활의 첫 번째 뿌리예요.', en: 'An account means a card, and a card means credit history. Your first root in Canada.', fr: "Un compte, c'est une carte. Une carte, c'est un historique de crédit. Votre première racine au Canada." },
+  },
 }
 
 // ─── TAB 3: Transit ───────────────────────────────────────────────────────────
@@ -904,6 +918,10 @@ const TRANSIT_TAB: TabContent = {
     timeline: { ko: '공항에서 시내까지 747 버스, 그 다음 날 OPUS 카드 구매 추천.', en: 'Take the 747 bus from the airport. Pick up an OPUS card the next day.', fr: "Prenez le 747 depuis l'aéroport. Achetez une carte OPUS le lendemain." },
     nextStepId: 'housing',
     nextStepLabel: { ko: '장기 주거 찾기', en: 'Find long-term housing', fr: 'Trouver un logement à long terme' },
+  },
+  completionCard: {
+    headline: { ko: 'OPUS 하나로 도시 전체를 이동합니다.', en: 'One OPUS card. The whole city.', fr: 'Une carte OPUS. Toute la ville.' },
+    body: { ko: '지하철, 버스, 어디든 가세요. 몬트리올은 교통으로 연결되어 있어요.', en: 'Metro, bus, anywhere. Montréal is more connected than it looks.', fr: 'Métro, bus, partout. Montréal est plus connectée qu\'elle n\'y paraît.' },
   },
 }
 
@@ -1042,6 +1060,10 @@ const HOUSING_TAB: TabContent = {
     nextStepId: 'insurance',
     nextStepLabel: { ko: '세입자 보험 가입하기', en: 'Get tenant insurance', fr: "Souscrire une assurance locataire" },
   },
+  completionCard: {
+    headline: { ko: '집 구하기, 알고 시작하면 다릅니다.', en: 'House hunting is easier when you know the rules.', fr: 'Chercher un logement, ça change quand on connaît les règles.' },
+    body: { ko: 'Kijiji, DuProprio, 한인 그룹 — 어디서 어떻게 찾는지 알았으니 이제 직접 찾아볼 차례예요.', en: 'Kijiji, DuProprio, Korean Facebook groups — you know where to look. Now go find it.', fr: 'Kijiji, DuProprio, groupes coréens — vous savez où chercher. Maintenant, allez-y.' },
+  },
 }
 
 // ─── TAB 5: SIN ───────────────────────────────────────────────────────────────
@@ -1143,6 +1165,10 @@ const SIN_TAB: TabContent = {
     nextStepId: 'transit',
     nextStepLabel: { ko: '대중교통 / OPUS 카드', en: 'Transit / OPUS card', fr: 'Transport / Carte OPUS' },
   },
+  completionCard: {
+    headline: { ko: '캐나다에서 일하고 생활할 준비가 됐습니다.', en: 'You can work and live in Canada now.', fr: 'Vous pouvez travailler et vivre au Canada maintenant.' },
+    body: { ko: 'SIN 번호는 번호 그 이상이에요. 캐나다 시스템 안에 존재하기 시작한 거예요.', en: 'A SIN is more than a number. It means you exist inside the Canadian system.', fr: 'Un NAS, c\'est plus qu\'un numéro. Ça veut dire que vous existez dans le système canadien.' },
+  },
 }
 
 // ─── TAB 6: Licence ───────────────────────────────────────────────────────────
@@ -1242,6 +1268,10 @@ const LICENCE_TAB: TabContent = {
     timeline: { ko: '보통 첫 1–3개월 이내에 해요. 당장 운전하지 않는다면 서두를 필요 없어요.', en: "Most people do this within their first 1–3 months. No rush if you're not driving immediately.", fr: "La plupart le font dans les 1–3 premiers mois. Pas urgent si vous ne conduisez pas tout de suite." },
     nextStepId: 'language',
     nextStepLabel: { ko: '언어 프로그램 & 커뮤니티', en: 'Language & community', fr: 'Langue & communauté' },
+  },
+  completionCard: {
+    headline: { ko: '퀘벡 도로가 열렸습니다.', en: 'The roads of Québec are open to you.', fr: 'Les routes du Québec vous sont ouvertes.' },
+    body: { ko: '면허 하나로 몬트리올 밖으로도 나갈 수 있어요. 로렌시안, 이스턴 타운십스, 퀘벡시티.', en: 'One licence, and Montréal is just the beginning. The Laurentians, the Townships, Québec City.', fr: 'Un permis, et Montréal n\'est qu\'un début. Laurentides, Cantons, Québec.' },
   },
 }
 
@@ -1384,6 +1414,10 @@ const LANGUAGE_TAB: TabContent = {
     ],
     timeline: { ko: '대부분 정착하고 나서 시작해요 — 어떤 분은 첫 주에, 어떤 분은 한두 달 후에.', en: 'Most people start once they feel settled — some in the first week, others after a month or two.', fr: "La plupart commencent une fois installés — certains dès la première semaine, d'autres après un mois ou deux." },
   },
+  completionCard: {
+    headline: { ko: '언어는 연습할수록 늘어납니다.', en: 'Language grows with practice.', fr: 'La langue grandit avec la pratique.' },
+    body: { ko: '영어든 불어든, HAKKYO에서 실제로 말하는 연습을 시작할 수 있어요.', en: 'English or French — HAKKYO is where you start actually speaking.', fr: 'Anglais ou français — HAKKYO, c\'est là où vous commencez vraiment à parler.' },
+  },
 }
 
 // ─── TAB 8: Flights ───────────────────────────────────────────────────────────
@@ -1502,6 +1536,10 @@ const FLIGHTS_TAB: TabContent = {
     nextStepId: 'airport',
     nextStepLabel: { ko: '공항 도착 & 입국 심사', en: 'Airport arrival & customs', fr: "Arrivée & douanes" },
   },
+  completionCard: {
+    headline: { ko: '몬트리올행 티켓, 준비됐습니다.', en: 'Your ticket to Montréal is ready.', fr: 'Votre billet pour Montréal est prêt.' },
+    body: { ko: '출발 60–90일 전 예매, 환승 시간 여유, 마일리지 확인까지. 이제 진짜 떠날 준비가 됐어요.', en: 'Book 60–90 days out, allow layover time, check your miles. You\'re actually doing this.', fr: 'Réservez 60–90 jours avant, prévoyez de la marge, vérifiez vos miles. Vous le faites vraiment.' },
+  },
 }
 
 // ─── NEW TAB: Airport arrival ─────────────────────────────────────────────────
@@ -1605,6 +1643,10 @@ const AIRPORT_TAB: TabContent = {
     timeline: { ko: '비행기에서 세관 신고서 미리 작성. 747 버스로 시내 이동. 다음 날 OPUS 카드 구매.', en: 'Fill customs form on plane. Take 747 to downtown. Get OPUS card next day.', fr: "Remplissez le formulaire dans l'avion. 747 vers le centre-ville. Carte OPUS le lendemain." },
     nextStepId: 'temp_stay',
     nextStepLabel: { ko: '임시 숙소 정착', en: 'Settle into temp housing', fr: "S'installer dans le logement temporaire" },
+  },
+  completionCard: {
+    headline: { ko: '입국 심사, 통과했습니다.', en: 'Through customs. You made it.', fr: 'Passage à la douane réussi. Vous êtes là.' },
+    body: { ko: '짐 찾고, 심사 통과하고, 밖으로 나오는 순간 — 몬트리올이 시작됩니다.', en: 'Bags. Customs. Exit doors. And then — Montréal begins.', fr: 'Bagages. Douane. Porties de sortie. Et puis — Montréal commence.' },
   },
 }
 
@@ -1713,6 +1755,10 @@ const TEMP_STAY_TAB: TabContent = {
     timeline: { ko: '도착 전 2–3주 예약. 도착 후 2–4주 내에 장기 아파트를 찾아요.', en: 'Book 2–3 weeks before arriving. Find a permanent apartment within 2–4 weeks of arrival.', fr: "Réservez 2–3 semaines avant. Trouvez un appartement dans les 2–4 semaines." },
     nextStepId: 'sim',
     nextStepLabel: { ko: 'SIM 카드 / 전화 요금제', en: 'SIM card / phone plan', fr: 'Carte SIM / forfait' },
+  },
+  completionCard: {
+    headline: { ko: '첫날 밤, 어디서 잘지 알고 있습니다.', en: 'You know where you\'re sleeping tonight.', fr: 'Vous savez où vous dormez ce soir.' },
+    body: { ko: '짐 풀고, 잠깐 쉬고, 내일부터 본격적으로 시작해요. 서두를 필요 없어요.', en: 'Unpack a little. Rest. Tomorrow, the real adventure starts. No rush.', fr: 'Déballez un peu. Reposez-vous. Demain, la vraie aventure commence. Pas de presse.' },
   },
 }
 
@@ -1915,6 +1961,10 @@ const LONG_HOUSING_TAB: TabContent = {
     nextStepId: 'insurance',
     nextStepLabel: { ko: '세입자 보험 가입하기', en: 'Get tenant insurance', fr: "Souscrire une assurance locataire" },
   },
+  completionCard: {
+    headline: { ko: '나만의 공간, 찾았습니다.', en: 'You found your place.', fr: 'Vous avez trouvé votre logement.' },
+    body: { ko: '계약서에 서명하는 순간, 몬트리올에 주소가 생깁니다. 진짜 시작이에요.', en: 'The moment you sign the lease, Montréal has your address. This is the real beginning.', fr: 'Quand vous signez le bail, Montréal a votre adresse. C\'est le vrai début.' },
+  },
 }
 
 // ─── NEW TAB: Tenant insurance ────────────────────────────────────────────────
@@ -2031,6 +2081,10 @@ const INSURANCE_TAB: TabContent = {
     nextStepId: 'hydro',
     nextStepLabel: { ko: 'Hydro-Québec & 인터넷 설치', en: 'Hydro-Québec & internet setup', fr: 'Hydro-Québec & internet' },
   },
+  completionCard: {
+    headline: { ko: '아프거나 다쳐도 걱정하지 않아도 됩니다.', en: 'If something happens, you\'re covered.', fr: "Si quelque chose arrive, vous êtes couvert·e." },
+    body: { ko: '세입자 보험, 가입했으면 됐어요. 월 $15–25로 마음이 편해집니다.', en: 'Tenant insurance done. $15–25/month for peace of mind. Worth it.', fr: 'Assurance locataire faite. 15–25$/mois pour dormir tranquille. Ça vaut le coup.' },
+  },
 }
 
 // ─── NEW TAB: Hydro-Québec & Internet ────────────────────────────────────────
@@ -2145,6 +2199,10 @@ const HYDRO_TAB: TabContent = {
     nextStepId: 'licence',
     nextStepLabel: { ko: '퀘벡 운전면허 교환', en: 'Québec driver licence exchange', fr: 'Échange permis de conduire Québec' },
   },
+  completionCard: {
+    headline: { ko: '몬트리올의 긴 겨울, 따뜻하게 날 수 있습니다.', en: 'You\'re ready for the long Montréal winter.', fr: 'Vous êtes prêt·e pour le long hiver montréalais.' },
+    body: { ko: 'Hydro 계좌 열고, 인터넷 연결하고 — 집이 진짜 집이 됐어요.', en: 'Hydro account open, internet connected — your apartment is now actually a home.', fr: 'Compte Hydro ouvert, internet branché — votre appartement est maintenant vraiment chez vous.' },
+  },
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -2201,6 +2259,14 @@ export default function Arriving() {
               <div className="text-right shrink-0">
                 <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{checked.size} / {TABS.length}</p>
                 <p className="text-[11px] text-gray-400 mt-1">{sectionLabel('완료', 'done', 'fait')}</p>
+                {checked.size > 0 && (
+                  <button
+                    onClick={() => setChecked(new Set())}
+                    className="text-[10px] text-gray-300 hover:text-gray-500 transition-colors mt-1"
+                  >
+                    {sectionLabel('초기화', 'Reset', 'Réinitialiser')}
+                  </button>
+                )}
               </div>
             </div>
             <p className="text-[13px] text-gray-400 mt-3 leading-relaxed max-w-[520px]">
@@ -2300,6 +2366,26 @@ export default function Arriving() {
               <div className="mb-4">
                 <SectionTitle>{sectionLabel('커뮤니티에 질문하기', 'Ask the community', 'Demander à la communauté')}</SectionTitle>
                 <AskCommunity lang={lang} />
+              </div>
+
+              {/* 8. Completion card */}
+              <div className="mt-8 rounded-2xl bg-gray-900 text-white px-6 py-6">
+                <p className="text-[16px] font-semibold leading-snug mb-2">{tri(activeTab.completionCard.headline, lang)}</p>
+                <p className="text-[13px] text-gray-300 leading-relaxed mb-5">{tri(activeTab.completionCard.body, lang)}</p>
+                <button
+                  onClick={() => {
+                    setChecked(prev => { const n = new Set(prev); n.add(activeTab.id); return n })
+                    if (activeTab.sidebar.nextStepId) {
+                      setTimeout(() => setActiveTabId(activeTab.sidebar.nextStepId!), 300)
+                    }
+                  }}
+                  className={`inline-flex items-center gap-2 text-[13px] font-semibold transition-colors ${checked.has(activeTab.id) ? 'text-green-400' : 'text-white hover:text-gray-300'}`}
+                >
+                  {checked.has(activeTab.id)
+                    ? (lang === 'ko' ? '✓ 완료됨' : lang === 'fr' ? '✓ Fait' : '✓ Done')
+                    : (lang === 'ko' ? '완료로 표시하기 →' : lang === 'fr' ? 'Marquer comme fait →' : 'Mark as done →')
+                  }
+                </button>
               </div>
 
             </div>
