@@ -2385,11 +2385,13 @@ export default function Arriving() {
                 <div className="border-t border-gray-100 pt-3 mb-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{sectionLabel('전체 진행률', 'Overall progress', 'Progression')}</p>
-                    {checked.size > 0 && (
-                      <button onClick={() => setChecked(new Set())} className="text-[9px] text-gray-400 hover:text-gray-600 transition-colors">
-                        {sectionLabel('초기화', 'Reset', 'Réinitialiser')}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setChecked(new Set())}
+                      className={`text-[9px] transition-colors ${checked.size > 0 ? 'text-gray-400 hover:text-gray-600' : 'text-gray-200 cursor-default'}`}
+                      disabled={checked.size === 0}
+                    >
+                      {sectionLabel('초기화', 'Reset', 'Réinitialiser')}
+                    </button>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
