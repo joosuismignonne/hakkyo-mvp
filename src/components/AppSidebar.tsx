@@ -82,6 +82,18 @@ function IconLanguage({ active }: { active?: boolean }) {
   )
 }
 
+function IconLab({ active }: { active?: boolean }) {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth={active ? 2.2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="2" width="6" height="11" rx="3"/>
+      <path d="M5 10a7 7 0 0014 0"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="8" y1="22" x2="16" y2="22"/>
+    </svg>
+  )
+}
+
 function IconLiving({ active }: { active?: boolean }) {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -133,10 +145,12 @@ const JOURNEY: JourneyItem[] = [
                       icon: IconConnecting, emoji: '👋', ko: '주변 사람들',   en: 'People Around You', fr: 'Autour de Vous'       },
   { to: '/programs',  activePaths: ['/programs', '/sessions', '/radar', '/resume-map'],
                       icon: IconWorking,    emoji: '💼', ko: '새로운 기회',   en: 'New Opportunities', fr: 'Nouvelles Opportunités'},
-  { to: '/phrases',   activePaths: ['/phrases'],
-                      icon: IconLanguage,   emoji: '🗣', ko: '일상 표현',     en: 'Everyday Words',   fr: 'Expressions Quotidiennes'},
-  { to: '/news',      activePaths: ['/news'],
-                      icon: IconLiving,     emoji: '🌱', ko: '몬트리올 라이프', en: 'Life in Montréal', fr: 'La Vie à Montréal'   },
+  { to: '/phrases',       activePaths: ['/phrases'],
+                          icon: IconLanguage,   emoji: '🗣', ko: '일상 표현',     en: 'Everyday Words',   fr: 'Expressions Quotidiennes'},
+  { to: '/language-lab',  activePaths: ['/language-lab'],
+                          icon: IconLab,        emoji: '🎙️', ko: '랭귀지 랩',    en: 'Language Lab',     fr: 'Labo de Langue'         },
+  { to: '/news',          activePaths: ['/news'],
+                          icon: IconLiving,     emoji: '🌱', ko: '몬트리올 라이프', en: 'Life in Montréal', fr: 'La Vie à Montréal'   },
 ]
 
 const JOURNEY_MOBILE = JOURNEY

@@ -29,6 +29,7 @@ import Phrases from './pages/Phrases'
 import Arriving from './pages/Arriving'
 import Settling from './pages/Settling'
 import SettlingArticle from './pages/SettlingArticle'
+import LanguageLab from './pages/LanguageLab'
 import { supabase } from './lib/supabase'
 
 function RedirectContentId() {
@@ -92,6 +93,7 @@ export default function App() {
               <Route path="/radar" element={<Radar />} />
               <Route path="/resume-map" element={<ResumeMap />} />
               <Route path="/phrases" element={<Phrases />} />
+              <Route path="/language-lab" element={<LanguageLab />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/account" element={<Account />} />
