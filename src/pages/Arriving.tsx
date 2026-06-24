@@ -455,7 +455,7 @@ function AskCommunity({ lang }: { lang: string }) {
           ? "Des personnes qui ont vécu la même expérience vous attendent dans la communauté HAKKYO."
           : 'People who already went through this are in the HAKKYO community and happy to help.'}
       </p>
-      <a href="/community" className="inline-block px-4 py-2 bg-gray-900 text-white text-[12px] font-medium rounded-lg hover:bg-gray-700 transition-colors no-underline">
+      <a href="/board" className="inline-block px-4 py-2 bg-gray-900 text-white text-[12px] font-medium rounded-lg hover:bg-gray-700 transition-colors no-underline">
         {lang==='ko'?'커뮤니티에 질문하기':lang==='fr'?'Poser une question':'Ask the community'}
       </a>
     </div>
