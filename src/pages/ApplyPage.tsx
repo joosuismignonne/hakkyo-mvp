@@ -1314,11 +1314,6 @@ export default function ApplyPage() {
 
             </div>
 
-            {!s.fields.some(f => f.required) && step > 1 && (
-              <button onClick={advance} className="mt-3 text-[11px] text-gray-400 hover:text-gray-600 transition-colors text-left">
-                {lang === 'ko' ? '건너뛰기' : lang === 'fr' ? 'Passer' : 'Skip'}
-              </button>
-            )}
 
             {hasContent && step >= 1 && (
               <div className="lg:hidden mt-10 border-t border-gray-100 pt-4">
