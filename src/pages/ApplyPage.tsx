@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ChevronLeft, Check, ArrowRight, ChevronDown } from 'lucide-react'
 import { getTrackById, submitSimpleApplication } from '../lib/db'
+import { parseIncludedSessionsList } from '../lib/programDisplay'
 import { useLang } from '../context/LangContext'
 import { trackEvent } from '../lib/analytics'
 import type { ProgramTrack } from '../types'
@@ -17,9 +18,7 @@ export type ProgLang = 'korean' | 'french' | 'english' | 'bilingual'
 export function detectProgLang(program: ProgramTrack | null): ProgLang {
   if (!program) return 'korean'
   // Combined course: included_sessions contains both English Class and French Class
-  const sessions: string[] = Array.isArray(program.included_sessions)
-    ? (program.included_sessions as string[])
-    : []
+  const sessions = parseIncludedSessionsList(program.included_sessions)
   const hasEn = sessions.some(s => s.toLowerCase().includes('english'))
   const hasFr = sessions.some(s => s.toLowerCase().includes('french'))
   if (hasEn && hasFr) return 'bilingual'
