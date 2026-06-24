@@ -1468,22 +1468,34 @@ export default function Settling() {
   const ctaCls = 'inline-flex items-center text-[12px] font-semibold text-gray-500 hover:text-gray-800 transition-colors'
 
   return (
-    <div className="flex min-h-screen">
-      <main className="flex-1 min-w-0 pb-24">
+    <div className="min-h-screen pb-24">
       <div className="max-w-[980px] mx-auto px-6 pt-12 md:pt-[72px] lg:pt-24">
 
-        {/* ── HEADER ── */}
-        <section className="mb-14">
-          <p className="t-eyebrow mb-3">{t('나의 여정 · 02', 'My Journey · 02', 'Mon parcours · 02')}</p>
-          <h1 className="t-page text-gray-900 mb-4">
-            {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
-          </h1>
-          <p className="text-[14px] text-gray-400 mt-3 leading-relaxed max-w-[520px]">
-            {t('예산 설정부터 계약, 입주 후 생활까지. 몬트리올에서 집을 구하는 과정을 단계별로 안내합니다.', 'From setting a budget to signing a lease and settling in. A step-by-step guide to finding a home in Montréal.', "Du budget à la signature du bail et à l'installation. Guide étape par étape.")}
-          </p>
-        </section>
+        {/* ── HEADER with counter ── */}
+        <div className="flex items-end justify-between gap-4 flex-wrap mb-14">
+          <div>
+            <p className="t-eyebrow mb-3">{t('나의 여정 · 02', 'My Journey · 02', 'Mon parcours · 02')}</p>
+            <h1 className="t-page text-gray-900 mb-4">
+              {t('나만의 공간 찾기', 'Finding My Place', 'Trouver mon logement')}
+            </h1>
+            <p className="text-[14px] text-gray-400 leading-relaxed max-w-[520px]">
+              {t('예산 설정부터 계약, 입주 후 생활까지. 몬트리올에서 집을 구하는 과정을 단계별로 안내합니다.', 'From setting a budget to signing a lease and settling in. A step-by-step guide to finding a home in Montréal.', "Du budget à la signature du bail et à l'installation. Guide étape par étape.")}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{toolChecked.size} / {TOOL_TABS.length}</p>
+            <p className="text-[11px] text-gray-400 mt-1">{t('완료', 'done', 'fait')}</p>
+          </div>
+        </div>
+
+        {/* ── TWO-COLUMN LAYOUT ── */}
+        <div className="flex gap-8 items-start">
+
+        {/* ── MAIN CONTENT ── */}
+        <div className="flex-1 min-w-0">
 
         {/* ── Narrative Anchor ── */}
+        {/* (inside main content column) */}
         <p style={{ fontSize: '15px', lineHeight: '1.8' }} className="text-gray-400 italic mb-14">
           {t(
             '동네를 고른다는 건 생활 방식을 고른다는 것과 같아요.',
@@ -1588,19 +1600,11 @@ export default function Settling() {
 
         {/* ── ESSENTIAL TOOLS ── */}
         <section ref={toolsRef} className="mb-16">
-          <div className="flex items-end justify-between gap-4 flex-wrap mb-2">
-            <div>
-              <SectionLabel>{t('필수 도구', 'Essential Tools', 'Outils essentiels')}</SectionLabel>
-              <p className="text-[13px] text-gray-500 mt-1">
-                {t('정착 과정에서 필요한 정보를 단계별로 정리했습니다.', 'Everything you need, organised by step.', 'Toutes les informations dont vous avez besoin, étape par étape.')}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{toolChecked.size} / {TOOL_TABS.length}</p>
-              <p className="text-[11px] text-gray-400 mt-1">{t('완료', 'done', 'fait')}</p>
-            </div>
-          </div>
-          <div className="flex gap-1 overflow-x-auto pb-1 mb-4 mt-4">
+          <SectionLabel>{t('필수 도구', 'Essential Tools', 'Outils essentiels')}</SectionLabel>
+          <p className="text-[13px] text-gray-500 mb-4">
+            {t('정착 과정에서 필요한 정보를 단계별로 정리했습니다.', 'Everything you need, organised by step.', 'Toutes les informations dont vous avez besoin, étape par étape.')}
+          </p>
+          <div className="flex gap-1 overflow-x-auto pb-1 mb-4">
             {TOOL_TABS.map(tab => {
               const isActive = activeTab === tab.id
               const isDone = toolChecked.has(tab.id)
@@ -1619,67 +1623,8 @@ export default function Settling() {
               )
             })}
           </div>
-
-          {/* Two-column layout */}
-          <div className="flex gap-8 items-start">
-            <div className="flex-1 min-w-0">
-              <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
-                <ToolPanel id={activeTab} lang={lang} t={t} />
-              </div>
-            </div>
-
-            {/* Sticky sidebar */}
-            <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
-              <div className="border border-gray-100 rounded-xl p-4 bg-white">
-                <div className="mb-3">
-                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-1">{t('현재 도구', 'Current tool', 'Outil actuel')}</p>
-                  <p className="text-[14px] font-medium text-gray-900">{tri(TOOL_TABS.find(tb => tb.id === activeTab) ?? TOOL_TABS[0], lang)}</p>
-                </div>
-                <div className="border-t border-gray-100 pt-3 mb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{t('전체 진행률', 'Overall progress', 'Progression')}</p>
-                    {toolChecked.size > 0 && (
-                      <button onClick={() => setToolChecked(new Set())} className="text-[9px] text-gray-400 hover:text-gray-600 transition-colors">
-                        {t('초기화', 'Reset', 'Réinitialiser')}
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${Math.round((toolChecked.size / TOOL_TABS.length) * 100)}%` }} />
-                    </div>
-                    <span className="text-[11px] font-medium text-gray-500 tabular-nums">{Math.round((toolChecked.size / TOOL_TABS.length) * 100)}%</span>
-                  </div>
-                </div>
-                {TOOL_COMPLETION[activeTab] && (() => {
-                  const c = TOOL_COMPLETION[activeTab]
-                  const isDone = toolChecked.has(activeTab)
-                  return (
-                    <div className="border-t border-gray-100 pt-3">
-                      <div className="rounded-xl bg-gray-900 text-white px-3 py-3">
-                        <p className="text-[12px] font-semibold leading-snug mb-1">{tri(c.headline, lang)}</p>
-                        <p className="text-[11px] text-gray-400 leading-relaxed mb-3">{tri(c.body, lang)}</p>
-                        <button
-                          onClick={() => {
-                            setToolChecked(prev => { const n = new Set(prev); n.add(activeTab); return n })
-                            const idx = TOOL_TABS.findIndex(tb => tb.id === activeTab)
-                            if (idx < TOOL_TABS.length - 1) {
-                              setTimeout(() => setActiveTab(TOOL_TABS[idx + 1].id), 300)
-                            }
-                          }}
-                          className={`text-[11px] font-semibold transition-colors ${isDone ? 'text-green-400' : 'text-white hover:text-gray-300'}`}
-                        >
-                          {isDone
-                            ? (lang === 'ko' ? '✓ 완료됨' : lang === 'fr' ? '✓ Fait' : '✓ Done')
-                            : (lang === 'ko' ? '완료로 표시하기 →' : lang === 'fr' ? 'Marquer comme fait →' : 'Mark as done →')
-                          }
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            </aside>
+          <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
+            <ToolPanel id={activeTab} lang={lang} t={t} />
           </div>
         </section>
 
@@ -1717,8 +1662,63 @@ export default function Settling() {
           </div>
         </section>
 
-      </div>
-      </main>
+        </div>{/* end main content column */}
+
+        {/* ── STICKY SIDEBAR ── */}
+        <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
+          <div className="border border-gray-100 rounded-xl p-4 bg-white">
+            <div className="mb-3">
+              <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-1">{t('현재 도구', 'Current tool', 'Outil actuel')}</p>
+              <p className="text-[14px] font-medium text-gray-900">{tri(TOOL_TABS.find(tb => tb.id === activeTab) ?? TOOL_TABS[0], lang)}</p>
+            </div>
+            <div className="border-t border-gray-100 pt-3 mb-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{t('전체 진행률', 'Overall progress', 'Progression')}</p>
+                {toolChecked.size > 0 && (
+                  <button onClick={() => setToolChecked(new Set())} className="text-[9px] text-gray-400 hover:text-gray-600 transition-colors">
+                    {t('초기화', 'Reset', 'Réinitialiser')}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${Math.round((toolChecked.size / TOOL_TABS.length) * 100)}%` }} />
+                </div>
+                <span className="text-[11px] font-medium text-gray-500 tabular-nums">{Math.round((toolChecked.size / TOOL_TABS.length) * 100)}%</span>
+              </div>
+            </div>
+            {TOOL_COMPLETION[activeTab] && (() => {
+              const c = TOOL_COMPLETION[activeTab]
+              const isDone = toolChecked.has(activeTab)
+              return (
+                <div className="border-t border-gray-100 pt-3">
+                  <div className="rounded-xl bg-gray-900 text-white px-3 py-3">
+                    <p className="text-[12px] font-semibold leading-snug mb-1">{tri(c.headline, lang)}</p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed mb-3">{tri(c.body, lang)}</p>
+                    <button
+                      onClick={() => {
+                        setToolChecked(prev => { const n = new Set(prev); n.add(activeTab); return n })
+                        const idx = TOOL_TABS.findIndex(tb => tb.id === activeTab)
+                        if (idx < TOOL_TABS.length - 1) {
+                          setTimeout(() => setActiveTab(TOOL_TABS[idx + 1].id), 300)
+                        }
+                      }}
+                      className={`text-[11px] font-semibold transition-colors ${isDone ? 'text-green-400' : 'text-white hover:text-gray-300'}`}
+                    >
+                      {isDone
+                        ? (lang === 'ko' ? '✓ 완료됨' : lang === 'fr' ? '✓ Fait' : '✓ Done')
+                        : (lang === 'ko' ? '완료로 표시하기 →' : lang === 'fr' ? 'Marquer comme fait →' : 'Mark as done →')
+                      }
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </aside>
+
+        </div>{/* end two-column flex */}
+      </div>{/* end max-w container */}
     </div>
   )
 }
