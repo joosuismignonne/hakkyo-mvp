@@ -905,6 +905,9 @@ const START_CARDS: Array<{ category: Tri; title: Tri; desc: Tri; slug: string }>
 
 // ─── HAKKYO CITY stories ──────────────────────────────────────────────────────
 
+// Slugs that exist in SettlingArticle LOCAL_GUIDES (or Supabase)
+const PUBLISHED_SLUGS = new Set(['moving-day', 'quebec-lease', 'housing-scams', 'first-apartment-checklist'])
+
 const STORIES: Array<{ num: string; category: Tri; title: Tri; desc: Tri; slug: string }> = [
   { num: '01', slug: 'lululemon-neighbourhood',
     category: { ko: '도시 생활', en: 'City Life', fr: 'Vie urbaine' },
@@ -1601,19 +1604,25 @@ export default function Settling() {
             {t('집을 구하는 일을 통해 몬트리올이 어떻게 작동하는지 읽어봅니다.', 'Stories that help explain how Montréal works.', 'Des histoires qui aident à comprendre Montréal.')}
           </p>
           <div className="space-y-2">
-            {STORIES.map(story => (
-              <div key={story.slug} className="border border-gray-200 rounded-2xl px-4 py-4 bg-white flex items-start gap-4">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 tabular-nums" style={{ background: 'var(--y)', color: '#111' }}>
+            {STORIES.map(story => {
+              const published = PUBLISHED_SLUGS.has(story.slug)
+              return (
+              <div key={story.slug} className={['border rounded-2xl px-4 py-4 bg-white flex items-start gap-4', published ? 'border-gray-200' : 'border-gray-100 opacity-60'].join(' ')}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 tabular-nums" style={{ background: published ? 'var(--y)' : '#F0F0F0', color: '#111' }}>
                   {story.num}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{tri(story.category, lang)}</p>
                   <p className="text-[14px] font-bold text-gray-900 leading-snug mb-1">{tri(story.title, lang)}</p>
                   <p className="text-[12px] text-gray-500 leading-snug mb-2">{tri(story.desc, lang)}</p>
-                  <Link to={`/settling/${story.slug}`} className={ctaCls} onClick={() => trackEvent({ eventName: 'settling_guide_clicked', targetType: 'story', targetId: story.slug, targetLabel: story.slug })}>{t('읽어보기 →', 'Read more →', 'Lire →')}</Link>
+                  {published
+                    ? <Link to={`/settling/${story.slug}`} className={ctaCls} onClick={() => trackEvent({ eventName: 'settling_guide_clicked', targetType: 'story', targetId: story.slug, targetLabel: story.slug })}>{t('읽어보기 →', 'Read more →', 'Lire →')}</Link>
+                    : <span className="text-[11px] text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">{t('준비 중', 'Coming soon', 'Bientôt disponible')}</span>
+                  }
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         </section>
 
