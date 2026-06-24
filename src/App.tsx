@@ -21,6 +21,7 @@ import Signup from './pages/Signup'
 import Account from './pages/Account'
 import ResetPassword from './pages/ResetPassword'
 import RequireAuth from './components/RequireAuth'
+import RequireAdmin from './components/RequireAdmin'
 import BoardMemoryWidget from './components/BoardMemoryWidget'
 import Radar from './pages/Radar'
 import ResumeMap from './pages/ResumeMap'
@@ -95,7 +96,7 @@ export default function App() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/account" element={<Account />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/admin/*" element={<RequireAuth><Admin /></RequireAuth>} />
+              <Route path="/admin/*" element={<RequireAdmin><Admin /></RequireAdmin>} />
             </Routes>
           </main>
           <Footer />
