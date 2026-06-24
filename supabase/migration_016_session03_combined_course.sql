@@ -84,7 +84,7 @@ VALUES (
   'SUM Gourmand, Montréal',
 
   -- capacity
-  12,
+  6,
 
   -- enrolled
   0,
