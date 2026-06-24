@@ -1578,7 +1578,12 @@ export default function Settling() {
                   ).split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
                 </p>
                 <div className="border-t border-gray-100 pt-4">
-                  <p className="text-[13px] font-semibold text-gray-800 mb-1">{t('학교 친구들아, 모여라!', 'Ready to meet people?', 'Prêt·e à rencontrer des gens ?')}</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[13px] font-semibold text-gray-800">{t('학교 친구들아, 모여라!', 'Ready to meet people?', 'Prêt·e à rencontrer des gens ?')}</p>
+                    <button onClick={() => setChecked(new Set())} className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
+                      {t('체크 초기화', 'Reset checklist', 'Réinitialiser')}
+                    </button>
+                  </div>
                   <p className="text-[12px] text-gray-400 mb-4">{t('한국어 · 영어 · 프랑스어 · 언어 교환', 'Korean · English · French · Language Exchange', 'Coréen · Anglais · Français · Échange linguistique')}</p>
                   <Link to="/programs" className="inline-flex items-center text-[13px] font-semibold text-gray-900 hover:opacity-70 transition-opacity">
                     {t('프로그램 보기 →', 'Browse Programs →', 'Voir les programmes →')}
