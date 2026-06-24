@@ -2386,7 +2386,7 @@ export default function Arriving() {
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{sectionLabel('전체 진행률', 'Overall progress', 'Progression')}</p>
                     {checked.size > 0 && (
-                      <button onClick={() => setChecked(new Set())} className="text-[9px] text-gray-300 hover:text-gray-500 transition-colors">
+                      <button onClick={() => setChecked(new Set())} className="text-[9px] text-gray-400 hover:text-gray-600 transition-colors">
                         {sectionLabel('초기화', 'Reset', 'Réinitialiser')}
                       </button>
                     )}

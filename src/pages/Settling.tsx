@@ -95,6 +95,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── Checklist ────────────────────────────────────────────────────────────────
 
 const SETTLING_KEY = 'hakkyo_settling'
+const TOOLS_DONE_KEY = 'hakkyo_tools_done'
 const CHECKLIST_ITEMS: Array<{ id: string } & Tri> = [
   { id: 'budget',    ko: '예산 설정',              en: 'Set a budget',                fr: 'Définir le budget'                },
   { id: 'hood',      ko: '동네 선택',              en: 'Choose a neighbourhood',       fr: 'Choisir le quartier'              },
@@ -1438,6 +1439,10 @@ export default function Settling() {
     try { return new Set(JSON.parse(localStorage.getItem(SETTLING_KEY) ?? '[]')) }
     catch { return new Set() }
   })
+  const [toolChecked, setToolChecked] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(TOOLS_DONE_KEY) ?? '[]')) }
+    catch { return new Set() }
+  })
   const [activeTab, setActiveTab] = useState('budget')
   const toolsRef = useRef<HTMLDivElement>(null)
 
@@ -1445,6 +1450,11 @@ export default function Settling() {
     try { localStorage.setItem(SETTLING_KEY, JSON.stringify([...checked])) }
     catch {}
   }, [checked])
+
+  useEffect(() => {
+    try { localStorage.setItem(TOOLS_DONE_KEY, JSON.stringify([...toolChecked])) }
+    catch {}
+  }, [toolChecked])
 
   function toggle(id: string) {
     setChecked(prev => {
@@ -1460,7 +1470,7 @@ export default function Settling() {
   return (
     <div className="flex min-h-screen">
       <main className="flex-1 min-w-0 pb-24">
-      <div className="max-w-[720px] mx-auto px-6 pt-12 md:pt-[72px] lg:pt-24">
+      <div className="max-w-[980px] mx-auto px-6 pt-12 md:pt-[72px] lg:pt-24">
 
         {/* ── HEADER ── */}
         <section className="mb-14">
@@ -1578,29 +1588,98 @@ export default function Settling() {
 
         {/* ── ESSENTIAL TOOLS ── */}
         <section ref={toolsRef} className="mb-16">
-          <SectionLabel>{t('필수 도구', 'Essential Tools', 'Outils essentiels')}</SectionLabel>
-          <p className="text-[13px] text-gray-500 mb-4">
-            {t('정착 과정에서 필요한 정보를 단계별로 정리했습니다.', 'Everything you need, organised by step.', 'Toutes les informations dont vous avez besoin, étape par étape.')}
-          </p>
-          <div className="flex gap-1 overflow-x-auto pb-1 mb-4">
+          <div className="flex items-end justify-between gap-4 flex-wrap mb-2">
+            <div>
+              <SectionLabel>{t('필수 도구', 'Essential Tools', 'Outils essentiels')}</SectionLabel>
+              <p className="text-[13px] text-gray-500 mt-1">
+                {t('정착 과정에서 필요한 정보를 단계별로 정리했습니다.', 'Everything you need, organised by step.', 'Toutes les informations dont vous avez besoin, étape par étape.')}
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{toolChecked.size} / {TOOL_TABS.length}</p>
+              <p className="text-[11px] text-gray-400 mt-1">{t('완료', 'done', 'fait')}</p>
+            </div>
+          </div>
+          <div className="flex gap-1 overflow-x-auto pb-1 mb-4 mt-4">
             {TOOL_TABS.map(tab => {
               const isActive = activeTab === tab.id
+              const isDone = toolChecked.has(tab.id)
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold whitespace-nowrap transition-colors shrink-0 ${
-                    isActive ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    isActive ? 'bg-gray-900 text-white' : isDone ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                   }`}
                 >
-                  <span className={isActive ? 'text-white' : 'text-gray-400'}>{tab.icon}</span>
+                  {isDone && !isActive && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  <span className={isActive ? 'text-white' : 'text-gray-400'}>{!isDone || isActive ? tab.icon : null}</span>
                   {tri(tab, lang)}
                 </button>
               )
             })}
           </div>
-          <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
-            <ToolPanel id={activeTab} lang={lang} t={t} />
+
+          {/* Two-column layout */}
+          <div className="flex gap-8 items-start">
+            <div className="flex-1 min-w-0">
+              <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
+                <ToolPanel id={activeTab} lang={lang} t={t} />
+              </div>
+            </div>
+
+            {/* Sticky sidebar */}
+            <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
+              <div className="border border-gray-100 rounded-xl p-4 bg-white">
+                <div className="mb-3">
+                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-1">{t('현재 도구', 'Current tool', 'Outil actuel')}</p>
+                  <p className="text-[14px] font-medium text-gray-900">{tri(TOOL_TABS.find(tb => tb.id === activeTab) ?? TOOL_TABS[0], lang)}</p>
+                </div>
+                <div className="border-t border-gray-100 pt-3 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{t('전체 진행률', 'Overall progress', 'Progression')}</p>
+                    {toolChecked.size > 0 && (
+                      <button onClick={() => setToolChecked(new Set())} className="text-[9px] text-gray-400 hover:text-gray-600 transition-colors">
+                        {t('초기화', 'Reset', 'Réinitialiser')}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${Math.round((toolChecked.size / TOOL_TABS.length) * 100)}%` }} />
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-500 tabular-nums">{Math.round((toolChecked.size / TOOL_TABS.length) * 100)}%</span>
+                  </div>
+                </div>
+                {TOOL_COMPLETION[activeTab] && (() => {
+                  const c = TOOL_COMPLETION[activeTab]
+                  const isDone = toolChecked.has(activeTab)
+                  return (
+                    <div className="border-t border-gray-100 pt-3">
+                      <div className="rounded-xl bg-gray-900 text-white px-3 py-3">
+                        <p className="text-[12px] font-semibold leading-snug mb-1">{tri(c.headline, lang)}</p>
+                        <p className="text-[11px] text-gray-400 leading-relaxed mb-3">{tri(c.body, lang)}</p>
+                        <button
+                          onClick={() => {
+                            setToolChecked(prev => { const n = new Set(prev); n.add(activeTab); return n })
+                            const idx = TOOL_TABS.findIndex(tb => tb.id === activeTab)
+                            if (idx < TOOL_TABS.length - 1) {
+                              setTimeout(() => setActiveTab(TOOL_TABS[idx + 1].id), 300)
+                            }
+                          }}
+                          className={`text-[11px] font-semibold transition-colors ${isDone ? 'text-green-400' : 'text-white hover:text-gray-300'}`}
+                        >
+                          {isDone
+                            ? (lang === 'ko' ? '✓ 완료됨' : lang === 'fr' ? '✓ Fait' : '✓ Done')
+                            : (lang === 'ko' ? '완료로 표시하기 →' : lang === 'fr' ? 'Marquer comme fait →' : 'Mark as done →')
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            </aside>
           </div>
         </section>
 
@@ -1640,62 +1719,6 @@ export default function Settling() {
 
       </div>
       </main>
-      <aside className="hidden xl:block w-72 shrink-0 sticky top-0 h-screen overflow-y-auto border-l border-gray-100 px-5 py-8 bg-white">
-        {/* Current tool + progress + completion card */}
-        <div className="border border-gray-100 rounded-xl p-4 bg-white mb-6">
-          <div className="mb-3">
-            <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-1">{t('현재 도구', 'Current tool', 'Outil actuel')}</p>
-            <p className="text-[14px] font-medium text-gray-900">{tri(TOOL_TABS.find(tb => tb.id === activeTab) ?? TOOL_TABS[0], lang)}</p>
-          </div>
-          <div className="border-t border-gray-100 pt-3 mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{t('전체 진행률', 'Overall progress', 'Progression')}</p>
-              {checked.size > 0 && (
-                <button onClick={() => setChecked(new Set())} className="text-[9px] text-gray-300 hover:text-gray-500 transition-colors">
-                  {t('초기화', 'Reset', 'Réinitialiser')}
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
-              </div>
-              <span className="text-[11px] font-medium text-gray-500 tabular-nums">{pct}%</span>
-            </div>
-          </div>
-          {TOOL_COMPLETION[activeTab] && (() => {
-            const c = TOOL_COMPLETION[activeTab]
-            return (
-              <div className="border-t border-gray-100 pt-3">
-                <div className="rounded-xl bg-gray-900 text-white px-3 py-3">
-                  <p className="text-[12px] font-semibold leading-snug mb-1">{tri(c.headline, lang)}</p>
-                  <p className="text-[11px] text-gray-400 leading-relaxed">{tri(c.body, lang)}</p>
-                </div>
-              </div>
-            )
-          })()}
-        </div>
-
-        {/* Static context */}
-        <div className="ctx-section">
-          <span className="ctx-label">{t('이사 시즌', 'Move-in season', 'Saison de déménagement')}</span>
-          <div className="ctx-note">{t('7월 1일은 몬트리올의 이사의 날입니다. 4월~6월에 매물이 가장 많습니다.', "July 1 is Montréal's moving day. Listings peak in April–June.", "Le 1er juillet est le jour de déménagement. Les annonces sont au maximum en avril–juin.")}</div>
-        </div>
-        <div className="border-t border-gray-100 pt-4 ctx-section">
-          <span className="ctx-label">{t('평균 월세 (1BR)', 'Avg rent (1BR)', 'Loyer moyen (1ch.)')}</span>
-          {MATRIX_HOODS.map(h => (
-            <div key={h.name} className="ctx-row">
-              <span>{h.name}</span>
-              <span className="ctx-val">{h.rent.split('–')[0]}</span>
-            </div>
-          ))}
-        </div>
-        <div className="border-t border-gray-100 pt-4">
-          <span className="ctx-label">{t('임대 주의사항', 'Lease reminders', 'Rappels de bail')}</span>
-          <div className="ctx-note">{t('퀘벡 임대는 12개월 기본입니다. 집주인은 90일 전에 갱신 거절을 통보해야 합니다.', 'Quebec leases are 12 months. Landlord must give 90 days notice to not renew.', 'Les baux québécois sont de 12 mois. Le propriétaire doit donner 90 jours de préavis.')}</div>
-          <div className="ctx-note">{t('신용 기록이 없다면 보증인을 요청하세요.', 'No credit history? Ask for a co-signer option.', 'Pas d\'historique de crédit? Demandez une caution.')}</div>
-        </div>
-      </aside>
     </div>
   )
 }
