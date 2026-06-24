@@ -176,8 +176,8 @@ export default function LanguageLab() {
       setError(t('mp3, wav, m4a 파일만 지원합니다.', 'Only mp3, wav, m4a files are supported.', 'Seuls les fichiers mp3, wav, m4a sont acceptés.'))
       return
     }
-    if (f.size > 10 * 1024 * 1024) {
-      setError(t('파일이 너무 큽니다. 10MB 이하 파일을 올려주세요. (약 5분 이내 녹음 권장)', 'File too large. Please upload under 10MB (recordings under ~5 min).', 'Fichier trop volumineux. Maximum 10 Mo.'))
+    if (f.size > 3 * 1024 * 1024) {
+      setError(t('파일이 너무 큽니다. 3MB 이하(약 2분 이내) 녹음을 올려주세요.', 'File too large. Please upload under 3MB (~2 min recording).', 'Fichier trop volumineux. Maximum 3 Mo (~2 min).'))
       return
     }
     setError('')
