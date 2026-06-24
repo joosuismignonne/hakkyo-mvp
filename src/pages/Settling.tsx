@@ -1462,6 +1462,14 @@ export default function Settling() {
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+    // sync toolChecked if this id is a tool tab
+    if (TOOL_TABS.some(tb => tb.id === id)) {
+      setToolChecked(prev => {
+        const next = new Set(prev)
+        next.has(id) ? next.delete(id) : next.add(id)
+        return next
+      })
+    }
   }
 
   const pct = Math.round((checked.size / CHECKLIST_ITEMS.length) * 100)
@@ -1680,7 +1688,7 @@ export default function Settling() {
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{t('전체 진행률', 'Overall progress', 'Progression')}</p>
                 <button
-                  onClick={() => setToolChecked(new Set())}
+                  onClick={() => { setToolChecked(new Set()); setChecked(new Set()) }}
                   className={`text-[9px] transition-colors ${toolChecked.size > 0 ? 'text-gray-400 hover:text-gray-600' : 'text-gray-200 cursor-default'}`}
                   disabled={toolChecked.size === 0}
                 >
@@ -1705,6 +1713,7 @@ export default function Settling() {
                     <button
                       onClick={() => {
                         setToolChecked(prev => { const n = new Set(prev); n.add(activeTab); return n })
+                        setChecked(prev => { const n = new Set(prev); n.add(activeTab); return n })
                         const idx = TOOL_TABS.findIndex(tb => tb.id === activeTab)
                         if (idx < TOOL_TABS.length - 1) {
                           setTimeout(() => setActiveTab(TOOL_TABS[idx + 1].id), 300)
