@@ -176,8 +176,8 @@ export default function LanguageLab() {
       setError(t('mp3, wav, m4a 파일만 지원합니다.', 'Only mp3, wav, m4a files are supported.', 'Seuls les fichiers mp3, wav, m4a sont acceptés.'))
       return
     }
-    if (f.size > 20 * 1024 * 1024) {
-      setError(t('파일이 너무 큽니다. 20MB 이하로 올려주세요.', 'File too large. Please upload under 20MB.', 'Fichier trop volumineux. Maximum 20 Mo.'))
+    if (f.size > 10 * 1024 * 1024) {
+      setError(t('파일이 너무 큽니다. 10MB 이하 파일을 올려주세요. (약 5분 이내 녹음 권장)', 'File too large. Please upload under 10MB (recordings under ~5 min).', 'Fichier trop volumineux. Maximum 10 Mo.'))
       return
     }
     setError('')
@@ -207,10 +207,16 @@ export default function LanguageLab() {
           scenario: selectedScenario,
         }),
       })
-      const data = await res.json()
+      let data: { transcript?: string; feedback?: Feedback; error?: string } = {}
+      try {
+        data = await res.json()
+      } catch {
+        if (res.status === 413) throw new Error(t('파일이 너무 큽니다. 더 짧은 녹음을 사용해주세요.', 'File too large for processing. Please use a shorter recording.', 'Fichier trop volumineux. Utilisez un enregistrement plus court.'))
+        throw new Error(`Server error ${res.status}`)
+      }
       if (!res.ok) throw new Error(data.error ?? 'Analysis failed')
-      setTranscript(data.transcript)
-      setFeedback(data.feedback)
+      setTranscript(data.transcript ?? '')
+      setFeedback(data.feedback ?? null)
       setStep('result')
     } catch (e) {
       setError(String(e))
