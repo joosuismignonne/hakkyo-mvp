@@ -147,8 +147,6 @@ const JOURNEY: JourneyItem[] = [
                       icon: IconWorking,    emoji: '💼', ko: '새로운 기회',   en: 'New Opportunities', fr: 'Nouvelles Opportunités'},
   { to: '/phrases',       activePaths: ['/phrases'],
                           icon: IconLanguage,   emoji: '🗣', ko: '일상 표현',     en: 'Everyday Words',   fr: 'Expressions Quotidiennes'},
-  { to: '/language-lab',  activePaths: ['/language-lab'],
-                          icon: IconLab,        emoji: '🎙️', ko: '랭귀지 랩',    en: 'Language Lab',     fr: 'Labo de Langue'         },
   { to: '/news',          activePaths: ['/news'],
                           icon: IconLiving,     emoji: '🌱', ko: '몬트리올 라이프', en: 'Life in Montréal', fr: 'La Vie à Montréal'   },
 ]
