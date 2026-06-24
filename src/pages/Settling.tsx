@@ -1602,15 +1602,6 @@ export default function Settling() {
           <div className="border border-gray-200 rounded-2xl px-5 py-5 bg-white">
             <ToolPanel id={activeTab} lang={lang} t={t} />
           </div>
-          {TOOL_COMPLETION[activeTab] && (() => {
-            const c = TOOL_COMPLETION[activeTab]
-            return (
-              <div className="mt-3 rounded-2xl bg-gray-900 text-white px-5 py-5">
-                <p className="text-[15px] font-semibold leading-snug mb-2">{tri(c.headline, lang)}</p>
-                <p className="text-[12px] text-gray-300 leading-relaxed">{tri(c.body, lang)}</p>
-              </div>
-            )
-          })()}
         </section>
 
         {/* ── NEIGHBOURHOOD MAP ── */}
@@ -1650,6 +1641,42 @@ export default function Settling() {
       </div>
       </main>
       <aside className="hidden xl:block w-72 shrink-0 sticky top-0 h-screen overflow-y-auto border-l border-gray-100 px-5 py-8 bg-white">
+        {/* Current tool + progress + completion card */}
+        <div className="border border-gray-100 rounded-xl p-4 bg-white mb-6">
+          <div className="mb-3">
+            <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-1">{t('현재 도구', 'Current tool', 'Outil actuel')}</p>
+            <p className="text-[14px] font-medium text-gray-900">{tri(TOOL_TABS.find(tb => tb.id === activeTab) ?? TOOL_TABS[0], lang)}</p>
+          </div>
+          <div className="border-t border-gray-100 pt-3 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{t('전체 진행률', 'Overall progress', 'Progression')}</p>
+              {checked.size > 0 && (
+                <button onClick={() => setChecked(new Set())} className="text-[9px] text-gray-300 hover:text-gray-500 transition-colors">
+                  {t('초기화', 'Reset', 'Réinitialiser')}
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="text-[11px] font-medium text-gray-500 tabular-nums">{pct}%</span>
+            </div>
+          </div>
+          {TOOL_COMPLETION[activeTab] && (() => {
+            const c = TOOL_COMPLETION[activeTab]
+            return (
+              <div className="border-t border-gray-100 pt-3">
+                <div className="rounded-xl bg-gray-900 text-white px-3 py-3">
+                  <p className="text-[12px] font-semibold leading-snug mb-1">{tri(c.headline, lang)}</p>
+                  <p className="text-[11px] text-gray-400 leading-relaxed">{tri(c.body, lang)}</p>
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+
+        {/* Static context */}
         <div className="ctx-section">
           <span className="ctx-label">{t('이사 시즌', 'Move-in season', 'Saison de déménagement')}</span>
           <div className="ctx-note">{t('7월 1일은 몬트리올의 이사의 날입니다. 4월~6월에 매물이 가장 많습니다.', "July 1 is Montréal's moving day. Listings peak in April–June.", "Le 1er juillet est le jour de déménagement. Les annonces sont au maximum en avril–juin.")}</div>

@@ -2259,14 +2259,6 @@ export default function Arriving() {
               <div className="text-right shrink-0">
                 <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{checked.size} / {TABS.length}</p>
                 <p className="text-[11px] text-gray-400 mt-1">{sectionLabel('완료', 'done', 'fait')}</p>
-                {checked.size > 0 && (
-                  <button
-                    onClick={() => setChecked(new Set())}
-                    className="text-[10px] text-gray-300 hover:text-gray-500 transition-colors mt-1"
-                  >
-                    {sectionLabel('초기화', 'Reset', 'Réinitialiser')}
-                  </button>
-                )}
               </div>
             </div>
             <p className="text-[13px] text-gray-400 mt-3 leading-relaxed max-w-[520px]">
@@ -2368,26 +2360,6 @@ export default function Arriving() {
                 <AskCommunity lang={lang} />
               </div>
 
-              {/* 8. Completion card */}
-              <div className="mt-8 rounded-2xl bg-gray-900 text-white px-6 py-6">
-                <p className="text-[16px] font-semibold leading-snug mb-2">{tri(activeTab.completionCard.headline, lang)}</p>
-                <p className="text-[13px] text-gray-300 leading-relaxed mb-5">{tri(activeTab.completionCard.body, lang)}</p>
-                <button
-                  onClick={() => {
-                    setChecked(prev => { const n = new Set(prev); n.add(activeTab.id); return n })
-                    if (activeTab.sidebar.nextStepId) {
-                      setTimeout(() => setActiveTabId(activeTab.sidebar.nextStepId!), 300)
-                    }
-                  }}
-                  className={`inline-flex items-center gap-2 text-[13px] font-semibold transition-colors ${checked.has(activeTab.id) ? 'text-green-400' : 'text-white hover:text-gray-300'}`}
-                >
-                  {checked.has(activeTab.id)
-                    ? (lang === 'ko' ? '✓ 완료됨' : lang === 'fr' ? '✓ Fait' : '✓ Done')
-                    : (lang === 'ko' ? '완료로 표시하기 →' : lang === 'fr' ? 'Marquer comme fait →' : 'Mark as done →')
-                  }
-                </button>
-              </div>
-
             </div>
 
             {/* Sticky sidebar */}
@@ -2410,8 +2382,15 @@ export default function Arriving() {
                   <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('일반적인 시기', 'Estimated timeline', 'Calendrier habituel')}</p>
                   <p className="text-[11px] text-gray-500 leading-relaxed">{tri(activeTab.sidebar.timeline, lang)}</p>
                 </div>
-                <div className="border-t border-gray-100 pt-3 mb-4">
-                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('전체 진행률', 'Overall progress', 'Progression')}</p>
+                <div className="border-t border-gray-100 pt-3 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{sectionLabel('전체 진행률', 'Overall progress', 'Progression')}</p>
+                    {checked.size > 0 && (
+                      <button onClick={() => setChecked(new Set())} className="text-[9px] text-gray-300 hover:text-gray-500 transition-colors">
+                        {sectionLabel('초기화', 'Reset', 'Réinitialiser')}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
@@ -2419,6 +2398,29 @@ export default function Arriving() {
                     <span className="text-[11px] font-medium text-gray-500 tabular-nums">{pct}%</span>
                   </div>
                 </div>
+
+                {/* Completion card in sidebar */}
+                <div className="border-t border-gray-100 pt-3 mb-3">
+                  <div className="rounded-xl bg-gray-900 text-white px-3 py-3">
+                    <p className="text-[12px] font-semibold leading-snug mb-1">{tri(activeTab.completionCard.headline, lang)}</p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed mb-3">{tri(activeTab.completionCard.body, lang)}</p>
+                    <button
+                      onClick={() => {
+                        setChecked(prev => { const n = new Set(prev); n.add(activeTab.id); return n })
+                        if (activeTab.sidebar.nextStepId) {
+                          setTimeout(() => setActiveTabId(activeTab.sidebar.nextStepId!), 300)
+                        }
+                      }}
+                      className={`text-[11px] font-semibold transition-colors ${checked.has(activeTab.id) ? 'text-green-400' : 'text-white hover:text-gray-300'}`}
+                    >
+                      {checked.has(activeTab.id)
+                        ? (lang === 'ko' ? '✓ 완료됨' : lang === 'fr' ? '✓ Fait' : '✓ Done')
+                        : (lang === 'ko' ? '완료로 표시하기 →' : lang === 'fr' ? 'Marquer comme fait →' : 'Mark as done →')
+                      }
+                    </button>
+                  </div>
+                </div>
+
                 {activeTab.sidebar.nextStepId && activeTab.sidebar.nextStepLabel && (
                   <div className="border-t border-gray-100 pt-3">
                     <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('다음 단계', 'Next step', 'Prochaine étape')}</p>
