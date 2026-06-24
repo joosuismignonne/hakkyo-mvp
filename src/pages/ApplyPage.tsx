@@ -12,10 +12,18 @@ import type { ProgramTrack } from '../types'
 // Program language detection
 // ──────────────────────────────────────────────────────────────────────────────
 
-export type ProgLang = 'korean' | 'french' | 'english'
+export type ProgLang = 'korean' | 'french' | 'english' | 'bilingual'
 
 export function detectProgLang(program: ProgramTrack | null): ProgLang {
   if (!program) return 'korean'
+  // Combined course: included_sessions contains both English Class and French Class
+  const sessions: string[] = Array.isArray(program.included_sessions)
+    ? (program.included_sessions as string[])
+    : []
+  const hasEn = sessions.some(s => s.toLowerCase().includes('english'))
+  const hasFr = sessions.some(s => s.toLowerCase().includes('french'))
+  if (hasEn && hasFr) return 'bilingual'
+
   const tags: string[] = Array.isArray(program.program_tags) ? program.program_tags : []
   if (tags.includes('french'))  return 'french'
   if (tags.includes('english')) return 'english'
@@ -68,35 +76,43 @@ interface StepConfig {
 // ──────────────────────────────────────────────────────────────────────────────
 
 const PROG_LANG_NAMES: Record<ProgLang, T3> = {
-  korean:  { fr: 'coréen',   en: 'Korean',  ko: '한국어'    },
-  french:  { fr: 'français', en: 'French',  ko: '프랑스어'  },
-  english: { fr: 'anglais',  en: 'English', ko: '영어'      },
+  korean:   { fr: 'coréen',              en: 'Korean',           ko: '한국어'         },
+  french:   { fr: 'français',            en: 'French',           ko: '프랑스어'       },
+  english:  { fr: 'anglais',             en: 'English',          ko: '영어'           },
+  bilingual:{ fr: 'anglais et français', en: 'English & French', ko: '영어 및 프랑스어' },
 }
 
 // French definite article before the language name
 const PROG_LANG_ARTICLE: Record<ProgLang, string> = {
-  korean:  'le',
-  french:  'le',
-  english: "l'",
+  korean:   'le',
+  french:   'le',
+  english:  "l'",
+  bilingual: "l'",
 }
 
 // Greeting word used in beginner level option
 const PROG_LANG_GREETING: Record<ProgLang, string> = {
-  korean:  '안녕하세요',
-  french:  'Bonjour',
-  english: 'Hello',
+  korean:   '안녕하세요',
+  french:   'Bonjour',
+  english:  'Hello',
+  bilingual: 'Hello / Bonjour',
 }
 
 function buildSections(pl: ProgLang): SectionMeta[] {
   const ln = PROG_LANG_NAMES[pl]
+  // Bilingual course adds one extra language step (4 instead of 3), pushing later sections by 1
+  const goalsStep    = pl === 'bilingual' ? 10 : 9
+  const learningStep = pl === 'bilingual' ? 12 : 11
+  const hakkoyStep   = pl === 'bilingual' ? 13 : 12
+  const lastStep     = pl === 'bilingual' ? 15 : 14
   return [
-    { id: 'basic',    label: { fr: 'Informations personnelles',                en: 'Basic Information',            ko: '기본 정보'         }, firstStep: 0  },
-    { id: 'montreal', label: { fr: 'Votre parcours à Montréal',               en: 'Your Montréal Journey',        ko: '몬트리올 여정'     }, firstStep: 4  },
-    { id: 'language', label: { fr: `Votre parcours en ${ln.fr}`,              en: `Your ${ln.en} Journey`,        ko: `${ln.ko} 여정`     }, firstStep: 6  },
-    { id: 'goals',    label: { fr: 'Vos objectifs',                            en: 'Your Goals',                   ko: '나의 목표'         }, firstStep: 9  },
-    { id: 'learning', label: { fr: "Votre façon d'apprendre",                 en: 'Learning Style',               ko: '학습 스타일'       }, firstStep: 11 },
-    { id: 'hakkyo',   label: { fr: 'À propos de HAKKYO',                      en: 'About HAKKYO',                 ko: 'HAKKYO에 대하여'  }, firstStep: 12 },
-    { id: 'last',     label: { fr: 'Une dernière question',                    en: 'One Last Question',            ko: '마지막 질문'       }, firstStep: 14 },
+    { id: 'basic',    label: { fr: 'Informations personnelles',                en: 'Basic Information',            ko: '기본 정보'         }, firstStep: 0           },
+    { id: 'montreal', label: { fr: 'Votre parcours à Montréal',               en: 'Your Montréal Journey',        ko: '몬트리올 여정'     }, firstStep: 4           },
+    { id: 'language', label: { fr: `Votre parcours en ${ln.fr}`,              en: `Your ${ln.en} Journey`,        ko: `${ln.ko} 여정`     }, firstStep: 6           },
+    { id: 'goals',    label: { fr: 'Vos objectifs',                            en: 'Your Goals',                   ko: '나의 목표'         }, firstStep: goalsStep   },
+    { id: 'learning', label: { fr: "Votre façon d'apprendre",                 en: 'Learning Style',               ko: '학습 스타일'       }, firstStep: learningStep },
+    { id: 'hakkyo',   label: { fr: 'À propos de HAKKYO',                      en: 'About HAKKYO',                 ko: 'HAKKYO에 대하여'  }, firstStep: hakkoyStep  },
+    { id: 'last',     label: { fr: 'Une dernière question',                    en: 'One Last Question',            ko: '마지막 질문'       }, firstStep: lastStep    },
   ]
 }
 
@@ -133,24 +149,20 @@ function buildLevelOptions(pl: ProgLang): RadioOption[] {
 }
 
 function buildLanguageSteps(pl: ProgLang): StepConfig[] {
+  if (pl === 'bilingual') return buildBilingualLanguageSteps()
+
   const ln  = PROG_LANG_NAMES[pl]
   const art = PROG_LANG_ARTICLE[pl]
 
-  // Placeholder text for language-specific free-text fields
-  const storyPlaceholder: Record<ProgLang, string> = {
-    korean:  'Culture, personnes, travail, musique, une histoire personnelle…',
-    french:  'La culture, la musique, les voyages, une connexion personnelle…',
-    english: 'Voyages, travail, culture pop, une connexion personnelle…',
-  }
-  const expPlaceholder: Record<ProgLang, string> = {
+  const expPlaceholder: Record<Exclude<ProgLang, 'bilingual'>, string> = {
     korean:  "Dites-nous ce que vous savez et comment vous l'avez appris…",
     french:  "Cours à l'école, séjour en France, autodidacte — dites-nous tout…",
     english: "Cours, télévision, voyages, autodidacte — dites-nous tout…",
   }
-  const firstGoalPlaceholder: Record<ProgLang, string> = {
-    korean:  'p. ex. Commander un café, me présenter, parler avec ma famille',
-    french:  'p. ex. Commander au restaurant, regarder un film sans sous-titres, parler avec des Québécois',
-    english: 'p. ex. Passer un entretien, regarder une série, parler avec des collègues',
+  const storyPlaceholder: Record<Exclude<ProgLang, 'bilingual'>, string> = {
+    korean:  'Culture, personnes, travail, musique, une histoire personnelle…',
+    french:  'La culture, la musique, les voyages, une connexion personnelle…',
+    english: 'Voyages, travail, culture pop, une connexion personnelle…',
   }
 
   return [
@@ -217,13 +229,99 @@ function buildLanguageSteps(pl: ProgLang): StepConfig[] {
   ]
 }
 
+function buildBilingualLanguageSteps(): StepConfig[] {
+  const enLvl = buildLevelOptions('english')
+  const frLvl = buildLevelOptions('french')
+
+  return [
+    // Step 6 — English level
+    {
+      id: 'english_level', section: 'language',
+      heading: {
+        fr: "Comment décririez-vous votre niveau d'anglais ?",
+        en: 'How would you describe your English right now?',
+        ko: '현재 영어 실력을 어떻게 설명하시겠어요?',
+      },
+      fields: [
+        {
+          key: 'korean_level',   // DB column reused for English level
+          type: 'radio', autoAdvance: true,
+          options: enLvl,
+        },
+      ],
+    },
+
+    // Step 7 — English experience
+    {
+      id: 'english_exp', section: 'language',
+      heading: {
+        fr: "Avez-vous une expérience préalable de l'anglais ?",
+        en: 'Any previous English experience?',
+        ko: '영어를 배운 경험이 있으시나요?',
+      },
+      subheading: {
+        fr: 'Cours, autodidacte, voyages, séries — tout compte.',
+        en: 'Classes, self-study, travel, TV shows — it all counts.',
+        ko: '수업, 독학, 여행, TV 시리즈 — 모든 것이 다 괜찮아요.',
+      },
+      fields: [
+        {
+          key: 'previous_korean_exp',   // DB column reused for English experience
+          type: 'textarea',
+          placeholder: "Cours, télévision, voyages, autodidacte — dites-nous tout…",
+        },
+      ],
+    },
+
+    // Step 8 — French level
+    {
+      id: 'french_level', section: 'language',
+      heading: {
+        fr: 'Comment décririez-vous votre niveau de français ?',
+        en: 'How would you describe your French right now?',
+        ko: '현재 프랑스어 실력을 어떻게 설명하시겠어요?',
+      },
+      fields: [
+        {
+          key: 'french_level_answer',
+          type: 'radio', autoAdvance: true,
+          options: frLvl,
+        },
+      ],
+    },
+
+    // Step 9 — French experience
+    {
+      id: 'french_exp', section: 'language',
+      heading: {
+        fr: 'Avez-vous une expérience préalable du français ?',
+        en: 'Any previous French experience?',
+        ko: '프랑스어를 배운 경험이 있으시나요?',
+      },
+      subheading: {
+        fr: 'Cours, autodidacte, voyages, séries — tout compte.',
+        en: 'Classes, self-study, travel, TV shows — it all counts.',
+        ko: '수업, 독학, 여행, TV 시리즈 — 모든 것이 다 괜찮아요.',
+      },
+      fields: [
+        {
+          key: 'interest_in_korean',   // DB column reused for French experience
+          type: 'textarea',
+          placeholder: "Cours à l'école, séjour en France, autodidacte — dites-nous tout…",
+        },
+      ],
+    },
+  ]
+}
+
 function buildSteps(pl: ProgLang): StepConfig[] {
   const ln = PROG_LANG_NAMES[pl]
 
   const firstGoalPlaceholder: Record<ProgLang, string> = {
-    korean:  'p. ex. Commander un café, me présenter, parler avec ma famille',
-    french:  'p. ex. Commander au restaurant, regarder un film, parler avec des Québécois',
-    english: 'p. ex. Passer un entretien, regarder une série, parler avec des collègues',
+    korean:   'p. ex. Commander un café, me présenter, parler avec ma famille',
+    french:   'p. ex. Commander au restaurant, regarder un film, parler avec des Québécois',
+    english:  'p. ex. Passer un entretien, regarder une série, parler avec des collègues',
+    bilingual: 'p. ex. Parler avec un collègue en anglais, commander en français au resto',
   }
 
   return [

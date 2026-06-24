@@ -2120,9 +2120,10 @@ type AnswerRow = {
 import { detectProgLang, shortLevel, type ProgLang } from './ApplyPage'
 
 const PROG_LANG_LABEL: Record<ProgLang, string> = {
-  korean:  'Korean',
-  french:  'French',
-  english: 'English',
+  korean:   'Korean',
+  french:   'French',
+  english:  'English',
+  bilingual: 'English & French',
 }
 
 function getProgLangFromApp(app: ProgramApplication, tracksMap: Map<string, ProgramTrack>): ProgLang {
