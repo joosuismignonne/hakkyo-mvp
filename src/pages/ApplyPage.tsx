@@ -176,7 +176,7 @@ function buildLanguageSteps(pl: ProgLang): StepConfig[] {
       fields: [
         {
           key: 'korean_level',   // DB column — stores level for any language
-          type: 'radio', autoAdvance: true,
+          type: 'radio', autoAdvance: true, required: true,
           options: buildLevelOptions(pl),
         },
       ],
@@ -198,7 +198,7 @@ function buildLanguageSteps(pl: ProgLang): StepConfig[] {
       fields: [
         {
           key: 'previous_korean_exp',   // DB column — stores exp for any language
-          type: 'textarea',
+          type: 'textarea', required: true,
           placeholder: expPlaceholder[pl],
         },
       ],
@@ -220,7 +220,7 @@ function buildLanguageSteps(pl: ProgLang): StepConfig[] {
       fields: [
         {
           key: 'interest_in_korean',   // DB column — stores motivation for any language
-          type: 'textarea',
+          type: 'textarea', required: true,
           placeholder: storyPlaceholder[pl],
         },
       ],
@@ -244,7 +244,7 @@ function buildBilingualLanguageSteps(): StepConfig[] {
       fields: [
         {
           key: 'korean_level',   // DB column reused for English level
-          type: 'radio', autoAdvance: true,
+          type: 'radio', autoAdvance: true, required: true,
           options: enLvl,
         },
       ],
@@ -266,7 +266,7 @@ function buildBilingualLanguageSteps(): StepConfig[] {
       fields: [
         {
           key: 'previous_korean_exp',   // DB column reused for English experience
-          type: 'textarea',
+          type: 'textarea', required: true,
           placeholder: "Cours, télévision, voyages, autodidacte — dites-nous tout…",
         },
       ],
@@ -283,7 +283,7 @@ function buildBilingualLanguageSteps(): StepConfig[] {
       fields: [
         {
           key: 'french_level_answer',
-          type: 'radio', autoAdvance: true,
+          type: 'radio', autoAdvance: true, required: true,
           options: frLvl,
         },
       ],
@@ -305,7 +305,7 @@ function buildBilingualLanguageSteps(): StepConfig[] {
       fields: [
         {
           key: 'interest_in_korean',   // DB column reused for French experience
-          type: 'textarea',
+          type: 'textarea', required: true,
           placeholder: "Cours à l'école, séjour en France, autodidacte — dites-nous tout…",
         },
       ],
@@ -380,7 +380,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'preferred_contact', type: 'radio', autoAdvance: true,
+          key: 'preferred_contact', type: 'radio', autoAdvance: true, required: true,
           options: [
             { fr: 'Courriel',          en: 'Email',          ko: '이메일'        },
             { fr: 'Téléphone / SMS',   en: 'Phone / SMS',    ko: '전화 / SMS'    },
@@ -410,7 +410,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'languages_spoken', type: 'text',
+          key: 'languages_spoken', type: 'text', required: true,
           placeholder: 'p. ex. Anglais, Français, Mandarin, Coréen',
         },
       ],
@@ -426,7 +426,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'time_in_montreal', type: 'radio', autoAdvance: true,
+          key: 'time_in_montreal', type: 'radio', autoAdvance: true, required: true,
           options: [
             { fr: 'Moins de 6 mois', en: 'Less than 6 months', ko: '6개월 미만'  },
             { fr: '6 mois à 1 an',   en: '6 months – 1 year',  ko: '6개월 ~ 1년' },
@@ -446,7 +446,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'current_stage', type: 'radio',
+          key: 'current_stage', type: 'radio', required: true,
           options: [
             { fr: 'Étudiant(e)',              en: 'Student',                     ko: '학생'              },
             { fr: 'En emploi',                en: 'Working',                     ko: '직장인'            },
@@ -456,7 +456,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
           ],
         },
         {
-          key: 'current_focus', type: 'textarea',
+          key: 'current_focus', type: 'textarea', required: true,
           label: {
             fr: 'Sur quoi vous concentrez-vous en ce moment ?',
             en: 'What are you currently focused on?',
@@ -480,7 +480,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'first_korean_goal', type: 'text',  // DB column — stores first goal for any language
+          key: 'first_korean_goal', type: 'text', required: true,  // DB column — stores first goal for any language
           label: {
             fr: `La première chose que vous souhaitez faire en ${ln.fr} :`,
             en: `The first thing you want to do in ${ln.en}:`,
@@ -489,7 +489,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
           placeholder: firstGoalPlaceholder[pl],
         },
         {
-          key: 'six_month_goal', type: 'textarea',
+          key: 'six_month_goal', type: 'textarea', required: true,
           label: {
             fr: "Où souhaitez-vous en être dans 6 mois ?",
             en: 'Where do you want to be in 6 months?',
@@ -514,7 +514,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'reason_for_joining', type: 'textarea',
+          key: 'reason_for_joining', type: 'textarea', required: true,
           placeholder: "Qu'est-ce qui vous a amené(e) ici ?",
         },
       ],
@@ -530,7 +530,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'biggest_challenge', type: 'textarea',
+          key: 'biggest_challenge', type: 'textarea', required: true,
           label: {
             fr: "Quel est votre plus grand défi dans l'apprentissage d'une langue ?",
             en: "What's your biggest challenge in learning a language?",
@@ -539,7 +539,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
           placeholder: 'Soyez honnête — cela nous aide à mieux vous aider.',
         },
         {
-          key: 'preferred_environment', type: 'radio',
+          key: 'preferred_environment', type: 'radio', required: true,
           label: {
             fr: "Environnement d'apprentissage préféré",
             en: 'Preferred learning environment',
@@ -565,7 +565,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'how_found_hakkyo', type: 'radio', autoAdvance: true,
+          key: 'how_found_hakkyo', type: 'radio', autoAdvance: true, required: true,
           options: [
             { fr: 'Instagram',                                en: 'Instagram',                   ko: '인스타그램'             },
             { fr: "Un(e) ami(e) ou membre de la communauté", en: 'A friend or community member', ko: '친구 또는 커뮤니티 멤버' },
@@ -591,7 +591,7 @@ function buildSteps(pl: ProgLang): StepConfig[] {
       },
       fields: [
         {
-          key: 'what_interested', type: 'textarea',
+          key: 'what_interested', type: 'textarea', required: true,
           placeholder: "Dites-nous ce qui vous a attiré(e)…",
         },
       ],
@@ -871,7 +871,7 @@ export default function ApplyPage() {
   const isReview  = step === TOTAL
   const progress  = isWelcome ? 0 : isReview ? 1 : (step + 1) / TOTAL
 
-  const set = (key: string, value: string) => setDraft(d => ({ ...d, [key]: value }))
+  const set = (key: string, value: string) => { setDraft(d => ({ ...d, [key]: value })); setError('') }
 
   const transition = useCallback((fn: () => void) => {
     setVisible(false)
@@ -879,7 +879,16 @@ export default function ApplyPage() {
   }, [])
 
   function advance() {
-    transition(() => setStep(s => s + 1))
+    const s = STEPS[step]
+    if (s) {
+      const missing = s.fields.filter(f => f.required && !draft[f.key]?.trim())
+      if (missing.length > 0) {
+        setError(lang === 'ko' ? '답변을 입력해 주세요.' : lang === 'fr' ? 'Veuillez remplir ce champ.' : 'Please fill in this field.')
+        return
+      }
+    }
+    setError('')
+    transition(() => setStep(st => st + 1))
     if (firstInputRef.current) firstInputRef.current.blur()
   }
 
@@ -1287,6 +1296,7 @@ export default function ApplyPage() {
             </div>
 
             <div className="mt-10">
+              {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
               <div className="flex items-center gap-4">
                 <button
                   onClick={advance}
