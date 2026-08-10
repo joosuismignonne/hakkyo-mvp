@@ -39,6 +39,16 @@ function NewsletterForm() {
   )
 }
 
+interface Question {
+  name: string
+  label: string
+  hint: string
+  type: string
+  placeholder?: string
+  required?: boolean
+  options?: string[]
+}
+
 function ApplicationForm({ kind, selection }: { kind: 'program' | 'activity' | 'community'; selection: string }) {
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [step, setStep] = useState(0)
@@ -79,7 +89,7 @@ function ApplicationForm({ kind, selection }: { kind: 'program' | 'activity' | '
     { name:"message",   label:"마지막으로 HAKKYO에 전하고 싶은 말이 있나요?", hint:"Final message · 선택",       type:"textarea", placeholder:"궁금한 점이나 함께 나누고 싶은 이야기를 적어주세요" },
   ]
 
-  const questions = [
+  const questions: Question[] = [
     ...commonQuestions,
     ...(kind === 'program' ? programQuestions : kind === 'community' ? communityQuestions : activityQuestions),
     ...(kind === 'program' ? schedulingQuestions : []),
@@ -172,7 +182,7 @@ export default function NewApply() {
     )
   }
 
-  const program = type === 'programs' ? programs.find(p => p.en.toLowerCase().replaceAll(' ', '-') === slug) : undefined
+  const program = type === 'programs' ? programs.find(p => p.en.toLowerCase().replace(/ /g, '-') === slug) : undefined
   const activity = type === 'activities' ? activities.find(a => a.slug === slug) : undefined
   const community = type === 'community'
   const item = program || activity || community

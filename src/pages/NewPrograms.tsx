@@ -52,7 +52,7 @@ function ProgramPass({ lang }: { lang: string }) {
 }
 
 function ProgramDetail({ slug }: { slug: string }) {
-  const p = programs.find(x => x.en.toLowerCase().replaceAll(' ', '-') === slug)
+  const p = programs.find(x => x.en.toLowerCase().replace(/ /g, '-') === slug)
   if (!p) return <NotFound />
 
   return (
