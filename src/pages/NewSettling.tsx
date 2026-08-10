@@ -190,40 +190,33 @@ export default function NewSettling() {
 
       {/* Neighbourhood Comparison */}
       <section className="neighbourhood-guide section-pad">
-        <div className="section-head">
-          <Status>NEIGHBOURHOOD GUIDE</Status>
-          <h2>어느 동네에서<br />살까요?</h2>
-        </div>
+        <div className="section-head"><Status>NEIGHBOURHOOD GUIDE</Status></div>
+        <h2 className="neighbourhood-title">어느 동네에서<br />살까요?</h2>
         <p className="neighbourhood-intro">지역을 선택하면 동네 분위기, 렌트 비용, 불어 환경, 한인 커뮤니티 현황을 확인할 수 있어요.</p>
 
-        <div className="area-selector">
-          {neighbourhoods.map((n, i) => (
-            <button
-              key={n.en}
-              className={`area-dot ${n.dot} ${i === area ? 'selected' : ''}`}
-              style={{ '--dot-color': n.color } as React.CSSProperties}
-              onClick={() => setArea(i)}
-              data-cursor={n.en}
-            >
-              <span>{n.en}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="area-detail" style={{ borderLeft: `4px solid ${nb.color}` }}>
-          <div className="area-detail-head">
-            <div>
-              <small>{nb.vibe}</small>
-              <h3>{nb.name}</h3>
-              <p>{nb.desc}</p>
-            </div>
+        <div className="area-layout">
+          <div className="mini-map">
+            {neighbourhoods.map((n, i) => (
+              <button
+                key={n.en}
+                className={`map-dot ${n.dot} ${i === area ? 'active' : ''}`}
+                onClick={() => setArea(i)}
+              >
+                {n.en}
+              </button>
+            ))}
           </div>
-          <dl className="area-stats">
-            <div><dt>렌트 비용</dt><dd>{nb.rent}</dd></div>
-            <div><dt>불어 환경</dt><dd>{nb.french}</dd></div>
-            <div><dt>도보 생활</dt><dd>{nb.walk}</dd></div>
-            <div><dt>한인 커뮤니티</dt><dd>{nb.korean}</dd></div>
-          </dl>
+          <article style={{ background: nb.color }}>
+            <small>{nb.vibe}</small>
+            <h3>{nb.name}</h3>
+            <p>{nb.desc}</p>
+            <dl>
+              <div><dt>렌트 비용</dt><dd>{nb.rent}</dd></div>
+              <div><dt>불어 환경</dt><dd>{nb.french}</dd></div>
+              <div><dt>도보 생활</dt><dd>{nb.walk}</dd></div>
+              <div><dt>한인 커뮤니티</dt><dd>{nb.korean}</dd></div>
+            </dl>
+          </article>
         </div>
 
         <div className="neighbourhood-table">
