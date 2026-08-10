@@ -1,43 +1,28 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { trackPageView } from './lib/analytics'
-import { LangProvider } from './context/LangContext'
 import { AuthProvider } from './context/AuthContext'
-import AppSidebar from './components/AppSidebar'
-import Footer from './components/Footer'
-import Home from './pages/Home'
-import Sessions from './pages/Sessions'
-import Schedule from './pages/Schedule'
-import Content from './pages/Content'
-import ContentDetail from './pages/ContentDetail'
-import Admin from './pages/Admin'
-import ProgramDetail from './pages/ProgramDetail'
-import ApplyPage from './pages/ApplyPage'
-import BoardDetail from './pages/BoardDetail'
-import CommunityDetail from './pages/CommunityDetail'
+import { supabase } from './lib/supabase'
+import SiteDetails from './components/SiteDetails'
+import SiteHeader from './components/SiteHeader'
+import SiteFooter from './components/SiteFooter'
+import NewHome from './pages/NewHome'
+import NewPrograms from './pages/NewPrograms'
+import NewActivities from './pages/NewActivities'
+import NewSchool from './pages/NewSchool'
+import NewGallery from './pages/NewGallery'
+import NewSettling from './pages/NewSettling'
+import NewBoard from './pages/NewBoard'
+import NewQna from './pages/NewQna'
+import NewApply from './pages/NewApply'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Account from './pages/Account'
 import ResetPassword from './pages/ResetPassword'
-import RequireAuth from './components/RequireAuth'
+import Admin from './pages/Admin'
 import RequireAdmin from './components/RequireAdmin'
-import BoardMemoryWidget from './components/BoardMemoryWidget'
-import Radar from './pages/Radar'
-import ResumeMap from './pages/ResumeMap'
-import Phrases from './pages/Phrases'
-import Arriving from './pages/Arriving'
-import Settling from './pages/Settling'
-import SettlingArticle from './pages/SettlingArticle'
-import LanguageLab from './pages/LanguageLab'
-import { supabase } from './lib/supabase'
 
-function RedirectContentId() {
-  const { id } = useParams<{ id: string }>()
-  return <Navigate to={`/news/${id}`} replace />
-}
-
-// Fires a GA4 page_view on every route change.
 function RouteTracker() {
   const location = useLocation()
   useEffect(() => {
@@ -46,7 +31,6 @@ function RouteTracker() {
   return null
 }
 
-// Listens for Supabase PASSWORD_RECOVERY event and redirects to the reset form.
 function AuthListener() {
   const navigate = useNavigate()
   useEffect(() => {
@@ -61,53 +45,54 @@ function AuthListener() {
   return null
 }
 
+function PublicLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <SiteDetails />
+      <SiteHeader />
+      <main>{children}</main>
+      <SiteFooter />
+    </>
+  )
+}
+
 export default function App() {
   return (
     <AuthProvider>
-    <LangProvider>
       <BrowserRouter>
-        <div className="min-h-screen flex bg-white text-gray-900 font-sans">
-          <RouteTracker />
-          <AuthListener />
-          <AppSidebar />
-          <div className="flex-1 min-w-0 flex flex-col pb-16 lg:pb-0">
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/sessions" element={<Sessions />} />
-              <Route path="/programs" element={<Sessions />} />
-              <Route path="/programs/:id" element={<ProgramDetail />} />
-              <Route path="/apply/:id" element={<ApplyPage />} />
-              <Route path="/board" element={<Schedule />} />
-              <Route path="/board/:id" element={<BoardDetail />} />
-              <Route path="/community/:id" element={<CommunityDetail />} />
-              <Route path="/news" element={<Content />} />
-              <Route path="/news/:id" element={<ContentDetail />} />
-              {/* Backward-compat redirects */}
-              <Route path="/schedule" element={<Navigate to="/board" replace />} />
-              <Route path="/content" element={<Navigate to="/news" replace />} />
-              <Route path="/content/:id" element={<RedirectContentId />} />
-              <Route path="/arriving" element={<Arriving />} />
-              <Route path="/settling" element={<Settling />} />
-              <Route path="/settling/:slug" element={<SettlingArticle />} />
-              <Route path="/radar" element={<Radar />} />
-              <Route path="/resume-map" element={<ResumeMap />} />
-              <Route path="/phrases" element={<Phrases />} />
-              <Route path="/language-lab" element={<LanguageLab />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/admin/*" element={<RequireAdmin><Admin /></RequireAdmin>} />
-            </Routes>
-          </main>
-          <Footer />
-          </div>
-          <BoardMemoryWidget />
-        </div>
+        <RouteTracker />
+        <AuthListener />
+        <Routes>
+          {/* Public site */}
+          <Route path="/" element={<PublicLayout><NewHome /></PublicLayout>} />
+          <Route path="/programs" element={<PublicLayout><NewPrograms /></PublicLayout>} />
+          <Route path="/programs/:slug" element={<PublicLayout><NewPrograms /></PublicLayout>} />
+          <Route path="/activities" element={<PublicLayout><NewActivities /></PublicLayout>} />
+          <Route path="/activities/:slug" element={<PublicLayout><NewActivities /></PublicLayout>} />
+          <Route path="/school" element={<PublicLayout><NewSchool /></PublicLayout>} />
+          <Route path="/gallery" element={<PublicLayout><NewGallery /></PublicLayout>} />
+          <Route path="/settling" element={<PublicLayout><NewSettling /></PublicLayout>} />
+          <Route path="/board" element={<PublicLayout><NewBoard /></PublicLayout>} />
+          <Route path="/qna" element={<PublicLayout><NewQna /></PublicLayout>} />
+          <Route path="/apply/:type/:slug" element={<PublicLayout><NewApply /></PublicLayout>} />
+          <Route path="/apply/news" element={<PublicLayout><NewApply /></PublicLayout>} />
+
+          {/* Auth pages (no public layout) */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin/*" element={<RequireAdmin><Admin /></RequireAdmin>} />
+
+          {/* Legacy redirects */}
+          <Route path="/sessions" element={<Navigate to="/programs" replace />} />
+          <Route path="/arriving" element={<Navigate to="/settling" replace />} />
+          <Route path="/news" element={<Navigate to="/board" replace />} />
+          <Route path="/schedule" element={<Navigate to="/board" replace />} />
+          <Route path="/community/:id" element={<Navigate to="/" replace />} />
+        </Routes>
         <Analytics />
       </BrowserRouter>
-    </LangProvider>
     </AuthProvider>
   )
 }
