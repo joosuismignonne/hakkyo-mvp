@@ -21,7 +21,7 @@
  * ──────────
  *   'program'  → navigates to /programs
  *   'board'    → navigates to /board
- *   'archive'  → navigates to /news/:id
+ *   'archive'  → legacy type; News was merged into Board, navigates to /board
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -59,8 +59,10 @@ const LEGACY_KEYS: Array<[legacyKey: string, newKey: string]> = [
 
 function normaliseUrl(url: string): string {
   if (url === '/schedule') return '/board'
-  if (url === '/content')  return '/news'
-  if (url.startsWith('/content/')) return '/news/' + url.slice('/content/'.length)
+  // News was merged into Board — individual article pages no longer exist,
+  // so legacy content/news links (list or per-article) fall back to /board.
+  if (url === '/content' || url === '/news') return '/board'
+  if (url.startsWith('/content/') || url.startsWith('/news/')) return '/board'
   return url
 }
 

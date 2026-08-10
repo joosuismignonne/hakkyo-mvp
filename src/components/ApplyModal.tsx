@@ -185,7 +185,7 @@ export default function ApplyModal({ onClose, preselectedTrackId, defaultType, l
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative z-10 w-full sm:max-w-[520px] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl
+      <div className="relative z-10 w-full sm:max-w-[520px] bg-white rounded-t-xl sm:rounded-xl sm:border sm:border-gray-100 shadow-lg
                       flex flex-col max-h-[94vh] sm:max-h-[88vh]">
 
         {/* Header */}

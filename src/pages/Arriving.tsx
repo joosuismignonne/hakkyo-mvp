@@ -1,224 +1,13 @@
-/**
- * First Steps — HAKKYO Montréal Starter Kit
- *
- * Tone: "a friend who arrived before you." Neutral options, never prescriptive.
- * Each of 8 tabs is a complete decision page with 7 sections + sticky sidebar.
- * i18n: every visible string through tri(). Three languages inline (ko/en/fr).
- */
-import React, { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { useLang } from '../context/LangContext'
+import React from 'react'
+import { tri, type Tri, type JourneyStep } from '../types/journey'
+import JourneyPage from '../components/JourneyPage'
 
-// ─── i18n types + helper ──────────────────────────────────────────────────────
+const PROGRESS_KEY = 'hakkyo_arriving_settling_v1'
 
-type Tri = { ko: string; en: string; fr: string }
-function tri(obj: Tri, lang: string): string {
-  return lang === 'ko' ? obj.ko : lang === 'fr' ? obj.fr : obj.en
-}
+// TabContent is an alias kept for the data declarations below
+type TabContent = JourneyStep
 
-const PROGRESS_KEY = 'hakkyo_firststeps'
-
-// ─── Data types ───────────────────────────────────────────────────────────────
-
-interface HeroData {
-  title: Tri
-  sub: Tri
-  when: Tri
-  cost: Tri
-  time: Tri
-  canBeforeArrival: Tri
-}
-
-interface OptionData {
-  name: string
-  sub: Tri
-  topPick?: boolean
-  meta: Array<{ icon: string; label: Tri }>
-  worksFor: Tri[]
-  worthKnowing: Tri[]
-  recommendNote?: Tri
-}
-
-interface CompareRow {
-  name: string
-  cols: Array<string | boolean>
-}
-
-interface CompareTable {
-  headers: Tri[]
-  rows: CompareRow[]
-}
-
-interface CommunityNote {
-  flag: string
-  person: Tri
-  text: Tri
-  likes: number
-}
-
-interface HelpLink {
-  label: Tri
-  url: string
-  domain: string
-}
-
-interface FAQItem {
-  q: Tri
-  a: Tri
-}
-
-interface SidebarData {
-  quickFacts: Array<{ label: Tri; value: Tri }>
-  timeline: Tri
-  nextStepId?: string
-  nextStepLabel?: Tri
-}
-
-interface CompletionCard {
-  headline: Tri
-  body: Tri
-}
-
-interface TabContent {
-  id: string
-  label: Tri
-  hero: HeroData
-  options: OptionData[]
-  compareTable: CompareTable
-  communityNotes: CommunityNote[]
-  helpLinks: HelpLink[]
-  faq: FAQItem[]
-  sidebar: SidebarData
-  completionCard: CompletionCard
-}
-
-// ─── Reusable components ───────────────────────────────────────────────────────
-
-function Hero({ data, lang }: { data: HeroData; lang: string }) {
-  return (
-    <div className="bg-gray-50 rounded-xl p-5 mb-8">
-      <p className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">
-        {lang==='ko'?'이게 뭔가요?':lang==='fr'?"Qu'est-ce que c'est?":'What is this?'}
-      </p>
-      <h2 className="text-[20px] font-light text-gray-900 leading-snug mb-2">{tri(data.title, lang)}</h2>
-      <p className="text-[13px] text-gray-500 leading-relaxed mb-4">{tri(data.sub, lang)}</p>
-      <div className="flex flex-wrap gap-2">
-        {[
-          { icon: 'calendar', text: tri(data.when, lang) },
-          { icon: 'currency-dollar', text: tri(data.cost, lang) },
-          { icon: 'clock', text: tri(data.time, lang) },
-          { icon: 'plane', text: tri(data.canBeforeArrival, lang) },
-        ].map((c, i) => (
-          <span key={i} className="inline-flex items-center gap-1.5 text-[11px] text-gray-500 px-2.5 py-1 bg-white border border-gray-200 rounded-full">
-            <i className={`ti ti-${c.icon} text-[12px]`} aria-hidden="true" />{c.text}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function OptionCard({ opt, lang }: { opt: OptionData; lang: string }) {
-  return (
-    <div className={`bg-white rounded-xl p-5 ${opt.topPick ? 'border-[1.5px] border-blue-200' : 'border border-gray-200'}`}>
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div>
-          <p className="text-[14px] font-medium text-gray-900">{opt.name}</p>
-          <p className="text-[12px] text-gray-400 mt-0.5">{tri(opt.sub, lang)}</p>
-        </div>
-        {opt.topPick && <span className="flex-shrink-0 text-[9px] font-bold tracking-wider uppercase px-2 py-1 rounded bg-blue-50 text-blue-700">
-          {lang==='ko'?'추천':lang==='fr'?'Recommandé':'Top pick'}
-        </span>}
-      </div>
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {opt.meta.map((m, i) => (
-          <span key={i} className="inline-flex items-center gap-1 text-[10px] text-gray-500 px-2 py-0.5 bg-gray-50 rounded-full border border-gray-100">
-            <i className={`ti ti-${m.icon} text-[11px]`} aria-hidden="true" />{tri(m.label, lang)}
-          </span>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-[9px] font-bold tracking-wider uppercase text-green-700 mb-2">
-            {lang==='ko'?'이런 분께 적합':lang==='fr'?'Convient si':'Works well for'}
-          </p>
-          {opt.worksFor.map((w, i) => <p key={i} className="text-[11px] text-gray-600 leading-snug mb-1">{tri(w, lang)}</p>)}
-        </div>
-        <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-[9px] font-bold tracking-wider uppercase text-gray-400 mb-2">
-            {lang==='ko'?'알아두면 좋은 점':lang==='fr'?'À savoir':'Worth knowing'}
-          </p>
-          {opt.worthKnowing.map((w, i) => <p key={i} className="text-[11px] text-gray-600 leading-snug mb-1">{tri(w, lang)}</p>)}
-        </div>
-      </div>
-      {opt.recommendNote && (
-        <div className="mt-3 border-l-2 border-blue-200 pl-3">
-          <p className="text-[11px] text-gray-500 leading-relaxed">
-            <span className="font-medium text-gray-700">
-              {lang==='ko'?'많은 분들의 경험: ':lang==='fr'?'Ce que font beaucoup : ':'A common pattern: '}
-            </span>
-            {tri(opt.recommendNote, lang)}
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CompareTableComp({ table, lang }: { table: CompareTable; lang: string }) {
-  return (
-    <div className="overflow-x-auto border border-gray-200 rounded-xl">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            {table.headers.map((h, i) => (
-              <th key={i} className="text-left text-[9px] font-bold tracking-[0.08em] uppercase text-gray-400 px-4 py-3 border-b border-gray-100 whitespace-nowrap bg-gray-50/50">
-                {tri(h, lang)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {table.rows.map((row, ri) => (
-            <tr key={ri} className="hover:bg-gray-50/50">
-              <td className="px-4 py-3 text-[12px] font-medium text-gray-900 border-b border-gray-100 whitespace-nowrap">{row.name}</td>
-              {row.cols.map((c, ci) => (
-                <td key={ci} className="px-4 py-3 text-[12px] text-gray-500 border-b border-gray-100">
-                  {typeof c === 'boolean'
-                    ? c
-                      ? <i className="ti ti-check text-green-600 text-[13px]" aria-label="yes" />
-                      : <i className="ti ti-x text-gray-300 text-[13px]" aria-label="no" />
-                    : c}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function CommunityNotes({ notes, lang }: { notes: CommunityNote[]; lang: string }) {
-  return (
-    <div className="flex flex-col gap-3">
-      {notes.map((n, i) => (
-        <div key={i} className="bg-gray-50 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[14px]">{n.flag}</span>
-            <span className="text-[10px] text-gray-400">{tri(n.person, lang)}</span>
-          </div>
-          <p className="text-[12px] text-gray-700 leading-relaxed italic mb-2">"{tri(n.text, lang)}"</p>
-          <div className="flex items-center gap-1 text-[10px] text-gray-400">
-            <i className="ti ti-thumb-up text-[11px]" aria-hidden="true" />{n.likes}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Housing platform search tiles ────────────────────────────────────────────
+// ─── Housing platform search tiles (Arriving-only) ───────────────────────────
 
 interface SearchPlatform {
   name: string
@@ -395,84 +184,6 @@ function HousingListings({ lang }: { lang: string }) {
           </a>
         ))}
       </div>
-    </div>
-  )
-}
-
-// ─── Help links ───────────────────────────────────────────────────────────────
-
-function HelpLinks({ links, lang }: { links: HelpLink[]; lang: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      {links.map((l, i) => {
-        const cls = "flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg border border-gray-100 text-[12px] text-gray-600 hover:bg-gray-100 transition-colors no-underline"
-        const icon = l.url.startsWith('/') ? 'ti-arrow-right' : 'ti-external-link'
-        const inner = (
-          <>
-            <i className={`ti ${icon} text-[14px] text-gray-400`} aria-hidden="true" />
-            <span className="flex-1">{tri(l.label, lang)}</span>
-            <span className="text-[10px] text-gray-400">{l.domain}</span>
-          </>
-        )
-        return l.url.startsWith('/') ? (
-          <Link key={i} to={l.url} className={cls}>{inner}</Link>
-        ) : (
-          <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
-        )
-      })}
-    </div>
-  )
-}
-
-function FAQ({ items, lang }: { items: FAQItem[]; lang: string }) {
-  const [open, setOpen] = React.useState<number | null>(0)
-  return (
-    <div className="flex flex-col gap-2">
-      {items.map((item, i) => (
-        <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
-          <button
-            onClick={() => setOpen(open === i ? null : i)}
-            className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-[12px] font-medium text-gray-800 bg-white hover:bg-gray-50 transition-colors"
-          >
-            {tri(item.q, lang)}
-            <i className={`ti ti-chevron-down text-[14px] text-gray-400 flex-shrink-0 transition-transform ${open === i ? 'rotate-180' : ''}`} aria-hidden="true" />
-          </button>
-          {open === i && (
-            <div className="px-4 pb-4 pt-1 text-[12px] text-gray-500 leading-relaxed bg-gray-50/50">
-              {tri(item.a, lang)}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function AskCommunity({ lang }: { lang: string }) {
-  return (
-    <div className="bg-gray-50 rounded-xl p-5 text-center">
-      <p className="text-[13px] font-medium text-gray-800 mb-1">
-        {lang==='ko'?'더 궁금한 것이 있으신가요?':lang==='fr'?'Une question spécifique?':'Have a specific question?'}
-      </p>
-      <p className="text-[12px] text-gray-400 leading-relaxed mb-4 max-w-[360px] mx-auto">
-        {lang==='ko'
-          ? '같은 과정을 먼저 경험한 분들이 HAKKYO 커뮤니티에서 기다리고 있어요.'
-          : lang==='fr'
-          ? "Des personnes qui ont vécu la même expérience vous attendent dans la communauté HAKKYO."
-          : 'People who already went through this are in the HAKKYO community and happy to help.'}
-      </p>
-      <a href="/board" className="inline-block px-4 py-2 bg-gray-900 text-white text-[12px] font-medium rounded-lg hover:bg-gray-700 transition-colors no-underline">
-        {lang==='ko'?'커뮤니티에 질문하기':lang==='fr'?'Poser une question':'Ask the community'}
-      </a>
-    </div>
-  )
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 mb-4">
-      <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 whitespace-nowrap">{children}</span>
-      <div className="flex-1 h-px bg-gray-100" />
     </div>
   )
 }
@@ -922,147 +633,6 @@ const TRANSIT_TAB: TabContent = {
   completionCard: {
     headline: { ko: 'OPUS 하나로 도시 전체를 이동합니다.', en: 'One OPUS card. The whole city.', fr: 'Une carte OPUS. Toute la ville.' },
     body: { ko: '지하철, 버스, 어디든 가세요. 몬트리올은 교통으로 연결되어 있어요.', en: 'Metro, bus, anywhere. Montréal is more connected than it looks.', fr: 'Métro, bus, partout. Montréal est plus connectée qu\'elle n\'y paraît.' },
-  },
-}
-
-// ─── TAB 4: Housing ───────────────────────────────────────────────────────────
-
-const HOUSING_TAB: TabContent = {
-  id: 'housing',
-  label: { ko: '주거', en: 'Housing', fr: 'Logement' },
-  hero: {
-    title: {
-      ko: '도착 직후 머물 곳 찾기',
-      en: 'Finding somewhere to stay when you first arrive',
-      fr: 'Trouver où loger à votre arrivée',
-    },
-    sub: {
-      ko: '대부분 영구 아파트를 찾는 동안 첫 2–4주는 임시 거처에 머물러요. 아파트 찾기는 현지에서 직접 보는 게 훨씬 효과적이라, 원격으로 찾는 건 더 어려워요.',
-      en: 'Most people stay in temporary housing for the first 2–4 weeks while searching for a permanent apartment. Apartment hunting is much more effective in person — remote searches are harder.',
-      fr: "La plupart logent en hébergement temporaire 2–4 semaines en cherchant un appartement permanent. La recherche est plus efficace sur place — à distance, c'est plus dur.",
-    },
-    when: { ko: '도착 전 예약 권장', en: 'Book before you arrive', fr: "Réserver avant d'arriver" },
-    cost: { ko: '2주에 $400–1,400', en: '$400–1,400 for 2 weeks', fr: '400–1 400$ pour 2 semaines' },
-    time: { ko: '2–4주 임시 거처, 아파트 구하는데 보통 2–4주 더', en: '2–4 weeks temp housing, then 2–4 weeks to find an apartment', fr: '2–4 semaines temporaire, puis 2–4 semaines pour trouver' },
-    canBeforeArrival: { ko: '네, 도착 전 예약 가능', en: 'Yes, book before arriving', fr: "Oui, réserver avant d'arriver" },
-  },
-  options: [
-    {
-      name: 'Airbnb / Short-term rental',
-      sub: { ko: '독립된 공간, 유연한 날짜', en: 'Private space, flexible dates', fr: 'Espace privé, dates flexibles' },
-      topPick: true,
-      meta: [
-        { icon: 'currency-dollar', label: { ko: '2주에 ~$800–1,400', en: '~$800–1,400 for 2 weeks', fr: '~800–1 400$ / 2 sem.' } },
-        { icon: 'plane', label: { ko: '도착 전 예약', en: 'Book before arrival', fr: 'Réserver avant' } },
-        { icon: 'building-bank', label: { ko: '은행용 주소 사용 가능', en: 'Address usable for banking', fr: 'Adresse utilisable en banque' } },
-      ],
-      worksFor: [
-        { ko: '독립된 공간을 원하는 분', en: 'Those wanting private space', fr: 'Ceux qui veulent un espace privé' },
-        { ko: '은행 계좌에 주소를 쓰려는 분', en: 'Using address for bank account', fr: "Adresse pour le compte bancaire" },
-        { ko: '연장 유연성이 필요한 분', en: 'Flexibility to extend', fr: 'Flexibilité de prolonger' },
-      ],
-      worthKnowing: [
-        { ko: '호스텔보다 비쌈', en: 'More expensive than hostels', fr: 'Plus cher que les auberges' },
-        { ko: '일부 집주인은 임대 신청에 에어비앤비 주소를 안 받음', en: "Some landlords don't accept Airbnb for lease applications", fr: "Certains proprios refusent l'adresse Airbnb pour un bail" },
-      ],
-      recommendNote: {
-        ko: '많은 분들이 은행 계좌를 열 때 에어비앤비 주소를 써요. 예약 확인 이메일이 보통 주소 증빙으로 인정돼요.',
-        en: 'Many people use their Airbnb address when opening a bank account. The confirmation email is usually accepted as proof of address.',
-        fr: "Beaucoup utilisent leur adresse Airbnb pour ouvrir un compte. Le courriel de confirmation sert souvent de preuve d'adresse.",
-      },
-    },
-    {
-      name: 'Hostel / Student residence',
-      sub: { ko: '저렴한 옵션', en: 'Budget option', fr: 'Option économique' },
-      meta: [
-        { icon: 'currency-dollar', label: { ko: '~$35–60/박', en: '~$35–60/night', fr: '~35–60$/nuit' } },
-      ],
-      worksFor: [
-        { ko: '예산을 아끼는 분', en: 'Budget-conscious', fr: 'Petit budget' },
-        { ko: '다른 이민자를 만나고 싶은 분', en: 'Meet other newcomers', fr: "Rencontrer d'autres arrivants" },
-        { ko: '1–2주', en: '1–2 weeks', fr: '1–2 semaines' },
-      ],
-      worthKnowing: [
-        { ko: '공용 공간', en: 'Shared spaces', fr: 'Espaces partagés' },
-        { ko: '공식 서류용 주소로 안 받힐 수 있음', en: 'Address may not be accepted for official documents', fr: "L'adresse peut ne pas être acceptée officiellement" },
-      ],
-    },
-    {
-      name: 'Facebook / Kijiji Sublet',
-      sub: { ko: '가구 포함 방', en: 'Furnished rooms', fr: 'Chambres meublées' },
-      meta: [
-        { icon: 'currency-dollar', label: { ko: '~$700–1,200/월', en: '~$700–1,200/mo', fr: '~700–1 200$/mois' } },
-      ],
-      worksFor: [
-        { ko: '더 긴 탐색 (1–2개월)', en: 'Longer searches (1–2 months)', fr: 'Recherches plus longues (1–2 mois)' },
-        { ko: '에어비앤비보다 저렴하게', en: 'Lower cost than Airbnb', fr: "Moins cher qu'Airbnb" },
-      ],
-      worthKnowing: [
-        { ko: '원격으로 잡기 어려움', en: 'Harder to arrange remotely', fr: 'Difficile à distance' },
-        { ko: '꼼꼼히 확인 — 일부는 사기', en: 'Vet carefully — some listings are scams', fr: 'Vérifiez bien — certaines annonces sont des arnaques' },
-      ],
-    },
-    {
-      name: 'School Residence / Homestay',
-      sub: { ko: '학교를 통해', en: 'Through your school', fr: 'Via votre école' },
-      meta: [
-        { icon: 'currency-dollar', label: { ko: '경우에 따라 다름', en: 'Varies', fr: 'Variable' } },
-      ],
-      worksFor: [
-        { ko: '주거 서비스가 있는 재학생', en: 'Enrolled students with housing services', fr: 'Étudiants avec services de logement' },
-        { ko: '지원받는 정착을 원하는 분', en: 'Want a supported landing', fr: 'Veulent une arrivée encadrée' },
-      ],
-      worthKnowing: [
-        { ko: '자리가 한정적 — 일찍 신청', en: 'Limited availability — apply early', fr: 'Places limitées — postulez tôt' },
-      ],
-    },
-  ],
-  compareTable: {
-    headers: [
-      { ko: '옵션', en: 'Option', fr: 'Option' },
-      { ko: '2주 비용', en: '2-week cost', fr: 'Coût 2 sem.' },
-      { ko: '주소 증빙', en: 'Address proof', fr: "Preuve d'adresse" },
-      { ko: '미리 예약', en: 'Book ahead', fr: 'Réserver tôt' },
-      { ko: '적합한 분', en: 'Best for', fr: 'Idéal pour' },
-    ],
-    rows: [
-      { name: 'Airbnb', cols: ['~$800–1,400', true, true, 'Privacy, banking'] },
-      { name: 'Hostel', cols: ['~$400–600', false, true, 'Budget newcomers'] },
-      { name: 'Sublet (Facebook)', cols: ['~$600–900', true, false, 'Longer searches'] },
-      { name: 'School housing', cols: ['Varies', true, true, 'Enrolled students'] },
-    ],
-  },
-  communityNotes: [
-    { flag: '🇰🇷', person: { ko: '학생 · 2023년 8월', en: 'Student Aug 2023', fr: 'Étudiant août 2023' }, text: { ko: '오기 전에 에어비앤비를 3주 예약했어요. 도착 3일째에 그 주소로 은행 계좌를 열었고 문제없었어요.', en: 'I booked an Airbnb for 3 weeks before coming. Used that address for my bank account on day 3. Worked fine.', fr: "J'ai réservé un Airbnb 3 semaines avant. J'ai utilisé l'adresse pour mon compte au 3e jour. Sans souci." }, likes: 26 },
-    { flag: '🇰🇷', person: { ko: '워킹홀리데이 · 2023년 11월', en: 'Working Holiday Nov 2023', fr: 'PVT nov. 2023' }, text: { ko: '호스텔에 일주일 묵으면서 페이스북에서 서블렛을 찾았어요. 다른 여행자도 만나고 빨리 적응했어요.', en: 'I stayed at a hostel for a week and found a sublet on Facebook. Met other travellers and got oriented quickly.', fr: "J'ai logé une semaine en auberge et trouvé un sous-loc sur Facebook. Rencontré d'autres voyageurs, vite orienté." }, likes: 17 },
-    { flag: '🇫🇷', person: { ko: '프랑스 학생', en: 'French Student', fr: 'Étudiant français' }, text: { ko: '학교에 홈스테이 프로그램이 있었어요. 더 비쌌지만 첫 달에 현지 호스트가 있는 게 정말 큰 도움이었어요.', en: 'My school had a homestay program. More expensive but having a local host the first month made a real difference.', fr: "Mon école avait un programme d'hébergement. Plus cher, mais avoir un hôte local le premier mois a tout changé." }, likes: 13 },
-  ],
-  helpLinks: [
-    { label: { ko: 'Airbnb 몬트리올', en: 'Airbnb Montréal', fr: 'Airbnb Montréal' }, url: 'https://www.airbnb.ca/montreal', domain: 'airbnb.ca' },
-    { label: { ko: 'Kijiji 몬트리올 임대', en: 'Kijiji Montréal rentals', fr: 'Kijiji locations Montréal' }, url: 'https://www.kijiji.ca', domain: 'kijiji.ca' },
-    { label: { ko: 'Facebook Marketplace', en: 'Facebook Marketplace', fr: 'Facebook Marketplace' }, url: 'https://www.facebook.com/marketplace', domain: 'facebook.com' },
-    { label: { ko: 'Concordia 교외 주거', en: 'Concordia off-campus housing', fr: 'Concordia logement hors campus' }, url: 'https://www.concordia.ca/students/housing.html', domain: 'concordia.ca' },
-  ],
-  faq: [
-    { q: { ko: '영구 아파트 없이 은행 계좌 주소를 어떻게 증빙하나요?', en: 'How do I prove my address for a bank account without a permanent apartment?', fr: "Comment prouver mon adresse sans appartement permanent?" }, a: { ko: '에어비앤비 예약 확인 이메일이 대부분 은행에서 주소 증빙으로 인정돼요. 호스텔 확인서도 될 수 있으니 미리 전화하세요.', en: 'An Airbnb confirmation email is accepted as proof of address at most banks. A hostel confirmation may also work — call ahead to confirm.', fr: "Le courriel de confirmation Airbnb est accepté dans la plupart des banques. Une confirmation d'auberge peut aussi marcher — appelez avant." } },
-    { q: { ko: '아파트를 찾기 가장 좋은 시기는 언제인가요?', en: 'When is the best time to look for apartments?', fr: 'Quand chercher un appartement?' }, a: { ko: '4–6월에 매물이 가장 많아요. 7월 1일은 몬트리올의 비공식 "이사의 날"로 대부분의 임대가 바뀌어요. 1월은 더 어려워요.', en: 'April–June has the most listings. July 1 is Montréal\'s unofficial "moving day" when most leases turn over. Searching in January is harder.', fr: "Avril–juin offre le plus d'annonces. Le 1er juillet est le « jour du déménagement » à Montréal. Janvier est plus difficile." } },
-    { q: { ko: '페이스북에서 집을 찾아도 안전한가요?', en: 'Is it safe to find housing on Facebook?', fr: 'Est-ce sûr de chercher sur Facebook?' }, a: { ko: '"Logements/Appartements Montréal" 같은 그룹을 많이 써요. 돈을 보내기 전에 직접 보거나 영상통화로 확인하세요.', en: 'Facebook groups like "Logements/Appartements Montréal" are widely used. Arrange to see the place (or video call) before sending any money.', fr: "Des groupes comme « Logements/Appartements Montréal » sont très utilisés. Visitez (ou appel vidéo) avant d'envoyer de l'argent." } },
-    { q: { ko: '첫 달과 마지막 달 월세로 얼마를 잡아야 하나요?', en: "How much should I budget for first and last month's rent?", fr: 'Combien prévoir pour le premier et dernier mois?' }, a: { ko: '퀘벡 집주인은 법적으로 마지막 달 월세를 요구할 수 없어요. 첫 달만 내는 게 일반적이에요.', en: "Québec landlords cannot legally ask for last month's rent. First month only is standard.", fr: "Au Québec, le proprio ne peut légalement exiger le dernier mois. Le premier mois seul est la norme." } },
-  ],
-  sidebar: {
-    quickFacts: [
-      { label: { ko: '에어비앤비 2주', en: 'Airbnb 2 weeks', fr: 'Airbnb 2 sem.' }, value: { ko: '~$800–1,400', en: '~$800–1,400', fr: '~800–1 400$' } },
-      { label: { ko: '호스텔 2주', en: 'Hostel 2 weeks', fr: 'Auberge 2 sem.' }, value: { ko: '~$400–600', en: '~$400–600', fr: '~400–600$' } },
-      { label: { ko: '이사의 날', en: 'Moving day', fr: 'Jour du déménagement' }, value: { ko: '7월 1일', en: 'July 1', fr: '1er juillet' } },
-      { label: { ko: '임대 시작', en: 'Lease start', fr: 'Début du bail' }, value: { ko: '보통 7월 1일', en: 'Typically July 1', fr: 'Souvent 1er juillet' } },
-    ],
-    timeline: { ko: '도착 전 에어비앤비 2–3주 예약. 도착 후 2–4주 내에 장기 아파트 계약.', en: 'Book 2–3 weeks of Airbnb before arriving. Find a permanent apartment within 2–4 weeks of arrival.', fr: "Réservez 2–3 semaines sur Airbnb avant d'arriver. Trouvez un appartement permanent dans les 2–4 semaines." },
-    nextStepId: 'insurance',
-    nextStepLabel: { ko: '세입자 보험 가입하기', en: 'Get tenant insurance', fr: "Souscrire une assurance locataire" },
-  },
-  completionCard: {
-    headline: { ko: '집 구하기, 알고 시작하면 다릅니다.', en: 'House hunting is easier when you know the rules.', fr: 'Chercher un logement, ça change quand on connaît les règles.' },
-    body: { ko: 'Kijiji, DuProprio, 한인 그룹 — 어디서 어떻게 찾는지 알았으니 이제 직접 찾아볼 차례예요.', en: 'Kijiji, DuProprio, Korean Facebook groups — you know where to look. Now go find it.', fr: 'Kijiji, DuProprio, groupes coréens — vous savez où chercher. Maintenant, allez-y.' },
   },
 }
 
@@ -2205,9 +1775,945 @@ const HYDRO_TAB: TabContent = {
   },
 }
 
+// ─── Settling-in steps (merged from former /settling page) ───────────────────
+
+// ─── Step 1: Budget ───────────────────────────────────────────────────────────
+
+const BUDGET_STEP: JourneyStep = {
+  id: 'budget',
+  label: { ko: '예산', en: 'Budget', fr: 'Budget' },
+  hero: {
+    title: {
+      ko: '몬트리올 주거 예산 잡기',
+      en: 'Setting a Montréal housing budget',
+      fr: 'Établir un budget logement à Montréal',
+    },
+    sub: {
+      ko: '몬트리올 임대료는 캐나다 주요 도시 중 가장 낮은 편이에요. 하지만 동네, 방 크기, 임대 유형에 따라 격차가 크기 때문에 먼저 현실적인 예산을 잡는 게 첫걸음이에요.',
+      en: "Montréal has some of the lowest rents of any major Canadian city — but the range is wide depending on neighbourhood, size, and type. Setting a realistic budget is your first move.",
+      fr: "Montréal a l'un des loyers les plus bas parmi les grandes villes canadiennes — mais l'écart est grand selon le quartier, la taille et le type. Établir un budget réaliste est votre premier pas.",
+    },
+    when: { ko: '집 찾기 전 가장 먼저', en: 'Before you start looking', fr: 'Avant de commencer à chercher' },
+    cost: { ko: '비용 없음 (계획만)', en: 'No cost (planning only)', fr: 'Aucun coût (planification seulement)' },
+    time: { ko: '30분–1시간', en: '30 min–1 hour', fr: '30 min–1 heure' },
+    canBeforeArrival: { ko: '네, 한국에서 가능', en: 'Yes, from home country', fr: 'Oui, depuis votre pays' },
+  },
+  options: [
+    {
+      name: '콜로카시옹 (Colocation)',
+      sub: {
+        ko: '방 하나를 빌려 다른 사람과 거실·주방 공유',
+        en: 'Rent one bedroom, share common areas with housemates',
+        fr: 'Louer une chambre, partager espaces communs avec colocataires',
+      },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$600–950/월', en: '$600–950/mo', fr: '600–950$/mois' } },
+        { icon: 'users', label: { ko: '2–4명과 공유', en: 'Share with 2–4 people', fr: 'Partager avec 2–4 personnes' } },
+        { icon: 'bolt', label: { ko: '수도·전기 보통 포함', en: 'Utilities often included', fr: 'Services souvent inclus' } },
+      ],
+      worksFor: [
+        { ko: '예산이 빡빡한 분', en: 'Tight budget', fr: 'Budget serré' },
+        { ko: '도착 직후 빠른 정착을 원하는 분', en: 'Fast move-in needed', fr: 'Emménagement rapide souhaité' },
+        { ko: '현지인과 친해지고 싶은 분', en: 'Wanting to meet locals', fr: 'Souhaitant rencontrer des locaux' },
+      ],
+      worthKnowing: [
+        { ko: '방마다 소음·생활 방식이 크게 달라요', en: 'Noise and lifestyle vary a lot by unit', fr: "Bruit et style de vie varient beaucoup d'une unité à l'autre" },
+        { ko: 'Facebook / Kijiji에 매물 많음', en: 'Many listings on Facebook / Kijiji', fr: "Beaucoup d'annonces sur Facebook / Kijiji" },
+      ],
+      recommendNote: {
+        ko: '처음 3–6개월은 콜로카시옹으로 시작하고, 생활 패턴을 파악한 뒤 단독 아파트로 이사하는 분이 많아요.',
+        en: 'Many people start in a colocation for 3–6 months to get oriented, then move to a solo apartment.',
+        fr: "Beaucoup commencent en colocation 3–6 mois pour s'orienter, puis passent à un appartement solo.",
+      },
+    },
+    {
+      name: '스튜디오 / 1½ 베드',
+      sub: { ko: '오픈형 원룸 또는 소형 분리형 침실', en: 'Open-plan studio or small separated bedroom', fr: 'Studio open-plan ou petite chambre séparée' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$950–1,400/월', en: '$950–1,400/mo', fr: '950–1 400$/mois' } },
+        { icon: 'home', label: { ko: '완전한 프라이버시', en: 'Full privacy', fr: 'Pleine intimité' } },
+        { icon: 'bolt', label: { ko: 'Hydro 별도 (보통 $40–80/월)', en: 'Hydro extra (~$40–80/mo)', fr: 'Hydro en sus (~40–80$/mois)' } },
+      ],
+      worksFor: [
+        { ko: '혼자 살고 싶은 분', en: 'Prefer living alone', fr: 'Préférez vivre seul·e' },
+        { ko: '재정적으로 안정된 분', en: 'Financially stable', fr: 'Financièrement stable' },
+      ],
+      worthKnowing: [
+        { ko: '1½ (un et demi) = 몬트리올식 원룸+소침실', en: '1½ (un et demi) = Montréal term for studio+small bedroom', fr: '1½ = terme montréalais pour studio + petite chambre' },
+        { ko: '7월 1일 이사 시즌에 공급이 확 줄어요', en: 'Supply drops sharply around July 1 moving day', fr: "L'offre chute fortement autour du 1er juillet" },
+      ],
+    },
+    {
+      name: '3½ / 4½ 베드 (일반 아파트)',
+      sub: { ko: '1–2 침실 + 거실 + 주방의 퀘벡식 표기', en: 'Québec notation: 1–2 bedrooms + living room + kitchen', fr: 'Notation québécoise : 1–2 chambres + salon + cuisine' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$1,300–2,000+/월', en: '$1,300–2,000+/mo', fr: '1 300–2 000+$/mois' } },
+        { icon: 'users', label: { ko: '커플·룸메이트 적합', en: 'Good for couples or roommates', fr: 'Idéal pour couples ou colocs' } },
+      ],
+      worksFor: [
+        { ko: '커플 또는 2인 이상 거주 예정인 분', en: 'Couple or multiple residents', fr: 'Couple ou plusieurs résidents' },
+        { ko: '충분한 공간이 필요한 분', en: 'Need ample space', fr: "Besoin d'espace" },
+      ],
+      worthKnowing: [
+        { ko: '3½ = 침실 1개 + 거실 + 주방 + 욕실', en: '3½ = 1 bedroom + living room + kitchen + bathroom', fr: '3½ = 1 chambre + salon + cuisine + salle de bain' },
+        { ko: '렌트 나눠 내면 콜로카시옹보다 저렴할 수 있음', en: 'Split rent can be cheaper than colocation', fr: 'Loyer partagé peut coûter moins que la colocation' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '유형', en: 'Type', fr: 'Type' },
+      { ko: '평균 월세', en: 'Avg rent/mo', fr: 'Loyer moy/mois' },
+      { ko: '수도·전기 포함', en: 'Utilities incl.', fr: 'Services inclus' },
+      { ko: '가구 포함', en: 'Furnished', fr: 'Meublé' },
+      { ko: '프라이버시', en: 'Privacy', fr: 'Intimité' },
+    ],
+    rows: [
+      { name: 'Colocation (방)', cols: ['$600–950', true, '종종 포함 / often', '낮음 / Low'] },
+      { name: 'Studio / 1½', cols: ['$950–1,400', false, '드물게 / Rare', '높음 / High'] },
+      { name: '3½ (1BR)', cols: ['$1,300–1,700', false, '드물게 / Rare', '높음 / High'] },
+      { name: '4½ (2BR)', cols: ['$1,600–2,000', false, '드물게 / Rare', '높음 / High'] },
+    ],
+  },
+  communityNotes: [
+    {
+      flag: '🇰🇷',
+      person: { ko: '소프트웨어 엔지니어 · 3년 거주', en: 'Software engineer · 3 yrs in MTL', fr: 'Ingénieur logiciel · 3 ans à MTL' },
+      text: {
+        ko: '처음에 5½을 혼자 구하려다 월세 감당이 힘들었어요. 3개월 콜로카시옹 후 3½로 이사했는데 훨씬 나았어요.',
+        en: 'I tried to get a 5½ solo at first but the rent was tough. After 3 months in colocation I moved to a 3½ — much better.',
+        fr: "J'ai d'abord voulu un 5½ seul mais c'était difficile financièrement. Après 3 mois en coloc, j'ai pris un 3½ — bien mieux.",
+      },
+      likes: 31,
+    },
+  ],
+  helpLinks: [
+    { label: { ko: 'Kijiji 몬트리올 임대 검색', en: 'Kijiji Montréal rentals', fr: 'Kijiji locations Montréal' }, url: 'https://www.kijiji.ca/b-apartments-condos/ville-de-montreal/c37l80002a10', domain: 'kijiji.ca' },
+    { label: { ko: 'Rentals.ca 몬트리올', en: 'Rentals.ca Montréal', fr: 'Rentals.ca Montréal' }, url: 'https://rentals.ca/montreal', domain: 'rentals.ca' },
+  ],
+  faq: [
+    {
+      q: { ko: '퀘벡 임대료 표기 (3½, 4½)는 뭔가요?', en: 'What does 3½ or 4½ mean?', fr: "Que signifie 3½ ou 4½ ?" },
+      a: { ko: '퀘벡에서는 방 개수를 독특하게 세요. 기본 단위 1이 주방이나 거실을 뜻하고, 침실 1개당 1을 더해요. 3½ = 침실 1 + 거실 + 주방 + 욕실(½). 4½ = 침실 2 포함 방 4개 + 욕실.', en: 'Québec counts rooms uniquely. The base number includes a kitchen/living room; each bedroom adds 1. 3½ = 1 bedroom + living room + kitchen + bathroom (the ½). 4½ = 2 bedrooms + 4 rooms total + bathroom.', fr: 'Le Québec compte les pièces de façon unique. La base inclut cuisine/salon ; chaque chambre ajoute 1. 3½ = 1 chambre + salon + cuisine + salle de bain (le ½). 4½ = 2 chambres + 4 pièces + salle de bain.' },
+    },
+    {
+      q: { ko: '월세의 몇 %를 주거비로 써야 할까요?', en: 'What share of income should go to rent?', fr: 'Quelle part du revenu consacrer au loyer ?' },
+      a: { ko: '일반적으로 세후 소득의 30% 이하를 권장해요. 유학생이라면 생활비 전체 예산에서 역산하는 게 현실적이에요.', en: 'The common guideline is under 30% of after-tax income. For students, working backwards from your total monthly budget is more practical.', fr: 'La règle habituelle est moins de 30% du revenu après impôts. Pour les étudiants, travailler à rebours à partir de votre budget mensuel total est plus pratique.' },
+    },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '평균 스튜디오 월세', en: 'Avg studio rent', fr: 'Loyer studio moy.' }, value: { ko: '$1,050/월', en: '$1,050/mo', fr: '1 050$/mois' } },
+      { label: { ko: '평균 1BR 월세', en: 'Avg 1BR rent', fr: 'Loyer 1BR moy.' }, value: { ko: '$1,450/월', en: '$1,450/mo', fr: '1 450$/mois' } },
+      { label: { ko: '이사 시즌', en: 'Moving season', fr: 'Saison déménagement' }, value: { ko: '6–7월', en: 'June–July', fr: 'Juin–Juillet' } },
+    ],
+    timeline: { ko: '정착 전 온라인에서 미리 조사하고, 도착 후 1–2주 내 예산 확정하기를 권장해요.', en: 'Research online before arrival; confirm your budget within 1–2 weeks of landing.', fr: "Cherchez en ligne avant l'arrivée ; confirmez votre budget dans les 1–2 semaines suivant votre arrivée." },
+    nextStepId: 'neighbourhood',
+    nextStepLabel: { ko: '동네 선택', en: 'Choose a neighbourhood', fr: 'Choisir un quartier' },
+  },
+  completionCard: {
+    headline: { ko: '예산이 잡혔군요!', en: 'Budget set!', fr: 'Budget établi !' },
+    body: { ko: '현실적인 예산을 가지고 동네를 골라볼 차례예요.', en: "Now it's time to pick a neighbourhood that fits.", fr: "Il est temps de choisir un quartier qui correspond." },
+  },
+}
+
+// ─── Step 2: Neighbourhood ────────────────────────────────────────────────────
+
+const NEIGHBOURHOOD_STEP: JourneyStep = {
+  id: 'neighbourhood',
+  label: { ko: '동네', en: 'Neighbourhood', fr: 'Quartier' },
+  hero: {
+    title: { ko: '내가 살 동네 고르기', en: 'Choosing where to live', fr: 'Choisir où vivre' },
+    sub: {
+      ko: '몬트리올은 동네마다 분위기가 크게 달라요. 임대료, 통근 시간, 생활 편의성을 함께 비교해서 나에게 맞는 곳을 찾아요.',
+      en: "Montréal neighbourhoods have wildly different vibes. Compare rent, commute, and convenience to find what fits you.",
+      fr: "Les quartiers de Montréal ont des ambiances très différentes. Comparez loyer, trajet et commodités pour trouver ce qui vous convient.",
+    },
+    when: { ko: '예산 확정 후', en: 'After setting your budget', fr: 'Après avoir établi votre budget' },
+    cost: { ko: '비용 없음', en: 'No cost', fr: 'Aucun coût' },
+    time: { ko: '2–5일 (리서치)', en: '2–5 days research', fr: '2–5 jours de recherche' },
+    canBeforeArrival: { ko: '네, 미리 조사 가능', en: 'Yes, research from home', fr: 'Oui, faites des recherches avant' },
+  },
+  options: [
+    {
+      name: 'Plateau-Mont-Royal',
+      sub: { ko: '아티스트 동네 · 카페 밀집 · 몬트리올의 심장', en: 'Artistic neighbourhood · dense café culture · heart of Montréal', fr: "Quartier artistique · cafés denses · cœur de Montréal" },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '3½: $1,300–1,800', en: '3½: $1,300–1,800', fr: '3½ : 1 300–1 800$' } },
+        { icon: 'walk', label: { ko: '매우 도보 친화적', en: 'Very walkable', fr: 'Très accessible à pied' } },
+        { icon: 'school', label: { ko: 'McGill·Concordia·UQAM 접근성 우수', en: 'Good access to McGill/Concordia/UQAM', fr: 'Bon accès McGill/Concordia/UQAM' } },
+      ],
+      worksFor: [
+        { ko: '바이브 중시하는 분', en: 'Value neighbourhood atmosphere', fr: "Valorisez l'ambiance du quartier" },
+        { ko: '카페·레스토랑 자주 이용하는 분', en: 'Frequent café/restaurant goers', fr: 'Habitués des cafés/restaurants' },
+      ],
+      worthKnowing: [
+        { ko: '인기 있어서 경쟁이 치열해요', en: 'Competitive — listings go fast', fr: 'Compétitif — les annonces partent vite' },
+        { ko: '여름 테라스 소음이 있어요', en: 'Summer terrace noise', fr: 'Bruit des terrasses en été' },
+      ],
+    },
+    {
+      name: 'Rosemont–La Petite-Patrie',
+      sub: { ko: '가족 친화적 · 조용함 · 로컬 마켓 풍부', en: 'Family-friendly · quieter · strong local market scene', fr: 'Familial · plus calme · marchés locaux' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '3½: $1,200–1,600', en: '3½: $1,200–1,600', fr: '3½ : 1 200–1 600$' } },
+        { icon: 'bike', label: { ko: '자전거 인프라 훌륭함', en: 'Excellent cycling infrastructure', fr: 'Infrastructure cyclable excellente' } },
+      ],
+      worksFor: [
+        { ko: '조용한 생활을 원하는 분', en: 'Prefer quieter living', fr: 'Préférez le calme' },
+        { ko: '자전거 통근 계획인 분', en: 'Planning to cycle commute', fr: 'Prévoyez de faire du vélo' },
+      ],
+      worthKnowing: [
+        { ko: 'Jean-Talon Market 근처는 특히 인기', en: 'Jean-Talon Market area especially popular', fr: "Zone du marché Jean-Talon très prisée" },
+      ],
+    },
+    {
+      name: 'Verdun / LaSalle',
+      sub: { ko: '강변 위치 · 저렴한 임대료 · 지하철 연결 양호', en: 'Riverside · lower rents · decent metro access', fr: 'Bord du fleuve · loyers bas · bon accès métro' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '3½: $1,000–1,400', en: '3½: $1,000–1,400', fr: '3½ : 1 000–1 400$' } },
+        { icon: 'train', label: { ko: '지하철 녹색 라인', en: 'Green line metro', fr: 'Métro ligne verte' } },
+      ],
+      worksFor: [
+        { ko: '예산을 최대한 아끼고 싶은 분', en: 'Maximizing budget savings', fr: 'Optimiser votre budget' },
+        { ko: '강변 산책을 좋아하는 분', en: 'Love riverside walks', fr: 'Aimez les promenades riveraines' },
+      ],
+      worthKnowing: [
+        { ko: '다운타운까지 지하철 15–25분', en: '15–25 min metro to downtown', fr: '15–25 min de métro vers le centre-ville' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '동네', en: 'Neighbourhood', fr: 'Quartier' },
+      { ko: '3½ 평균 월세', en: 'Avg 3½ rent', fr: 'Loyer 3½ moy.' },
+      { ko: '다운타운까지', en: 'To downtown', fr: 'Vers centre-ville' },
+      { ko: '도보 편의성', en: 'Walkability', fr: 'Marchabilité' },
+      { ko: '한인 커뮤니티', en: 'Korean community', fr: 'Communauté coréenne' },
+    ],
+    rows: [
+      { name: 'Plateau-Mont-Royal', cols: ['$1,500', '10–15 min', '⭐⭐⭐⭐⭐', '보통 / Medium'] },
+      { name: 'Rosemont–La Petite-Patrie', cols: ['$1,400', '15–20 min', '⭐⭐⭐⭐', '적음 / Low'] },
+      { name: 'Mile-End', cols: ['$1,550', '10–15 min', '⭐⭐⭐⭐⭐', '적음 / Low'] },
+      { name: 'Côte-des-Neiges', cols: ['$1,200', '15–25 min', '⭐⭐⭐', '많음 / High'] },
+      { name: 'Verdun / LaSalle', cols: ['$1,200', '20–30 min', '⭐⭐⭐', '적음 / Low'] },
+      { name: 'NDG (Notre-Dame-de-Grâce)', cols: ['$1,350', '20–30 min', '⭐⭐⭐', '적음 / Low'] },
+    ],
+  },
+  communityNotes: [
+    {
+      flag: '🇰🇷',
+      person: { ko: '간호사 · CDN 거주 2년', en: 'Nurse · 2 yrs in Côte-des-Neiges', fr: 'Infirmière · 2 ans à CDN' },
+      text: {
+        ko: 'CDN은 한국 마트, 한식당이 있어서 처음 정착하기 정말 편했어요. 다운타운 거리가 있지만 버스가 자주 와요.',
+        en: "CDN has Korean grocery and restaurants — really easy for early settling. A bit far from downtown but buses are frequent.",
+        fr: "CDN a une épicerie et des restaurants coréens — super pratique pour s'installer. Un peu loin du centre mais les bus sont fréquents.",
+      },
+      likes: 44,
+    },
+    {
+      flag: '🇰🇷',
+      person: { ko: 'UdeM 대학원생 · 플라토 거주', en: 'UdeM grad student · living in Plateau', fr: "Étudiant UdeM · habite le Plateau" },
+      text: {
+        ko: '플라토는 비싸지만 대중교통, 카페, 모든 게 가까워서 차 없이도 충분해요. 자전거 한 대면 모든 게 해결돼요.',
+        en: "Plateau is pricier but everything is close — transit, cafés, all of it. You don't need a car at all. One bike covers everything.",
+        fr: "Le Plateau est plus cher mais tout est proche — transports, cafés, tout. Pas besoin de voiture. Un vélo suffit.",
+      },
+      likes: 38,
+    },
+  ],
+  helpLinks: [
+    { label: { ko: 'Montréal Neighbourhood Guide (Zumper)', en: 'Montréal neighbourhood guide', fr: 'Guide des quartiers de Montréal' }, url: 'https://www.zumper.com/blog/montreal-neighborhood-guide/', domain: 'zumper.com' },
+    { label: { ko: 'STM 지하철 노선도', en: 'STM metro map', fr: 'Plan du métro STM' }, url: 'https://www.stm.info/en/info/networks/metro', domain: 'stm.info' },
+  ],
+  faq: [
+    {
+      q: { ko: 'Côte-des-Neiges에 한인 마트가 있나요?', en: 'Is there a Korean grocery in Montréal?', fr: 'Y a-t-il une épicerie coréenne à Montréal ?' },
+      a: { ko: '네. Côte-des-Neiges에 한국 식료품점과 한식당이 모여 있어요. H-Mart, Kim Bo Land 등이 있고 주말이면 커뮤니티를 자주 만날 수 있어요.', en: "Yes. Côte-des-Neiges has Korean groceries and restaurants. H-Mart, Kim Bo Land and others are clustered there — you'll find community on weekends.", fr: "Oui. Côte-des-Neiges a des épiceries et restaurants coréens. H-Mart, Kim Bo Land et d'autres sont regroupés là — vous trouverez de la communauté les week-ends." },
+    },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '가장 저렴한 동네', en: 'Most affordable', fr: 'Plus abordable' }, value: { ko: 'Verdun / LaSalle', en: 'Verdun / LaSalle', fr: 'Verdun / LaSalle' } },
+      { label: { ko: '한인 커뮤니티', en: 'Korean community', fr: 'Communauté coréenne' }, value: { ko: 'Côte-des-Neiges', en: 'Côte-des-Neiges', fr: 'Côte-des-Neiges' } },
+      { label: { ko: '학생 인기 동네', en: 'Student favourite', fr: 'Favori étudiants' }, value: { ko: 'Plateau / Mile-End', en: 'Plateau / Mile-End', fr: 'Plateau / Mile-End' } },
+    ],
+    timeline: { ko: '도착 전 온라인 리서치 → 도착 후 1–2주 안에 직접 걸어보기를 추천해요.', en: 'Online research before arrival → walk the neighbourhoods in person within 1–2 weeks of landing.', fr: "Recherche en ligne avant l'arrivée → visitez les quartiers en personne dans les 1–2 semaines." },
+    nextStepId: 'visits',
+    nextStepLabel: { ko: '아파트 방문', en: 'Apartment visits', fr: "Visites d'appartement" },
+  },
+  completionCard: {
+    headline: { ko: '동네가 결정됐어요!', en: "Neighbourhood chosen!", fr: 'Quartier choisi !' },
+    body: { ko: '이제 본격적으로 매물을 보러 다닐 준비가 됐어요.', en: "Now you're ready to start viewing apartments.", fr: "Vous êtes prêt·e à commencer les visites." },
+  },
+}
+
+// ─── Step 3: Apartment Visits ─────────────────────────────────────────────────
+
+const VISITS_STEP: JourneyStep = {
+  id: 'visits',
+  label: { ko: '아파트 방문', en: 'Apartment visits', fr: "Visites d'appartement" },
+  hero: {
+    title: { ko: '내 방 찾기: 방문 체크리스트', en: 'Finding your place: the visit checklist', fr: 'Trouver votre logement : liste de vérification' },
+    sub: {
+      ko: '몬트리올 아파트는 현지에서 직접 봐야 해요. 사진과 실제가 다를 수 있고, 건물 상태와 집주인 성향을 파악하는 게 중요해요.',
+      en: "Montréal apartments need to be seen in person. Photos don't always match reality, and assessing the building condition and landlord manner matters.",
+      fr: "Les appartements à Montréal doivent être vus en personne. Les photos ne correspondent pas toujours à la réalité, et il est important d'évaluer l'état de l'immeuble.",
+    },
+    when: { ko: '동네 결정 후 즉시', en: 'Right after choosing a neighbourhood', fr: 'Juste après avoir choisi un quartier' },
+    cost: { ko: '비용 없음 (방문만)', en: 'No cost (just visits)', fr: 'Aucun coût (visites seulement)' },
+    time: { ko: '매물당 30–60분', en: '30–60 min per unit', fr: '30–60 min par logement' },
+    canBeforeArrival: { ko: '아니요, 직접 방문 필요', en: 'No — in-person required', fr: 'Non — visite en personne requise' },
+  },
+  options: [
+    {
+      name: '플랫폼별 매물 연락',
+      sub: { ko: 'Kijiji, DuProprio, FB Marketplace, Rentals.ca', en: 'Kijiji, DuProprio, FB Marketplace, Rentals.ca', fr: 'Kijiji, DuProprio, FB Marketplace, Rentals.ca' },
+      topPick: true,
+      meta: [
+        { icon: 'device-laptop', label: { ko: '온라인 검색', en: 'Online search', fr: 'Recherche en ligne' } },
+        { icon: 'message', label: { ko: '문자/이메일로 방문 예약', en: 'Book visit by text/email', fr: 'Réserver par texto/courriel' } },
+      ],
+      worksFor: [
+        { ko: '본인이 직접 찾고 싶은 분', en: 'Prefer to search independently', fr: 'Préférez chercher seul·e' },
+        { ko: '중개 수수료를 피하고 싶은 분', en: 'Want to avoid agent fees', fr: "Souhaitez éviter les frais d'agent" },
+      ],
+      worthKnowing: [
+        { ko: '인기 매물은 당일 마감되기도 해요', en: 'Popular units close same day', fr: "Les bons logements partent le jour même" },
+        { ko: '방문 전 건물 주소 구글맵으로 미리 확인', en: 'Google the address before visiting', fr: "Cherchez l'adresse sur Google avant la visite" },
+      ],
+      recommendNote: {
+        ko: '방문 시 사진 충분히 찍기, 집주인 연락처 받아두기, 수도·전기·인터넷 상태 꼭 확인하세요.',
+        en: 'During visits: take plenty of photos, get landlord contact info, always check water/electricity/internet.',
+        fr: "Lors des visites : prenez beaucoup de photos, obtenez les coordonnées du propriétaire, vérifiez toujours eau/électricité/internet.",
+      },
+    },
+    {
+      name: '부동산 에이전트 활용',
+      sub: { ko: '퀘벡에서 임대 중개는 보통 무료 (집주인이 수수료 부담)', en: 'Rental agents in Québec are usually free for tenants — landlord pays', fr: 'Les agents de location au Québec sont souvent gratuits pour les locataires — le propriétaire paie' },
+      meta: [
+        { icon: 'user-check', label: { ko: '세입자에게 무료', en: 'Free for tenant', fr: 'Gratuit pour locataire' } },
+        { icon: 'building', label: { ko: '물량 더 많이 접근 가능', en: 'Access more listings', fr: "Accès à plus d'annonces" } },
+      ],
+      worksFor: [
+        { ko: '언어 장벽이 있는 분', en: 'Language barrier concerns', fr: 'Barrière de langue' },
+        { ko: '시간이 부족한 분', en: 'Limited time to search', fr: 'Peu de temps pour chercher' },
+      ],
+      worthKnowing: [
+        { ko: '모든 에이전트가 세입자 친화적이지 않을 수 있어요', en: 'Not all agents are tenant-oriented', fr: 'Tous les agents ne sont pas orientés locataires' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '확인 항목', en: 'Check item', fr: 'Élément à vérifier' },
+      { ko: '왜 중요한가', en: 'Why it matters', fr: "Pourquoi c'est important" },
+    ],
+    rows: [
+      { name: '수압 / 온수', cols: ['임대 후 고장 발견 시 수리 책임 분쟁 / Avoid post-move disputes'] },
+      { name: '창문 단열 / Window seals', cols: ['몬트리올 겨울 난방비 직결 / Linked to winter heating costs'] },
+      { name: '곰팡이 흔적 / Mold signs', cols: ['퇴거 후에도 건강 문제 지속 가능 / Health risk after move-out'] },
+      { name: '소음 수준 / Noise level', cols: ['낮에 방문해도 밤 소음 다를 수 있음 / Daytime visit ≠ nighttime noise'] },
+      { name: '인터넷 제공자 / ISP coverage', cols: ['건물에 따라 Bell/Vidéotron 제한 / Not all ISPs reach every building'] },
+      { name: '세탁기/건조기 위치', cols: ['공용 세탁실 vs 유닛 내 / In-unit vs shared laundry'] },
+    ],
+  },
+  communityNotes: [
+    {
+      flag: '🇰🇷',
+      person: { ko: '회계사 · 첫 아파트 경험', en: 'Accountant · first MTL apartment', fr: 'Comptable · premier appartement à MTL' },
+      text: {
+        ko: '방문할 때 꼭 욕실 수압 확인하고, 창문 사이 외풍 체크하세요. 겨울에 난방비 폭탄 맞을 수 있어요.',
+        en: "Always check shower pressure and window drafts during visits. Winter heating bills can be brutal if the seals are bad.",
+        fr: "Vérifiez toujours la pression de la douche et les courants d'air des fenêtres. Les factures de chauffage en hiver peuvent être brutales si les joints sont mauvais.",
+      },
+      likes: 29,
+    },
+  ],
+  helpLinks: [
+    { label: { ko: 'DuProprio 임대 검색', en: 'DuProprio rental search', fr: 'Recherche location DuProprio' }, url: 'https://duproprio.com/en/to-rent', domain: 'duproprio.com' },
+    { label: { ko: 'Kijiji 아파트 검색', en: 'Kijiji apartment search', fr: 'Annonces appartements Kijiji' }, url: 'https://www.kijiji.ca/b-apartments-condos/ville-de-montreal/c37l80002a10', domain: 'kijiji.ca' },
+    { label: { ko: 'Centris 임대 리스팅', en: 'Centris rental listings', fr: 'Annonces Centris' }, url: 'https://www.centris.ca/en/properties~for-rent~montreal', domain: 'centris.ca' },
+  ],
+  faq: [
+    {
+      q: { ko: '방문할 때 무엇을 가져가야 하나요?', en: 'What should I bring to a visit?', fr: "Qu'est-ce que je dois apporter à une visite ?" },
+      a: { ko: '신분증, 수입 증명서 (유학생이라면 입학 허가서), 은행 잔액 증명 준비하면 집주인이 좋아해요. 사진도 많이 찍어오세요.', en: "Bring ID, proof of income (or admission letter if student), and a bank statement. Landlords appreciate being prepared. Take lots of photos.", fr: "Apportez une pièce d'identité, preuve de revenus (lettre d'admission si étudiant·e) et un relevé bancaire. Les propriétaires apprécient la préparation. Prenez beaucoup de photos." },
+    },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '평균 방문 횟수', en: 'Avg visits before signing', fr: 'Visites avant signature' }, value: { ko: '3–8회', en: '3–8 visits', fr: '3–8 visites' } },
+      { label: { ko: '이사 시즌 경쟁', en: 'July 1 competition', fr: 'Compétition 1 juillet' }, value: { ko: '매우 치열', en: 'Very high', fr: 'Très élevée' } },
+    ],
+    timeline: { ko: '보통 입주 2–4주 전부터 적극적으로 방문하기 시작하면 적당해요.', en: 'Start actively visiting 2–4 weeks before your target move-in date.', fr: "Commencez activement à visiter 2–4 semaines avant votre date d'emménagement cible." },
+    nextStepId: 'lease',
+    nextStepLabel: { ko: '임대 계약', en: 'Lease', fr: 'Bail' },
+  },
+  completionCard: {
+    headline: { ko: '마음에 드는 곳을 찾았나요?', en: 'Found the one?', fr: 'Trouvé le bon logement ?' },
+    body: { ko: '이제 계약서 검토할 준비가 됐어요.', en: "Time to review the lease.", fr: "Il est temps de lire le bail." },
+  },
+}
+
+// ─── Step 4: Lease ────────────────────────────────────────────────────────────
+
+const LEASE_STEP: JourneyStep = {
+  id: 'lease',
+  label: { ko: '임대 계약', en: 'Lease', fr: 'Bail' },
+  hero: {
+    title: { ko: '퀘벡 임대 계약서 이해하기', en: 'Understanding the Québec lease', fr: 'Comprendre le bail québécois' },
+    sub: {
+      ko: '퀘벡은 세입자 보호가 강한 곳이에요. 표준 임대 계약서(Bail de la Régie du logement)를 사용해야 하고, 집주인도 함부로 퇴거 통보를 할 수 없어요.',
+      en: "Québec has strong tenant protections. The standard lease (Bail de la Régie du logement) is mandatory, and landlords have limited eviction rights.",
+      fr: "Le Québec a une forte protection des locataires. Le bail standard (bail de la Régie du logement) est obligatoire, et les propriétaires ont des droits d'expulsion limités.",
+    },
+    when: { ko: '아파트 결정 직후', en: 'Right after choosing an apartment', fr: 'Juste après avoir choisi un appartement' },
+    cost: { ko: '보통 첫 달 · 보증금은 퀘벡에서 불법!', en: 'Usually first month; security deposits are illegal in Québec', fr: "Habituellement premier mois ; les dépôts de garantie sont illégaux au Québec" },
+    time: { ko: '서명까지 1–3일', en: '1–3 days to signing', fr: '1–3 jours avant signature' },
+    canBeforeArrival: { ko: '아니요, 현지에서 진행', en: 'No — done in person locally', fr: 'Non — en personne sur place' },
+  },
+  options: [
+    {
+      name: '표준 1년 계약 (Standard 12-month)',
+      sub: { ko: '퀘벡 표준 · 7월 1일 만료 관행 · 가장 일반적', en: 'Québec standard · typical July 1 expiry · most common', fr: "Standard québécois · expiration habituelle le 1er juillet · plus courant" },
+      topPick: true,
+      meta: [
+        { icon: 'calendar', label: { ko: '보통 7/1 – 6/30', en: 'Usually July 1 – June 30', fr: 'Habituellement 1 juillet – 30 juin' } },
+        { icon: 'shield-check', label: { ko: '퀘벡 세입자법 보호', en: 'Protected by Québec tenancy law', fr: 'Protégé par la loi locative du Québec' } },
+      ],
+      worksFor: [
+        { ko: '안정적인 주거를 원하는 분', en: 'Want stable housing', fr: 'Souhaitez un logement stable' },
+        { ko: '장기 체류 계획인 분', en: 'Planning to stay long-term', fr: 'Prévoyez un séjour à long terme' },
+      ],
+      worthKnowing: [
+        { ko: '계약 갱신 거부는 4개월 전 서면 통보 필요', en: 'Non-renewal requires 4-month written notice', fr: 'Non-renouvellement nécessite un préavis écrit de 4 mois' },
+        { ko: '중도 해지 시 대체 세입자 찾아야 함', en: 'Early termination: must find a replacement tenant', fr: 'Résiliation anticipée : vous devez trouver un remplaçant' },
+      ],
+    },
+    {
+      name: '월세 계약 (Month-to-month)',
+      sub: { ko: '유연하지만 집주인이 더 쉽게 계약 변경 가능', en: 'Flexible but landlord can change terms more easily', fr: "Flexible mais le propriétaire peut modifier les conditions plus facilement" },
+      meta: [
+        { icon: 'refresh', label: { ko: '매달 갱신', en: 'Renews monthly', fr: 'Renouvellement mensuel' } },
+        { icon: 'alert-triangle', label: { ko: '안정성 낮음', en: 'Less security', fr: 'Moins de sécurité' } },
+      ],
+      worksFor: [
+        { ko: '단기 체류 예정인 분', en: 'Short-term stay planned', fr: 'Séjour à court terme prévu' },
+        { ko: '유연성이 필요한 분', en: 'Need flexibility', fr: 'Besoin de flexibilité' },
+      ],
+      worthKnowing: [
+        { ko: '집주인이 1개월 전 통보로 임대료 인상 가능', en: 'Landlord can raise rent with 1 month notice', fr: 'Le propriétaire peut augmenter le loyer avec 1 mois de préavis' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '항목', en: 'Item', fr: 'Élément' },
+      { ko: '퀘벡 법 내용', en: 'Québec law says', fr: 'Loi québécoise' },
+    ],
+    rows: [
+      { name: '보증금 / Security deposit', cols: ['불법 (집주인이 요구할 수 없음) / Illegal — landlords cannot demand it'] },
+      { name: '임대료 인상', cols: ['매년 TAL 가이드라인 % 이내 / Annual increase capped by TAL guidelines'] },
+      { name: '수리 책임', cols: ['집주인이 주요 수리 책임 / Landlord responsible for major repairs'] },
+      { name: '퇴거 통보', cols: ['세입자에게 이유 없이 퇴거 불가 / Cannot evict without cause'] },
+      { name: '반려동물', cols: ['계약서 금지 조항 있어도 퀘벡에서는 일부 허용 / Clauses banning pets may be unenforceable'] },
+    ],
+  },
+  communityNotes: [
+    {
+      flag: '🇰🇷',
+      person: { ko: '법학과 대학원생', en: 'Law grad student', fr: 'Étudiant en droit' },
+      text: {
+        ko: '보증금 달라고 하면 거절하세요. 퀘벡에서는 불법이에요. 많은 분들이 모르고 내는데, 퇴거 시 돌려받기 어렵습니다.',
+        en: "If a landlord asks for a security deposit, you can say no — it's illegal in Québec. Many newcomers pay it unknowingly and struggle to get it back.",
+        fr: "Si un propriétaire demande un dépôt de garantie, vous pouvez refuser — c'est illégal au Québec. Beaucoup de nouveaux arrivants le paient sans le savoir et ont du mal à le récupérer.",
+      },
+      likes: 67,
+    },
+  ],
+  helpLinks: [
+    { label: { ko: 'Tribunal administratif du logement (TAL)', en: 'Tribunal administratif du logement (TAL)', fr: 'Tribunal administratif du logement (TAL)' }, url: 'https://www.tal.gouv.qc.ca/en', domain: 'tal.gouv.qc.ca' },
+    { label: { ko: '퀘벡 표준 임대 계약서', en: 'Standard Québec lease form', fr: 'Bail standard du Québec' }, url: 'https://www.tal.gouv.qc.ca/en/forms-and-publications/lease', domain: 'tal.gouv.qc.ca' },
+  ],
+  faq: [
+    {
+      q: { ko: '집주인이 보증금을 요구하면 어떻게 하나요?', en: "What if a landlord demands a security deposit?", fr: "Que faire si un propriétaire demande un dépôt ?" },
+      a: { ko: '퀘벡에서 보증금(dépôt de sécurité)은 불법이에요. 거절할 권리가 있어요. 집주인이 계속 요구하면 TAL에 신고할 수 있어요.', en: "Security deposits are illegal in Québec. You have the right to refuse. If a landlord keeps demanding one, you can report to the TAL.", fr: "Les dépôts de garantie sont illégaux au Québec. Vous avez le droit de refuser. Si un propriétaire insiste, vous pouvez signaler au TAL." },
+    },
+    {
+      q: { ko: '계약 중간에 이사를 가고 싶으면 어떻게 하나요?', en: 'Can I leave before the lease ends?', fr: 'Puis-je partir avant la fin du bail ?' },
+      a: { ko: '대체 세입자(cession de bail)를 찾아 계약을 양도할 수 있어요. 집주인이 거절하려면 합당한 사유가 필요해요.', en: "You can assign the lease (cession de bail) by finding a replacement tenant. The landlord can only refuse for valid reasons.", fr: "Vous pouvez céder le bail en trouvant un remplaçant. Le propriétaire ne peut refuser que pour des raisons valables." },
+    },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '보증금', en: 'Security deposit', fr: 'Dépôt de garantie' }, value: { ko: '불법', en: 'Illegal', fr: 'Illégal' } },
+      { label: { ko: '표준 계약 기간', en: 'Standard term', fr: 'Durée standard' }, value: { ko: '12개월', en: '12 months', fr: '12 mois' } },
+      { label: { ko: '이사 갱신 시즌', en: 'Renewal season', fr: 'Saison renouvellement' }, value: { ko: '3–4월', en: 'March–April', fr: 'Mars–Avril' } },
+    ],
+    timeline: { ko: '계약서 서명 → 입주 전 체크리스트 작성 (방 상태 사진 기록) → 열쇠 받기.', en: 'Sign lease → document unit condition with photos → collect keys.', fr: "Signer le bail → documenter l'état du logement avec photos → récupérer les clés." },
+    nextStepId: 'settle_insurance',
+    nextStepLabel: { ko: '세입자 보험', en: 'Tenant insurance', fr: 'Assurance locataire' },
+  },
+  completionCard: {
+    headline: { ko: '계약서에 서명했어요!', en: 'Lease signed!', fr: 'Bail signé !' },
+    body: { ko: '이제 보험 가입하고 유틸리티 연결할 차례예요.', en: "Now get insured and connect utilities.", fr: "Maintenant, assurez-vous et connectez les services." },
+  },
+}
+
+// ─── Step 5: Tenant Insurance ─────────────────────────────────────────────────
+
+const INSURANCE_STEP: JourneyStep = {
+  id: 'settle_insurance',
+  label: { ko: '세입자 보험', en: 'Tenant insurance', fr: 'Assurance locataire' },
+  hero: {
+    title: { ko: '세입자 보험: 왜, 어디서 가입하나요?', en: 'Tenant insurance: why and where', fr: "Assurance locataire : pourquoi et où" },
+    sub: {
+      ko: '세입자 보험은 화재, 도난, 수해로 인한 개인 물건 피해와 제3자 배상 책임을 커버해요. 퀘벡에서 법적 의무는 아니지만 많은 집주인이 계약 조건으로 요구해요.',
+      en: "Tenant insurance covers your belongings against fire, theft, and water damage, plus liability if someone is injured in your unit. Not legally required in Québec but many landlords require it.",
+      fr: "L'assurance locataire couvre vos biens contre l'incendie, le vol et les dégâts d'eau, plus la responsabilité civile. Non obligatoire légalement au Québec mais souvent exigée par les propriétaires.",
+    },
+    when: { ko: '입주 직전 또는 입주일', en: 'Just before or on move-in day', fr: "Juste avant ou le jour d'emménagement" },
+    cost: { ko: '$15–40/월', en: '$15–40/mo', fr: '15–40$/mois' },
+    time: { ko: '온라인 15–30분', en: '15–30 min online', fr: '15–30 min en ligne' },
+    canBeforeArrival: { ko: '아니요, 주소 필요', en: 'No — need Montréal address first', fr: 'Non — adresse montréalaise requise' },
+  },
+  options: [
+    {
+      name: 'Intact Insurance',
+      sub: { ko: '캐나다 최대 손보사 · 온라인 가입 가능', en: "Canada's largest insurer · online signup", fr: 'Plus grand assureur canadien · inscription en ligne' },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$20–35/월', en: '$20–35/mo', fr: '20–35$/mois' } },
+        { icon: 'globe', label: { ko: '영어·불어 온라인 가입', en: 'English/French online', fr: 'Anglais/Français en ligne' } },
+      ],
+      worksFor: [
+        { ko: '빠르게 온라인으로 가입하고 싶은 분', en: 'Want fast online signup', fr: 'Inscription rapide en ligne' },
+      ],
+      worthKnowing: [
+        { ko: '첫 달 무료 이벤트 종종 있음', en: 'Sometimes offers first-month free', fr: 'Parfois premier mois gratuit' },
+      ],
+    },
+    {
+      name: 'Sonnet Insurance',
+      sub: { ko: '전액 온라인 · 간단한 비교 견적', en: 'Fully online · simple quote comparison', fr: '100% en ligne · comparaison de devis simple' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$18–30/월', en: '$18–30/mo', fr: '18–30$/mois' } },
+        { icon: 'device-laptop', label: { ko: '5분 가입 완료', en: '5-min signup', fr: 'Inscription en 5 min' } },
+      ],
+      worksFor: [
+        { ko: '디지털 가입을 선호하는 분', en: 'Prefer digital-only', fr: 'Préférez le tout numérique' },
+      ],
+      worthKnowing: [
+        { ko: '영어 지원 · 불어 제한적', en: 'English support · limited French', fr: 'Support anglais · français limité' },
+      ],
+    },
+    {
+      name: 'Desjardins / TD / RBC (은행 연계)',
+      sub: { ko: '은행 계좌와 함께 묶음 할인 가능', en: 'Bundle discount with your bank account', fr: 'Réduction groupée avec votre compte bancaire' },
+      meta: [
+        { icon: 'building-bank', label: { ko: '은행 방문 or 온라인', en: 'In-branch or online', fr: 'En succursale ou en ligne' } },
+        { icon: 'discount', label: { ko: '묶음 할인 5–10%', en: '5–10% bundle discount', fr: '5–10% de réduction groupée' } },
+      ],
+      worksFor: [
+        { ko: '이미 캐나다 은행 계좌가 있는 분', en: 'Already have a Canadian bank account', fr: 'Déjà un compte bancaire canadien' },
+      ],
+      worthKnowing: [
+        { ko: 'Desjardins는 불어가 기본, 영어 가능', en: 'Desjardins is French-first, English available', fr: 'Desjardins est en français principalement, anglais disponible' },
+      ],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '보험사', en: 'Insurer', fr: 'Assureur' },
+      { ko: '월 보험료', en: 'Monthly premium', fr: 'Prime mensuelle' },
+      { ko: '온라인 가입', en: 'Online signup', fr: 'Inscription en ligne' },
+      { ko: '한국어 지원', en: 'Korean support', fr: 'Support coréen' },
+    ],
+    rows: [
+      { name: 'Intact', cols: ['$20–35', true, false] },
+      { name: 'Sonnet', cols: ['$18–30', true, false] },
+      { name: 'Desjardins', cols: ['$20–35', true, false] },
+      { name: 'TD Insurance', cols: ['$22–40', true, false] },
+    ],
+  },
+  communityNotes: [
+    {
+      flag: '🇰🇷',
+      person: { ko: '디자이너 · 몬트리올 2년', en: 'Designer · 2 yrs in MTL', fr: 'Graphiste · 2 ans à MTL' },
+      text: {
+        ko: '처음엔 그냥 집주인이 요구하니까 가입했는데, 나중에 욕실 수도관 터졌을 때 보험이 없었으면 제 물건 다 날릴 뻔했어요. 꼭 들어요.',
+        en: "I signed up just because the landlord required it, but when the bathroom pipe burst my belongings would have been ruined without it. Get it.",
+        fr: "Je me suis inscrit·e juste parce que le propriétaire l'exigeait, mais quand le tuyau de la salle de bain a éclaté, mes affaires auraient été perdues sans ça. Prenez-la.",
+      },
+      likes: 52,
+    },
+  ],
+  helpLinks: [
+    { label: { ko: 'Sonnet 온라인 견적', en: 'Sonnet online quote', fr: 'Devis en ligne Sonnet' }, url: 'https://www.sonnet.ca/insurance/tenant-insurance', domain: 'sonnet.ca' },
+    { label: { ko: 'Intact 세입자 보험', en: 'Intact tenant insurance', fr: "Assurance locataire Intact" }, url: 'https://www.intact.ca/en/personal-insurance/tenant-insurance.html', domain: 'intact.ca' },
+  ],
+  faq: [
+    {
+      q: { ko: '집주인이 세입자 보험 가입을 강요할 수 있나요?', en: 'Can a landlord require tenant insurance?', fr: "Un propriétaire peut-il exiger l'assurance locataire ?" },
+      a: { ko: '네. 퀘벡에서 법적으로 의무는 아니지만 임대 계약서 조건으로 명시하면 집주인이 요구할 수 있어요. 실질적으로 대부분의 집주인이 요구합니다.', en: "Yes. While not legally mandatory in Québec, landlords can require it as a lease condition — and most do in practice.", fr: "Oui. Bien que non obligatoire légalement au Québec, les propriétaires peuvent l'exiger comme condition du bail — et la plupart le font en pratique." },
+    },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '평균 보험료', en: 'Avg premium', fr: 'Prime moyenne' }, value: { ko: '$25/월', en: '$25/mo', fr: '25$/mois' } },
+      { label: { ko: '가입 소요 시간', en: 'Time to sign up', fr: "Temps d'inscription" }, value: { ko: '15–30분', en: '15–30 min', fr: '15–30 min' } },
+    ],
+    timeline: { ko: '입주일 당일 또는 이틀 전까지 가입 완료하기를 추천해요.', en: 'Aim to be covered by move-in day — sign up 1–2 days before.', fr: "Visez une couverture pour le jour d'emménagement — inscrivez-vous 1–2 jours avant." },
+    nextStepId: 'settle_hydro',
+    nextStepLabel: { ko: 'Hydro-Québec 개설', en: 'Open Hydro-Québec account', fr: 'Ouvrir compte Hydro-Québec' },
+  },
+  completionCard: {
+    headline: { ko: '보험 가입 완료!', en: 'Insured!', fr: 'Assuré·e !' },
+    body: { ko: '이제 전기·가스 계정을 열 시간이에요.', en: "Now open your electricity account.", fr: "Maintenant, ouvrez votre compte d'électricité." },
+  },
+}
+
+// ─── Step 6: Hydro-Québec ─────────────────────────────────────────────────────
+
+const HYDRO_STEP: JourneyStep = {
+  id: 'settle_hydro',
+  label: { ko: 'Hydro-Québec', en: 'Hydro-Québec', fr: 'Hydro-Québec' },
+  hero: {
+    title: { ko: 'Hydro-Québec 계정 만들기', en: 'Opening a Hydro-Québec account', fr: 'Ouvrir un compte Hydro-Québec' },
+    sub: {
+      ko: 'Hydro-Québec는 퀘벡의 전력 공급 공기업이에요. 아파트를 독립적으로 임대한다면 본인 명의로 계정을 열어야 해요. 일부 임대에는 포함돼 있으니 계약서 확인이 먼저예요.',
+      en: "Hydro-Québec is the provincial electricity utility. If you're renting independently, you need your own account. Some leases include it — check your lease first.",
+      fr: "Hydro-Québec est la compagnie d'électricité provinciale. Si vous louez de façon indépendante, vous avez besoin de votre propre compte. Certains baux l'incluent — vérifiez votre bail.",
+    },
+    when: { ko: '입주 1–2주 전', en: '1–2 weeks before move-in', fr: "1–2 semaines avant l'emménagement" },
+    cost: { ko: '$40–120/월 (겨울 높음)', en: '$40–120/mo (higher in winter)', fr: '40–120$/mois (plus élevé en hiver)' },
+    time: { ko: '온라인 15분', en: '15 min online', fr: '15 min en ligne' },
+    canBeforeArrival: { ko: '아니요, 퀘벡 주소 필요', en: 'No — need your Québec address', fr: 'Non — adresse québécoise requise' },
+  },
+  options: [
+    {
+      name: 'Hydro-Québec 웹사이트 온라인 개설',
+      sub: { ko: '가장 빠르고 일반적인 방법', en: 'Fastest and most common method', fr: 'La méthode la plus rapide et courante' },
+      topPick: true,
+      meta: [
+        { icon: 'globe', label: { ko: 'hydroquebec.com에서 신청', en: 'Apply at hydroquebec.com', fr: 'Faire une demande sur hydroquebec.com' } },
+        { icon: 'clock', label: { ko: '15분 소요', en: '15 min', fr: '15 min' } },
+        { icon: 'calendar', label: { ko: '개시일 지정 가능', en: 'Choose service start date', fr: 'Choisir la date de début du service' } },
+      ],
+      worksFor: [{ ko: '모두에게 적합', en: 'Anyone', fr: 'Tout le monde' }],
+      worthKnowing: [
+        { ko: '영어 인터페이스 지원', en: 'English interface available', fr: 'Interface anglaise disponible' },
+        { ko: '입주 전날까지 신청 완료 권장', en: 'Apply at least 1 day before move-in', fr: "Faire la demande au moins 1 jour avant l'emménagement" },
+      ],
+    },
+    {
+      name: '전화 개설 (1 888 385-7252)',
+      sub: { ko: '온라인이 어려울 때', en: 'If online signup is difficult', fr: "Si l'inscription en ligne est difficile" },
+      meta: [
+        { icon: 'phone', label: { ko: '월–금 8:30–20:00', en: 'Mon–Fri 8:30 am–8 pm', fr: 'Lun–Ven 8h30–20h' } },
+        { icon: 'language', label: { ko: '영어·불어 가능', en: 'English & French available', fr: 'Anglais et français disponibles' } },
+      ],
+      worksFor: [{ ko: '온라인 사용이 불편한 분', en: 'Less comfortable online', fr: "Moins à l'aise en ligne" }],
+      worthKnowing: [{ ko: '대기 시간이 길 수 있음', en: 'Wait times can be long', fr: "Les temps d'attente peuvent être longs" }],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '기간', en: 'Season', fr: 'Saison' },
+      { ko: '평균 월 청구액', en: 'Avg monthly bill', fr: 'Facture mensuelle moy.' },
+      { ko: '주요 사유', en: 'Main reason', fr: 'Raison principale' },
+    ],
+    rows: [
+      { name: '여름 (6–8월)', cols: ['$40–60', '에어컨 / AC usage'] },
+      { name: '가을 (9–11월)', cols: ['$60–80', '냉방→난방 전환 / Transition season'] },
+      { name: '겨울 (12–3월)', cols: ['$90–140', '전기 난방 / Electric heating'] },
+      { name: '봄 (4–5월)', cols: ['$50–70', '난방 감소 / Heating reduction'] },
+    ],
+  },
+  communityNotes: [
+    {
+      flag: '🇰🇷',
+      person: { ko: '마케터 · 첫 겨울 경험', en: 'Marketer · first Montréal winter', fr: 'Marketeur · premier hiver à MTL' },
+      text: {
+        ko: '첫 겨울 Hydro 청구서 보고 깜짝 놀랐어요. 1월에 $130 나왔거든요. 전기 난방이라 어쩔 수 없지만, 미리 알고 있으면 덜 충격이에요.',
+        en: "My first winter Hydro bill was a shock — $130 in January. Electric heating does that. Knowing ahead helps.",
+        fr: "Ma première facture d'hiver Hydro était un choc — 130$ en janvier. Le chauffage électrique fait ça. Être prévenu aide.",
+      },
+      likes: 41,
+    },
+  ],
+  helpLinks: [
+    { label: { ko: 'Hydro-Québec 온라인 계정 개설', en: 'Open Hydro-Québec account online', fr: 'Ouvrir un compte Hydro-Québec en ligne' }, url: 'https://www.hydroquebec.com/residential/moving/', domain: 'hydroquebec.com' },
+    { label: { ko: 'Hydro-Québec 에너지 절약 팁', en: 'Hydro-Québec energy saving tips', fr: "Conseils d'économie d'énergie Hydro-Québec" }, url: 'https://www.hydroquebec.com/residential/energy-wise/', domain: 'hydroquebec.com' },
+  ],
+  faq: [
+    {
+      q: { ko: '임대료에 전기세 포함이면 계정 안 열어도 되나요?', en: 'What if electricity is included in rent?', fr: "Et si l'électricité est incluse dans le loyer ?" },
+      a: { ko: '네. 계약서에 "chauffage et électricité inclus" 또는 "utilities included"라고 명시돼 있으면 별도로 Hydro 계정을 열 필요 없어요.', en: "Correct. If your lease says utilities/electricity are included, you don't need your own Hydro account.", fr: "Exact. Si votre bail indique que les services/l'électricité sont inclus, vous n'avez pas besoin d'un compte Hydro personnel." },
+    },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '퀘벡 전력 연료원', en: 'Power source', fr: "Source d'énergie" }, value: { ko: '99% 수력 발전', en: '99% hydroelectric', fr: '99% hydroélectrique' } },
+      { label: { ko: '전기 요금', en: 'Rate', fr: 'Tarif' }, value: { ko: '캐나다 최저', en: "Canada's lowest", fr: 'Le plus bas au Canada' } },
+      { label: { ko: '겨울 난방 방식', en: 'Winter heating', fr: 'Chauffage hiver' }, value: { ko: '주로 전기', en: 'Mostly electric', fr: 'Principalement électrique' } },
+    ],
+    timeline: { ko: '입주 1–2주 전에 개설 신청하고, 개시일을 입주일에 맞추세요.', en: 'Apply 1–2 weeks before move-in; set the service start date to your move-in day.', fr: "Faites la demande 1–2 semaines avant l'emménagement ; réglez la date de début au jour d'emménagement." },
+    nextStepId: 'internet',
+    nextStepLabel: { ko: '인터넷 설치', en: 'Set up internet', fr: 'Configurer internet' },
+  },
+  completionCard: {
+    headline: { ko: '전기 연결 완료!', en: 'Electricity connected!', fr: 'Électricité connectée !' },
+    body: { ko: '이제 인터넷 설치가 남았어요.', en: "One more utility to go: internet.", fr: "Un autre service à configurer : internet." },
+  },
+}
+
+// ─── Step 7: Internet ─────────────────────────────────────────────────────────
+
+const INTERNET_STEP: JourneyStep = {
+  id: 'internet',
+  label: { ko: '인터넷', en: 'Internet', fr: 'Internet' },
+  hero: {
+    title: { ko: '몬트리올 인터넷 연결하기', en: 'Getting internet in Montréal', fr: 'Avoir internet à Montréal' },
+    sub: {
+      ko: '캐나다 인터넷 요금은 비싼 편이에요. 하지만 퀘벡은 경쟁이 있어서 저가 MVNO(재판매 사업자)를 이용하면 비용을 많이 줄일 수 있어요.',
+      en: "Canadian internet is pricey — but Québec has competition. Budget ISPs (resellers) can cut your bill significantly.",
+      fr: "Internet au Canada est cher — mais le Québec est concurrentiel. Les fournisseurs économiques (revendeurs) peuvent réduire votre facture.",
+    },
+    when: { ko: '입주 1–2주 전', en: '1–2 weeks before move-in', fr: "1–2 semaines avant l'emménagement" },
+    cost: { ko: '$35–100/월', en: '$35–100/mo', fr: '35–100$/mois' },
+    time: { ko: '설치 예약 후 당일 or 1–3일', en: 'Same day or 1–3 days after booking', fr: "Le jour même ou 1–3 jours après la réservation" },
+    canBeforeArrival: { ko: '아니요, 주소 필요', en: 'No — need Montréal address', fr: 'Non — adresse montréalaise requise' },
+  },
+  options: [
+    {
+      name: 'TekSavvy (저가 추천)',
+      sub: { ko: 'Bell/Vidéotron 망 임차 · 훨씬 저렴', en: "Resells Bell/Vidéotron infrastructure at lower cost", fr: "Revend l'infrastructure Bell/Vidéotron à moindre coût" },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$35–55/월', en: '$35–55/mo', fr: '35–55$/mois' } },
+        { icon: 'globe', label: { ko: '온라인 신청', en: 'Online signup', fr: 'Inscription en ligne' } },
+      ],
+      worksFor: [
+        { ko: '비용을 최소화하고 싶은 분', en: 'Want to minimize cost', fr: 'Souhaitez minimiser les coûts' },
+      ],
+      worthKnowing: [
+        { ko: '설치 기사 방문 1–5일 대기 가능', en: 'Technician visit may take 1–5 days', fr: "La visite du technicien peut prendre 1–5 jours" },
+        { ko: '일부 건물은 Vidéotron만 지원', en: 'Some buildings only support Vidéotron', fr: "Certains immeubles ne supportent que Vidéotron" },
+      ],
+      recommendNote: {
+        ko: '많은 이민자들이 Bell 또는 Vidéotron으로 시작했다가 비용 절약을 위해 TekSavvy로 갈아타요.',
+        en: 'Many newcomers start with Bell or Vidéotron then switch to TekSavvy to cut costs.',
+        fr: "Beaucoup de nouveaux arrivants commencent avec Bell ou Vidéotron puis passent à TekSavvy pour réduire les coûts.",
+      },
+    },
+    {
+      name: 'Vidéotron',
+      sub: { ko: '퀘벡 1위 사업자 · 케이블 인터넷', en: "Québec's leading cable ISP", fr: "Principal fournisseur câble au Québec" },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$55–90/월', en: '$55–90/mo', fr: '55–90$/mois' } },
+        { icon: 'wifi', label: { ko: '안정적인 속도', en: 'Reliable speeds', fr: 'Vitesses fiables' } },
+      ],
+      worksFor: [{ ko: '최고 안정성이 필요한 분', en: 'Need maximum reliability', fr: 'Besoin de fiabilité maximale' }],
+      worthKnowing: [{ ko: '번들 (TV+인터넷) 할인 있음', en: 'Bundles (TV+internet) available', fr: 'Forfaits groupés disponibles' }],
+    },
+    {
+      name: 'Bell Fibe',
+      sub: { ko: '광섬유 기반 · 빠른 속도 · 프리미엄 가격', en: 'Fibre-based · fast · premium priced', fr: 'Fibre optique · rapide · prix premium' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$70–100/월', en: '$70–100/mo', fr: '70–100$/mois' } },
+        { icon: 'lightning-bolt', label: { ko: '최대 3 Gbps', en: 'Up to 3 Gbps', fr: "Jusqu'à 3 Gbps" } },
+      ],
+      worksFor: [{ ko: '초고속 인터넷이 필요한 분', en: 'Need ultra-fast internet', fr: "Besoin d'internet ultra-rapide" }],
+      worthKnowing: [{ ko: '광섬유 커버리지는 지역마다 다름', en: 'Fibre coverage varies by area', fr: 'La couverture fibre varie selon la zone' }],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '사업자', en: 'ISP', fr: 'Fournisseur' },
+      { ko: '월 요금', en: 'Monthly', fr: 'Mensuel' },
+      { ko: '속도', en: 'Speed', fr: 'Vitesse' },
+      { ko: '계약 조건', en: 'Contract', fr: 'Contrat' },
+    ],
+    rows: [
+      { name: 'TekSavvy', cols: ['$35–55', '75–1000 Mbps', '무계약 / No contract'] },
+      { name: 'Vidéotron', cols: ['$55–90', '100–1500 Mbps', '1–2년 / 1–2 yr'] },
+      { name: 'Bell Fibe', cols: ['$70–100', '500–3000 Mbps', '2년 / 2 yr'] },
+      { name: 'VMedia', cols: ['$35–60', '30–940 Mbps', '무계약 / No contract'] },
+    ],
+  },
+  communityNotes: [
+    {
+      flag: '🇰🇷',
+      person: { ko: '개발자 · 재택 근무', en: 'Developer · remote work', fr: 'Développeur · télétravail' },
+      text: {
+        ko: 'TekSavvy 1기가 $45로 쓰고 있어요. Bell이랑 속도 차이 못 느끼겠어요. 한 달에 $40 절약하면 1년에 $480이잖아요.',
+        en: "TekSavvy 1Gig for $45. Can't tell the difference from Bell. Save $40/month = $480/year.",
+        fr: "TekSavvy 1 Gbps pour 45$. Aucune différence avec Bell. 40$/mois économisés = 480$/an.",
+      },
+      likes: 58,
+    },
+  ],
+  helpLinks: [
+    { label: { ko: 'TekSavvy 플랜 비교', en: 'TekSavvy plans', fr: 'Forfaits TekSavvy' }, url: 'https://teksavvy.com/internet/home-internet', domain: 'teksavvy.com' },
+    { label: { ko: 'Vidéotron 인터넷 플랜', en: 'Vidéotron internet plans', fr: 'Forfaits internet Vidéotron' }, url: 'https://www.videotron.com/en/internet', domain: 'videotron.com' },
+  ],
+  faq: [
+    {
+      q: { ko: '이사 전 인터넷 미리 신청해야 하나요?', en: 'Should I apply for internet before moving?', fr: "Dois-je demander internet avant de déménager ?" },
+      a: { ko: '네. 대부분 임대에는 인터넷이 포함되지 않아요. 이사 2주 전에 신청해야 이사 당일 또는 그 바로 다음 날 설치가 가능해요.', en: "Yes. Most leases don't include internet. Apply 2 weeks before moving to get installation on or just after move-in day.", fr: "Oui. La plupart des baux n'incluent pas internet. Faites la demande 2 semaines avant pour une installation le jour ou lendemain de l'emménagement." },
+    },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '평균 월 요금', en: 'Avg monthly cost', fr: 'Coût mensuel moy.' }, value: { ko: '$50–70', en: '$50–70', fr: '50–70$' } },
+      { label: { ko: '설치 대기 기간', en: 'Installation wait', fr: "Délai d'installation" }, value: { ko: '1–7일', en: '1–7 days', fr: '1–7 jours' } },
+    ],
+    timeline: { ko: '이사 1–2주 전에 신청하고, 이사 당일 또는 그 전날 설치 예약을 잡으세요.', en: "Apply 1–2 weeks before moving; schedule installation for move-in day or the day before.", fr: "Faites la demande 1–2 semaines avant ; planifiez l'installation pour le jour d'emménagement ou la veille." },
+    nextStepId: 'movingin',
+    nextStepLabel: { ko: '이사 준비', en: 'Moving in', fr: 'Emménagement' },
+  },
+  completionCard: {
+    headline: { ko: '인터넷 연결 완료!', en: 'Internet connected!', fr: 'Internet connecté !' },
+    body: { ko: '이제 이사 당일 준비만 남았어요.', en: "Just one more step: moving day.", fr: "Plus qu'une étape : le jour du déménagement." },
+  },
+}
+
+// ─── Step 8: Moving In ────────────────────────────────────────────────────────
+
+const MOVINGIN_STEP: JourneyStep = {
+  id: 'movingin',
+  label: { ko: '이사하기', en: 'Moving in', fr: 'Emménagement' },
+  hero: {
+    title: { ko: '몬트리올 이사 당일: 준비와 팁', en: "Moving day in Montréal: prep and tips", fr: "Jour de déménagement à Montréal : préparation et conseils" },
+    sub: {
+      ko: '몬트리올에서 7월 1일은 "이사의 날"이에요. 인구의 약 20%가 같은 날 이사를 해요. 이 날을 피하거나, 일찍 계획하세요. 다른 날 이사라도 주차, 엘리베이터 예약, 이웃 배려가 중요해요.',
+      en: "July 1 is Montréal's unofficial moving day — roughly 20% of the city moves that day. Avoid it or plan very early. Any moving day: parking, elevator booking, and neighbour courtesy matter.",
+      fr: "Le 1er juillet est le jour de déménagement non officiel de Montréal — environ 20% de la ville déménage ce jour-là. Évitez-le ou planifiez très tôt. N'importe quel jour : stationnement, ascenseur et courtoisie envers les voisins comptent.",
+    },
+    when: { ko: '입주일 당일 및 며칠 전', en: 'Move-in day and a few days before', fr: "Le jour d'emménagement et quelques jours avant" },
+    cost: { ko: '이삿짐센터 $300–800 / 트럭 렌트 $80–200/일', en: 'Movers $300–800 · truck rental $80–200/day', fr: 'Déménageurs 300–800$ · camion 80–200$/jour' },
+    time: { ko: '1일 (소형) ~ 2일 (대형)', en: '1 day (small) to 2 days (large)', fr: '1 jour (petit) à 2 jours (grand)' },
+    canBeforeArrival: { ko: '아니요, 현지에서만', en: 'No — local only', fr: 'Non — sur place seulement' },
+  },
+  options: [
+    {
+      name: '이삿짐센터 고용',
+      sub: { ko: '전문 인력이 이삿짐을 안전하게 이동', en: 'Professional movers handle everything safely', fr: "Des déménageurs professionnels s'occupent de tout" },
+      topPick: true,
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$300–800', en: '$300–800', fr: '300–800$' } },
+        { icon: 'shield', label: { ko: '보험 적용', en: 'Insurance covered', fr: 'Couvert par assurance' } },
+      ],
+      worksFor: [
+        { ko: '짐이 많은 분', en: 'Lots of belongings', fr: "Beaucoup d'affaires" },
+        { ko: '도움을 줄 사람이 없는 분', en: 'No one to help', fr: "Personne pour vous aider" },
+      ],
+      worthKnowing: [
+        { ko: '7월 1일 전후 예약은 최소 4–8주 전에', en: 'Book 4–8 weeks ahead for June/July moves', fr: "Réservez 4–8 semaines à l'avance pour juin/juillet" },
+        { ko: '견적 2–3군데 비교 권장', en: 'Get 2–3 quotes', fr: 'Comparez 2–3 devis' },
+      ],
+    },
+    {
+      name: '트럭 렌트 (U-Haul / Enterprise)',
+      sub: { ko: '직접 운전 · 비용 절약 · 도울 사람 필요', en: 'Drive yourself · budget-friendly · need helpers', fr: "Conduire soi-même · économique · besoin d'aide" },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '$80–200/일', en: '$80–200/day', fr: '80–200$/jour' } },
+        { icon: 'users', label: { ko: '도와줄 사람 2–4명 필요', en: 'Need 2–4 helpers', fr: "Besoin de 2–4 aides" } },
+      ],
+      worksFor: [
+        { ko: '예산을 최대한 아끼고 싶은 분', en: 'Tight budget', fr: 'Budget serré' },
+        { ko: '도와줄 친구나 가족이 있는 분', en: 'Have friends/family to help', fr: 'Avez des amis/famille pour aider' },
+      ],
+      worthKnowing: [
+        { ko: '주차 퍼밋 사전 신청 필요 (일부 동네)', en: 'Parking permits required in some neighbourhoods', fr: 'Permis de stationnement requis dans certains quartiers' },
+      ],
+    },
+    {
+      name: '친구와 함께 이사',
+      sub: { ko: '비용 최소 · 시간 최대 · 피자 한 판 준비', en: 'Minimum cost · maximum time · order pizza', fr: 'Coût minimal · temps maximal · commandez des pizzas' },
+      meta: [
+        { icon: 'currency-dollar', label: { ko: '거의 무료', en: 'Near-free', fr: 'Quasi-gratuit' } },
+        { icon: 'users', label: { ko: '4–6명 추천', en: '4–6 people recommended', fr: '4–6 personnes recommandées' } },
+      ],
+      worksFor: [
+        { ko: '짐이 적은 분', en: 'Light belongings', fr: "Peu d'affaires" },
+        { ko: '현지 친구 네트워크가 있는 분', en: 'Have a local network', fr: 'Avez un réseau local' },
+      ],
+      worthKnowing: [{ ko: '음식과 음료 준비는 필수 예의', en: 'Providing food and drinks is expected', fr: 'Fournir nourriture et boissons est attendu' }],
+    },
+  ],
+  compareTable: {
+    headers: [
+      { ko: '이사 체크리스트', en: 'Moving checklist', fr: 'Liste de déménagement' },
+      { ko: '시기', en: 'When', fr: 'Quand' },
+    ],
+    rows: [
+      { name: '이삿짐센터 / 트럭 예약', cols: ['4–8주 전 / 4–8 weeks before'] },
+      { name: 'Hydro-Québec 개시일 설정', cols: ['2주 전 / 2 weeks before'] },
+      { name: '인터넷 설치 예약', cols: ['2주 전 / 2 weeks before'] },
+      { name: '세입자 보험 가입', cols: ['입주 전날까지 / Before move-in'] },
+      { name: '현 상태 사진 촬영 (방 곳곳)', cols: ['열쇠 받은 직후 / Right after getting keys'] },
+      { name: '이전 주소 변경 (은행·우체국)', cols: ['입주일 또는 이후 / Move-in day or after'] },
+      { name: '엘리베이터 예약 (있으면)', cols: ['최소 1주 전 / At least 1 week before'] },
+    ],
+  },
+  communityNotes: [
+    {
+      flag: '🇰🇷',
+      person: { ko: '간호사 · 3번 이사 경험', en: 'Nurse · moved 3 times in MTL', fr: 'Infirmière · 3 déménagements à MTL' },
+      text: {
+        ko: '이사 당일 방 곳곳 사진 찍는 것 잊지 마세요. 나중에 퇴거할 때 보증금 분쟁 생기면 증거가 돼요.',
+        en: "Don't forget to photograph every room right when you get the keys. It's your evidence if there's a dispute when you move out.",
+        fr: "N'oubliez pas de photographier chaque pièce dès que vous récupérez les clés. C'est votre preuve en cas de litige à la fin.",
+      },
+      likes: 73,
+    },
+    {
+      flag: '🇰🇷',
+      person: { ko: '유학생 · 7/1 이사 경험', en: 'Student · survived July 1 moving day', fr: "Étudiant·e · a survécu au 1er juillet" },
+      text: {
+        ko: '7월 1일에 이사해 봤어요. 진짜 카오스예요. 가능하면 6월 29–30일이나 7월 2–3일로 피하세요.',
+        en: "I moved on July 1. Pure chaos. Avoid it if at all possible — June 29–30 or July 2–3 are fine.",
+        fr: "J'ai déménagé le 1er juillet. Chaos total. Évitez si possible — le 29–30 juin ou 2–3 juillet, c'est bien.",
+      },
+      likes: 61,
+    },
+  ],
+  helpLinks: [
+    { label: { ko: 'U-Haul 트럭 예약 몬트리올', en: 'U-Haul truck rental Montréal', fr: 'Location camion U-Haul Montréal' }, url: 'https://www.uhaul.com/Locations/Montreal-QC/', domain: 'uhaul.com' },
+    { label: { ko: '몬트리올 이사 주차 퍼밋', en: 'Montréal parking permit for moving', fr: 'Permis de stationnement déménagement' }, url: 'https://montreal.ca/en/articles/parking-for-moving', domain: 'montreal.ca' },
+  ],
+  faq: [
+    {
+      q: { ko: '7월 1일 꼭 피해야 하나요?', en: 'Do I have to avoid July 1?', fr: 'Dois-je vraiment éviter le 1er juillet ?' },
+      a: { ko: '강력히 권장해요. 피할 수 없다면 이삿짐센터를 최소 6–8주 전에 예약하고, 트럭 렌트도 최대한 일찍 해요. 당일 주차 공간 찾기가 매우 어렵습니다.', en: "Strongly recommended to avoid it. If unavoidable, book movers 6–8 weeks ahead and rent a truck as early as possible. Parking on that day is very hard.", fr: "Fortement recommandé de l'éviter. Si inévitable, réservez des déménageurs 6–8 semaines à l'avance. Trouver du stationnement ce jour-là est très difficile." },
+    },
+    {
+      q: { ko: '이사 전 현 상태 기록이 왜 중요한가요?', en: "Why document the unit's condition before moving in?", fr: "Pourquoi documenter l'état du logement avant d'emménager ?" },
+      a: { ko: '퇴거 시 집주인이 기존 손상을 세입자 잘못으로 청구할 수 있어요. 입주 당일 사진을 찍어두면 분쟁 시 증거가 돼요.', en: "A landlord might charge you for pre-existing damage when you move out. Photos taken on move-in day are your evidence.", fr: "Un propriétaire pourrait vous facturer des dommages préexistants à la sortie. Les photos du jour d'emménagement constituent votre preuve." },
+    },
+  ],
+  sidebar: {
+    quickFacts: [
+      { label: { ko: '몬트리올 이사의 날', en: 'Montréal moving day', fr: 'Jour de déménagement MTL' }, value: { ko: '7월 1일', en: 'July 1', fr: '1er juillet' } },
+      { label: { ko: '이삿짐센터 평균 비용', en: 'Avg mover cost', fr: 'Coût déménageurs moy.' }, value: { ko: '$400–600', en: '$400–600', fr: '400–600$' } },
+    ],
+    timeline: { ko: '2–4주 전: 이삿짐센터 예약 → 1주 전: 짐 포장 → 당일: 현 상태 사진 촬영 후 이사 시작.', en: '2–4 weeks before: book movers → 1 week before: pack → move day: photograph the unit before unloading.', fr: "2–4 semaines avant : réserver des déménageurs → 1 semaine avant : emballer → jour J : photographier le logement." },
+  },
+  completionCard: {
+    headline: { ko: '집이 생겼습니다! 🏠', en: 'You have a home! 🏠', fr: 'Vous avez un chez-vous ! 🏠' },
+    body: { ko: '몬트리올에서의 새 출발을 축하해요. 이제 진짜 정착이 시작됩니다.', en: "Welcome to your new home in Montréal. The real settling-in begins now.", fr: "Bienvenue dans votre nouveau chez-vous à Montréal. La vraie installation commence maintenant." },
+  },
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-const TABS: TabContent[] = [
+const ARRIVE_STEPS: TabContent[] = [
   FLIGHTS_TAB,
   AIRPORT_TAB,
   TEMP_STAY_TAB,
@@ -2222,225 +2728,62 @@ const TABS: TabContent[] = [
   LANGUAGE_TAB,
 ]
 
-export default function Arriving() {
-  const { lang } = useLang()
-  const [checked, setChecked] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '[]')) }
-    catch { return new Set() }
-  })
-  const [activeTabId, setActiveTabId] = useState<string>('flights')
-  const contentRef = useRef<HTMLDivElement>(null)
+const SETTLE_STEPS: TabContent[] = [
+  BUDGET_STEP,
+  NEIGHBOURHOOD_STEP,
+  VISITS_STEP,
+  LEASE_STEP,
+  INSURANCE_STEP,
+  HYDRO_STEP,
+  INTERNET_STEP,
+  MOVINGIN_STEP,
+]
 
-  useEffect(() => {
-    try { localStorage.setItem(PROGRESS_KEY, JSON.stringify([...checked])) }
-    catch {}
-  }, [checked])
+const TABS: TabContent[] = [...ARRIVE_STEPS, ...SETTLE_STEPS]
 
-  const pct = Math.round((checked.size / TABS.length) * 100)
-  const activeTab = TABS.find(t => t.id === activeTabId) ?? TABS[0]
+// Two-phase grouping so the tab-pill/check-strip rows show ~12 items at a time
+// instead of all 20 — overall progress still counts across every step.
+const PHASES = [
+  {
+    id: 'arrive',
+    label: { ko: '도착 전 준비', en: 'Before you arrive', fr: 'Avant votre arrivée' },
+    stepIds: ARRIVE_STEPS.map(s => s.id),
+  },
+  {
+    id: 'settle',
+    label: { ko: '도착 후 정착', en: 'Settling in', fr: "Une fois arrivé·e" },
+    stepIds: SETTLE_STEPS.map(s => s.id),
+  },
+]
 
-  const sectionLabel = (ko: string, en: string, fr: string) =>
-    lang === 'ko' ? ko : lang === 'fr' ? fr : en
-
+function HousingExtra(tabId: string, lang: string) {
+  if (tabId !== 'housing') return null
+  const label = lang === 'ko' ? '플랫폼별 매물 검색' : lang === 'fr' ? 'Chercher par plateforme' : 'Search by platform'
   return (
-    <div className="flex min-h-screen">
-      <main className="flex-1 min-w-0 px-6 lg:px-10 pt-12 md:pt-[72px] lg:pt-24 pb-24">
-        <div className="max-w-[900px]">
-
-          {/* Page header */}
-          <div className="mb-8">
-            <p className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-3">
-              {sectionLabel('나의 여정 · 01', 'My Journey · 01', 'Mon parcours · 01')}
-            </p>
-            <div className="flex items-end justify-between gap-4 flex-wrap">
-              <h1 className="text-[32px] font-light tracking-tight text-gray-900 leading-none">
-                {sectionLabel('첫 걸음', 'First Steps', 'Premiers Pas')}
-              </h1>
-              <div className="text-right shrink-0">
-                <p className="text-2xl font-light text-gray-900 tabular-nums leading-none">{checked.size} / {TABS.length}</p>
-                <p className="text-[11px] text-gray-400 mt-1">{sectionLabel('완료', 'done', 'fait')}</p>
-              </div>
-            </div>
-            <p className="text-[13px] text-gray-400 mt-3 leading-relaxed max-w-[520px]">
-              {sectionLabel(
-                '몇 가지 준비하면 좋은 것들이 있어요. 첫날부터 다 해결할 필요는 없어요.',
-                'A few things to sort out when you arrive. None of it needs to happen on day one.',
-                "Quelques choses à régler à l'arrivée. Rien n'est urgent le premier jour.",
-              )}
-            </p>
-          </div>
-
-          {/* Checklist chips */}
-          <div className="check-strip mb-6">
-            {TABS.map(tab => {
-              const done = checked.has(tab.id)
-              return (
-                <button key={tab.id} onClick={() => {
-                  setChecked(prev => { const n = new Set(prev); n.has(tab.id) ? n.delete(tab.id) : n.add(tab.id); return n })
-                  setActiveTabId(tab.id)
-                  setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
-                }}
-                  className={`check-chip${done ? ' done' : ''}`}>
-                  <span className={`w-3 h-3 rounded-sm border flex-shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-gray-900 border-gray-900' : 'border-gray-300'}`}>
-                    {done && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                  </span>
-                  {tri(tab.label, lang)}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Tab navigation */}
-          <div className="flex gap-1 flex-wrap mb-6">
-            {TABS.map(tab => (
-              <button key={tab.id} onClick={() => {
-                setActiveTabId(tab.id)
-                setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
-              }}
-                className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors whitespace-nowrap ${
-                  activeTabId === tab.id ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`}>
-                {tri(tab.label, lang)}
-              </button>
-            ))}
-          </div>
-
-          {/* Two-column layout: main content + sidebar */}
-          <div ref={contentRef} className="flex gap-8 items-start">
-
-            {/* Main content — all 7 sections */}
-            <div className="flex-1 min-w-0">
-
-              {/* 1. Hero */}
-              <Hero data={activeTab.hero} lang={lang} />
-
-              {/* 2. Options */}
-              <div className="mb-10">
-                <SectionTitle>{sectionLabel('추천 선택지', 'Recommended options', 'Options recommandées')}</SectionTitle>
-                <div className="flex flex-col gap-4">
-                  {activeTab.options.map((opt, i) => <OptionCard key={i} opt={opt} lang={lang} />)}
-                </div>
-              </div>
-
-              {/* 3. Comparison table */}
-              <div className="mb-10">
-                <SectionTitle>{sectionLabel('비교 표', 'Side-by-side comparison', 'Comparaison')}</SectionTitle>
-                <CompareTableComp table={activeTab.compareTable} lang={lang} />
-              </div>
-
-              {/* 4. Community */}
-              <div className="mb-10">
-                <SectionTitle>{sectionLabel('먼저 경험한 분들의 이야기', 'Community experiences', 'Témoignages')}</SectionTitle>
-                <CommunityNotes notes={activeTab.communityNotes} lang={lang} />
-              </div>
-
-              {/* 5a. Platform search + live listings (housing tab only) */}
-              {activeTab.id === 'housing' && (
-                <div className="mb-10">
-                  <SectionTitle>{sectionLabel('플랫폼별 매물 검색', 'Search by platform', 'Chercher par plateforme')}</SectionTitle>
-                  <HousingListings lang={lang} />
-                </div>
-              )}
-
-              {/* 5b. Helpful links */}
-              <div className="mb-10">
-                <SectionTitle>{sectionLabel('도움이 되는 링크', 'Helpful links', 'Liens utiles')}</SectionTitle>
-                <HelpLinks links={activeTab.helpLinks} lang={lang} />
-              </div>
-
-              {/* 6. FAQ */}
-              <div className="mb-10">
-                <SectionTitle>{sectionLabel('자주 묻는 질문', 'Frequently asked questions', 'Questions fréquentes')}</SectionTitle>
-                <FAQ items={activeTab.faq} lang={lang} />
-              </div>
-
-              {/* 7. Ask community */}
-              <div className="mb-4">
-                <SectionTitle>{sectionLabel('커뮤니티에 질문하기', 'Ask the community', 'Demander à la communauté')}</SectionTitle>
-                <AskCommunity lang={lang} />
-              </div>
-
-            </div>
-
-            {/* Sticky sidebar */}
-            <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
-              <div className="border border-gray-100 rounded-xl p-4 bg-white">
-                <div className="mb-4">
-                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-1">{sectionLabel('현재 주제', 'Current topic', 'Sujet actuel')}</p>
-                  <p className="text-[14px] font-medium text-gray-900">{tri(activeTab.label, lang)}</p>
-                </div>
-                <div className="border-t border-gray-100 pt-3 mb-4">
-                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('빠른 참고', 'Quick facts', 'Infos rapides')}</p>
-                  {activeTab.sidebar.quickFacts.map((f, i) => (
-                    <div key={i} className="flex justify-between items-baseline py-1.5 border-b border-gray-50 last:border-0">
-                      <span className="text-[11px] text-gray-500">{tri(f.label, lang)}</span>
-                      <span className="text-[11px] font-medium text-gray-900 ml-2 text-right">{tri(f.value, lang)}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t border-gray-100 pt-3 mb-4">
-                  <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('일반적인 시기', 'Estimated timeline', 'Calendrier habituel')}</p>
-                  <p className="text-[11px] text-gray-500 leading-relaxed">{tri(activeTab.sidebar.timeline, lang)}</p>
-                </div>
-                <div className="border-t border-gray-100 pt-3 mb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400">{sectionLabel('전체 진행률', 'Overall progress', 'Progression')}</p>
-                    <button
-                      onClick={() => setChecked(new Set())}
-                      className={`text-[9px] transition-colors ${checked.size > 0 ? 'text-gray-400 hover:text-gray-600' : 'text-gray-200 cursor-default'}`}
-                      disabled={checked.size === 0}
-                    >
-                      {sectionLabel('초기화', 'Reset', 'Réinitialiser')}
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gray-900 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
-                    </div>
-                    <span className="text-[11px] font-medium text-gray-500 tabular-nums">{pct}%</span>
-                  </div>
-                </div>
-
-                {/* Completion card in sidebar */}
-                <div className="border-t border-gray-100 pt-3 mb-3">
-                  <div className="rounded-xl bg-gray-900 text-white px-3 py-3">
-                    <p className="text-[12px] font-semibold leading-snug mb-1">{tri(activeTab.completionCard.headline, lang)}</p>
-                    <p className="text-[11px] text-gray-400 leading-relaxed mb-3">{tri(activeTab.completionCard.body, lang)}</p>
-                    <button
-                      onClick={() => {
-                        setChecked(prev => { const n = new Set(prev); n.add(activeTab.id); return n })
-                        if (activeTab.sidebar.nextStepId) {
-                          setTimeout(() => setActiveTabId(activeTab.sidebar.nextStepId!), 300)
-                        }
-                      }}
-                      className={`text-[11px] font-semibold transition-colors ${checked.has(activeTab.id) ? 'text-green-400' : 'text-white hover:text-gray-300'}`}
-                    >
-                      {checked.has(activeTab.id)
-                        ? (lang === 'ko' ? '✓ 완료됨' : lang === 'fr' ? '✓ Fait' : '✓ Done')
-                        : (lang === 'ko' ? '완료로 표시하기 →' : lang === 'fr' ? 'Marquer comme fait →' : 'Mark as done →')
-                      }
-                    </button>
-                  </div>
-                </div>
-
-                {activeTab.sidebar.nextStepId && activeTab.sidebar.nextStepLabel && (
-                  <div className="border-t border-gray-100 pt-3">
-                    <p className="text-[9px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-2">{sectionLabel('다음 단계', 'Next step', 'Prochaine étape')}</p>
-                    <button
-                      onClick={() => setActiveTabId(activeTab.sidebar.nextStepId!)}
-                      className="w-full flex items-center justify-between px-3 py-2 bg-gray-900 text-white rounded-lg text-[12px] font-medium hover:bg-gray-700 transition-colors"
-                    >
-                      <span>{tri(activeTab.sidebar.nextStepLabel, lang)}</span>
-                      <i className="ti ti-arrow-right text-[14px]" aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </aside>
-
-          </div>
-        </div>
-      </main>
+    <div className="mb-10">
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 whitespace-nowrap">{label}</span>
+        <div className="flex-1 h-px bg-gray-100" />
+      </div>
+      <HousingListings lang={lang} />
     </div>
+  )
+}
+
+export default function Arriving() {
+  return (
+    <JourneyPage
+      steps={TABS}
+      progressKey={PROGRESS_KEY}
+      eyebrow={{ ko: '나의 여정', en: 'My Journey', fr: 'Mon parcours' }}
+      title={{ ko: '도착 & 정착', en: 'Arriving & Settling In', fr: 'Arrivée & Installation' }}
+      subtitle={{
+        ko: '비행기 예약부터 첫 아파트 계약까지 — 몬트리올 정착의 전 과정을 한 곳에서 안내해 드려요.',
+        en: 'From booking your flight to signing your first lease — the whole Montréal settling journey in one place.',
+        fr: "De la réservation du vol à la signature du premier bail — tout le parcours d'installation à Montréal réuni ici.",
+      }}
+      extraContent={HousingExtra}
+      phases={PHASES}
+    />
   )
 }

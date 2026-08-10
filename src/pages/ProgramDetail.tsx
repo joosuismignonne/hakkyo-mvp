@@ -15,6 +15,7 @@ import {
   parseOutputTags,
   type TrackView,
 } from '../lib/programDisplay'
+import { formatPrice, formatDuration } from '../lib/format'
 import { LeftSidebar, PageShell, SharedRightSidebar } from '../components/PageLayout'
 import type { ProgramTrack } from '../types'
 
@@ -32,22 +33,6 @@ function fmtDate(iso: string | null | undefined): string {
   try {
     return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(iso))
   } catch { return iso }
-}
-
-function resolvePrice(s: TrackView): string {
-  if (s.is_free) return 'Free'
-  if (s.total_price && s.total_price > 0) return `$${s.total_price} ${s.currency}`
-  if (s.class_count > 0 && s.price_per_class > 0) return `$${s.price_per_class * s.class_count} ${s.currency}`
-  if (s.price_per_class > 0) return `$${s.price_per_class} ${s.currency}`
-  return 'Free'
-}
-
-function resolveDuration(s: TrackView): string | null {
-  const dur = (s as TrackView & { duration?: string }).duration
-  if (dur?.trim()) return dur.trim()
-  if (s.duration_weeks) return `${s.duration_weeks} weeks`
-  if (s.class_count > 1) return `${s.class_count} classes`
-  return null
 }
 
 // ─── Shared atoms ─────────────────────────────────────────────────────────────
@@ -134,8 +119,8 @@ export default function ProgramDetail() {
   const isOpen   = track.status === 'open'
   const name     = pickText(lang, track.name_ko, track.name_en, track.name_fr)
   const descFull = pickText(lang, track.description_ko, track.description_en, track.description_fr)
-  const price    = resolvePrice(tv)
-  const duration = resolveDuration(tv)
+  const price    = formatPrice(tv)
+  const duration = formatDuration(tv)
   const typeLabel  = resolveTrackTypeLabel(tv)
   const typeChip   = resolveProgramTypeChip(tv, typeLabel)
   const classSchedule = buildClassSchedule(tv)

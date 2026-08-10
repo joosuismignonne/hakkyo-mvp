@@ -42,9 +42,15 @@
 /* ─── Brand tokens ───────────────────────────────────────────────────────────*/
 
 :root {
-  --y:   #F0C040;
-  --y-h: #E8B530;
-  --y-l: #FDF6D8;
+  /* Kept in sync with tailwind.config.ts colors.yellow — same brand yellow, two access paths */
+  --y:   #F5C518;
+  --y-h: #DFB215;
+  --y-l: #FEF9E7;
+
+  /* Row stat status colors — deliberately not finance red/green.
+     Closed/unavailable reads as neutral gray, not alarming. */
+  --pos: #0F7B4E;
+  --neg: #9CA3AF;
 
   /* Spacing scale */
   --space-xs:  4px;
@@ -152,6 +158,46 @@
     font-size: 11px; color: #6b7280; padding: 6px 8px;
     background: #f9fafb; border-radius: 4px; margin-bottom: 5px; line-height: 1.4;
   }
+
+  /* Dense list rows — Toss-style "a lot of info, scannable at a glance" */
+  .row-list { display: flex; flex-direction: column; }
+  .row-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 4px; border-bottom: 1px solid #f3f4f6;
+    transition: background 0.15s;
+  }
+  .row-list > .row-item:last-child { border-bottom: none; }
+  .row-item.interactive { cursor: pointer; }
+  .row-item.interactive:hover { background: #fafafa; }
+
+  .row-chip {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #f4f4f4; font-size: 16px;
+  }
+  .row-chip-sm { width: 28px; height: 28px; border-radius: 8px; font-size: 13px; }
+
+  .row-body { min-width: 0; flex: 1 1 auto; }
+  .row-title {
+    font-size: 13px; font-weight: 600; color: #111827; line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .row-sub {
+    font-size: 11px; color: #9ca3af; line-height: 1.3; margin-top: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .row-stats { flex-shrink: 0; text-align: right; }
+  .row-stat {
+    font-size: 12px; font-weight: 600; color: #111827;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .row-stat-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #9ca3af; white-space: nowrap;
+  }
+  .status-positive { color: var(--pos); }
+  .status-negative { color: var(--neg); }
 
   /* Checklist strip */
   .check-strip { display: flex; gap: 6px; flex-wrap: wrap; }

@@ -36,17 +36,6 @@ function IconArriving({ active }: { active?: boolean }) {
   )
 }
 
-function IconSettling({ active }: { active?: boolean }) {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth={active ? 2.2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
-      <path d="M9 21V12h6v9"/>
-      <circle cx="12" cy="10" r="1.5" fill="currentColor" stroke="none"/>
-    </svg>
-  )
-}
-
 function IconConnecting({ active }: { active?: boolean }) {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -67,40 +56,6 @@ function IconWorking({ active }: { active?: boolean }) {
       <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
       <line x1="12" y1="12" x2="12" y2="16"/>
       <line x1="10" y1="14" x2="14" y2="14"/>
-    </svg>
-  )
-}
-
-function IconLanguage({ active }: { active?: boolean }) {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth={active ? 2.2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 5h10M7 2v3M12 14l4-9 4 9M13.5 11h5"/>
-      <path d="M4 9c0 4 2.5 6.5 5 8"/>
-      <path d="M9 9c0 4-2.5 6.5-5 8"/>
-    </svg>
-  )
-}
-
-function IconLab({ active }: { active?: boolean }) {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth={active ? 2.2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="2" width="6" height="11" rx="3"/>
-      <path d="M5 10a7 7 0 0014 0"/>
-      <line x1="12" y1="19" x2="12" y2="22"/>
-      <line x1="8" y1="22" x2="16" y2="22"/>
-    </svg>
-  )
-}
-
-function IconLiving({ active }: { active?: boolean }) {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth={active ? 2.2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22V12"/>
-      <path d="M12 12C12 12 7 10 7 6a5 5 0 0110 0c0 4-5 6-5 6z"/>
-      <path d="M12 17c-2.5 0-5-1.5-5-4"/>
     </svg>
   )
 }
@@ -135,20 +90,18 @@ type JourneyItem = {
   ko: string
   en: string
   fr: string
+  /** Shorter label for the mobile bottom tab bar, where space is tight. Falls back to `en`. */
+  mobileLabel?: string
 }
 
 const JOURNEY: JourneyItem[] = [
   { to: '/',          icon: IconHome,       emoji: '🏠', ko: '홈',           en: 'Home',            fr: 'Accueil'                },
-  { to: '/arriving',  icon: IconArriving,   emoji: '✈️', ko: '첫 걸음',      en: 'First Steps',     fr: 'Premiers Pas'           },
-  { to: '/settling',  icon: IconSettling,   emoji: '🏡', ko: '나만의 공간',   en: 'Finding My Place', fr: 'Trouver Mon Chez-Soi'  },
+  { to: '/arriving',  activePaths: ['/arriving', '/settling'],
+                      icon: IconArriving,   emoji: '✈️', ko: '도착 & 정착',  en: 'Arriving & Settling', fr: 'Arrivée & Installation', mobileLabel: 'Arriving'},
   { to: '/board',     activePaths: ['/board', '/community'],
-                      icon: IconConnecting, emoji: '👋', ko: '주변 사람들',   en: 'People Around You', fr: 'Autour de Vous'       },
-  { to: '/programs',  activePaths: ['/programs', '/sessions', '/radar', '/resume-map'],
-                      icon: IconWorking,    emoji: '💼', ko: '새로운 기회',   en: 'New Opportunities', fr: 'Nouvelles Opportunités'},
-  { to: '/phrases',       activePaths: ['/phrases'],
-                          icon: IconLanguage,   emoji: '🗣', ko: '일상 표현',     en: 'Everyday Words',   fr: 'Expressions Quotidiennes'},
-  { to: '/news',          activePaths: ['/news'],
-                          icon: IconLiving,     emoji: '🌱', ko: '몬트리올 라이프', en: 'Life in Montréal', fr: 'La Vie à Montréal'   },
+                      icon: IconConnecting, emoji: '👋', ko: '게시판',   en: 'Board', fr: 'Babillard'       },
+  { to: '/programs',  activePaths: ['/programs', '/sessions'],
+                      icon: IconWorking,    emoji: '💼', ko: '새로운 기회',   en: 'New Opportunities', fr: 'Nouvelles Opportunités', mobileLabel: 'Programs'},
 ]
 
 const JOURNEY_MOBILE = JOURNEY
@@ -353,7 +306,7 @@ function MobileBottomNav() {
   const { pathname } = useLocation()
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-stretch overflow-x-auto">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-stretch">
       {JOURNEY_MOBILE.map(j => {
         const active = isJourneyActive(j, pathname)
         const Icon = j.icon
@@ -361,11 +314,16 @@ function MobileBottomNav() {
           <Link
             key={j.to}
             to={j.to}
-            className="flex flex-col items-center justify-center py-2 gap-0.5 transition-colors shrink-0"
-            style={{ color: active ? '#111' : '#d1d5db', minWidth: '56px', flex: '1 0 56px' }}
+            className="flex flex-col items-center justify-center py-2 gap-0.5 px-0.5 transition-colors"
+            style={{ color: active ? '#111' : '#9ca3af', flex: '1 1 0', minWidth: 0 }}
           >
             <Icon active={active} />
-            <span style={{ fontSize: '9px', fontWeight: active ? 700 : 500 }}>{j.en}</span>
+            <span
+              style={{ fontSize: '9px', fontWeight: active ? 700 : 500, maxWidth: '100%' }}
+              className="overflow-hidden text-ellipsis whitespace-nowrap"
+            >
+              {j.mobileLabel ?? j.en}
+            </span>
           </Link>
         )
       })}

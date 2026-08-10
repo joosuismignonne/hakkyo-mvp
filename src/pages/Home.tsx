@@ -1,11 +1,11 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { getTracks, getContents, getPublishedCommunityPosts } from '../lib/db'
+import { getTracks, getPublishedCommunityPosts } from '../lib/db'
 import { useLang } from '../context/LangContext'
-import { normalizeContent } from '../lib/newsContent'
-import type { ProgramTrack, Content, CommunitySubmission } from '../types'
-import { trackEvent } from '../lib/analytics'
-const CommunitySubmitModal = lazy(() => import('../components/CommunitySubmitModal'))
+import { formatPrice, formatSeats, formatDeadlineDelta } from '../lib/format'
+import { resolveApplicationDeadline, dedupeTracks } from '../lib/programDisplay'
+import type { ProgramTrack, CommunitySubmission } from '../types'
+import CommunityComposer from '../components/CommunityComposer'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,7 +17,6 @@ function pickText(lang: Lang, ko: string, en: string, fr: string): string {
 }
 
 const tName  = (s: ProgramTrack, l: Lang) => pickText(l, s.name_ko, s.name_en, s.name_fr)
-const cTitle = (c: Content, l: Lang)      => pickText(l, c.title_ko, c.title_en, c.title_fr)
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -34,22 +33,9 @@ function todayFull(lang: Lang): string {
   return now.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 }
 
-// ─── Daily phrase ─────────────────────────────────────────────────────────────
-
-const DAILY_WORDS: Array<{ ko: string; en: string; fr: string; context: string }> = [
-  { ko: '천천히 가도 괜찮아요.',         en: "It's okay to go slowly.",           fr: "C'est bien d'y aller doucement.", context: 'Settling in' },
-  { ko: '오늘 어떠세요?',                en: 'How are you today?',                fr: "Comment allez-vous aujourd'hui ?", context: 'Daily greeting' },
-  { ko: '몬트리올에 온 걸 환영해요.',     en: 'Welcome to Montréal.',              fr: 'Bienvenue à Montréal.',           context: 'First arrival' },
-  { ko: '지하철 타는 법을 알아요?',       en: 'Do you know how to take the metro?', fr: 'Savez-vous prendre le métro ?', context: 'Transit' },
-  { ko: '어디서 왔어요?',                en: 'Where are you from?',               fr: "D'où venez-vous ?",               context: 'Getting to know each other' },
-  { ko: '이 근처에 좋은 카페가 있어요?',  en: 'Is there a good café nearby?',      fr: 'Y a-t-il un bon café par ici ?',  context: 'Neighbourhood life' },
-  { ko: '같이 공부할 사람 있어요?',       en: 'Anyone want to study together?',    fr: "Quelqu'un veut étudier ensemble ?", context: 'Community' },
-]
-
 // ─── Section 1: HERO ─────────────────────────────────────────────────────────
 
 function Hero({ lang }: { lang: Lang }) {
-  const { t } = useLang()
   const [times, setTimes] = useState({ mtl: '', seo: '' })
 
   useEffect(() => {
@@ -62,44 +48,15 @@ function Hero({ lang }: { lang: Lang }) {
   }, [])
 
   return (
-    <section className="pt-12 pb-16 md:pt-[72px] md:pb-24 lg:pt-24 animate-fade-up">
-      {/* Date eyebrow */}
-      <p className="t-eyebrow mb-7 text-gray-400">
+    <section className="py-5 md:py-6 flex items-center justify-between gap-4 border-b border-gray-100 animate-fade-up">
+      <p className="t-eyebrow text-gray-400 truncate">
         {todayFull(lang)}
       </p>
-
-      {/* Hero title */}
-      <h1 className="t-hero text-gray-900 mb-6">
-        {t('몬트리올,\n오늘.', 'Montréal,\ntoday.', "Montréal,\naujourd'hui.")}
-      </h1>
-
-      {/* Subtitle */}
-      <p style={{ fontSize: '14px', lineHeight: '1.65' }} className="text-gray-500 max-w-[440px] mb-12">
-        {t(
-          '언어를 찾고, 사람을 만나고,\n이 도시에서 나만의 자리를 찾는 하루 가이드.',
-          'A daily guide for finding language, people,\nand your place in the city.',
-          "Un guide quotidien pour trouver\nvotre langue, vos gens, et votre place en ville.",
-        )}
+      <p style={{ fontSize: '13px', fontVariantNumeric: 'tabular-nums' }} className="text-gray-500 shrink-0 whitespace-nowrap">
+        <span className="text-gray-300">MTL</span> {times.mtl}
+        <span className="text-gray-200 mx-2">·</span>
+        <span className="text-gray-300">Seoul</span> {times.seo}
       </p>
-
-      {/* Live clocks */}
-      <div className="flex items-end gap-10">
-        <div>
-          <p className="t-eyebrow text-gray-300 mb-2">Montréal</p>
-          <p style={{ fontSize: '28px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
-             className="text-gray-900 leading-none">
-            {times.mtl}
-          </p>
-        </div>
-        <div className="w-px h-10 bg-gray-100 mb-1" />
-        <div>
-          <p className="t-eyebrow text-gray-300 mb-2">Seoul</p>
-          <p style={{ fontSize: '28px', fontWeight: 300, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
-             className="text-gray-900 leading-none">
-            {times.seo}
-          </p>
-        </div>
-      </div>
     </section>
   )
 }
@@ -108,16 +65,15 @@ function Hero({ lang }: { lang: Lang }) {
 
 type HappeningItem = { label: string; title: string; href: string; time?: string }
 
-function TodayInHakkyo({ tracks, contents, community, lang }: {
+function TodayInHakkyo({ tracks, lang }: {
   tracks: ProgramTrack[]
-  contents: Content[]
-  community: CommunitySubmission[]
   lang: Lang
 }) {
   const { t } = useLang()
   const items: HappeningItem[] = []
+  const dedupedTracks = dedupeTracks(tracks)
 
-  const openCount = tracks.filter(s => s.status === 'open').length
+  const openCount = dedupedTracks.filter(s => s.status === 'open').length
   if (openCount > 0) {
     items.push({
       label: t('프로그램', 'Programs', 'Programmes'),
@@ -126,7 +82,7 @@ function TodayInHakkyo({ tracks, contents, community, lang }: {
     })
   }
 
-  const exchanges = tracks.filter(s => {
+  const exchanges = dedupedTracks.filter(s => {
     const name = tName(s, 'en').toLowerCase()
     const isExchange = name.includes('exchange') || name.includes('교환') || name.includes('échange')
     if (!isExchange || !s.start_date) return false
@@ -139,25 +95,6 @@ function TodayInHakkyo({ tracks, contents, community, lang }: {
       title: tName(s, lang),
       href: `/programs/${s.id}`,
       time: s.start_date?.slice(0, 10),
-    })
-  })
-
-  contents.slice(0, 2).forEach(c => {
-    const title = cTitle(c, lang)
-    if (title) items.push({
-      label: t('가이드', 'Guide', 'Guide'),
-      title,
-      href: `/news/${c.id}`,
-      time: c.published_at?.slice(0, 10),
-    })
-  })
-
-  community.slice(0, 2).forEach(p => {
-    if (p.title) items.push({
-      label: t('커뮤니티', 'Community', 'Communauté'),
-      title: p.title,
-      href: '/board',
-      time: p.created_at?.slice(0, 10),
     })
   })
 
@@ -209,14 +146,6 @@ function IcoArrive() {
     </svg>
   )
 }
-function IcoHome() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
-      <path d="M9 21V12h6v9"/>
-    </svg>
-  )
-}
 function IcoPeople() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -231,20 +160,11 @@ const PATHS = [
   {
     href: '/arriving',
     icon: <IcoArrive />,
-    tag_ko: '첫 걸음', tag_en: 'First Steps', tag_fr: 'Premiers Pas',
-    ko: '몬트리올로', en: 'Into Montréal', fr: 'Vers Montréal',
-    desc_ko: '도착 전부터 첫 주까지 — 항공편, 유심, 은행, 교통까지',
-    desc_en: 'From your flight to your first week — flights, SIM, banking, transit and more',
-    desc_fr: "De votre vol à votre première semaine — vols, SIM, banque, transport",
-  },
-  {
-    href: '/settling',
-    icon: <IcoHome />,
-    tag_ko: '나만의 공간', tag_en: 'Finding My Place', tag_fr: 'Mon espace',
-    ko: '나만의 공간 찾기', en: 'Finding My Place', fr: 'Trouver ma place',
-    desc_ko: '예산, 동네, 계약, 이사까지 단계별 가이드',
-    desc_en: 'Budget, neighbourhood, lease, and moving in — step by step',
-    desc_fr: 'Budget, quartier, bail, emménagement — étape par étape',
+    tag_ko: '도착 & 정착', tag_en: 'Arriving & Settling', tag_fr: 'Arrivée & Installation',
+    ko: '몬트리올 도착부터 정착까지', en: 'Arriving & settling in Montréal', fr: 'Arriver et s\'installer à Montréal',
+    desc_ko: '항공편·유심·은행부터 예산·동네·계약·이사까지, 전 과정 한 곳에서',
+    desc_en: 'Flights, SIM, and banking through budget, lease, and moving day — all in one place',
+    desc_fr: "Vols, carte SIM et banque jusqu'au budget, bail et déménagement — tout en un seul endroit",
   },
   {
     href: '/board',
@@ -271,10 +191,10 @@ function StartFromHere({ lang }: { lang: Lang }) {
           <Link
             key={card.href}
             to={card.href}
-            className="group flex items-center gap-6 md:gap-8 py-7 px-1 border-b border-gray-100 last:border-0 hover:pl-2 transition-all duration-200"
+            className="group flex items-center gap-5 md:gap-7 py-4 px-1 border-b border-gray-100 last:border-0 hover:pl-2 transition-all duration-200"
           >
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors group-hover:bg-gray-100"
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors group-hover:bg-gray-100"
               style={{ background: '#F4F4F4' }}
             >
               <span className="text-gray-500 group-hover:text-gray-800 transition-colors">{card.icon}</span>
@@ -306,52 +226,10 @@ function StartFromHere({ lang }: { lang: Lang }) {
   )
 }
 
-// ─── Section 4: TODAY'S EXPRESSION ───────────────────────────────────────────
-
-function TodaysExpression() {
-  const { t } = useLang()
-  const word = DAILY_WORDS[new Date().getDay()]
-
-  return (
-    <section className="editorial-section">
-      <p className="t-eyebrow text-gray-400 mb-8">
-        {t('오늘의 표현', "Today's Expression", "Expression du jour")}
-      </p>
-
-      <div className="rounded-3xl border border-gray-100 bg-gray-50/50 px-8 py-9 md:px-10 md:py-11">
-        <p className="t-eyebrow text-gray-300 mb-6">{word.context}</p>
-
-        <div className="space-y-4">
-          <p style={{ fontSize: 'clamp(18px, 2.5vw, 24px)', fontWeight: 600, letterSpacing: '-0.015em', lineHeight: 1.3 }}
-             className="text-gray-900">
-            {word.ko}
-          </p>
-          <p style={{ fontSize: '14px' }} className="text-gray-600 leading-relaxed">
-            {word.en}
-          </p>
-          <p style={{ fontSize: '13px' }} className="text-gray-400 italic leading-relaxed">
-            {word.fr}
-          </p>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-gray-100">
-          <Link to="/phrases" className="inline-flex items-center gap-2 text-[13px] font-semibold text-gray-600 hover:text-gray-900 transition-colors">
-            {t('더 많은 표현 보기', 'More everyday expressions', "Plus d'expressions")}
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="6,3 11,8 6,13"/>
-            </svg>
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 // ─── Section 5: COMMUNITY PULSE ───────────────────────────────────────────────
 
-function CommunityPulse({ posts, onCompose }: {
+function CommunityPulse({ posts }: {
   posts: CommunitySubmission[]
-  onCompose: () => void
 }) {
   const { t } = useLang()
   const show = posts.slice(0, 3)
@@ -363,20 +241,15 @@ function CommunityPulse({ posts, onCompose }: {
       </p>
 
       {show.length > 0 && (
-        <div className="space-y-5 mb-8">
+        <div className="row-list mb-8">
           {show.map((post, i) => (
-            <div key={i} className="flex items-start gap-4">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5"
-                style={{ background: 'var(--y)', color: '#111' }}
-              >
+            <div key={i} className="row-item">
+              <span className="row-chip row-chip-sm" style={{ background: 'var(--y)', color: '#111' }}>
                 {(post.author_name ?? '?')[0].toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0 pt-1">
-                <p style={{ fontSize: '13px', lineHeight: '1.55' }} className="text-gray-700">
-                  {post.title ?? post.description?.slice(0, 90)}
-                </p>
-                <p className="text-[12px] text-gray-300 mt-1.5">
+              </span>
+              <div className="row-body">
+                <span className="row-title">{post.title ?? post.description?.slice(0, 90)}</span>
+                <p className="row-sub">
                   {post.author_name ?? t('익명', 'Anonymous', 'Anonyme')}
                   {post.created_at && <span> · {post.created_at.slice(0, 10)}</span>}
                 </p>
@@ -386,16 +259,9 @@ function CommunityPulse({ posts, onCompose }: {
         </div>
       )}
 
-      <button
-        onClick={onCompose}
-        className="w-full text-left border border-dashed border-gray-200 rounded-2xl px-6 py-4 text-[14px] text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-all hover:bg-gray-50/50"
-      >
-        {t(
-          '몬트리올 생활에서 있었던 일을 나눠보세요.',
-          'Share something from your life in Montréal.',
-          'Partagez quelque chose de votre vie à Montréal.',
-        )} <span className="text-gray-300 ml-1">+</span>
-      </button>
+      <div className="mb-5">
+        <CommunityComposer />
+      </div>
 
       <div className="mt-5">
         <Link to="/board" className="inline-flex items-center gap-2 text-[13px] font-semibold text-gray-500 hover:text-gray-900 transition-colors">
@@ -414,68 +280,92 @@ function CommunityPulse({ posts, onCompose }: {
 function Programs({ tracks, lang }: { tracks: ProgramTrack[]; lang: Lang }) {
   const { t } = useLang()
 
-  const upcoming = tracks
-    .filter(s => {
-      if (!s.start_date) return false
-      const diff = (new Date(s.start_date).getTime() - Date.now()) / 86_400_000
-      return diff >= -1 && diff <= 21
+  // "Open now" first, sorted by nearest deadline — not "starts soon", which hid
+  // every open program once their start_date had already passed.
+  const openTracks = dedupeTracks(tracks)
+    .filter(s => s.status === 'open')
+    .sort((a, b) => {
+      const pa = !!(a as ProgramTrack & { is_pinned?: boolean }).is_pinned
+      const pb = !!(b as ProgramTrack & { is_pinned?: boolean }).is_pinned
+      if (pa !== pb) return pa ? -1 : 1
+      const da = resolveApplicationDeadline(a)
+      const db = resolveApplicationDeadline(b)
+      if (da && db) return new Date(da).getTime() - new Date(db).getTime()
+      if (da) return -1
+      if (db) return 1
+      const sa = a.start_date ? new Date(a.start_date).getTime() : Infinity
+      const sb = b.start_date ? new Date(b.start_date).getTime() : Infinity
+      return sa - sb
     })
     .slice(0, 4)
-
-  if (upcoming.length === 0) return null
 
   return (
     <section className="editorial-section">
       <p className="t-eyebrow text-gray-400 mb-8">
-        {t('이번 달 프로그램', 'Upcoming Programs', 'Programmes à venir')}
+        {t('지금 신청 가능', 'Open Now', 'Ouvert maintenant')}
       </p>
 
-      <div className="space-y-4">
-        {upcoming.map(s => {
-          const name    = tName(s, lang)
-          const dateStr = s.start_date?.slice(0, 10) ?? ''
-          const isOpen  = s.status === 'open'
-          const d       = dateStr ? new Date(dateStr) : null
-          return (
-            <Link key={s.id} to={`/programs/${s.id}`}
-                  className="group flex items-center gap-5 rounded-2xl border border-gray-100 px-6 py-5 hover:border-gray-200 hover:bg-gray-50/50 transition-all">
-              {/* Date block */}
-              <div className="w-12 h-12 border border-gray-100 rounded-2xl flex flex-col items-center justify-center shrink-0 group-hover:border-gray-200 transition-colors">
-                <p className="text-[9px] font-bold text-gray-300 uppercase leading-none">
-                  {d ? d.toLocaleDateString('en-CA', { month: 'short' }) : ''}
-                </p>
-                <p style={{ fontSize: '17px', fontWeight: 600 }} className="text-gray-800 leading-none mt-0.5">
-                  {d ? d.getDate() : ''}
-                </p>
-              </div>
+      {openTracks.length === 0 ? (
+        <p className="text-[13px] text-gray-400 mb-2">
+          {t('지금 신청 가능한 프로그램이 없어요.', 'No programs open right now.', "Aucun programme ouvert pour l'instant.")}
+          {' '}
+          <Link to="/programs" className="text-gray-600 underline underline-offset-2 hover:text-gray-900 transition-colors">
+            {t('전체 프로그램 보기', 'See all programs', 'Voir tous les programmes')}
+          </Link>
+        </p>
+      ) : (
+        <>
+          <div className="row-list">
+            {openTracks.map(s => {
+              const name    = tName(s, lang)
+              const dateStr = s.start_date?.slice(0, 10) ?? ''
+              const d       = dateStr ? new Date(dateStr) : null
+              const price   = formatPrice(s)
+              const seats   = formatSeats(s.capacity, s.enrolled)
+              const deadlineText = !seats ? formatDeadlineDelta(resolveApplicationDeadline(s)) : null
+              return (
+                <Link key={s.id} to={`/programs/${s.id}`} className="row-item interactive">
+                  {/* Date block doubles as the row chip */}
+                  <div className="row-chip flex-col !bg-transparent border border-gray-100">
+                    <p className="text-[9px] font-bold text-gray-300 uppercase leading-none">
+                      {d ? d.toLocaleDateString('en-CA', { month: 'short' }) : ''}
+                    </p>
+                    <p style={{ fontSize: '15px', fontWeight: 600 }} className="text-gray-800 leading-none mt-0.5">
+                      {d ? d.getDate() : ''}
+                    </p>
+                  </div>
 
-              <div className="flex-1 min-w-0">
-                <p style={{ fontSize: '14px', fontWeight: 600 }}
-                   className="text-gray-800 group-hover:text-gray-600 transition-colors leading-snug truncate mb-1">
-                  {name}
-                </p>
-                <p className="text-[12px] font-semibold" style={{ color: isOpen ? 'var(--y-h)' : '#D1D5DB' }}>
-                  {isOpen ? t('신청 가능', 'Open', 'Ouvert') : t('마감', 'Closed', 'Fermé')}
-                </p>
-              </div>
+                  <div className="row-body">
+                    <span className="row-title">{name}</span>
+                    <p className="row-sub">{price}</p>
+                  </div>
 
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-                   className="text-gray-200 group-hover:text-gray-400 shrink-0 transition-colors">
+                  <div className="row-stats">
+                    {seats ? (
+                      <p className={`row-stat-label${seats.low ? ' status-negative' : ''}`}>{seats.text}</p>
+                    ) : deadlineText ? (
+                      <p className="row-stat-label">{deadlineText}</p>
+                    ) : null}
+                  </div>
+
+                  <span className="badge-open">
+                    {t('신청 가능', 'Open', 'Ouvert')}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+
+          <div className="mt-6">
+            <Link to="/programs" className="inline-flex items-center gap-2 text-[13px] font-semibold text-gray-500 hover:text-gray-900 transition-colors">
+              {t('모든 프로그램 보기', 'All programs', 'Tous les programmes')}
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <polyline points="6,3 11,8 6,13"/>
               </svg>
             </Link>
-          )
-        })}
-      </div>
-
-      <div className="mt-6">
-        <Link to="/programs" className="inline-flex items-center gap-2 text-[13px] font-semibold text-gray-500 hover:text-gray-900 transition-colors">
-          {t('모든 프로그램 보기', 'All programs', 'Tous les programmes')}
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <polyline points="6,3 11,8 6,13"/>
-          </svg>
-        </Link>
-      </div>
+          </div>
+        </>
+      )}
     </section>
   )
 }
@@ -487,17 +377,12 @@ export default function Home() {
   const lang = rawLang as Lang
 
   const [tracks,    setTracks]    = useState<ProgramTrack[]>([])
-  const [contents,  setContents]  = useState<Content[]>([])
   const [community, setCommunity] = useState<CommunitySubmission[]>([])
-  const [submitTag, setSubmitTag] = useState<string | null>(null)
   const [loading,   setLoading]   = useState(true)
 
   useEffect(() => {
-    Promise.all([getTracks('program'), getContents()])
-      .then(([tr, c]) => {
-        setTracks(tr ?? [])
-        setContents((c ?? []).map(normalizeContent))
-      })
+    getTracks('program')
+      .then(tr => setTracks(tr ?? []))
       .catch(() => {})
       .finally(() => setLoading(false))
 
@@ -513,20 +398,6 @@ export default function Home() {
     window.addEventListener('hakkyo:community-post', onNewPost)
     return () => window.removeEventListener('hakkyo:community-post', onNewPost)
   }, [])
-
-  useEffect(() => {
-    function onCompose(e: Event) {
-      const tag = (e as CustomEvent<{ tag: string }>).detail?.tag ?? 'general'
-      setSubmitTag(tag)
-    }
-    window.addEventListener('hakkyo:open-compose', onCompose)
-    return () => window.removeEventListener('hakkyo:open-compose', onCompose)
-  }, [])
-
-  function openCompose() {
-    trackEvent({ eventName: 'post_create_clicked', targetType: 'home', targetLabel: 'general' })
-    setSubmitTag('general')
-  }
 
   if (loading) {
     return (
@@ -545,29 +416,20 @@ export default function Home() {
           <Hero lang={lang} />
 
           {/* 2 · Today in HAKKYO */}
-          <TodayInHakkyo tracks={tracks} contents={contents} community={community} lang={lang} />
+          <TodayInHakkyo tracks={tracks} lang={lang} />
 
-          {/* 3 · Start from where you are */}
-          <StartFromHere lang={lang} />
-
-          {/* 4 · Today's Expression */}
-          <TodaysExpression />
-
-          {/* 5 · Community Pulse */}
-          <CommunityPulse posts={community} onCompose={openCompose} />
-
-          {/* 6 · Programs */}
+          {/* 3 · Open programs — what's actionable right now */}
           <Programs tracks={tracks} lang={lang} />
+
+          {/* 4 · Community Pulse — latest activity */}
+          <CommunityPulse posts={community} />
+
+          {/* 5 · Start from where you are — onboarding nav */}
+          <StartFromHere lang={lang} />
 
           <div className="h-20" />
         </div>
       </div>
-
-      <Suspense fallback={null}>
-        {submitTag !== null && (
-          <CommunitySubmitModal initialTag={submitTag} onClose={() => setSubmitTag(null)} />
-        )}
-      </Suspense>
     </>
   )
 }

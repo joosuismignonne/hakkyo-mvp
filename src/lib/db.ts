@@ -763,6 +763,68 @@ export async function getLeSettings(): Promise<LeSettings> {
   return (data ?? {}) as LeSettings
 }
 
+// ─── Community Activities ─────────────────────────────────────────────────────
+// Admin-managed list of recurring/one-off activities (Wednesday movie night,
+// running club, etc.) — a list, unlike LeSettings' single settings row.
+
+export interface CommunityActivity {
+  id?: string
+  emoji?: string | null
+  title_ko: string
+  title_en?: string | null
+  title_fr?: string | null
+  activity_date: string   // 'YYYY-MM-DD'
+  time_range?: string | null
+  location_name?: string | null
+  location_address?: string | null
+  google_maps_url?: string | null
+  notes?: string | null
+  status?: 'active' | 'archived'
+  created_at?: string
+}
+
+/** Upcoming, active activities only — for public display. */
+export async function getUpcomingActivities(): Promise<CommunityActivity[]> {
+  if (!isConfigured) return []
+  const today = new Date().toISOString().slice(0, 10)
+  const { data, error } = await db()
+    .from('community_activities')
+    .select('*')
+    .eq('status', 'active')
+    .gte('activity_date', today)
+    .order('activity_date', { ascending: true })
+  if (error) { console.error(error); return [] }
+  return (data ?? []) as CommunityActivity[]
+}
+
+/** All activities regardless of date/status — for the admin list. */
+export async function getAllActivities(): Promise<CommunityActivity[]> {
+  if (!isConfigured) return []
+  const { data, error } = await db()
+    .from('community_activities')
+    .select('*')
+    .order('activity_date', { ascending: false })
+  if (error) { console.error(error); return [] }
+  return (data ?? []) as CommunityActivity[]
+}
+
+export async function saveActivity(a: Partial<CommunityActivity>): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, created_at, ...fields } = a as CommunityActivity & { created_at?: string }
+  if (id) {
+    const { error } = await db().from('community_activities').update(fields).eq('id', id)
+    if (error) throw error
+  } else {
+    const { error } = await db().from('community_activities').insert(fields)
+    if (error) throw error
+  }
+}
+
+export async function deleteActivity(id: string): Promise<void> {
+  const { error } = await db().from('community_activities').delete().eq('id', id)
+  if (error) throw error
+}
+
 // ─── Community Submissions ────────────────────────────────────────────────────
 //
 // Actual live DB columns (verified 2026-06-16 by probing PostgREST responses):
@@ -1065,37 +1127,6 @@ export async function updateProgramApplicationNotes(
 ): Promise<void> {
   const { error } = await db().from('program_applications').update({ admin_notes }).eq('id', id)
   if (error) throw error
-}
-
-// ─── Settling Guides ──────────────────────────────────────────────────────────
-
-export interface SettlingGuide {
-  id: string
-  slug: string
-  category: string
-  title_ko: string
-  title_en: string | null
-  title_fr: string | null
-  summary_ko: string | null
-  summary_en: string | null
-  summary_fr: string | null
-  content_ko: string
-  content_en: string | null
-  content_fr: string | null
-  status: string
-  created_at: string
-}
-
-export async function getSettlingGuide(slug: string): Promise<SettlingGuide | null> {
-  if (!isConfigured) return null
-  const { data, error } = await db()
-    .from('settling_guides')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .maybeSingle()
-  if (error) { console.warn('[settling] getGuide:', error.message); return null }
-  return data as SettlingGuide | null
 }
 
 // ─── Neighbourhood Comments ───────────────────────────────────────────────────

@@ -9,10 +9,11 @@ import {
   getApplications, setApplicationStatus,
   getProgramApplications, updateProgramApplicationStatus, updateProgramApplicationNotes,
   getLeSettings, saveLeSettings,
+  getAllActivities, saveActivity, deleteActivity,
   getAllCommunitySubmissions, setCommunitySubmissionStatus, deleteCommunitySubmission, updateCommunityPost,
   getAdminNotifications, markNotificationRead, markAllNotificationsRead,
 } from '../lib/db'
-import type { LeSettings } from '../lib/db'
+import type { LeSettings, CommunityActivity } from '../lib/db'
 import type { ProgramTrack, Notice, Content, FormQuestion, Application, ContentCategory, ContentType, CommunitySubmission, AdminNotification, ProgramApplication, ProgramApplicationStatus } from '../types'
 import {
   CONTENT_CATEGORIES,
@@ -933,6 +934,132 @@ function NoticesAdmin() {
                   <button onClick={() => remove(n.id)} disabled={deleting === n.id}
                           className="text-xs text-red-500 hover:text-red-700 px-2 py-1 disabled:opacity-40">
                     {deleting === n.id ? 'Deleting…' : 'Delete'}
+                  </button>
+                </div></Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ─── Activities Admin ──────────────────────────────────────────────────────────
+// Recurring/one-off community activities (Wednesday movie night, running club,
+// etc.) — a simple list CRUD, modeled on NoticesAdmin above.
+function ActivitiesAdmin() {
+  const [rows,     setRows]     = useState<CommunityActivity[]>([])
+  const [editing,  setEditing]  = useState<Partial<CommunityActivity> | null>(null)
+  const [loading,  setLoading]  = useState(true)
+  const [saving,   setSaving]   = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [err,      setErr]      = useState('')
+
+  const load = useCallback(() =>
+    getAllActivities().then(setRows).catch((e: Error) => setErr(e.message)).finally(() => setLoading(false))
+  , [])
+  useEffect(() => { load() }, [load])
+
+  const blank = (): Partial<CommunityActivity> => ({
+    emoji: '', title_ko: '', title_en: '', title_fr: '',
+    activity_date: new Date().toISOString().split('T')[0],
+    time_range: '', location_name: '', location_address: '', google_maps_url: '', notes: '',
+    status: 'active',
+  })
+  const set = (k: string, v: unknown) => setEditing(e => e ? { ...e, [k]: v } : e)
+
+  async function save() {
+    if (!editing) return
+    if (!editing.title_ko?.trim() || !editing.activity_date) {
+      setErr('Title (KO) and date are required.')
+      return
+    }
+    setSaving(true); setErr('')
+    try {
+      await saveActivity(editing)
+      await load(); setEditing(null)
+    } catch (e: unknown) { setErr((e as Error).message) }
+    finally { setSaving(false) }
+  }
+  async function remove(id: string) {
+    if (!confirm('Delete this activity? This action cannot be undone.')) return
+    setDeleting(id); setErr('')
+    try {
+      await deleteActivity(id)
+      setRows(r => r.filter(x => x.id !== id))
+    } catch (e: unknown) {
+      setErr((e as Error).message ?? 'Failed to delete.')
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  if (loading) return <Spinner />
+  return (
+    <div className="space-y-4">
+      {err && <ErrorMsg msg={err} />}
+      <div className="flex justify-end">
+        <button onClick={() => setEditing(blank())} className="btn-yellow">+ New Activity</button>
+      </div>
+      {editing && (
+        <FormCard title={editing.id ? 'Edit Activity' : 'New Activity'}>
+          <div className="space-y-4">
+            <FL label="Emoji">
+              <input type="text" className="input" placeholder="🎬" maxLength={4}
+                     value={editing.emoji ?? ''} onChange={e => set('emoji', e.target.value)} />
+            </FL>
+            <div><p className="label mb-1">Title</p>
+              <LangFields prefix="title" ko={editing.title_ko||''} en={editing.title_en||''} fr={editing.title_fr||''} onChange={set} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FL label="Date"><input type="date" className="input" value={editing.activity_date||''} onChange={e => set('activity_date', e.target.value)} /></FL>
+              <FL label="Time range">
+                <input type="text" className="input" placeholder="19:00–21:00"
+                       value={editing.time_range ?? ''} onChange={e => set('time_range', e.target.value)} />
+              </FL>
+            </div>
+            <div className="grid grid-cols-1 gap-3 pt-1 border-t border-gray-100">
+              <FL label="Location name">
+                <input type="text" className="input" placeholder="e.g. HAKKYO Space"
+                       value={editing.location_name ?? ''} onChange={e => set('location_name', e.target.value)} />
+              </FL>
+              <FL label="Location address">
+                <input type="text" className="input"
+                       value={editing.location_address ?? ''} onChange={e => set('location_address', e.target.value)} />
+              </FL>
+              <FL label="Map URL">
+                <input type="url" className="input" placeholder="https://maps.google.com/..."
+                       value={editing.google_maps_url ?? ''} onChange={e => set('google_maps_url', e.target.value)} />
+              </FL>
+              <FL label="Notes">
+                <textarea rows={2} className="input resize-y" value={editing.notes ?? ''} onChange={e => set('notes', e.target.value)} />
+              </FL>
+            </div>
+            <FL label="Status">
+              <select className="input" value={editing.status ?? 'active'} onChange={e => set('status', e.target.value)}>
+                <option value="active">Active</option>
+                <option value="archived">Archived</option>
+              </select>
+            </FL>
+            <SaveRow onSave={save} onCancel={() => setEditing(null)} saving={saving} />
+          </div>
+        </FormCard>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead><tr><Th>Title</Th><Th>Date</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
+          <tbody className="divide-y divide-gray-100">
+            {rows.map(a => (
+              <tr key={a.id}>
+                <Td><span className="font-medium">{a.emoji} {a.title_en || a.title_ko}</span></Td>
+                <Td>{a.activity_date}</Td>
+                <Td><span className="text-xs uppercase tracking-wide font-semibold text-gray-400">{a.status}</span></Td>
+                <Td><div className="flex gap-2">
+                  <button onClick={() => setEditing(a)} className="btn-ghost py-1 px-2">Edit</button>
+                  <button onClick={() => a.id && remove(a.id)} disabled={deleting === a.id}
+                          className="text-xs text-red-500 hover:text-red-700 px-2 py-1 disabled:opacity-40">
+                    {deleting === a.id ? 'Deleting…' : 'Delete'}
                   </button>
                 </div></Td>
               </tr>
@@ -3609,6 +3736,7 @@ const TABS = [
   { id: 'questions',     label: 'Questions',         Component: QuestionsAdmin     },
   { id: 'applications',  label: 'Applications',      Component: ApplicationsAdmin  },
   { id: 'le',            label: 'Lang. Exchange',    Component: LeSettingsAdmin    },
+  { id: 'activities',    label: 'Activities',        Component: ActivitiesAdmin    },
   { id: 'settings',      label: 'Site Settings',     Component: SiteSettingsAdmin  },
   { id: 'analytics',     label: 'Analytics',         Component: AnalyticsAdmin     },
 ]

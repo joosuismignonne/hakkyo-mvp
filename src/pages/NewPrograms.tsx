@@ -80,13 +80,11 @@ function ProgramDetail({ slug }: { slug: string }) {
             <div><dt>시작</dt><dd>2026년 10월</dd></div>
             <div><dt>시간·장소</dt><dd>확정되는 즉시 신청자에게 이메일로 먼저 안내</dd></div>
           </dl>
-          <p className="schedule-note">신청 후 일정이 맞지 않으면 등록을 확정하지 않아도 괜찮아요.</p>
           <div className="active-output-note">
             <span>ACTIVE OUTPUT</span>
             <strong>배운 언어를 내 말로 꺼내는 시간</strong>
             <p>{p.active}. 모든 HAKKYO 언어 클래스에는 배운 표현을 실제 대화로 사용해보는 Active Output 시간이 있습니다.</p>
           </div>
-          <ProgramPass lang={p.en} />
           <button className="cta" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }}>10월 시작 예정 <Arrow /></button>
         </div>
       </section>
@@ -163,6 +161,16 @@ export default function NewPrograms() {
             <Status>COMING SOON</Status>
           </a>
         ))}
+      </section>
+      <section className="community-cta section-pad">
+        <div className="community-cta-inner">
+          <div>
+            <span style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700 }}>HAKKYO COMMUNITY</span>
+            <h2>수업 전에<br />커뮤니티부터.</h2>
+            <p>프로그램 시작 전에도 HAKKYO 커뮤니티에서 같은 도시에 사는 사람들과 먼저 연결될 수 있어요.</p>
+          </div>
+          <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
+        </div>
       </section>
     </>
   )

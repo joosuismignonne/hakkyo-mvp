@@ -97,9 +97,15 @@ export default function NewActivities() {
           </a>
         ))}
       </section>
-      <section className="simple-cta section-pad">
-        <h2>다음 수요일,<br />무엇을 같이 할까요?</h2>
-        <a className="cta" href="/qna">궁금한 점 남기기 <Arrow /></a>
+      <section className="community-cta section-pad">
+        <div className="community-cta-inner">
+          <div>
+            <span style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700 }}>HAKKYO COMMUNITY</span>
+            <h2>다음 수요일,<br />같이 해봐요.</h2>
+            <p>액티비티 모집 전에도 HAKKYO 커뮤니티에 먼저 참여할 수 있어요. 9월 일정이 확정되면 신청자에게 먼저 안내드려요.</p>
+          </div>
+          <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
+        </div>
       </section>
     </>
   )

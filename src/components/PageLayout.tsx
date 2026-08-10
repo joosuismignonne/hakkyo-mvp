@@ -85,7 +85,6 @@ export function CityPanel() {
 const NAV_LINKS = [
   { to: '/programs', ko: '프로그램', en: 'Programs',  fr: 'Programmes' },
   { to: '/board',    ko: '게시판',   en: 'Board',     fr: 'Forum'      },
-  { to: '/news',     ko: '뉴스',     en: 'News',      fr: 'Actualités' },
 ]
 
 export function LeftSidebar({ lang }: { lang: 'ko' | 'en' | 'fr' }) {

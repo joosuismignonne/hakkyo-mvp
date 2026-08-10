@@ -73,6 +73,25 @@ export function buildClassSchedule(track: TrackView): ClassScheduleRow[] {
   return parseClassScheduleText(track.class_schedule)
 }
 
+/**
+ * Collapses tracks that are content-identical (same name/dates/schedule/price)
+ * down to one — guards against literal duplicate rows in the DB without
+ * hiding genuinely distinct re-offerings of the same course on other dates.
+ */
+export function dedupeTracks(tracks: TrackView[]): TrackView[] {
+  const seen = new Set<string>()
+  return tracks.filter(t => {
+    const key = [
+      t.name_ko, t.name_en, t.name_fr,
+      t.start_date, t.end_date, t.class_schedule,
+      t.is_free ? 'free' : `${t.total_price ?? ''}-${t.price_per_class ?? ''}-${t.currency ?? ''}`,
+    ].join('|')
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 export function formatProgramDateRange(track: TrackView): string | null {
   if (track.start_date && track.end_date) return `${track.start_date} – ${track.end_date}`
   if (track.start_date) return track.start_date
