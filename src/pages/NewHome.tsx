@@ -173,7 +173,7 @@ export default function NewHome() {
           <div>
             <span style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700 }}>HAKKYO COMMUNITY</span>
             <h2>HAKKYO 커뮤니티에<br />함께하세요.</h2>
-            <p>언어 수업, 수요일 액티비티, 몬트리올 정착 정보까지 — 같은 도시에서 새로운 시간을 보내는 사람들과 연결돼요.</p>
+            <p>매주 일요일 오후, 수업 안의 Active Output 시간을 함께 해요. 언어를 배우는 사람들과 같은 공간에서 실제로 말하고, 연결되는 시간입니다.</p>
           </div>
           <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
         </div>

@@ -101,8 +101,8 @@ export default function NewActivities() {
         <div className="community-cta-inner">
           <div>
             <span style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700 }}>HAKKYO COMMUNITY</span>
-            <h2>다음 수요일,<br />같이 해봐요.</h2>
-            <p>액티비티 모집 전에도 HAKKYO 커뮤니티에 먼저 참여할 수 있어요. 9월 일정이 확정되면 신청자에게 먼저 안내드려요.</p>
+            <h2>수요일 액티비티와는<br />별개로, 매주 일요일.</h2>
+            <p>HAKKYO 커뮤니티는 수요일 액티비티와 다른 시간이에요. 매주 일요일 오후, 수업 시간 안 Active Output 자리에서 함께할 수 있어요.</p>
           </div>
           <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
         </div>

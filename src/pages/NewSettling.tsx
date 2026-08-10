@@ -252,18 +252,15 @@ export default function NewSettling() {
         </div>
       </section>
 
-      {/* CTA back to community */}
-      <section className="settling-cta section-pad">
-        <div>
-          <Status>COMMUNITY</Status>
-          <h2>혼자 정착하지<br />않아도 돼요.</h2>
-          <p>HAKKYO 커뮤니티에 참여하면 같은 시기에 몬트리올에 온 사람들과 연결돼요. 정착 중 궁금한 것, Q&A에서 물어보세요.</p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 24 }}>
-            <a className="cta" href="/qna" data-cursor="ASK">HAKKYO에 물어보기 <Arrow /></a>
-            <a className="cta-outline" href="/apply/community/join">커뮤니티 참여하기 <Arrow /></a>
+      <section className="community-cta section-pad">
+        <div className="community-cta-inner">
+          <div>
+            <span style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700 }}>HAKKYO COMMUNITY</span>
+            <h2>혼자 정착하지<br />않아도 돼요.</h2>
+            <p>HAKKYO 커뮤니티에 참여하면 같은 시기에 몬트리올에 온 사람들과 연결돼요. 매주 일요일 오후, 수업 시간 안에서 함께 이야기하는 시간이 있어요.</p>
           </div>
+          <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
         </div>
-        <img src="/mascot/mimi-natural.png" alt="Mimi" style={{ width: 180, objectFit: 'contain' }} />
       </section>
     </>
   )

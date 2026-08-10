@@ -166,8 +166,8 @@ export default function NewPrograms() {
         <div className="community-cta-inner">
           <div>
             <span style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700 }}>HAKKYO COMMUNITY</span>
-            <h2>수업 전에<br />커뮤니티부터.</h2>
-            <p>프로그램 시작 전에도 HAKKYO 커뮤니티에서 같은 도시에 사는 사람들과 먼저 연결될 수 있어요.</p>
+            <h2>수업 안에서<br />함께하는 시간.</h2>
+            <p>HAKKYO 커뮤니티는 매주 일요일 오후 수업 시간 안에서 열려요. 학생들이 Active Output을 함께 하는 시간 — 말하고, 듣고, 연결되는 자리예요.</p>
           </div>
           <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
         </div>
