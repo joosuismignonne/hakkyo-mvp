@@ -4,7 +4,7 @@ export interface ApplicationPayload {
   kind: 'program' | 'activity' | 'community' | 'newsletter'
   selection: string
   name?: string
-  email: string
+  email?: string
   phone?: string
   instagram?: string
   city?: string
