@@ -101,8 +101,8 @@ export default function NewActivities() {
         <div className="community-cta-inner">
           <div>
             <span style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700 }}>HAKKYO COMMUNITY</span>
-            <h2>같이 있으면<br />더 재밌잖아요.</h2>
-            <p>HAKKYO 커뮤니티에서 같은 도시를 살아가는 사람들과 연결돼요.</p>
+            <h2>몬트리올에서<br />새로운 사람을 만나요.</h2>
+            <p>같은 도시에서 새로운 시간을 보내는 사람들과 연결돼요.</p>
           </div>
           <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
         </div>
