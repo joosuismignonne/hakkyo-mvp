@@ -2913,6 +2913,137 @@ type SiteSettingsRow = {
   language_exchange_button_text?: string
 }
 
+// ─── Site Content Admin ────────────────────────────────────────────────────────
+interface SiteContentRow {
+  id: string
+  page: string
+  key: string
+  label: string
+  value_ko: string
+  value_en: string
+  value_fr: string
+  updated_at: string
+}
+
+const PAGE_LABELS: Record<string, string> = {
+  'activity_book-club': 'Book Club',
+  'activity_running-club': 'Running Club',
+  'activity_boardgame-club': 'Boardgame Club',
+  'home': 'Home',
+}
+
+function SiteContentAdmin() {
+  const [rows, setRows] = useState<SiteContentRow[]>([])
+  const [editing, setEditing] = useState<SiteContentRow | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) { setLoading(false); return }
+    void supabase.from('site_content').select('*').order('page').order('key')
+      .then(({ data, error }) => {
+        if (error) setErr(error.message)
+        else setRows((data ?? []) as SiteContentRow[])
+        setLoading(false)
+      })
+  }, [])
+
+  async function save() {
+    if (!editing || !supabase) return
+    setSaving(true); setErr(''); setSaved(false)
+    const { error } = await supabase.from('site_content').update({
+      value_ko: editing.value_ko,
+      value_en: editing.value_en,
+      value_fr: editing.value_fr,
+      updated_at: new Date().toISOString(),
+    }).eq('id', editing.id)
+    if (error) { setErr(error.message) }
+    else {
+      setRows(r => r.map(x => x.id === editing.id ? { ...editing } : x))
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 2500)
+    }
+    setSaving(false)
+  }
+
+  const grouped = rows.reduce<Record<string, SiteContentRow[]>>((acc, r) => {
+    ;(acc[r.page] ??= []).push(r)
+    return acc
+  }, {})
+
+  if (loading) return <Spinner />
+  return (
+    <div className="space-y-6">
+      {err && <ErrorMsg msg={err} />}
+      {!supabase && (
+        <p className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded p-3">
+          Supabase not configured — run the migration SQL first in the Supabase dashboard.
+        </p>
+      )}
+      <p className="text-sm text-gray-500">
+        Edit page content stored in Supabase. Changes go live immediately on save (no deploy needed).
+        Run <code className="bg-gray-100 px-1 rounded text-xs">supabase/migration_019_site_content.sql</code> in the Supabase SQL editor first.
+      </p>
+      {Object.entries(grouped).map(([page, items]) => (
+        <div key={page}>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+            {PAGE_LABELS[page] ?? page}
+          </h3>
+          <div className="space-y-3">
+            {items.map(row => (
+              <div key={row.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  className="w-full text-left px-5 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center"
+                  onClick={() => setEditing(editing?.id === row.id ? null : { ...row })}
+                >
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{row.label}</span>
+                    <span className="ml-3 text-xs text-gray-400 font-mono">{row.key}</span>
+                  </div>
+                  <span className="text-gray-400 text-sm">{editing?.id === row.id ? '▲' : '▼'}</span>
+                </button>
+                {editing?.id === row.id && (
+                  <div className="p-5 space-y-4">
+                    <FL label="한국어 (KO)">
+                      <textarea rows={5} className="input resize-y min-h-[120px]"
+                        value={editing.value_ko}
+                        onChange={e => setEditing(x => x ? { ...x, value_ko: e.target.value } : x)} />
+                    </FL>
+                    <FL label="English (EN)">
+                      <textarea rows={5} className="input resize-y min-h-[120px]"
+                        value={editing.value_en}
+                        onChange={e => setEditing(x => x ? { ...x, value_en: e.target.value } : x)} />
+                    </FL>
+                    <FL label="Français (FR)">
+                      <textarea rows={5} className="input resize-y min-h-[120px]"
+                        value={editing.value_fr}
+                        onChange={e => setEditing(x => x ? { ...x, value_fr: e.target.value } : x)} />
+                    </FL>
+                    <div className="flex items-center gap-3">
+                      <button onClick={save} disabled={saving || !supabase} className="btn-yellow">
+                        {saving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button onClick={() => setEditing(null)} className="btn-outline">Cancel</button>
+                      {saved && <span className="text-xs text-green-600 font-semibold">Saved ✓</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      {rows.length === 0 && !loading && (
+        <p className="text-sm text-gray-400">
+          No content rows found. Run the migration SQL in Supabase to seed the initial content.
+        </p>
+      )}
+    </div>
+  )
+}
+
 function SiteSettingsAdmin() {
   const [form, setForm] = useState<SiteSettingsRow>({})
   const [rowId, setRowId] = useState<string | null>(null)
@@ -3737,6 +3868,7 @@ const TABS = [
   { id: 'applications',  label: 'Applications',      Component: ApplicationsAdmin  },
   { id: 'le',            label: 'Lang. Exchange',    Component: LeSettingsAdmin    },
   { id: 'activities',    label: 'Activities',        Component: ActivitiesAdmin    },
+  { id: 'site-content',  label: 'Page Content',      Component: SiteContentAdmin   },
   { id: 'settings',      label: 'Site Settings',     Component: SiteSettingsAdmin  },
   { id: 'analytics',     label: 'Analytics',         Component: AnalyticsAdmin     },
 ]
