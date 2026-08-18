@@ -6,10 +6,9 @@ export const programs = [
 ]
 
 export const activities = [
-  { code:"RUN 01", slug:"running", ko:"함께 달리기", en:"Run together", fr:"Courir ensemble", note:"가볍게 달리고, 천천히 친해지는 저녁" },
-  { code:"RIDE 02", slug:"cycling", ko:"도시를 자전거로", en:"Ride the city", fr:"La ville à vélo", note:"자전거로 새롭게 만나는 몬트리올" },
-  { code:"FLOWER 03", slug:"flower", ko:"꽃을 배우는 저녁", en:"An evening with flowers", fr:"Une soirée fleurie", note:"꽃을 만지며 함께 배우는 작은 경험" },
-  { code:"BAKE 04", slug:"baking", ko:"함께 굽는 수요일", en:"Wednesday baking", fr:"Pâtisserie du mercredi", note:"같이 만들고 나누어 먹는 베이킹 시간" },
+  { code:"BOOK 01", slug:"book-club", ko:"북클럽", en:"Book Club", fr:"Club de lecture", note:"책 한 권으로 시작하는 언어 교환", host:"Joy", date:"Sep 9", time:"7–8:30PM", entry:"$10" },
+  { code:"RUN 02", slug:"running-club", ko:"러닝클럽", en:"Running Club", fr:"Club de course", note:"달리며 나누는 이야기", host:"Joo", date:"Sep 16", time:"6–7:30PM", entry:"$10" },
+  { code:"GAME 03", slug:"boardgame-club", ko:"보드게임클럽", en:"Boardgame Club", fr:"Club de jeux", note:"게임으로 자연스럽게 이어지는 대화", host:"Jaehee", date:"Sep 23", time:"7–8:30PM", entry:"$10" },
 ]
 
 export const faqs = [

@@ -56,8 +56,8 @@ export default function NewHome() {
         </div>
         <div className="hero-stage">
           <div className="hero-copy">
-            <h1>같이 듣고,<br /><em>같이 말해요!</em></h1>
-            <p>Every new language begins with a First Listener<br />사람을 만나며 언어를 배우는 Montréal Learning Community</p>
+            <h1>나는 이 언어로<br /><em>누구와 이야기하고 싶은가.</em></h1>
+            <p>How do we help people build real relationships through language?<br />사람을 만나며 언어를 배우는 Montréal Learning Community</p>
           </div>
           <div className="mimi mimi-natural" aria-label="HAKKYO 포스터의 까만 고양이 마스코트">
             <img className="mimi-character" src="/mascot/mimi-poster-v3.png" alt="" />
@@ -65,7 +65,7 @@ export default function NewHome() {
           </div>
         </div>
         <div className="hero-bottom">
-          <p>HAKKYO는 사람들이 서로 만나며 자연스럽게 언어를 사용하는 시간을 설계하는 Learning Community입니다. 우리는 사람이 언어를 배우기 전에 먼저 말할 용기를 얻는다고 믿습니다.</p>
+          <p>사람은 낯선 도시에서 어떻게 배우고, 연결되고, 자기 삶을 만들어가는가. HAKKYO는 그 질문에서 시작한 Montréal Learning Community입니다.</p>
           <div className="hero-actions">
             <a className="hero-button" href="/programs">함께할 시간 보기 <Arrow /></a>
           </div>
@@ -78,12 +78,12 @@ export default function NewHome() {
             <Status>OUR FIRST PRINCIPLE</Status>
             <span>FIRST LISTENER</span>
           </div>
-          <h2>새로운 언어는<br />첫 번째 청취자에서<br />시작됩니다.</h2>
+          <h2>First Listener는<br />가장 먼저<br />들어주는 사람입니다.</h2>
         </div>
         <div className="announcement-copy">
-          <p className="lead">First Listener는 언어를 가장 잘하는 사람이 아니라, 가장 먼저 들어주는 사람입니다.</p>
-          <p>그들은 틀린 문장을 먼저 찾지 않습니다. 말하고자 하는 마음을 먼저 이해합니다. 설명하기보다 질문하고, 평가하기보다 기다리며, 정답을 알려주기보다 대화를 이어 갑니다.</p>
-          <a className="cta" href="/apply/community/join">나의 첫 대화 시작하기 <Arrow /></a>
+          <p className="lead">언어를 가장 잘하는 사람이 아니라, 말하고자 하는 마음을 가장 먼저 이해하는 사람.</p>
+          <p>틀린 문장을 먼저 찾지 않습니다. 설명하기보다 질문하고, 평가하기보다 기다리며, 정답보다 대화를 먼저 이어 갑니다. HAKKYO의 모든 시간은 First Listener와 함께 시작됩니다.</p>
+          <a className="cta" href="/apply/community">나의 첫 대화 시작하기 <Arrow /></a>
         </div>
       </section>
 
@@ -121,10 +121,10 @@ export default function NewHome() {
             <span>SEPTEMBER</span>
           </div>
           <div>
-            <Status>SHARED EXPERIENCES</Status>
-            <h2>함께한 경험이<br />우리의 언어가 됩니다.</h2>
-            <p>함께 걷고, 만들고, 먹고, 이야기하는 시간. 무엇을 가르칠지보다 어떤 경험을 함께할지 먼저 고민한 HAKKYO 액티비티입니다.</p>
-            <a className="cta wed-cta" href="/activities">함께할 경험 보기 <Arrow /></a>
+            <Status>MINI HAKKYO · LANGUAGE EXCHANGE</Status>
+            <h2>같이 하다 보면<br />말이 나옵니다.</h2>
+            <p>북클럽, 러닝클럽, 보드게임클럽 — 각 클럽은 Language Exchange와 함께 진행되는 Mini HAKKYO 시리즈예요. 잘하려고 오는 곳이 아니에요.</p>
+            <a className="cta wed-cta" href="/activities">Mini HAKKYO 보기 <Arrow /></a>
           </div>
         </div>
         <div className="wed-list">

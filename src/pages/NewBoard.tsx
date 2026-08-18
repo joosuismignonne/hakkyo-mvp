@@ -29,13 +29,15 @@ const posts: Post[] = [
   },
   {
     date: "2026.08.01",
-    tag: "ACTIVITY",
-    title: "9월, 수요일 액티비티를 시작합니다",
+    tag: "MINI HAKKYO",
+    title: "9월, Mini HAKKYO 시리즈를 시작합니다",
     body: [
-      "HAKKYO 수요일 액티비티 클럽이 9월부터 새롭게 시작됩니다.",
-      "달리기(RUN), 자전거(RIDE), 플라워 클래스(FLOWER), 베이킹(BAKING) 총 4개의 액티비티가 준비되어 있어요.",
-      "수업을 듣지 않아도 참여할 수 있어요. 새로운 사람들과 부담 없이 함께하고 싶은 누구나 환영합니다.",
-      "9월 모집 일정은 확정 즉시 공지할게요.",
+      "HAKKYO의 새로운 시리즈 Mini HAKKYO가 9월 수요일마다 열려요.",
+      "· Book Club — Language Exchange w/ Joy · Sep 9 · 7–8:30PM",
+      "· Running Club — Language Exchange w/ Joo · Sep 16 · 6–7:30PM",
+      "· Boardgame Club — Language Exchange w/ Jaehee · Sep 23 · 7–8:30PM",
+      "각 클럽은 Language Exchange와 함께 진행되는 Mini HAKKYO 시리즈예요. 수업을 듣지 않아도 참여할 수 있어요. 잘하려고 오지 않아도 돼요.",
+      "참가비 $10 · 장소는 신청자에게 별도 안내",
     ]
   },
   {

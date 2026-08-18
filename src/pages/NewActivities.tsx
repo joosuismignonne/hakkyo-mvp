@@ -12,41 +12,41 @@ function PageTitle({ no, title, sub }: { no: string; title: string; sub: string 
 }
 
 const prep: Record<string, string[]> = {
-  running: ["편한 러닝화","물","가볍게 달릴 마음"],
-  cycling: ["개인 자전거 또는 BIXI","헬멧 권장","물"],
-  flower: ["준비물 없음","꽃과 도구는 제공 예정","완성한 꽃은 가져가요"],
-  baking: ["준비물 없음","앞치마 제공 예정","함께 만든 디저트는 나눠요"],
+  'book-club': ["읽고 싶은 책 한 권 (선택)","필기구","편하게 이야기할 마음"],
+  'running-club': ["편한 러닝화","물","가볍게 달릴 마음"],
+  'boardgame-club': ["준비물 없음","게임과 도구는 제공","함께 웃을 준비"],
 }
 
 function ActivityDetail({ slug }: { slug: string }) {
   const a = activities.find(x => x.slug === slug)
   if (!a) return (
     <>
-      <PageTitle no="ACTIVITIES" title="액티비티를 찾을 수 없어요" sub="" />
+      <PageTitle no="MINI HAKKYO" title="클럽을 찾을 수 없어요" sub="" />
       <section className="simple-cta section-pad">
-        <a className="cta" href="/activities">액티비티로 돌아가기 <Arrow /></a>
+        <a className="cta" href="/activities">돌아가기 <Arrow /></a>
       </section>
     </>
   )
 
   return (
     <>
-      <PageTitle no={`NEW IN SEPTEMBER · ${a.code}`} title={a.ko} sub={`${a.en} · ${a.fr}`} />
+      <PageTitle no={`MINI HAKKYO · ${a.code}`} title={a.ko} sub={`${a.en} · Language Exchange w/ ${(a as any).host}`} />
       <section className="activity-detail section-pad">
         <div className={`activity-poster poster-${a.slug}`} data-cursor="PLAY">
           <span>WED</span>
           <strong>{a.code.split(' ')[0]}</strong>
-          <small>HAKKYO ACTIVITY CLUB</small>
+          <small>MINI HAKKYO · SERIE 1</small>
         </div>
         <div>
-          <Status>SEPTEMBER · WEDNESDAY</Status>
+          <Status>MINI HAKKYO · KR–EN–FR</Status>
           <h2>{a.note}</h2>
-          <p>수업을 듣지 않아도 괜찮아요. 새로운 사람들과 부담 없이 함께 해보고 싶은 누구나 참여할 수 있어요. 잘하는 것보다 함께 해보는 시간이 더 중요합니다.</p>
+          <p>잘해야 오는 게 아니에요. Language Exchange는 함께 하다 보면 자연스럽게 말이 나오는 구조예요. 언어 실력과 상관없이 누구나 참여할 수 있어요.</p>
           <dl>
-            <div><dt>일정</dt><dd>2026년 9월 수요일 · 추후 공개</dd></div>
-            <div><dt>소요 시간</dt><dd>약 60–90분 예정</dd></div>
-            <div><dt>장소</dt><dd>Montréal · 액티비티별 안내</dd></div>
-            <div><dt>참가비</dt><dd>추후 공개</dd></div>
+            <div><dt>일정</dt><dd>2026년 {(a as any).date} (수요일)</dd></div>
+            <div><dt>시간</dt><dd>{(a as any).time}</dd></div>
+            <div><dt>진행</dt><dd>Language Exchange w/ {(a as any).host}</dd></div>
+            <div><dt>장소</dt><dd>Montréal · 신청자에게 안내</dd></div>
+            <div><dt>참가비</dt><dd>{(a as any).entry}</dd></div>
           </dl>
           <button className="cta" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }}>9월 모집 예정 <Arrow /></button>
         </div>
@@ -55,7 +55,7 @@ function ActivityDetail({ slug }: { slug: string }) {
         <div>
           <span>BEFORE YOU JOIN</span>
           <h2>이것만 알고<br />오면 돼요.</h2>
-          <p>정확한 만남 장소와 세부 준비물은 신청자에게 다시 안내해 드릴게요.</p>
+          <p>자세한 장소와 안내는 신청 후 이메일로 드려요.</p>
         </div>
         <div className="prep-cards">
           {(prep[a.slug] || []).map((x, i) => (
@@ -64,9 +64,9 @@ function ActivityDetail({ slug }: { slug: string }) {
         </div>
       </section>
       <section className="activity-flow section-pad">
-        <div className="section-head"><span>WEDNESDAY FLOW</span><span>60–90 MIN</span></div>
+        <div className="section-head"><span>HOW IT GOES · LANGUAGE EXCHANGE</span><span>60–90 MIN</span></div>
         <div className="flow-line">
-          {["모여서 가볍게 인사해요","오늘의 활동을 함께 시작해요","천천히 이야기하며 즐겨요","다음 수요일을 기약해요"].map((x, i) => (
+          {["모여서 가볍게 인사해요","오늘의 클럽 활동을 함께 해요","자연스럽게 이야기가 이어져요","다음 수요일을 기약해요"].map((x, i) => (
             <article key={x}><b>{String(i + 1).padStart(2, '0')}</b><p>{x}</p></article>
           ))}
         </div>
@@ -82,7 +82,7 @@ export default function NewActivities() {
 
   return (
     <>
-      <PageTitle no="02 — WEDNESDAY CLUB" title="수요일에는 같이 해요" sub="Activities from September 2026" />
+      <PageTitle no="02 — MINI HAKKYO" title="같이 하다 보면 말이 나와요" sub="Language Exchange · Book · Running · Boardgame" />
       <section className="activity-list section-pad">
         {activities.map((a, i) => (
           <a href={`/activities/${a.slug}`} key={a.code} className="activity-list-item" onClick={() => trackEvent({ eventName: 'activity_card_clicked', targetType: 'activity', targetLabel: a.slug })}>
@@ -90,8 +90,8 @@ export default function NewActivities() {
             <div className={`shape activity-shape s${i}`} aria-hidden="true"><i /></div>
             <div>
               <h2>{a.ko}</h2>
-              <p>{a.en} · {a.fr}</p>
-              <small>{a.note}</small>
+              <p>{a.en} · Language Exchange w/ {(a as any).host}</p>
+              <small>{(a as any).date} · {(a as any).time}</small>
             </div>
             <b>9월 모집 예정</b>
           </a>
