@@ -599,7 +599,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   display: flex; flex-direction: column;
   transition: border-color .2s, box-shadow .22s, transform .2s;
 }
-.feed-prog-card:hover { border-color: #111; box-shadow: 3px 3px 0 #111; transform: translateY(-2px); }
+.feed-prog-card:hover { border-color: #ccc; box-shadow: 0 4px 12px rgba(0,0,0,.07); transform: translateY(-2px); }
 .feed-prog-mark {
   width: 34px; height: 34px; border-radius: 8px;
   background: #f5c542; display: flex; align-items: center;
