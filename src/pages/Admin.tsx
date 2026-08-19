@@ -4469,8 +4469,143 @@ function ThemeChannelAdmin() {
         <HomeNoticesAdmin />
       </FormCard>
 
+      <FormCard title="홈 레이아웃 순서">
+        <HomeLayoutAdmin />
+      </FormCard>
+
       <button onClick={save} disabled={saving} className="btn-yellow">
         {saving ? '저장 중…' : saved ? '저장됨 ✓' : '저장하기'}
+      </button>
+    </div>
+  )
+}
+
+// ─── Home Layout Block Editor ──────────────────────────────────────────────────
+
+export const HOME_BLOCKS_DEFAULT = [
+  { id: 'calendar_notices', label: '📅 캘린더 + 공지', desc: '달력과 공지 카드 (가로 배치)' },
+  { id: 'mini_hakkyo',      label: '🐱 MINI HAKKYO',   desc: '다가오는 액티비티 일정' },
+  { id: 'programs',         label: '📚 프로그램',        desc: '언어 프로그램 카드 목록' },
+  { id: 'cta',              label: '🔔 소식 신청',       desc: '4기 시작 소식 CTA 카드' },
+  { id: 'reviews',          label: '⭐ 리뷰',           desc: '수강생 후기 채널 링크' },
+] as const
+
+export type HomeBlockId = typeof HOME_BLOCKS_DEFAULT[number]['id']
+
+export interface HomeBlockConfig { id: HomeBlockId; visible: boolean }
+
+function HomeLayoutAdmin() {
+  const [blocks, setBlocks] = useState<HomeBlockConfig[]>(
+    HOME_BLOCKS_DEFAULT.map(b => ({ id: b.id, visible: true }))
+  )
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [dragging, setDragging] = useState<number | null>(null)
+  const [dragOver, setDragOver] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('value_ko').eq('page','home_layout').eq('key','block_order').single()
+      .then(({ data }) => {
+        if (data?.value_ko) {
+          try {
+            const saved = JSON.parse(data.value_ko) as HomeBlockConfig[]
+            // merge: include any new blocks not yet in DB, preserve order of saved ones
+            const ids = saved.map(b => b.id)
+            const rest = HOME_BLOCKS_DEFAULT.filter(b => !ids.includes(b.id)).map(b => ({ id: b.id, visible: true }))
+            setBlocks([...saved, ...rest])
+          } catch {}
+        }
+      })
+  }, [])
+
+  async function handleSave() {
+    if (!supabase) return
+    setSaving(true)
+    await supabase.from('site_content').upsert([{
+      page: 'home_layout', key: 'block_order', label: '홈 블록 순서',
+      value_ko: JSON.stringify(blocks),
+      value_en: JSON.stringify(blocks),
+      value_fr: JSON.stringify(blocks),
+    }], { onConflict: 'page,key' })
+    setSaving(false); setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  function move(from: number, to: number) {
+    setBlocks(prev => {
+      const arr = [...prev]
+      const [item] = arr.splice(from, 1)
+      arr.splice(to, 0, item)
+      return arr
+    })
+  }
+
+  function onDragStart(i: number) { setDragging(i) }
+  function onDragEnter(i: number) { setDragOver(i) }
+  function onDragEnd() {
+    if (dragging !== null && dragOver !== null && dragging !== dragOver) {
+      move(dragging, dragOver)
+    }
+    setDragging(null); setDragOver(null)
+  }
+
+  const meta = Object.fromEntries(HOME_BLOCKS_DEFAULT.map(b => [b.id, b]))
+
+  return (
+    <div>
+      <p className="text-xs text-gray-400 mb-3">드래그하거나 화살표로 순서를 바꾸고, 눈 아이콘으로 블록을 숨길 수 있어요.</p>
+      <div className="space-y-2">
+        {blocks.map((b, i) => {
+          const info = meta[b.id]
+          const isDraggingOver = dragOver === i && dragging !== i
+          return (
+            <div
+              key={b.id}
+              draggable
+              onDragStart={() => onDragStart(i)}
+              onDragEnter={() => onDragEnter(i)}
+              onDragOver={e => { e.preventDefault(); onDragEnter(i) }}
+              onDragEnd={onDragEnd}
+              className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all cursor-grab active:cursor-grabbing select-none"
+              style={{
+                background: isDraggingOver ? '#fef9e7' : b.visible ? '#fff' : '#f9f9f7',
+                border: isDraggingOver ? '1.5px dashed #f5c542' : '1.5px solid #e8e7e2',
+                opacity: dragging === i ? 0.4 : 1,
+                transform: isDraggingOver ? 'scale(1.01)' : 'none',
+              }}
+            >
+              {/* Drag handle */}
+              <span className="text-gray-300 text-base leading-none shrink-0">⠿</span>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-semibold ${b.visible ? 'text-gray-800' : 'text-gray-400'}`}>{info?.label}</div>
+                <div className="text-xs text-gray-400">{info?.desc}</div>
+              </div>
+
+              {/* Up / Down */}
+              <button type="button" onClick={() => i > 0 && move(i, i - 1)}
+                disabled={i === 0}
+                className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-20 text-xs">↑</button>
+              <button type="button" onClick={() => i < blocks.length - 1 && move(i, i + 1)}
+                disabled={i === blocks.length - 1}
+                className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-20 text-xs">↓</button>
+
+              {/* Visibility toggle */}
+              <button type="button"
+                onClick={() => setBlocks(prev => prev.map((x, idx) => idx === i ? { ...x, visible: !x.visible } : x))}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-base transition-colors ${b.visible ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-100'}`}
+                title={b.visible ? '숨기기' : '표시하기'}
+              >
+                {b.visible ? '👁' : '🙈'}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      <button className="btn-yellow mt-4 text-sm" onClick={handleSave} disabled={saving}>
+        {saving ? '저장 중…' : saved ? '저장됨 ✓' : '레이아웃 저장'}
       </button>
     </div>
   )

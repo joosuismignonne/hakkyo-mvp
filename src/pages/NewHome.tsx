@@ -275,11 +275,36 @@ function useCalEvents(): CalEvent[] {
   return events
 }
 
+import type { HomeBlockConfig } from './Admin'
+import { HOME_BLOCKS_DEFAULT } from './Admin'
+
+const DEFAULT_LAYOUT: HomeBlockConfig[] = HOME_BLOCKS_DEFAULT.map(b => ({ id: b.id, visible: true }))
+
+function useHomeLayout(): HomeBlockConfig[] {
+  const [layout, setLayout] = useState<HomeBlockConfig[]>(DEFAULT_LAYOUT)
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('value_ko').eq('page','home_layout').eq('key','block_order').single()
+      .then(({ data }) => {
+        if (data?.value_ko) {
+          try {
+            const saved = JSON.parse(data.value_ko) as HomeBlockConfig[]
+            const ids = saved.map(b => b.id)
+            const rest = DEFAULT_LAYOUT.filter(b => !ids.includes(b.id))
+            setLayout([...saved, ...rest])
+          } catch {}
+        }
+      })
+  }, [])
+  return layout
+}
+
 export default function NewHome() {
   const [notices, setNotices] = useState<Notice[]>(FALLBACK)
   const { lang } = useLang()
   const t = useT()
   const calEvents = useCalEvents()
+  const layout = useHomeLayout()
 
   useEffect(() => {
     getNotices()
@@ -295,96 +320,82 @@ export default function NewHome() {
     .filter(a => a.dday >= 0)
     .sort((a, b) => a.dday - b.dday)
 
-  return (
-    <div className="ch-feed">
-      <div className="ch-header">
-        <span className="ch-header-icon">🏠</span>
-        <div className="ch-header-text">
-          <h1 className="ch-header-title">{t.home.title}</h1>
-          <span className="ch-header-desc">{t.home.desc}</span>
-        </div>
-      </div>
-
-      <div className="ch-scroll">
-        <div className="ch-inner">
-
-          {/* Compose */}
-          <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
-            <div className="ch-compose-avatar">😺</div>
-            <span className="ch-compose-ph">{t.home.compose}</span>
-            <button className="ch-compose-btn">{t.home.applyBtn}</button>
-          </div>
-
-          {/* Calendar + notices — side-by-side */}
-          <div className="home-split-row">
+  function renderBlock(id: string) {
+    switch (id) {
+      case 'calendar_notices':
+        return (
+          <div key="calendar_notices" className="home-split-row">
             <HakkyoCalendar events={calEvents} lang={lang} />
             <div className="home-split-notices">
               {pinned && <NoticeCard n={pinned} />}
               {rest.slice(0, 2).map(n => <NoticeCard key={n.id} n={n} />)}
             </div>
           </div>
-
-          {upcomingEvents.length > 0 && (
-            <>
-              <div className="feed-divider">{t.home.miniSection}</div>
-              {upcomingEvents.map(a => {
-                const dday = (a as any).dday as number
-                const ddLabel = dday === 0 ? t.home.today : dday === 1 ? t.home.tomorrow : `D-${dday}`
-                const aDate = lang === 'en' ? (a as any).dateEn : lang === 'fr' ? (a as any).dateFr : (a as any).date
-                const aTime = lang === 'en' ? (a as any).timeEn : (a as any).time
-                const aDay = t.home.wednesday
-                const aTitle = lang === 'fr' ? (a as any).fr : lang === 'en' ? (a as any).en : (a as any).ko
-                return (
-                  <a key={a.code} href={`/activities/${a.slug}`} className="feed-event-card">
-                    <div className="feed-dday">
-                      {ddLabel}
-                      <div className="feed-dday-sub">MINI</div>
-                    </div>
-                    <div className="feed-event-body">
-                      <div className="feed-event-title">{aTitle}</div>
-                      <div className="feed-event-meta">
-                        {aDate} ({aDay}) · {aTime} · w/ {(a as any).host} · {(a as any).entry}
-                      </div>
-                    </div>
-                    <div className="feed-event-arrow">→</div>
-                  </a>
-                )
-              })}
-            </>
-          )}
-
-          <div className="feed-divider">{t.home.programSection}</div>
-          <div className="feed-programs-grid">
-            {programs.slice(0, 4).map(p => {
-              const pName = lang === 'fr' ? (p as any).fr : lang === 'en' ? p.en : p.lang
-              const pLevel = lang === 'en'
-                ? (p as any).level?.replace('입문–초급','Beginner').replace('초급–중급','Intermediate').replace('레벨 상담 후 안내','Level TBD')
-                : lang === 'fr'
-                ? (p as any).level?.replace('입문–초급','Débutant').replace('초급–중급','Intermédiaire').replace('레벨 상담 후 안내','Niveau à confirmer')
-                : (p as any).level
-              const pScene = lang === 'en'
-                ? (p as any).scene?.replace('카페에서 주문하고, 친구와 약속을 잡고, 내 하루를 한국어로 말해봐요.','Order at a café, make plans with friends, and talk about your day in Korean.')
-                  .replace('머릿속에 있던 영어를 꺼내 실제 대화로 연결하는 연습을 해요.','Practice turning your English vocabulary into real, flowing conversations.')
-                  .replace('가게, 직장, 이웃과의 짧은 대화부터 몬트리올 생활 불어를 시작해요.','Start with everyday French for shops, work, and neighbours in Montréal.')
-                  .replace('두 언어를 따로 외우는 대신, 한 주 안에서 배우고 말하고 다시 연결해요.','Instead of studying two languages separately, learn, speak, and connect them all in one week.')
-                : lang === 'fr'
-                ? (p as any).scene?.replace('카페에서 주문하고, 친구와 약속을 잡고, 내 하루를 한국어로 말해봐요.','Commandez un café, planifiez avec des amis et parlez de votre journée en coréen.')
-                  .replace('머릿속에 있던 영어를 꺼내 실제 대화로 연결하는 연습을 해요.','Transformez votre vocabulaire en anglais en vraies conversations fluides.')
-                  .replace('가게, 직장, 이웃과의 짧은 대화부터 몬트리올 생활 불어를 시작해요.','Commencez par le français du quotidien pour les commerces, le travail et les voisins à Montréal.')
-                  .replace('두 언어를 따로 외우는 대신, 한 주 안에서 배우고 말하고 다시 연결해요.','Plutôt que d\'étudier deux langues séparément, apprenez, parlez et connectez-les en une semaine.')
-                : (p as any).scene
+        )
+      case 'mini_hakkyo':
+        if (!upcomingEvents.length) return null
+        return (
+          <div key="mini_hakkyo">
+            <div className="feed-divider">{t.home.miniSection}</div>
+            {upcomingEvents.map(a => {
+              const dd = (a as any).dday as number
+              const ddLabel = dd === 0 ? t.home.today : dd === 1 ? t.home.tomorrow : `D-${dd}`
+              const aDate = lang === 'en' ? (a as any).dateEn : lang === 'fr' ? (a as any).dateFr : (a as any).date
+              const aTime = lang === 'en' ? (a as any).timeEn : (a as any).time
+              const aTitle = lang === 'fr' ? (a as any).fr : lang === 'en' ? (a as any).en : (a as any).ko
               return (
-                <a key={p.en} href={p.href} className="feed-prog-card">
-                  <div className="feed-prog-mark">{p.mark}</div>
-                  <div className="feed-prog-lang">{pName}</div>
-                  <div className="feed-prog-level">{pLevel}</div>
-                  <div className="feed-prog-desc">{pScene}</div>
+                <a key={a.code} href={`/activities/${a.slug}`} className="feed-event-card">
+                  <div className="feed-dday">{ddLabel}<div className="feed-dday-sub">MINI</div></div>
+                  <div className="feed-event-body">
+                    <div className="feed-event-title">{aTitle}</div>
+                    <div className="feed-event-meta">{aDate} ({t.home.wednesday}) · {aTime} · w/ {(a as any).host} · {(a as any).entry}</div>
+                  </div>
+                  <div className="feed-event-arrow">→</div>
                 </a>
               )
             })}
           </div>
-
-          <div className="feed-card feed-cta-card">
+        )
+      case 'programs':
+        return (
+          <div key="programs">
+            <div className="feed-divider">{t.home.programSection}</div>
+            <div className="feed-programs-grid">
+              {programs.slice(0, 4).map(p => {
+                const pName = lang === 'fr' ? (p as any).fr : lang === 'en' ? p.en : p.lang
+                const pLevel = lang === 'en'
+                  ? (p as any).level?.replace('입문–초급','Beginner').replace('초급–중급','Intermediate').replace('레벨 상담 후 안내','Level TBD')
+                  : lang === 'fr'
+                  ? (p as any).level?.replace('입문–초급','Débutant').replace('초급–중급','Intermédiaire').replace('레벨 상담 후 안내','Niveau à confirmer')
+                  : (p as any).level
+                const pScene = lang === 'en'
+                  ? (p as any).scene
+                    ?.replace('카페에서 주문하고, 친구와 약속을 잡고, 내 하루를 한국어로 말해봐요.','Order at a café, make plans with friends, and talk about your day in Korean.')
+                    .replace('머릿속에 있던 영어를 꺼내 실제 대화로 연결하는 연습을 해요.','Practice turning your English vocabulary into real, flowing conversations.')
+                    .replace('가게, 직장, 이웃과의 짧은 대화부터 몬트리올 생활 불어를 시작해요.','Start with everyday French for shops, work, and neighbours in Montréal.')
+                    .replace('두 언어를 따로 외우는 대신, 한 주 안에서 배우고 말하고 다시 연결해요.','Instead of studying two languages separately, learn, speak, and connect them all in one week.')
+                  : lang === 'fr'
+                  ? (p as any).scene
+                    ?.replace('카페에서 주문하고, 친구와 약속을 잡고, 내 하루를 한국어로 말해봐요.','Commandez un café, planifiez avec des amis et parlez de votre journée en coréen.')
+                    .replace('머릿속에 있던 영어를 꺼내 실제 대화로 연결하는 연습을 해요.','Transformez votre vocabulaire en anglais en vraies conversations fluides.')
+                    .replace('가게, 직장, 이웃과의 짧은 대화부터 몬트리올 생활 불어를 시작해요.','Commencez par le français du quotidien pour les commerces, le travail et les voisins à Montréal.')
+                    .replace('두 언어를 따로 외우는 대신, 한 주 안에서 배우고 말하고 다시 연결해요.','Plutôt que d\'étudier deux langues séparément, apprenez, parlez et connectez-les en une semaine.')
+                  : (p as any).scene
+                return (
+                  <a key={p.en} href={p.href} className="feed-prog-card">
+                    <div className="feed-prog-mark">{p.mark}</div>
+                    <div className="feed-prog-lang">{pName}</div>
+                    <div className="feed-prog-level">{pLevel}</div>
+                    <div className="feed-prog-desc">{pScene}</div>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        )
+      case 'cta':
+        return (
+          <div key="cta" className="feed-card feed-cta-card">
             <div className="feed-card-inner">
               <div className="feed-meta">
                 <div className="feed-avatar feed-avatar-h">H</div>
@@ -405,9 +416,10 @@ export default function NewHome() {
               </div>
             </div>
           </div>
-
-          {/* Reviews channel teaser */}
-          <a href="/community/reviews" className="feed-event-card" style={{ textDecoration:'none' }}>
+        )
+      case 'reviews':
+        return (
+          <a key="reviews" href="/community/reviews" className="feed-event-card" style={{ textDecoration:'none' }}>
             <div className="feed-dday" style={{ background:'#f5f5f0', fontSize:22 }}>⭐</div>
             <div className="feed-event-body">
               <div className="feed-event-title">{t.home.reviewSection}</div>
@@ -416,10 +428,34 @@ export default function NewHome() {
               </div>
             </div>
           </a>
+        )
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="ch-feed">
+      <div className="ch-header">
+        <span className="ch-header-icon">🏠</span>
+        <div className="ch-header-text">
+          <h1 className="ch-header-title">{t.home.title}</h1>
+          <span className="ch-header-desc">{t.home.desc}</span>
+        </div>
+      </div>
+
+      <div className="ch-scroll">
+        <div className="ch-inner">
+          <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
+            <div className="ch-compose-avatar">😺</div>
+            <span className="ch-compose-ph">{t.home.compose}</span>
+            <button className="ch-compose-btn">{t.home.applyBtn}</button>
+          </div>
+
+          {layout.filter(b => b.visible).map(b => renderBlock(b.id))}
 
           {rest.length > 2 && <div className="feed-divider">{t.home.noticeSection}</div>}
           {rest.slice(2).map(n => <NoticeCard key={n.id} n={n} />)}
-
         </div>
       </div>
     </div>
