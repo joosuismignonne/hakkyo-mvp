@@ -6,9 +6,9 @@ export const programs = [
 ]
 
 export const activities = [
-  { code:"BOOK 01", slug:"book-club", ko:"북클럽", en:"Book Club", fr:"Club de lecture", note:"책 한 권으로 시작하는 언어 교환", host:"Joy", date:"9월 9일", dateEn:"Sep 9", dateFr:"9 sept", day:"수요일", time:"오후 7:00–8:30", timeEn:"7–8:30 PM", entry:"$10" },
-  { code:"RUN 02", slug:"running-club", ko:"러닝클럽", en:"Running Club", fr:"Club de course", note:"달리며 나누는 이야기", host:"Joo", date:"9월 16일", dateEn:"Sep 16", dateFr:"16 sept", day:"수요일", time:"오후 6:00–7:30", timeEn:"6–7:30 PM", entry:"$10" },
-  { code:"GAME 03", slug:"boardgame-club", ko:"보드게임클럽", en:"Boardgame Club", fr:"Club de jeux", note:"게임으로 자연스럽게 이어지는 대화", host:"Jaehee", date:"9월 23일", dateEn:"Sep 23", dateFr:"23 sept", day:"수요일", time:"오후 7:00–8:30", timeEn:"7–8:30 PM", entry:"$10" },
+  { code:"BOOK 01", slug:"book-club", ko:"북클럽", en:"Book Club", fr:"Club de lecture", note:"책 한 권으로 시작하는 언어 교환", host:"Joy", date:"9월 9일", dateIso:"2026-09-09", dateEn:"Sep 9", dateFr:"9 sept", day:"수요일", time:"오후 7:00–8:30", timeEn:"7–8:30 PM", entry:"$10" },
+  { code:"RUN 02", slug:"running-club", ko:"러닝클럽", en:"Running Club", fr:"Club de course", note:"달리며 나누는 이야기", host:"Joo", date:"9월 16일", dateIso:"2026-09-16", dateEn:"Sep 16", dateFr:"16 sept", day:"수요일", time:"오후 6:00–7:30", timeEn:"6–7:30 PM", entry:"$10" },
+  { code:"GAME 03", slug:"boardgame-club", ko:"보드게임클럽", en:"Boardgame Club", fr:"Club de jeux", note:"게임으로 자연스럽게 이어지는 대화", host:"Jaehee", date:"9월 23일", dateIso:"2026-09-23", dateEn:"Sep 23", dateFr:"23 sept", day:"수요일", time:"오후 7:00–8:30", timeEn:"7–8:30 PM", entry:"$10" },
 ]
 
 export const faqs = [
