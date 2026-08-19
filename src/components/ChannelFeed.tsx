@@ -85,7 +85,7 @@ function PostCard({
   const stripped = body.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()
   const hasMore = stripped.length > 200
   const hasBody = !!body
-  const hasMedia = /<img|<iframe|youtube/.test(body)
+  const hasMedia = /<img|<video|<iframe|youtube/.test(body)
 
   function handleShare() {
     sharePost(channel, post.id)
@@ -133,7 +133,7 @@ function PostCard({
         )}
 
         {!open && (
-          <div className="feed-body">
+          <div className={`feed-body${hasMedia ? ' post-rich-body' : ''}`}>
             {hasMedia
               ? <div dangerouslySetInnerHTML={{ __html: body }} />
               : <p>{stripped.slice(0, 200)}{hasMore ? '…' : ''}</p>

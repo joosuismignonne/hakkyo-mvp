@@ -1164,7 +1164,8 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 }
 
 /* ── Post rich body ──────────────────────────────────────────────────────── */
-.post-rich-body img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+.post-rich-body img { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
+.post-rich-body video { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
 .post-rich-body iframe { max-width: 100%; border-radius: 8px; margin: 8px 0; }
 .post-rich-body ul, .post-rich-body ol { padding-left: 20px; }
 .post-rich-body blockquote {
