@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import Status, { Arrow } from '../components/HakkyoStatus'
 import { activities } from '../data/hakkyo'
 import { trackEvent } from '../lib/analytics'
+import { supabase } from '../lib/supabase'
 
 function PageTitle({ no, title, sub }: { no: string; title: string; sub: string }) {
   return (
@@ -17,7 +19,31 @@ const prep: Record<string, string[]> = {
   'boardgame-club': ["준비물 없음","게임과 도구는 제공","함께 웃을 준비"],
 }
 
+interface LeaderQuote { value_ko: string; value_en: string; value_fr: string }
+
+function useLeaderQuote(slug: string): LeaderQuote | null {
+  const [quote, setQuote] = useState<LeaderQuote | null>(null)
+  useEffect(() => {
+    if (!supabase) return
+    void supabase
+      .from('site_content')
+      .select('value_ko, value_en, value_fr')
+      .eq('page', `activity_${slug}`)
+      .eq('key', 'leader_quote')
+      .single()
+      .then(({ data }) => {
+        if (data && (data.value_ko || data.value_en || data.value_fr)) {
+          setQuote(data as LeaderQuote)
+        }
+      })
+  }, [slug])
+  return quote
+}
+
 function ActivityDetail({ slug }: { slug: string }) {
+  const quote = useLeaderQuote(slug)
+  const [lang, setLang] = useState<'ko' | 'en' | 'fr'>('ko')
+
   const a = activities.find(x => x.slug === slug)
   if (!a) return (
     <>
@@ -51,6 +77,28 @@ function ActivityDetail({ slug }: { slug: string }) {
           <button className="cta" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }}>9월 모집 예정 <Arrow /></button>
         </div>
       </section>
+      {quote && (
+        <section className="activity-quote section-pad">
+          <div className="section-head">
+            <span>WHY THIS CLUB · {(a as any).host?.toUpperCase()}</span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['ko','en','fr'] as const).map(l => (
+                <button key={l} onClick={() => setLang(l)}
+                  style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, padding: '3px 8px',
+                    border: '1px solid', borderColor: lang === l ? '#111' : '#ccc',
+                    background: lang === l ? '#111' : 'transparent',
+                    color: lang === l ? '#fff' : '#888', borderRadius: 4, cursor: 'pointer' }}>
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+          <blockquote className="leader-quote">
+            <p>{quote[`value_${lang}`]}</p>
+            <cite>— {(a as any).host}</cite>
+          </blockquote>
+        </section>
+      )}
       <section className="activity-guide section-pad">
         <div>
           <span>BEFORE YOU JOIN</span>
