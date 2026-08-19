@@ -4,9 +4,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { trackPageView } from './lib/analytics'
 import { AuthProvider } from './context/AuthContext'
 import { supabase } from './lib/supabase'
-import SiteDetails from './components/SiteDetails'
-import SiteHeader from './components/SiteHeader'
-import SiteFooter from './components/SiteFooter'
+import CommunityLayout from './components/CommunityLayout'
 import NewHome from './pages/NewHome'
 import NewPrograms from './pages/NewPrograms'
 import NewActivities from './pages/NewActivities'
@@ -46,14 +44,7 @@ function AuthListener() {
 }
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <SiteDetails />
-      <SiteHeader />
-      <main>{children}</main>
-      <SiteFooter />
-    </>
-  )
+  return <CommunityLayout>{children}</CommunityLayout>
 }
 
 export default function App() {

@@ -3858,6 +3858,124 @@ function AnalyticsAdmin() {
   )
 }
 
+// ─── Theme & Channel Admin ────────────────────────────────────────────────────
+const DEFAULT_CHANNELS_CONFIG = [
+  { icon: '📢', name: '공지', href: '/board' },
+  { icon: '💬', name: '자유게시판', href: '/board' },
+  { icon: '🌐', name: '언어교환', href: '/board' },
+  { icon: '🏠', name: '주거', href: '/board' },
+  { icon: '💼', name: '취업·이민', href: '/board' },
+  { icon: '📅', name: '이벤트·모임', href: '/board' },
+]
+
+function ThemeChannelAdmin() {
+  const [colors, setColors] = useState({ color_sidebar: '#111116', color_accent: '#f5c542', color_main_bg: '#fafaf7' })
+  const [channels, setChannels] = useState(DEFAULT_CHANNELS_CONFIG)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('key,value_ko').eq('page','theme').then(({data}) => {
+      if (!data?.length) return
+      const get = (k: string) => data.find(r => r.key === k)?.value_ko
+      setColors({
+        color_sidebar: get('color_sidebar') || '#111116',
+        color_accent:  get('color_accent')  || '#f5c542',
+        color_main_bg: get('color_main_bg') || '#fafaf7',
+      })
+    })
+    supabase.from('site_content').select('key,value_ko').eq('page','community_channels').then(({data}) => {
+      if (!data?.length) return
+      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      const chs = []
+      for (let i = 1; i <= 8; i++) {
+        const name = get(`ch${i}_name`)
+        if (!name) break
+        chs.push({ icon: get(`ch${i}_icon`), name, href: get(`ch${i}_href`) || '/board' })
+      }
+      if (chs.length) setChannels(chs)
+    })
+  }, [])
+
+  async function save() {
+    if (!supabase) return
+    setSaving(true)
+    const themeRows = Object.entries(colors).map(([key, value]) => ({
+      page: 'theme', key, label: key, value_ko: value, value_en: value, value_fr: value,
+    }))
+    const chRows = channels.flatMap((ch, i) => [
+      { page: 'community_channels', key: `ch${i+1}_icon`, label: `채널${i+1} 아이콘`, value_ko: ch.icon, value_en: ch.icon, value_fr: ch.icon },
+      { page: 'community_channels', key: `ch${i+1}_name`, label: `채널${i+1} 이름`, value_ko: ch.name, value_en: ch.name, value_fr: ch.name },
+      { page: 'community_channels', key: `ch${i+1}_href`, label: `채널${i+1} 링크`, value_ko: ch.href, value_en: ch.href, value_fr: ch.href },
+    ])
+    await supabase.from('site_content').upsert([...themeRows, ...chRows], { onConflict: 'page,key' })
+    setSaving(false); setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+    // Apply immediately
+    const r = document.documentElement
+    r.style.setProperty('--sidebar-bg', colors.color_sidebar)
+    r.style.setProperty('--sidebar-accent', colors.color_accent)
+    r.style.setProperty('--main-bg', colors.color_main_bg)
+  }
+
+  function updateCh(i: number, k: 'icon'|'name'|'href', v: string) {
+    setChannels(prev => prev.map((ch, idx) => idx === i ? { ...ch, [k]: v } : ch))
+  }
+
+  return (
+    <div className="space-y-6">
+      <FormCard title="사이드바 색상">
+        <div className="grid grid-cols-3 gap-4">
+          {([
+            ['color_sidebar', '사이드바 배경'],
+            ['color_accent',  '포인트 색상 (노란색 등)'],
+            ['color_main_bg', '메인 배경'],
+          ] as const).map(([k, label]) => (
+            <div key={k}>
+              <label className="label">{label}</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={colors[k]}
+                  onChange={e => setColors(prev => ({ ...prev, [k]: e.target.value }))}
+                  className="w-10 h-9 rounded border border-gray-200 cursor-pointer p-0.5"
+                />
+                <input type="text" className="input flex-1 font-mono text-sm"
+                  value={colors[k]}
+                  onChange={e => setColors(prev => ({ ...prev, [k]: e.target.value }))}
+                />
+              </div>
+              <div className="mt-1.5 h-5 rounded" style={{ background: colors[k], border: '1px solid #eee' }} />
+            </div>
+          ))}
+        </div>
+      </FormCard>
+
+      <FormCard title="커뮤니티 채널">
+        <div className="space-y-2 mb-3">
+          {channels.map((ch, i) => (
+            <div key={i} className="grid grid-cols-[44px_1fr_1fr_24px] gap-2 items-center">
+              <input className="input text-center text-lg" value={ch.icon}
+                onChange={e => updateCh(i, 'icon', e.target.value)} placeholder="🏠" />
+              <input className="input" value={ch.name}
+                onChange={e => updateCh(i, 'name', e.target.value)} placeholder="채널 이름" />
+              <input className="input font-mono text-xs" value={ch.href}
+                onChange={e => updateCh(i, 'href', e.target.value)} placeholder="/board" />
+              <button type="button" onClick={() => setChannels(prev => prev.filter((_,idx) => idx !== i))}
+                className="text-gray-300 hover:text-red-500 text-xl leading-none">×</button>
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={() => setChannels(prev => [...prev, { icon: '💬', name: '새 채널', href: '/board' }])}
+          className="text-xs text-gray-400 hover:text-gray-700">+ 채널 추가</button>
+      </FormCard>
+
+      <button onClick={save} disabled={saving} className="btn-yellow">
+        {saving ? '저장 중…' : saved ? '저장됨 ✓' : '저장하기'}
+      </button>
+    </div>
+  )
+}
+
 // ─── Root Admin page ───────────────────────────────────────────────────────────
 const TABS = [
   { id: 'notifications', label: 'Notifications',   Component: NotificationsAdmin },
@@ -3871,6 +3989,7 @@ const TABS = [
   { id: 'site-content',  label: 'Page Content',      Component: SiteContentAdmin   },
   { id: 'settings',      label: 'Site Settings',     Component: SiteSettingsAdmin  },
   { id: 'analytics',     label: 'Analytics',         Component: AnalyticsAdmin     },
+  { id: 'theme',         label: '테마 & 채널',        Component: ThemeChannelAdmin  },
 ]
 
 export default function Admin() {

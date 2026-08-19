@@ -191,3 +191,106 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   .hero-entry-links{flex-direction:column}
   .hero-entry-links a{text-align:center}
 }
+
+/* ── App Shell (Discord/Slack-style sidebar layout) ─────────────────────────── */
+:root {
+  --sidebar-bg: #111116;
+  --sidebar-accent: #f5c542;
+  --main-bg: #fafaf7;
+}
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+.app-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+  z-index: 100;
+}
+.app-sidebar::-webkit-scrollbar { width: 3px; }
+.app-sidebar::-webkit-scrollbar-thumb { background: #2a2a38; border-radius: 2px; }
+.app-main {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--main-bg);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* Sidebar internals */
+.sidebar-logo { padding: 14px 14px 12px; border-bottom: 1px solid rgba(255,255,255,.06); flex-shrink: 0; }
+.sidebar-logo-link { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.sidebar-logo-mark {
+  width: 30px; height: 30px; background: var(--sidebar-accent);
+  border-radius: 7px; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 13px; color: #111; flex-shrink: 0;
+}
+.sidebar-wordmark { color: #e8e8f0; font-weight: 800; font-size: 14px; letter-spacing: -.2px; }
+.sidebar-city { color: #44445a; font-size: 9px; letter-spacing: 1.2px; margin-top: 1px; }
+.sidebar-section { padding: 14px 0 4px; }
+.sidebar-section-label {
+  padding: 0 12px 5px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px;
+  color: #33334a; text-transform: uppercase;
+}
+.sidebar-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px 6px 10px;
+  margin: 1px 5px; border-radius: 6px;
+  color: #77778a; text-decoration: none;
+  font-size: 13.5px; font-weight: 500;
+  transition: background .1s, color .1s;
+}
+.sidebar-item:hover { background: #1a1a24; color: #c0c0d8; }
+.sidebar-item.active { background: #252535; color: #e8e8f0; }
+.sidebar-item-icon { font-size: 14px; width: 17px; text-align: center; flex-shrink: 0; }
+.sidebar-divider { height: 1px; background: rgba(255,255,255,.06); margin: 8px 12px; }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sidebar-footer-link {
+  font-size: 11px; color: #44445a; text-decoration: none;
+  padding: 4px 2px; transition: color .12s;
+}
+.sidebar-footer-link:hover { color: #888899; }
+.sidebar-overlay { display: none; }
+.mobile-topbar { display: none; }
+
+/* Mobile */
+@media (max-width: 760px) {
+  .app-shell { display: block; height: auto; overflow: visible; }
+  .app-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    height: 100%; transform: translateX(-100%);
+    transition: transform .22s ease;
+    z-index: 200; width: 240px;
+  }
+  .app-sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.4); }
+  .sidebar-overlay {
+    display: block; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 199;
+  }
+  .app-main { min-height: 100vh; padding-top: 52px; overflow: visible; }
+  .mobile-topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; height: 52px;
+    background: var(--sidebar-bg);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  }
+  .mobile-menu-btn {
+    background: none; border: none; color: #888;
+    font-size: 20px; cursor: pointer; padding: 4px; line-height: 1;
+  }
+  .mobile-logo { color: #e8e8f0; font-weight: 800; font-size: 14px; }
+}
