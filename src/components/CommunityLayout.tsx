@@ -392,12 +392,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             })}
           </nav>
 
-          {/* Footer */}
-          {!collapsed && (
-            <div className="sidebar-footer">
-              <a href="/apply/community" className="sidebar-footer-cta">{t.footer.apply}</a>
-            </div>
-          )}
+          {/* Footer intentionally empty — apply CTA lives in each channel page */}
         </aside>
 
         <main className="app-main">

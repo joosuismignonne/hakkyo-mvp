@@ -5,6 +5,13 @@ import { supabase } from '../lib/supabase'
 import { programs, activities } from '../data/hakkyo'
 import { submitApplication, ApplicationPayload } from '../lib/hakkyoApi'
 import { trackEvent } from '../lib/analytics'
+import { useLang } from '../lib/lang'
+
+const APPLY_UI = {
+  ko: { next: '다음', prev: '← 이전', back: '← 돌아가기', send: '신청서 보내기', sending: '보내는 중…', required: '* 표시된 질문은 필수예요.', done_title: '신청이 접수됐어요!', done_body: 'HAKKYO에서 곧 이메일로 연락드릴게요.', home: '← 홈으로', goBack: '← 돌아가기', error: '접수 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.' },
+  en: { next: 'Next', prev: '← Back', back: '← Back', send: 'Submit', sending: 'Sending…', required: '* Required fields.', done_title: 'Application received!', done_body: "We'll be in touch by email soon.", home: '← Home', goBack: '← Go back', error: 'Something went wrong. Please try again.' },
+  fr: { next: 'Suivant', prev: '← Retour', back: '← Retour', send: 'Envoyer', sending: 'Envoi…', required: '* Champs requis.', done_title: 'Candidature reçue !', done_body: 'Nous vous contacterons bientôt par courriel.', home: '← Accueil', goBack: '← Retour', error: 'Une erreur est survenue. Veuillez réessayer.' },
+}
 
 function NewsletterForm() {
   const [email, setEmail] = useState('')
@@ -160,6 +167,8 @@ function ApplicationForm({ kind, selection, backHref }: { kind: 'program' | 'act
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const { lang } = useLang()
+  const ui = APPLY_UI[lang as keyof typeof APPLY_UI] ?? APPLY_UI.ko
   const dynamicActivityQuestions = useActivityQuestions()
 
   const commonQuestions: Question[] = [
@@ -241,13 +250,13 @@ function ApplicationForm({ kind, selection, backHref }: { kind: 'program' | 'act
               <div className="feed-card-inner">
                 <div className="feed-meta">
                   <div className="feed-avatar" style={{ background:'#4caf50', fontSize:16 }}>✓</div>
-                  <span className="feed-author">신청 완료</span>
+                  <span className="feed-author">{lang === 'fr' ? 'Envoyé' : lang === 'en' ? 'Submitted' : '신청 완료'}</span>
                 </div>
-                <div className="feed-title">신청이 접수됐어요!</div>
-                <div className="feed-body"><p>HAKKYO에서 곧 이메일로 연락드릴게요.</p></div>
+                <div className="feed-title">{ui.done_title}</div>
+                <div className="feed-body"><p>{ui.done_body}</p></div>
                 <div className="feed-footer">
-                  <button className="feed-action" onClick={() => window.location.href='/'}>← 홈으로</button>
-                  <button className="feed-action" onClick={() => window.location.href=backHref}>← 돌아가기</button>
+                  <button className="feed-action" onClick={() => window.location.href='/'}>{ui.home}</button>
+                  <button className="feed-action" onClick={() => window.location.href=backHref}>{ui.goBack}</button>
                 </div>
               </div>
             </div>
@@ -302,8 +311,8 @@ function ApplicationForm({ kind, selection, backHref }: { kind: 'program' | 'act
                 {/* Actions */}
                 <div className="apply-actions">
                   {step > 0
-                    ? <button type="button" className="feed-action" onClick={() => setStep(step - 1)}>← 이전</button>
-                    : <a href={backHref} className="feed-action" style={{ textDecoration:'none' }}>← 돌아가기</a>
+                    ? <button type="button" className="feed-action" onClick={() => setStep(step - 1)}>{ui.prev}</button>
+                    : <a href={backHref} className="feed-action" style={{ textDecoration:'none' }}>{ui.back}</a>
                   }
                   <button
                     type="button"
@@ -311,16 +320,16 @@ function ApplicationForm({ kind, selection, backHref }: { kind: 'program' | 'act
                     className="apply-next-btn"
                     onClick={next}
                   >
-                    {state === 'sending' ? '보내는 중…' : step === questions.length - 1 ? '신청서 보내기' : '다음'} <Arrow />
+                    {state === 'sending' ? ui.sending : step === questions.length - 1 ? ui.send : ui.next} <Arrow />
                   </button>
                 </div>
 
                 {state === 'error' && (
                   <p style={{ color:'#c0392b', fontSize:13, marginTop:8 }}>
-                    접수 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.
+                    {ui.error}
                   </p>
                 )}
-                <p className="apply-note">* 표시된 질문은 필수예요.</p>
+                <p className="apply-note">{ui.required}</p>
 
               </div>
             </div>

@@ -2326,6 +2326,87 @@ type UnifiedApp = {
   answers?: AnswerRow[]
 }
 
+const HAKKYO_SUB_FIELDS: { key: string; label: string }[] = [
+  { key: 'name',               label: '이름' },
+  { key: 'email',              label: '이메일' },
+  { key: 'phone',              label: '전화번호' },
+  { key: 'instagram',          label: '인스타그램' },
+  { key: 'city',               label: '도시' },
+  { key: 'time_in_montreal',   label: '몬트리올 체류 기간' },
+  { key: 'current_stage',      label: '현재 상황' },
+  { key: 'language',           label: '구사 언어' },
+  { key: 'interests',          label: '관심사' },
+  { key: 'language_level',     label: '언어 수준' },
+  { key: 'learning_experience',label: '학습 경험' },
+  { key: 'speaking_barrier',   label: '말하기 어려운 점' },
+  { key: 'goal',               label: '목표' },
+  { key: 'preferred_class_style', label: '선호 수업 방식' },
+  { key: 'experience',         label: '액티비티 경험' },
+  { key: 'join_reason',        label: '참여 이유' },
+  { key: 'comfort',            label: '미리 알아두면 좋은 점' },
+  { key: 'availability',       label: '참여 가능 시간' },
+  { key: 'preferred_location', label: '선호 지역' },
+  { key: 'discovery',          label: 'HAKKYO를 알게 된 경로' },
+  { key: 'message',            label: '마지막 메시지' },
+]
+
+function HakkyoSubCard({ s, index }: { s: Record<string, unknown>; index: number }) {
+  const [open, setOpen] = useState(false)
+  const str = (k: string) => s[k] != null ? String(s[k]) : ''
+  const kindLabel: Record<string, string> = { activity: '🐱 액티비티', community: '🤝 커뮤니티', newsletter: '🔔 소식', program: '📚 프로그램' }
+  return (
+    <div key={str('id') || index} className="border border-gray-200 rounded-xl overflow-hidden mb-3">
+      <div
+        className="px-4 py-3 cursor-pointer flex items-start justify-between gap-3 hover:bg-gray-50 transition-colors"
+        onClick={() => setOpen(o => !o)}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <span className="text-[10px] font-bold tracking-wide text-gray-400">{kindLabel[str('kind')] || str('kind').toUpperCase()}</span>
+            <span className="text-[10px] text-gray-300">
+              {str('created_at') ? new Date(str('created_at')).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+            </span>
+            {str('selection') && (
+              <span className="text-[10px] bg-yellow-50 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded">{str('selection')}</span>
+            )}
+          </div>
+          <p className="text-sm font-semibold text-gray-900">{str('name') || '이름 없음'}</p>
+          <p className="text-xs text-gray-500">{str('email')}{str('phone') ? ` · ${str('phone')}` : ''}</p>
+          {!open && str('join_reason') && (
+            <p className="text-xs text-gray-400 mt-1 line-clamp-2">{str('join_reason')}</p>
+          )}
+        </div>
+        <span className="text-gray-300 text-sm flex-shrink-0 mt-1">{open ? '▲' : '▼'}</span>
+      </div>
+      {open && (
+        <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-2">
+          {HAKKYO_SUB_FIELDS.map(f => {
+            const v = str(f.key)
+            if (!v) return null
+            return (
+              <div key={f.key} className="grid grid-cols-[140px_1fr] gap-2 text-xs">
+                <span className="text-gray-400 font-medium shrink-0">{f.label}</span>
+                <span className="text-gray-700 whitespace-pre-wrap">{v}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function HakkyoSubList({ subs }: { subs: Record<string, unknown>[] }) {
+  return (
+    <div>
+      <div className="text-[11px] font-bold text-gray-400 tracking-wide uppercase mb-3">
+        액티비티 · 커뮤니티 · 소식 신청 ({subs.length}건)
+      </div>
+      {subs.map((s, i) => <HakkyoSubCard key={String(s['id'] ?? i)} s={s} index={i} />)}
+    </div>
+  )
+}
+
 function ApplicationsAdmin() {
   const [apps,         setApps]         = useState<UnifiedApp[]>([])
   const [hakkyoSubs,   setHakkyoSubs]   = useState<Record<string, unknown>[]>([])
@@ -2689,34 +2770,7 @@ function ApplicationsAdmin() {
 
       {/* hakkyo_submissions (activity / community / newsletter) */}
       {showHakkyo && visibleHakkyo.length > 0 && (
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
-          <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 tracking-wide uppercase">
-            액티비티 · 커뮤니티 · 소식 신청
-          </div>
-          <div className="divide-y divide-gray-100">
-            {visibleHakkyo.map((s, i) => {
-              const str = (k: string) => s[k] != null ? String(s[k]) : ''
-              return (
-              <div key={str('id') || i} className="px-4 py-3">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="text-[10px] font-bold tracking-wide uppercase text-gray-400">{str('kind')}</span>
-                  <span className="text-[10px] text-gray-300">
-                    {str('created_at') ? new Date(str('created_at')).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
-                  </span>
-                  {str('selection') && (
-                    <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{str('selection')}</span>
-                  )}
-                </div>
-                <p className="text-sm font-medium text-gray-900">{str('name') || '—'}</p>
-                <p className="text-xs text-gray-500">{str('email')}{str('phone') ? ` · ${str('phone')}` : ''}</p>
-                {str('join_reason') && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{str('join_reason')}</p>}
-                {str('message') && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{str('message')}</p>}
-                {str('goal') && <p className="text-xs text-gray-400 mt-1 line-clamp-2">목표: {str('goal')}</p>}
-              </div>
-              )
-            })}
-          </div>
-        </div>
+        <HakkyoSubList subs={visibleHakkyo} />
       )}
       {showHakkyo && visibleHakkyo.length === 0 && kindFilter !== 'all' && (kindFilter === 'activity' || kindFilter === 'community' || kindFilter === 'newsletter') && (
         <p className="text-sm text-gray-400 text-center py-8">신청 내역이 없어요.</p>
