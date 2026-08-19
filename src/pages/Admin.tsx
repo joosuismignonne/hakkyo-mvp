@@ -736,6 +736,218 @@ function SessionsAdmin() {
           </ul>
         </details>
       </div>
+      <ProgramFormAdmin />
+    </div>
+  )
+}
+
+// ─── Program Form Questions Admin ──────────────────────────────────────────────
+interface PqItem { key: string; hint: string; label: string; type: 'choice'|'textarea'|'text'; options: string; required: boolean }
+
+const DEFAULT_PROGRAM_QUESTIONS: PqItem[] = [
+  { key: 'pq1', hint: 'Language level *',       label: '현재 언어 실력은 어느 정도인가요?',         type: 'choice',   options: '처음 시작해요,기초 표현을 조금 알아요,간단한 대화가 가능해요,일상 대화가 가능해요,잘 모르겠어요', required: true },
+  { key: 'pq2', hint: 'Learning experience *',  label: '지금까지 이 언어를 어떻게 공부해 왔나요?',  type: 'textarea', options: '', required: true },
+  { key: 'pq3', hint: 'Speaking barrier *',     label: '이 언어로 말할 때 가장 어려운 점은?',       type: 'choice',   options: '표현이 바로 떠오르지 않아요,발음이 걱정돼요,문법이 틀릴까 봐 망설여요,상대가 못 알아들을까 걱정돼요,말할 기회가 부족해요,그 외', required: true },
+  { key: 'pq4', hint: 'Your goal *',            label: '이번 프로그램을 통해 이루고 싶은 것은?',    type: 'textarea', options: '', required: true },
+  { key: 'pq5', hint: 'Preferred class style *', label: '수업에서 어떤 활동을 가장 해보고 싶나요?', type: 'choice',   options: '생활 표현 배우기,1:1 대화 연습,그룹 대화·게임,발음 교정,쓰기와 피드백,골고루 해보고 싶어요', required: true },
+]
+
+const DEFAULT_SCHEDULING_QUESTIONS: PqItem[] = [
+  { key: 'sq1', hint: 'Availability *',   label: '참여 가능한 요일과 시간대를 알려주세요.',       type: 'textarea', options: '', required: true },
+  { key: 'sq2', hint: 'Preferred area *', label: '몬트리올에서 참여하기 편한 지역은 어디인가요?', type: 'text',     options: '', required: true },
+]
+
+const PROGRAM_COMMON_DISPLAY = [
+  { hint: 'Name *',             label: '이름을 알려주세요.',                            type: '텍스트' },
+  { hint: 'Email *',            label: '연락받을 이메일은 무엇인가요?',                  type: '이메일' },
+  { hint: 'Phone · 선택',       label: '전화번호를 알려주세요.',                         type: '텍스트' },
+  { hint: 'Instagram · 선택',   label: '인스타그램 계정이 있나요?',                      type: '텍스트' },
+  { hint: 'Current city *',     label: '현재 어느 도시에 거주하고 있나요?',              type: '텍스트' },
+  { hint: 'Time in Montréal *', label: '몬트리올에 온 지 얼마나 되었나요?',              type: '객관식' },
+  { hint: 'Your current stage *', label: '현재 몬트리올에서 어떤 시간을 보내고 있나요?', type: '객관식' },
+]
+
+const PROGRAM_CLOSING_DISPLAY = [
+  { hint: 'How did you hear about us? *', label: 'HAKKYO를 어떻게 알게 되었나요?',             type: '객관식' },
+  { hint: 'Final message · 선택',          label: '마지막으로 HAKKYO에 전하고 싶은 말이 있나요?', type: '주관식' },
+]
+
+function ProgramFormAdmin() {
+  const [pqs, setPqs] = useState<PqItem[]>(DEFAULT_PROGRAM_QUESTIONS)
+  const [sqs, setSqs] = useState<PqItem[]>(DEFAULT_SCHEDULING_QUESTIONS)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('key,value_ko').eq('page', 'program_questions').then(({ data }) => {
+      if (!data?.length) return
+      const get = (k: string) => data.find((r: {key:string;value_ko:string}) => r.key === k)?.value_ko || ''
+      const pCount = parseInt(get('pq_count') || String(DEFAULT_PROGRAM_QUESTIONS.length))
+      const sCount = parseInt(get('sq_count') || String(DEFAULT_SCHEDULING_QUESTIONS.length))
+      const loadGroup = (prefix: string, count: number, defaults: PqItem[]): PqItem[] =>
+        Array.from({ length: count }, (_, i) => {
+          const key = `${prefix}${i + 1}`
+          const def = defaults[i]
+          return {
+            key,
+            label:    get(`${key}_label`)    || def?.label    || '',
+            hint:     get(`${key}_hint`)     || def?.hint     || '',
+            type:     (get(`${key}_type`)    || def?.type     || 'textarea') as PqItem['type'],
+            options:  get(`${key}_options`)  || def?.options  || '',
+            required: get(`${key}_required`) === 'false' ? false : (def?.required ?? true),
+          }
+        })
+      setPqs(loadGroup('pq', pCount, DEFAULT_PROGRAM_QUESTIONS))
+      setSqs(loadGroup('sq', sCount, DEFAULT_SCHEDULING_QUESTIONS))
+    })
+  }, [])
+
+  async function save() {
+    if (!supabase) return
+    setSaving(true)
+    const toRows = (items: PqItem[]) => items.flatMap((q, i) => {
+      const key = q.key
+      return [
+        { page: 'program_questions', key: `${key}_label`,    label: `${key} 질문`,   value_ko: q.label,            value_en: q.label,            value_fr: q.label },
+        { page: 'program_questions', key: `${key}_hint`,     label: `${key} 힌트`,   value_ko: q.hint,             value_en: q.hint,             value_fr: q.hint },
+        { page: 'program_questions', key: `${key}_type`,     label: `${key} 유형`,   value_ko: q.type,             value_en: q.type,             value_fr: q.type },
+        { page: 'program_questions', key: `${key}_options`,  label: `${key} 선택지`, value_ko: q.options,          value_en: q.options,          value_fr: q.options },
+        { page: 'program_questions', key: `${key}_required`, label: `${key} 필수`,   value_ko: String(q.required), value_en: String(q.required), value_fr: String(q.required) },
+      ]
+    })
+    const metaRows = [
+      { page: 'program_questions', key: 'pq_count', label: '프로그램 질문 수', value_ko: String(pqs.length), value_en: String(pqs.length), value_fr: String(pqs.length) },
+      { page: 'program_questions', key: 'sq_count', label: '일정 질문 수',     value_ko: String(sqs.length), value_en: String(sqs.length), value_fr: String(sqs.length) },
+    ]
+    await supabase.from('site_content').upsert([...metaRows, ...toRows(pqs), ...toRows(sqs)], { onConflict: 'page,key' })
+    setSaving(false); setSaved(true)
+    setTimeout(() => setSaved(false), 2200)
+  }
+
+  function updateQ(setter: React.Dispatch<React.SetStateAction<PqItem[]>>, i: number, field: keyof PqItem, val: string | boolean) {
+    setter(prev => prev.map((q, idx) => idx === i ? { ...q, [field]: val } : q))
+  }
+
+  function addQ(setter: React.Dispatch<React.SetStateAction<PqItem[]>>, prefix: string, items: PqItem[]) {
+    const key = `${prefix}${items.length + 1}`
+    setter(prev => [...prev, { key, hint: '', label: '', type: 'textarea', options: '', required: false }])
+  }
+
+  function removeQ(setter: React.Dispatch<React.SetStateAction<PqItem[]>>, i: number, prefix: string) {
+    setter(prev => prev.filter((_, idx) => idx !== i).map((q, idx) => ({ ...q, key: `${prefix}${idx + 1}` })))
+  }
+
+  function moveQ(setter: React.Dispatch<React.SetStateAction<PqItem[]>>, i: number, dir: -1|1, prefix: string) {
+    const next = i + dir
+    setter(prev => {
+      if (next < 0 || next >= prev.length) return prev
+      const arr = [...prev]
+      ;[arr[i], arr[next]] = [arr[next], arr[i]]
+      return arr.map((q, idx) => ({ ...q, key: `${prefix}${idx + 1}` }))
+    })
+  }
+
+  const readOnlyStyle = { background: '#f9f9f6', borderRadius: 8, border: '1px solid #eee', padding: '8px 12px', marginBottom: 4 }
+
+  function EditableSection({ label, items, setter, prefix, offset }: {
+    label: string; items: PqItem[]; setter: React.Dispatch<React.SetStateAction<PqItem[]>>; prefix: string; offset: number
+  }) {
+    return (
+      <div className="mt-5 mb-2">
+        <p className="text-[11px] font-bold text-[#b8860b] uppercase tracking-wider mb-3">✏️ {label} ({items.length}개)</p>
+        <div className="space-y-3">
+          {items.map((q, i) => (
+            <div key={q.key} className="border border-yellow-100 rounded-xl p-4 space-y-3 bg-yellow-50/30">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-yellow-700">질문 {offset + i + 1}</span>
+                <span className="text-[10px] text-gray-400">({q.type === 'choice' ? '객관식' : '주관식'})</span>
+                <div className="ml-auto flex items-center gap-1">
+                  <button onClick={() => moveQ(setter, i, -1, prefix)} disabled={i === 0}
+                    className="text-[11px] px-2 py-0.5 rounded border border-gray-200 text-gray-400 disabled:opacity-30 hover:bg-gray-50">↑</button>
+                  <button onClick={() => moveQ(setter, i, 1, prefix)} disabled={i === items.length - 1}
+                    className="text-[11px] px-2 py-0.5 rounded border border-gray-200 text-gray-400 disabled:opacity-30 hover:bg-gray-50">↓</button>
+                  <button onClick={() => removeQ(setter, i, prefix)}
+                    className="text-[11px] px-2 py-0.5 rounded border border-red-200 text-red-400 hover:bg-red-50 ml-1">삭제</button>
+                </div>
+              </div>
+              <FL label="힌트 (영문 레이블)">
+                <input className="input text-sm" value={q.hint} onChange={e => updateQ(setter, i, 'hint', e.target.value)} placeholder="예: Language level" />
+              </FL>
+              <FL label="질문 (한국어)">
+                <input className="input" value={q.label} onChange={e => updateQ(setter, i, 'label', e.target.value)} placeholder="질문 내용을 입력해주세요" />
+              </FL>
+              <FL label="유형">
+                <select className="input" value={q.type} onChange={e => updateQ(setter, i, 'type', e.target.value as PqItem['type'])}>
+                  <option value="textarea">주관식 (텍스트)</option>
+                  <option value="choice">객관식 (선택지)</option>
+                  <option value="text">단답형 (한 줄)</option>
+                </select>
+              </FL>
+              {q.type === 'choice' && (
+                <FL label="선택지 (쉼표로 구분)">
+                  <input className="input text-sm font-mono" value={q.options} onChange={e => updateQ(setter, i, 'options', e.target.value)} placeholder="선택지1,선택지2,선택지3" />
+                </FL>
+              )}
+              <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+                <input type="checkbox" checked={q.required} onChange={e => updateQ(setter, i, 'required', e.target.checked)} />
+                필수 질문
+              </label>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => addQ(setter, prefix, items)}
+          className="mt-3 w-full py-2 rounded-xl border border-dashed border-yellow-300 text-sm text-yellow-700 hover:bg-yellow-50 transition-colors">
+          + 질문 추가
+        </button>
+      </div>
+    )
+  }
+
+  const totalQ = PROGRAM_COMMON_DISPLAY.length + pqs.length + sqs.length + PROGRAM_CLOSING_DISPLAY.length
+
+  return (
+    <div className="mt-8 space-y-5">
+      <FormCard title="📋 프로그램 신청 폼 — 전체 질문 구조">
+        <p className="text-xs text-gray-400 mb-5">실제 프로그램 신청서와 동일한 순서예요. 총 {totalQ}개 질문. 회색은 고정, 노란색은 편집 가능.</p>
+
+        {/* 공통 고정 */}
+        <div className="mb-2">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">공통 질문 (고정 · {PROGRAM_COMMON_DISPLAY.length}개)</p>
+          <div className="space-y-1">
+            {PROGRAM_COMMON_DISPLAY.map((q, i) => (
+              <div key={i} style={readOnlyStyle} className="flex items-center gap-3">
+                <span className="text-[11px] text-gray-300 w-4 shrink-0">{i + 1}</span>
+                <span className="text-[11px] text-gray-400 w-32 shrink-0">{q.hint}</span>
+                <span className="text-sm text-gray-600 flex-1">{q.label}</span>
+                <span className="text-[10px] text-gray-300 shrink-0">{q.type}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <EditableSection label="프로그램 전용 질문" items={pqs} setter={setPqs} prefix="pq" offset={PROGRAM_COMMON_DISPLAY.length} />
+        <EditableSection label="일정 질문" items={sqs} setter={setSqs} prefix="sq" offset={PROGRAM_COMMON_DISPLAY.length + pqs.length} />
+
+        {/* 마무리 고정 */}
+        <div className="mt-5">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">마무리 질문 (고정 · {PROGRAM_CLOSING_DISPLAY.length}개)</p>
+          <div className="space-y-1">
+            {PROGRAM_CLOSING_DISPLAY.map((q, i) => (
+              <div key={i} style={readOnlyStyle} className="flex items-center gap-3">
+                <span className="text-[11px] text-gray-300 w-4 shrink-0">{PROGRAM_COMMON_DISPLAY.length + pqs.length + sqs.length + i + 1}</span>
+                <span className="text-[11px] text-gray-400 w-32 shrink-0">{q.hint}</span>
+                <span className="text-sm text-gray-600 flex-1">{q.label}</span>
+                <span className="text-[10px] text-gray-300 shrink-0">{q.type}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </FormCard>
+
+      <button onClick={save} disabled={saving} className="btn-yellow">
+        {saving ? '저장 중…' : saved ? '저장됨 ✓' : '저장하기'}
+      </button>
     </div>
   )
 }

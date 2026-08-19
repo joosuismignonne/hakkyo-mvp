@@ -169,6 +169,48 @@ function useActivityQuestions(): Question[] {
   return qs
 }
 
+const DEFAULT_PROGRAM_QUESTIONS_APPLY: Question[] = [
+  { name:'pq1', label:'현재 언어 실력은 어느 정도인가요?',         hint:'Language level',       type:'choice',   options:['처음 시작해요','기초 표현을 조금 알아요','간단한 대화가 가능해요','일상 대화가 가능해요','잘 모르겠어요'], required:true },
+  { name:'pq2', label:'지금까지 이 언어를 어떻게 공부해 왔나요?',  hint:'Learning experience',  type:'textarea', required:true },
+  { name:'pq3', label:'이 언어로 말할 때 가장 어려운 점은?',       hint:'Speaking barrier',     type:'choice',   options:['표현이 바로 떠오르지 않아요','발음이 걱정돼요','문법이 틀릴까 봐 망설여요','상대가 못 알아들을까 걱정돼요','말할 기회가 부족해요','그 외'], required:true },
+  { name:'pq4', label:'이번 프로그램을 통해 이루고 싶은 것은?',    hint:'Your goal',            type:'textarea', required:true },
+  { name:'pq5', label:'수업에서 어떤 활동을 가장 해보고 싶나요?',  hint:'Preferred class style', type:'choice',  options:['생활 표현 배우기','1:1 대화 연습','그룹 대화·게임','발음 교정','쓰기와 피드백','골고루 해보고 싶어요'], required:true },
+]
+
+const DEFAULT_SCHEDULING_QUESTIONS_APPLY: Question[] = [
+  { name:'sq1', label:'참여 가능한 요일과 시간대를 알려주세요.',       hint:'Availability',   type:'textarea', required:true },
+  { name:'sq2', label:'몬트리올에서 참여하기 편한 지역은 어디인가요?', hint:'Preferred area', type:'text',     required:true },
+]
+
+function useProgramQuestions(): { pqs: Question[]; sqs: Question[] } {
+  const [pqs, setPqs] = useState<Question[]>(DEFAULT_PROGRAM_QUESTIONS_APPLY)
+  const [sqs, setSqs] = useState<Question[]>(DEFAULT_SCHEDULING_QUESTIONS_APPLY)
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('key,value_ko').eq('page', 'program_questions').then(({ data }) => {
+      if (!data?.length) return
+      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      const loadGroup = (prefix: string, count: number, defaults: Question[]): Question[] =>
+        Array.from({ length: count }, (_, i) => {
+          const key = `${prefix}${i + 1}`
+          const def = defaults[i]
+          const label   = get(`${key}_label`)   || def?.label   || ''
+          const hint    = get(`${key}_hint`)    || def?.hint    || ''
+          const type    = get(`${key}_type`)    || def?.type    || 'textarea'
+          const required = get(`${key}_required`) === 'false' ? false : (def?.required ?? true)
+          const optStr  = get(`${key}_options`)
+          const options = optStr ? optStr.split(',').map((s: string) => s.trim()).filter(Boolean) : def?.options
+          return { name: key, label, hint, type, options, required }
+        })
+      const pCount = parseInt(get('pq_count') || String(DEFAULT_PROGRAM_QUESTIONS_APPLY.length))
+      const sCount = parseInt(get('sq_count') || String(DEFAULT_SCHEDULING_QUESTIONS_APPLY.length))
+      setPqs(loadGroup('pq', pCount, DEFAULT_PROGRAM_QUESTIONS_APPLY))
+      setSqs(loadGroup('sq', sCount, DEFAULT_SCHEDULING_QUESTIONS_APPLY))
+    })
+  }, [])
+  return { pqs, sqs }
+}
+
 function ApplicationForm({ kind, selection, trackSlug, backHref }: { kind: 'program' | 'activity' | 'community'; selection: string; trackSlug?: string; backHref: string }) {
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [step, setStep] = useState(0)
@@ -176,6 +218,7 @@ function ApplicationForm({ kind, selection, trackSlug, backHref }: { kind: 'prog
   const { lang } = useLang()
   const ui = APPLY_UI[lang as keyof typeof APPLY_UI] ?? APPLY_UI.ko
   const dynamicActivityQuestions = useActivityQuestions()
+  const { pqs: dynamicProgramQuestions, sqs: dynamicSchedulingQuestions } = useProgramQuestions()
 
   const commonQuestions: Question[] = [
     { name:'name',           label:'이름을 알려주세요.',                          hint:'Name',             type:'text',     placeholder:'이름을 적어주세요',         required:true },
@@ -186,23 +229,14 @@ function ApplicationForm({ kind, selection, trackSlug, backHref }: { kind: 'prog
     { name:'timeInMontreal', label:'몬트리올에 온 지 얼마나 되었나요?',           hint:'Time in Montréal', type:'choice',   options:['아직 오기 전이에요','3개월 미만','3–6개월','6개월–1년','1–3년','3년 이상'], required:true },
     { name:'currentStage',   label:'현재 몬트리올에서 어떤 시간을 보내고 있나요?', hint:'Your current stage', type:'choice', options:['유학 중','워킹홀리데이 중','직장 생활 중','이민·정착 중','여행·단기 체류 중','그 외'], required:true },
   ]
-  const programQuestions: Question[] = [
-    { name:'languageLevel',      label:`현재 ${selection} 실력은 어느 정도인가요?`, hint:'Language level',       type:'choice',   options:['처음 시작해요','기초 표현을 조금 알아요','간단한 대화가 가능해요','일상 대화가 가능해요','잘 모르겠어요'], required:true },
-    { name:'learningExperience', label:'지금까지 이 언어를 어떻게 공부해 왔나요?',  hint:'Learning experience',  type:'textarea', placeholder:'학원, 독학, 앱, 현지 생활 등 편하게 적어주세요', required:true },
-    { name:'speakingBarrier',    label:'이 언어로 말할 때 가장 어려운 점은?',       hint:'Speaking barrier',     type:'choice',   options:['표현이 바로 떠오르지 않아요','발음이 걱정돼요','문법이 틀릴까 봐 망설여요','상대가 못 알아들을까 걱정돼요','말할 기회가 부족해요','그 외'], required:true },
-    { name:'goal',               label:'이번 프로그램을 통해 이루고 싶은 것은?',    hint:'Your goal',            type:'textarea', placeholder:'구체적인 장면이나 목표가 있다면 함께 적어주세요', required:true },
-    { name:'preferredClassStyle', label:'수업에서 어떤 활동을 가장 해보고 싶나요?', hint:'Preferred class style', type:'choice',   options:['생활 표현 배우기','1:1 대화 연습','그룹 대화·게임','발음 교정','쓰기와 피드백','골고루 해보고 싶어요'], required:true },
-  ]
+  const programQuestions: Question[] = dynamicProgramQuestions
   const activityQuestions = dynamicActivityQuestions
   const communityQuestions: Question[] = [
     { name:'joinReason', label:'HAKKYO 커뮤니티와 함께하고 싶은 이유는?',          hint:'Why join?',       type:'textarea', placeholder:'배우고 싶은 것, 만나고 싶은 사람, 함께 나누고 싶은 이야기를 적어주세요', required:true },
     { name:'interests',  label:'어떤 모임과 소식에 관심이 있나요?',                hint:'Your interests',  type:'choice',   options:['언어 교환과 클래스','수요일 액티비티','몬트리올 정착 정보','새로운 친구와 커뮤니티','모두 궁금해요'], required:true },
     { name:'language',   label:'편하게 이야기할 수 있는 언어를 알려주세요.',       hint:'Languages',       type:'text',     placeholder:'예: 한국어, English, Français', required:true },
   ]
-  const schedulingQuestions: Question[] = [
-    { name:'availability',      label:'참여 가능한 요일과 시간대를 알려주세요.',       hint:'Availability',    type:'textarea', placeholder:'예: 평일 6시 이후 / 일요일 오전', required:true },
-    { name:'preferredLocation', label:'몬트리올에서 참여하기 편한 지역은 어디인가요?', hint:'Preferred area',  type:'text',     placeholder:'예: Westmount, Downtown, NDG', required:true },
-  ]
+  const schedulingQuestions: Question[] = dynamicSchedulingQuestions
   const closingQuestions: Question[] = [
     { name:'discovery', label:'HAKKYO를 어떻게 알게 되었나요?',              hint:'How did you hear about us?', type:'choice',   options:['Instagram','네이버 카페','한카','친구·지인 추천','Google 검색','HAKKYO 수업·행사','기타'], required:true },
     { name:'message',   label:'마지막으로 HAKKYO에 전하고 싶은 말이 있나요?', hint:'Final message · 선택',       type:'textarea', placeholder:'궁금한 점이나 함께 나누고 싶은 이야기를 적어주세요' },
