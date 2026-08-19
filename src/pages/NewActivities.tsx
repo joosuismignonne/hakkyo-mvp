@@ -118,11 +118,11 @@ function ActivityDetail({ slug }: { slug: string }) {
         <span className="ch-header-icon">{POSTER_EMOJI[slug] || '🐱'}</span>
         <h1 className="ch-header-title">{m.title}</h1>
         <span className="ch-header-desc">Mini HAKKYO · {a.code}</span>
-        <button className="ch-header-action" onClick={() => {
+        <button className="activity-apply-btn activity-apply-btn-sm" onClick={() => {
           trackEvent({ eventName:'activity_apply_click', targetType:'button', targetLabel:slug })
           window.location.href = `/apply/activities/${slug}`
         }}>
-          ✋ 신청하기
+          신청하기 →
         </button>
       </div>
       <div className="ch-scroll">
@@ -162,11 +162,11 @@ function ActivityDetail({ slug }: { slug: string }) {
                 </ul>
                 <p style={{ marginTop:10 }}>잘해야 오는 게 아니에요. Language Exchange는 함께 하다 보면 자연스럽게 말이 나오는 구조예요.</p>
               </div>
-              <div className="feed-footer">
-                <button className="feed-action subscribed" onClick={() => {
+              <div className="feed-footer activity-apply-row">
+                <button className="activity-apply-btn" onClick={() => {
                   trackEvent({ eventName:'activity_apply_click', targetType:'button', targetLabel:slug })
                   window.location.href = `/apply/activities/${slug}`
-                }}>✋ 신청하기</button>
+                }}>신청하기 →</button>
                 <button className="feed-action" onClick={() => window.location.href='/activities'}>← 목록으로</button>
               </div>
             </div>

@@ -396,9 +396,6 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
           {!collapsed && (
             <div className="sidebar-footer">
               <a href="/apply/community" className="sidebar-footer-cta">{t.footer.apply}</a>
-              <div className="sidebar-footer-links">
-                <a href="/apply/news" className="sidebar-footer-link">{t.footer.subscribe}</a>
-              </div>
             </div>
           )}
         </aside>

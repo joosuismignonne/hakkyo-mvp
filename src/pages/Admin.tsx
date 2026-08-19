@@ -2328,11 +2328,13 @@ type UnifiedApp = {
 
 function ApplicationsAdmin() {
   const [apps,         setApps]         = useState<UnifiedApp[]>([])
+  const [hakkyoSubs,   setHakkyoSubs]   = useState<Record<string, unknown>[]>([])
   const [tracksMap,    setTracksMap]    = useState<Map<string, ProgramTrack>>(new Map())
   const [selected,     setSelected]     = useState<UnifiedApp | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [err,          setErr]          = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [kindFilter,   setKindFilter]   = useState<string>('all')
   const [searchQuery,  setSearchQuery]  = useState('')
   const [notes,        setNotes]        = useState('')
   const [notesSaving,  setNotesSaving]  = useState(false)
@@ -2341,12 +2343,14 @@ function ApplicationsAdmin() {
     setLoading(true)
     setErr('')
     try {
-      const [programApps, legacyAppsResult, answersResult, tracks] = await Promise.all([
+      const [programApps, legacyAppsResult, answersResult, tracks, hakkyoResult] = await Promise.all([
         getProgramApplications(),
         supabase!.from('applications').select('*').order('created_at', { ascending: false }),
         supabase!.from('application_answers').select('*').order('question_order_snapshot', { ascending: true }),
         getTracks('program'),
+        supabase!.from('hakkyo_submissions').select('*').order('created_at', { ascending: false }),
       ])
+      setHakkyoSubs((hakkyoResult.data ?? []) as Record<string, unknown>[])
 
       if (legacyAppsResult.error) {
         console.error('[Admin] applications fetch error:', legacyAppsResult.error)
@@ -2492,10 +2496,24 @@ function ApplicationsAdmin() {
     s === 'pending'         ? 'bg-gray-100 text-gray-500'     :
     'bg-gray-100 text-gray-500'
 
-  // Collect all unique statuses across both tables for the filter bar
-  const allStatuses = Array.from(new Set(apps.map(a => a.status))).sort()
+    const allStatuses = Array.from(new Set(apps.map(a => a.status))).sort()
+
+  // For hakkyo_submissions (activity/community/newsletter)
+  const visibleHakkyo = hakkyoSubs.filter(s => {
+    const k = String(s.kind ?? '')
+    if (kindFilter !== 'all' && k !== kindFilter) return false
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return true
+    return [String(s.name ?? ''), String(s.email ?? ''), String(s.selection ?? ''), String(s.join_reason ?? '')]
+      .some(f => f.toLowerCase().includes(q))
+  })
 
   const visible = apps
+    .filter(a => {
+      if (kindFilter === 'activity' || kindFilter === 'community' || kindFilter === 'newsletter') return false
+      if (kindFilter === 'program') return true
+      return true
+    })
     .filter(a => statusFilter === 'all' || a.status === statusFilter)
     .filter(a => {
       const q = searchQuery.trim().toLowerCase()
@@ -2504,6 +2522,8 @@ function ApplicationsAdmin() {
               a.application_type, a.korean_level, a.time_in_montreal, a.interest_in_korean]
         .some(f => (f ?? '').toLowerCase().includes(q))
     })
+
+  const showHakkyo = kindFilter === 'all' || kindFilter === 'activity' || kindFilter === 'community' || kindFilter === 'newsletter'
 
   if (loading) return <Spinner />
 
@@ -2632,9 +2652,29 @@ function ApplicationsAdmin() {
     <div className="space-y-4">
       {err && <ErrorMsg msg={err} />}
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">{visible.length} of {apps.length} application{apps.length !== 1 ? 's' : ''}</p>
+      {/* Kind filter tabs */}
+      <div className="flex gap-1 flex-wrap">
+        {[
+          { id: 'all', label: '전체' },
+          { id: 'program', label: '📚 프로그램' },
+          { id: 'activity', label: '🐱 액티비티' },
+          { id: 'community', label: '🤝 커뮤니티' },
+          { id: 'newsletter', label: '🔔 소식' },
+        ].map(k => (
+          <button key={k.id} onClick={() => { setKindFilter(k.id); setSelected(null) }}
+            className={['px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+              kindFilter === k.id ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+            ].join(' ')}>
+            {k.label}
+          </button>
+        ))}
+        <span className="ml-auto text-xs text-gray-400 self-center">
+          {visible.length + (showHakkyo ? visibleHakkyo.length : 0)}건
+        </span>
+      </div>
+
+      {/* Status filter (only for program apps) */}
+      {(kindFilter === 'all' || kindFilter === 'program') && (
         <div className="flex flex-wrap items-center gap-1">
           {(['all', ...allStatuses]).map(f => (
             <button key={f} onClick={() => setStatusFilter(f)}
@@ -2645,7 +2685,42 @@ function ApplicationsAdmin() {
             </button>
           ))}
         </div>
-      </div>
+      )}
+
+      {/* hakkyo_submissions (activity / community / newsletter) */}
+      {showHakkyo && visibleHakkyo.length > 0 && (
+        <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 tracking-wide uppercase">
+            액티비티 · 커뮤니티 · 소식 신청
+          </div>
+          <div className="divide-y divide-gray-100">
+            {visibleHakkyo.map((s, i) => {
+              const str = (k: string) => s[k] != null ? String(s[k]) : ''
+              return (
+              <div key={str('id') || i} className="px-4 py-3">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="text-[10px] font-bold tracking-wide uppercase text-gray-400">{str('kind')}</span>
+                  <span className="text-[10px] text-gray-300">
+                    {str('created_at') ? new Date(str('created_at')).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                  {str('selection') && (
+                    <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{str('selection')}</span>
+                  )}
+                </div>
+                <p className="text-sm font-medium text-gray-900">{str('name') || '—'}</p>
+                <p className="text-xs text-gray-500">{str('email')}{str('phone') ? ` · ${str('phone')}` : ''}</p>
+                {str('join_reason') && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{str('join_reason')}</p>}
+                {str('message') && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{str('message')}</p>}
+                {str('goal') && <p className="text-xs text-gray-400 mt-1 line-clamp-2">목표: {str('goal')}</p>}
+              </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      {showHakkyo && visibleHakkyo.length === 0 && kindFilter !== 'all' && (kindFilter === 'activity' || kindFilter === 'community' || kindFilter === 'newsletter') && (
+        <p className="text-sm text-gray-400 text-center py-8">신청 내역이 없어요.</p>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 items-start">
 
