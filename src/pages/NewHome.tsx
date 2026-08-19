@@ -34,16 +34,15 @@ function LatestNoticeBanner() {
   )
 }
 
-// ─── D-day: 다음 Mini HAKKYO ──────────────────────────────────────────────────
+// ─── D-day helpers ────────────────────────────────────────────────────────────
 function getDday(dateIso: string) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const target = new Date(dateIso)
-  target.setHours(0, 0, 0, 0)
+  const today = new Date(); today.setHours(0,0,0,0)
+  const target = new Date(dateIso); target.setHours(0,0,0,0)
   return Math.ceil((target.getTime() - today.getTime()) / 86400000)
 }
 
-function NextMiniSection() {
+// 히어로 안에 들어가는 다음 일정 블록
+function HeroNextEvent() {
   const upcoming = activities
     .map(a => ({ ...a, dday: getDday(a.dateIso) }))
     .filter(a => a.dday >= 0)
@@ -52,40 +51,17 @@ function NextMiniSection() {
   const next = upcoming[0]
   if (!next) return null
 
-  const ddayLabel = next.dday === 0 ? '오늘이에요!' : next.dday === 1 ? '내일이에요' : `D-${next.dday}`
+  const ddayLabel = next.dday === 0 ? '오늘' : next.dday === 1 ? '내일' : `D-${next.dday}`
 
   return (
-    <section className="home-next section-pad">
-      <div className="home-next-inner">
-        <div className="home-next-dday">
-          <span className="home-next-dday-num">{ddayLabel}</span>
-          <span className="home-next-dday-label">다음 Mini HAKKYO</span>
-        </div>
-        <div className="home-next-info">
-          <h2 className="home-next-title">{next.ko}</h2>
-          <ul className="home-next-meta">
-            <li>{next.date} ({next.day})</li>
-            <li>{next.time}</li>
-            <li>w/ {next.host}</li>
-            <li>{next.entry}</li>
-          </ul>
-          <p className="home-next-note">{next.note}</p>
-        </div>
-        <div className="home-next-actions">
-          <a className="home-next-cta" href={`/activities/${next.slug}`}>자세히 보기</a>
-          {upcoming.length > 1 && (
-            <div className="home-next-rest">
-              {upcoming.slice(1).map(a => (
-                <a href={`/activities/${a.slug}`} key={a.code} className="home-next-rest-item">
-                  <span>D-{a.dday}</span>
-                  <strong>{a.ko}</strong>
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
+    <a href={`/activities/${next.slug}`} className="hero-next-block">
+      <div className="hero-next-dday">{ddayLabel}</div>
+      <div className="hero-next-body">
+        <strong>{next.ko}</strong>
+        <span>{next.date} ({next.day}) · {next.time} · w/ {next.host}</span>
       </div>
-    </section>
+      <span className="hero-next-arrow">→</span>
+    </a>
   )
 }
 
@@ -222,37 +198,27 @@ export default function NewHome() {
         </div>
         <div className="hero-stage">
           <div className="hero-copy">
-            <p className="hero-where">Montréal Learning Community</p>
-            <div className="hero-cta-group">
-              <a className="hero-cta-card" href="/programs">
-                <span className="hero-cta-label">언어 프로그램</span>
-                <strong>수업 보러가기</strong>
-                <small>한국어 · 영어 · 불어</small>
-              </a>
-              <a className="hero-cta-card" href="/activities">
-                <span className="hero-cta-label">Mini HAKKYO</span>
-                <strong>9월 일정 보기</strong>
-                <small>북클럽 · 러닝 · 보드게임</small>
-              </a>
-              <a className="hero-cta-card" href="/apply/community">
-                <span className="hero-cta-label">커뮤니티</span>
-                <strong>신청하기</strong>
-                <small>매주 일요일 오후</small>
-              </a>
+            <p className="hero-where">Montréal Learning Community · 2026</p>
+
+            {/* 다음 일정 인라인 */}
+            <HeroNextEvent />
+
+            {/* 진입 링크 */}
+            <div className="hero-entry-links">
+              <a href="/programs">언어 프로그램 →</a>
+              <a href="/activities">Mini HAKKYO →</a>
+              <a href="/apply/community">커뮤니티 신청 →</a>
             </div>
           </div>
-          <div className="mimi mimi-natural" aria-label="HAKKYO 포스터의 까만 고양이 마스코트">
+          <div className="mimi mimi-natural" aria-label="HAKKYO 마스코트 미니">
             <img className="mimi-character" src="/mascot/mimi-poster-v3.png" alt="" />
-            <span className="cat-name">HAKKYO CAT · MIMI</span>
+            <span className="cat-name">HAKKYO CAT · MINI</span>
           </div>
         </div>
       </section>
 
       {/* ── 공지 배너 ── */}
       <LatestNoticeBanner />
-
-      {/* ── 다음 Mini HAKKYO D-day ── */}
-      <NextMiniSection />
 
       {/* ── 최신 소식 피드 ── */}
       <NoticeFeed />

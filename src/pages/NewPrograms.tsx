@@ -114,7 +114,7 @@ function ProgramDetail({ slug }: { slug: string }) {
       <section className="friendly-note section-pad">
         <div className="mini-mimi" data-cursor="MEOW">●</div>
         <div>
-          <span>MIMI'S NOTE</span>
+          <span>MINI'S NOTE</span>
           <h2>잘해야 오는 수업이 아니에요.</h2>
           <p>막히면 다른 언어를 섞어도 괜찮고, 잠시 듣고 있어도 괜찮아요. 멘토가 각자의 속도에 맞춰 대화에 들어올 수 있도록 도와드립니다.</p>
         </div>
