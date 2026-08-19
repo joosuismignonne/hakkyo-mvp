@@ -163,7 +163,7 @@ function useActivityQuestions(): Question[] {
   return qs
 }
 
-function ApplicationForm({ kind, selection, backHref }: { kind: 'program' | 'activity' | 'community'; selection: string; backHref: string }) {
+function ApplicationForm({ kind, selection, trackSlug, backHref }: { kind: 'program' | 'activity' | 'community'; selection: string; trackSlug?: string; backHref: string }) {
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
@@ -220,7 +220,7 @@ function ApplicationForm({ kind, selection, backHref }: { kind: 'program' | 'act
     try {
       const payload: ApplicationPayload = { kind, selection, ...answers }
       await submitApplication(payload)
-      trackEvent({ eventName: 'application_submitted', targetType: kind, targetLabel: selection })
+      trackEvent({ eventName: 'application_submitted', targetType: kind, targetLabel: trackSlug ?? selection })
       setState('done')
     } catch {
       setState('error')
@@ -379,12 +379,14 @@ export default function NewApply() {
   }
 
   const selection = community ? 'HAKKYO 커뮤니티' : program?.lang || activity?.ko || ''
+  const trackSlug = community ? 'community' : activity?.slug ?? program?.en.toLowerCase().replace(/ /g, '-') ?? slug
   const backHref = community ? '/' : program?.href || `/activities/${activity?.slug}`
 
   return (
     <ApplicationForm
       kind={community ? 'community' : program ? 'program' : 'activity'}
       selection={selection}
+      trackSlug={trackSlug}
       backHref={backHref}
     />
   )
