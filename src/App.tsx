@@ -14,6 +14,7 @@ import NewSettling from './pages/NewSettling'
 import NewBoard from './pages/NewBoard'
 import NewQna from './pages/NewQna'
 import NewApply from './pages/NewApply'
+import NewCommunity from './pages/NewCommunity'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Account from './pages/Account'
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/settling" element={<PublicLayout><NewSettling /></PublicLayout>} />
           <Route path="/board" element={<PublicLayout><NewBoard /></PublicLayout>} />
           <Route path="/qna" element={<PublicLayout><NewQna /></PublicLayout>} />
+          <Route path="/community/:channel" element={<PublicLayout><NewCommunity /></PublicLayout>} />
           <Route path="/apply/:type/:slug" element={<PublicLayout><NewApply /></PublicLayout>} />
           <Route path="/apply/:type" element={<PublicLayout><NewApply /></PublicLayout>} />
 

@@ -7,11 +7,11 @@ interface Channel { icon: string; name: string; href: string }
 
 const DEFAULT_CHANNELS: Channel[] = [
   { icon: '📢', name: '공지', href: '/board' },
-  { icon: '💬', name: '자유게시판', href: '/board' },
-  { icon: '🌐', name: '언어교환', href: '/board' },
-  { icon: '🏠', name: '주거', href: '/board' },
-  { icon: '💼', name: '취업·이민', href: '/board' },
-  { icon: '📅', name: '이벤트·모임', href: '/board' },
+  { icon: '💬', name: '자유게시판', href: '/community/chat' },
+  { icon: '🌐', name: '언어교환', href: '/community/exchange' },
+  { icon: '🏠', name: '주거', href: '/community/housing' },
+  { icon: '💼', name: '취업·이민', href: '/community/jobs' },
+  { icon: '📅', name: '이벤트·모임', href: '/community/events' },
 ]
 
 const DEFAULT_THEME = {
@@ -109,7 +109,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             <div className="sidebar-section-label">커뮤니티</div>
             {channels.map((ch, i) => (
               <a key={i} href={ch.href}
-                className={`sidebar-item${path === ch.href && path === '/board' && i === 0 ? ' active' : ''}`}>
+                className={`sidebar-item${isActive(ch.href) ? ' active' : ''}`}>
                 <span className="sidebar-item-icon">{ch.icon}</span>
                 <span>{ch.name}</span>
               </a>
