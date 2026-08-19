@@ -52,7 +52,7 @@ export default function SiteHeader() {
       </button>
       <nav className={open ? 'nav open' : 'nav'} style={{ marginLeft: 'auto', display: 'flex' }}>
         <a href="/programs">프로그램</a>
-        <a href="/activities">액티비티</a>
+        <a href="/activities">Mini</a>
         <a href="/school">우리 이야기</a>
         <a href="/gallery">갤러리</a>
         <a href="/settling">몬트리올 정착</a>

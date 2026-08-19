@@ -40,9 +40,48 @@ function useSiteContent(slug: string, key: string): ContentRow | null {
   return row
 }
 
+// 클럽 메타(날짜/시간/호스트/제목) — site_content에서 읽고 없으면 hakkyo.ts fallback
+interface ClubMeta {
+  title: string; note: string; host: string
+  date: string; day: string; time: string; entry: string
+}
+function useClubMeta(slug: string): ClubMeta | null {
+  const [meta, setMeta] = useState<ClubMeta | null>(null)
+  const a = activities.find(x => x.slug === slug)
+  useEffect(() => {
+    if (!supabase) return
+    void supabase
+      .from('site_content')
+      .select('key, value_ko')
+      .eq('page', `activity_${slug}`)
+      .in('key', ['club_title','club_note','club_host','club_date','club_day','club_time','club_entry'])
+      .then(({ data }) => {
+        if (!data || data.length === 0) return
+        const get = (k: string) => data.find(r => r.key === k)?.value_ko ?? ''
+        setMeta({
+          title: get('club_title') || a?.ko || '',
+          note:  get('club_note')  || a?.note || '',
+          host:  get('club_host')  || (a as any)?.host || '',
+          date:  get('club_date')  || (a as any)?.date || '',
+          day:   get('club_day')   || (a as any)?.day  || '',
+          time:  get('club_time')  || (a as any)?.time || '',
+          entry: get('club_entry') || (a as any)?.entry || '',
+        })
+      })
+  }, [slug, a])
+  // fallback to hakkyo.ts while loading
+  if (!meta && a) return {
+    title: a.ko, note: a.note, host: (a as any).host,
+    date: (a as any).date, day: (a as any).day,
+    time: (a as any).time, entry: (a as any).entry,
+  }
+  return meta
+}
+
 function ActivityDetail({ slug }: { slug: string }) {
   const quote = useSiteContent(slug, 'leader_quote')
   const prepContent = useSiteContent(slug, 'prep_items')
+  const clubMeta = useClubMeta(slug)
   const [lang, setLang] = useState<'ko' | 'en' | 'fr'>('ko')
 
   const a = activities.find(x => x.slug === slug)
@@ -55,9 +94,12 @@ function ActivityDetail({ slug }: { slug: string }) {
     </>
   )
 
+  const m = clubMeta
+  const host = m?.host || (a as any).host
+
   return (
     <>
-      <PageTitle no={`MINI HAKKYO · ${a.code}`} title={a.ko} sub={`${a.en} · Language Exchange w/ ${(a as any).host}`} />
+      <PageTitle no={`MINI HAKKYO · ${a.code}`} title={m?.title || a.ko} sub={`${a.en} · Language Exchange w/ ${host}`} />
       <section className="activity-detail section-pad">
         <div className={`activity-poster poster-${a.slug}`} data-cursor="PLAY">
           <span>WED</span>
@@ -66,14 +108,14 @@ function ActivityDetail({ slug }: { slug: string }) {
         </div>
         <div>
           <Status>MINI HAKKYO · KR–EN–FR</Status>
-          <h2>{a.note}</h2>
+          <h2>{m?.note || a.note}</h2>
           <p>잘해야 오는 게 아니에요. Language Exchange는 함께 하다 보면 자연스럽게 말이 나오는 구조예요. 언어 실력과 상관없이 누구나 참여할 수 있어요.</p>
           <dl>
-            <div><dt>일정</dt><dd>2026년 {(a as any).date} ({(a as any).day})</dd></div>
-            <div><dt>시간</dt><dd>{(a as any).time}</dd></div>
-            <div><dt>진행</dt><dd>Language Exchange w/ {(a as any).host}</dd></div>
+            <div><dt>일정</dt><dd>2026년 {m?.date || (a as any).date} ({m?.day || (a as any).day})</dd></div>
+            <div><dt>시간</dt><dd>{m?.time || (a as any).time}</dd></div>
+            <div><dt>진행</dt><dd>Language Exchange w/ {host}</dd></div>
             <div><dt>장소</dt><dd>Montréal · 신청자에게 안내</dd></div>
-            <div><dt>참가비</dt><dd>{(a as any).entry}</dd></div>
+            <div><dt>참가비</dt><dd>{m?.entry || (a as any).entry}</dd></div>
           </dl>
           <button className="cta" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }}>9월 모집 예정 <Arrow /></button>
         </div>
@@ -81,7 +123,7 @@ function ActivityDetail({ slug }: { slug: string }) {
       {quote && (
         <section className="activity-quote section-pad">
           <div className="section-head">
-            <span>WHY THIS CLUB · {(a as any).host?.toUpperCase()}</span>
+            <span>WHY THIS CLUB · {host?.toUpperCase()}</span>
             <div style={{ display: 'flex', gap: 6 }}>
               {(['ko','en','fr'] as const).map(l => (
                 <button key={l} onClick={() => setLang(l)}
@@ -96,7 +138,7 @@ function ActivityDetail({ slug }: { slug: string }) {
           </div>
           <blockquote className="leader-quote">
             <p>{quote[`value_${lang}`]}</p>
-            <cite>— {(a as any).host}</cite>
+            <cite>— {host}</cite>
           </blockquote>
         </section>
       )}
