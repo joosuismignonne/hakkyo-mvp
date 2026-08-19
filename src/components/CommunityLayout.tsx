@@ -3,12 +3,12 @@ import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import SiteDetails from './SiteDetails'
 import { programs, activities } from '../data/hakkyo'
-import { useLang } from '../lib/lang'
+import { useLang, useT, UI } from '../lib/lang'
 import type { Lang } from '../lib/lang'
 
 interface Channel { icon: string; name: string; href: string }
 
-// Name → href 매핑: Supabase 구형 데이터의 /board 를 덮어씀
+// Fix legacy Supabase hrefs (all were '/board')
 const CHANNEL_HREF: Record<string, string> = {
   '공지':       '/board',
   '자유게시판': '/community/chat',
@@ -30,7 +30,7 @@ const DEFAULT_CHANNELS: Channel[] = [
 const DEFAULT_THEME = {
   color_sidebar: '#111116',
   color_accent: '#f5c542',
-  color_main_bg: '#fafaf7',
+  color_main_bg: '#f7f7f5',
 }
 
 function applyTheme(t: typeof DEFAULT_THEME) {
@@ -42,14 +42,15 @@ function applyTheme(t: typeof DEFAULT_THEME) {
 
 interface SearchResult { icon: string; title: string; sub: string; href: string }
 
-function buildSearchIndex(): SearchResult[] {
+function buildSearchIndex(lang: Lang): SearchResult[] {
+  const t = UI[lang].searchItems
   const results: SearchResult[] = [
-    { icon: '🏠', title: '홈',        sub: 'HAKKYO 메인',               href: '/' },
-    { icon: '📢', title: '공지',      sub: 'HAKKYO 공식 소식',           href: '/board' },
-    { icon: '📚', title: '프로그램',  sub: 'SESSION 04 언어 프로그램',   href: '/programs' },
-    { icon: '🐱', title: 'Mini HAKKYO', sub: '매주 수요일 클럽',        href: '/activities' },
-    { icon: '🔔', title: '소식 신청', sub: '4기 소식 먼저 받기',        href: '/apply/news' },
-    { icon: '🤝', title: '커뮤니티 신청', sub: 'HAKKYO 커뮤니티 합류', href: '/apply/community' },
+    { icon: '🏠', title: t.home[0],          sub: t.home[1],          href: '/' },
+    { icon: '📢', title: t.board[0],         sub: t.board[1],         href: '/board' },
+    { icon: '📚', title: t.programs[0],      sub: t.programs[1],      href: '/programs' },
+    { icon: '🐱', title: t.mini[0],          sub: t.mini[1],          href: '/activities' },
+    { icon: '🔔', title: t.applyNews[0],     sub: t.applyNews[1],     href: '/apply/news' },
+    { icon: '🤝', title: t.applyCommunity[0], sub: t.applyCommunity[1], href: '/apply/community' },
   ]
   programs.forEach(p => results.push({
     icon: p.mark || '📚',
@@ -63,19 +64,28 @@ function buildSearchIndex(): SearchResult[] {
     sub: `Mini HAKKYO · ${(a as any).date || ''}`,
     href: `/activities/${a.slug}`,
   }))
-  DEFAULT_CHANNELS.slice(1).forEach(ch => results.push({
-    icon: ch.icon,
-    title: ch.name,
-    sub: '커뮤니티 채널',
-    href: ch.href,
-  }))
+  DEFAULT_CHANNELS.slice(1).forEach(ch => {
+    const channelMap = UI[lang].channels as Record<string, string>
+    results.push({
+      icon: ch.icon,
+      title: channelMap[ch.name] || ch.name,
+      sub: t.channelSub,
+      href: ch.href,
+    })
+  })
   return results
 }
 
 function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [q, setQ] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
-  const index = useRef(buildSearchIndex())
+  const { lang } = useLang()
+  const t = useT()
+  const index = useRef<SearchResult[]>([])
+
+  useEffect(() => {
+    index.current = buildSearchIndex(lang)
+  }, [lang])
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -101,13 +111,13 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
             className="search-input"
             value={q}
             onChange={e => setQ(e.target.value)}
-            placeholder="검색 — 프로그램, 채널, 클럽…"
+            placeholder={t.search.placeholder}
           />
           <button className="search-close-btn" onClick={onClose}>Esc</button>
         </div>
         <div className="search-results">
           {results.length === 0 && (
-            <div className="search-empty">"{q}"에 대한 결과가 없어요</div>
+            <div className="search-empty">{t.search.empty(q)}</div>
           )}
           {results.map((r, i) => (
             <a key={i} href={r.href} className="search-result-item" onClick={onClose}>
@@ -120,9 +130,7 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
             </a>
           ))}
         </div>
-        {!q && (
-          <div className="search-hint">자주 찾는 페이지 · ↵ 로 이동</div>
-        )}
+        {!q && <div className="search-hint">{t.search.hint}</div>}
       </div>
     </div>
   )
@@ -140,6 +148,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   const [open, setOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const { lang, setLang } = useLang()
+  const t = useT()
 
   useEffect(() => {
     applyTheme(DEFAULT_THEME)
@@ -164,7 +173,6 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
         const icon = get(`ch${i}_icon`)
         const rawHref = get(`ch${i}_href`) || '/board'
         if (!name) break
-        // 이름으로 올바른 href 매핑 (Supabase 구형 데이터 /board 자동 수정)
         const href = CHANNEL_HREF[name] || rawHref
         chs.push({ name, icon, href })
       }
@@ -174,7 +182,6 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
 
   useEffect(() => { setOpen(false) }, [location.pathname])
 
-  // cmd+k / ctrl+k 단축키로 검색
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -187,11 +194,12 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   }, [])
 
   const path = location.pathname
+  const channelMap = t.channels as Record<string, string>
 
   const navItems = [
-    { icon: '🏠', name: '홈', href: '/' },
-    { icon: '📚', name: '프로그램', href: '/programs' },
-    { icon: '🐱', name: 'Mini HAKKYO', href: '/activities' },
+    { icon: '🏠', name: t.nav.home,     href: '/' },
+    { icon: '📚', name: t.nav.programs, href: '/programs' },
+    { icon: '🐱', name: t.nav.mini,     href: '/activities' },
   ]
 
   function isActive(href: string) {
@@ -221,14 +229,14 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
 
           {/* Search button */}
           <div className="sidebar-search-btn" onClick={() => setSearchOpen(true)}>
-            <span style={{ fontSize:13 }}>🔍</span>
-            <span style={{ flex:1 }}>검색</span>
-            <span className="sidebar-search-kbd">⌘K</span>
+            <span style={{ fontSize: 13 }}>🔍</span>
+            <span style={{ flex: 1 }}>{t.search.label}</span>
+            <span className="sidebar-search-kbd">{t.search.kbd}</span>
           </div>
 
           {/* Main nav */}
           <nav className="sidebar-section">
-            <div className="sidebar-section-label">메인</div>
+            <div className="sidebar-section-label">{t.section.main}</div>
             {navItems.map(item => (
               <a key={item.href} href={item.href}
                 className={`sidebar-item${isActive(item.href) ? ' active' : ''}`}>
@@ -242,12 +250,12 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
 
           {/* Community channels */}
           <nav className="sidebar-section">
-            <div className="sidebar-section-label">커뮤니티</div>
+            <div className="sidebar-section-label">{t.section.community}</div>
             {channels.map((ch, i) => (
               <a key={i} href={ch.href}
                 className={`sidebar-item${isActive(ch.href) ? ' active' : ''}`}>
-                <span className="sidebar-item-icon" style={{ fontSize:12 }}>#</span>
-                <span>{ch.name}</span>
+                <span className="sidebar-item-icon sidebar-ch-hash">#</span>
+                <span>{channelMap[ch.name] || ch.name}</span>
               </a>
             ))}
           </nav>
@@ -265,11 +273,9 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
 
           {/* Footer */}
           <div className="sidebar-footer">
-            <a href="/apply/community" className="sidebar-footer-cta">
-              ✋ 커뮤니티 신청
-            </a>
+            <a href="/apply/community" className="sidebar-footer-cta">{t.footer.apply}</a>
             <div className="sidebar-footer-links">
-              <a href="/apply/news" className="sidebar-footer-link">🔔 소식 받기</a>
+              <a href="/apply/news" className="sidebar-footer-link">{t.footer.subscribe}</a>
             </div>
           </div>
         </aside>
@@ -281,17 +287,37 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             <span className="mobile-logo">HAKKYO</span>
             <button className="mobile-search-btn" onClick={() => setSearchOpen(true)}>🔍</button>
           </div>
-          {/* Desktop topbar */}
-          <div className="desktop-topbar">
-            <button className="desktop-search-btn" onClick={() => setSearchOpen(true)}>
-              <span>🔍</span>
-              <span>검색</span>
-              <kbd>⌘K</kbd>
-            </button>
-          </div>
           {children}
         </main>
       </div>
+    </>
+  )
+}
+
+// Export for pages to use in ch-header search slot
+export function HeaderSearch() {
+  const [searchOpen, setSearchOpen] = useState(false)
+  const t = useT()
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(s => !s)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  return (
+    <>
+      {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+      <button className="header-search-btn" onClick={() => setSearchOpen(true)}>
+        <span>🔍</span>
+        <span className="header-search-label">{t.search.label}</span>
+        <kbd className="header-search-kbd">{t.search.kbd}</kbd>
+      </button>
     </>
   )
 }
