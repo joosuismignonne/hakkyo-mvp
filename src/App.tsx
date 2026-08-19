@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { trackPageView } from './lib/analytics'
 import { AuthProvider } from './context/AuthContext'
+import { LangProvider } from './lib/lang'
 import { supabase } from './lib/supabase'
 import CommunityLayout from './components/CommunityLayout'
 import NewHome from './pages/NewHome'
@@ -50,6 +51,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
+    <LangProvider>
     <AuthProvider>
       <BrowserRouter>
         <RouteTracker />
@@ -87,5 +89,6 @@ export default function App() {
         <Analytics />
       </BrowserRouter>
     </AuthProvider>
+    </LangProvider>
   )
 }

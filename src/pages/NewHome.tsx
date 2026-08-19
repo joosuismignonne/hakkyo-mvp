@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { programs, activities } from '../data/hakkyo'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
+import { useLang, pick } from '../lib/lang'
 
 function getDday(dateIso: string) {
   const today = new Date(); today.setHours(0,0,0,0)
@@ -52,13 +53,16 @@ const FALLBACK: Notice[] = [
 function NoticeCard({ n }: { n: Notice }) {
   const [open, setOpen] = useState(false)
   const [liked, setLiked] = useState(false)
+  const { lang } = useLang()
   const tag = TYPE_TAG[n.type] ?? TYPE_TAG.notice
-  const preview = strip(n.body_ko || '').slice(0, 120)
-  const hasBody = !!(n.body_ko || n.body_en)
+  const title = pick({ ko: n.title_ko, en: n.title_en, fr: n.title_fr }, lang)
+  const body = pick({ ko: n.body_ko, en: n.body_en, fr: n.body_fr }, lang)
+  const preview = strip(body).slice(0, 120)
+  const hasBody = !!body
 
   return (
     <div className={`feed-card${n.is_pinned ? ' feed-card-pinned' : ''}`}>
-      {n.is_pinned && <div className="feed-pin-bar">📌 고정된 공지</div>}
+      {n.is_pinned && <div className="feed-pin-bar">📌 공지</div>}
       <div className="feed-card-inner">
         <div className="feed-meta">
           <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
@@ -67,23 +71,23 @@ function NoticeCard({ n }: { n: Notice }) {
           <span className="feed-time">{fmtDate(n.date)}</span>
         </div>
         <div className="feed-title" onClick={() => hasBody && setOpen(o => !o)} style={{ cursor: hasBody ? 'pointer' : 'default' }}>
-          {n.title_ko || n.title_en}
+          {title}
         </div>
         {!open && preview && <div className="feed-body"><p>{preview}{preview.length >= 120 ? '…' : ''}</p></div>}
-        {open && n.body_ko && (
-          <div className="feed-body" dangerouslySetInnerHTML={{ __html: n.body_ko }} />
+        {open && body && (
+          <div className="feed-body" dangerouslySetInnerHTML={{ __html: body }} />
         )}
         <div className="feed-footer">
           <button className={`feed-action${liked ? ' liked' : ''}`} onClick={() => setLiked(l => !l)}>
-            {liked ? '❤️ 좋아요' : '🤍 좋아요'}
+            {liked ? '❤️' : '🤍'} {lang === 'fr' ? 'J\'aime' : lang === 'en' ? 'Like' : '좋아요'}
           </button>
           {hasBody && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
-              💬 {open ? '접기' : '더 보기'}
+              💬 {open ? (lang === 'fr' ? 'Réduire' : lang === 'en' ? 'Collapse' : '접기') : (lang === 'fr' ? 'Voir plus' : lang === 'en' ? 'Read more' : '더 보기')}
             </button>
           )}
           <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}>
-            🔔 소식 받기
+            🔔 {lang === 'fr' ? 'S\'abonner' : lang === 'en' ? 'Subscribe' : '소식 받기'}
           </button>
         </div>
       </div>

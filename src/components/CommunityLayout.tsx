@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import SiteDetails from './SiteDetails'
 import { programs, activities } from '../data/hakkyo'
+import { useLang } from '../lib/lang'
+import type { Lang } from '../lib/lang'
 
 interface Channel { icon: string; name: string; href: string }
 
@@ -126,11 +128,18 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   )
 }
 
+const LANG_LABELS: { code: Lang; label: string }[] = [
+  { code: 'ko', label: '한' },
+  { code: 'en', label: 'EN' },
+  { code: 'fr', label: 'FR' },
+]
+
 export default function CommunityLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const [channels, setChannels] = useState<Channel[]>(DEFAULT_CHANNELS)
   const [open, setOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const { lang, setLang } = useLang()
 
   useEffect(() => {
     applyTheme(DEFAULT_THEME)
@@ -243,6 +252,17 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             ))}
           </nav>
 
+          {/* Language switcher */}
+          <div className="sidebar-lang-switcher">
+            {LANG_LABELS.map(l => (
+              <button
+                key={l.code}
+                className={`lang-btn${lang === l.code ? ' active' : ''}`}
+                onClick={() => setLang(l.code)}
+              >{l.label}</button>
+            ))}
+          </div>
+
           {/* Footer */}
           <div className="sidebar-footer">
             <a href="/apply/community" className="sidebar-footer-cta">
@@ -250,16 +270,24 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             </a>
             <div className="sidebar-footer-links">
               <a href="/apply/news" className="sidebar-footer-link">🔔 소식 받기</a>
-              <a href="/admin" className="sidebar-footer-link">어드민</a>
             </div>
           </div>
         </aside>
 
         <main className="app-main">
+          {/* Mobile topbar */}
           <div className="mobile-topbar">
             <button className="mobile-menu-btn" onClick={() => setOpen(true)}>☰</button>
             <span className="mobile-logo">HAKKYO</span>
             <button className="mobile-search-btn" onClick={() => setSearchOpen(true)}>🔍</button>
+          </div>
+          {/* Desktop topbar */}
+          <div className="desktop-topbar">
+            <button className="desktop-search-btn" onClick={() => setSearchOpen(true)}>
+              <span>🔍</span>
+              <span>검색</span>
+              <kbd>⌘K</kbd>
+            </button>
           </div>
           {children}
         </main>
