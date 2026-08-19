@@ -20,7 +20,7 @@ const VideoNode = Node.create({
   },
   parseHTML() { return [{ tag: 'video[src]' }] },
   renderHTML({ HTMLAttributes }) {
-    return ['video', mergeAttributes(HTMLAttributes, { controls: true, style: 'max-width:100%;border-radius:8px;display:block;margin:4px 0' })]
+    return ['video', mergeAttributes(HTMLAttributes, { controls: true })]
   },
 })
 import { useAuth } from '../context/AuthContext'
