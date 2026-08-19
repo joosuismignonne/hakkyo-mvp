@@ -1,10 +1,28 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
+import { Node, mergeAttributes } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
+
+// Custom TipTap extension so <video> tags survive getHTML() round-trips
+const VideoNode = Node.create({
+  name: 'video',
+  group: 'block',
+  atom: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+      controls: { default: true },
+    }
+  },
+  parseHTML() { return [{ tag: 'video[src]' }] },
+  renderHTML({ HTMLAttributes }) {
+    return ['video', mergeAttributes(HTMLAttributes, { controls: true, style: 'max-width:100%;border-radius:8px;display:block;margin:4px 0' })]
+  },
+})
 import { useAuth } from '../context/AuthContext'
 import { useLang, useT, pick } from '../lib/lang'
 import type { Lang } from '../lib/lang'
@@ -232,36 +250,25 @@ function AdminCompose({
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
   // One editor per language, but only one visible at a time
+  const sharedExtensions = [
+    StarterKit,
+    Image.configure({ inline: false }),
+    Youtube.configure({ width: 640, height: 360 }),
+    Link.configure({ openOnClick: false }),
+    VideoNode,
+  ]
   const editorKo = useEditor({
-    extensions: [
-      StarterKit,
-      Image.configure({ inline: false }),
-      Youtube.configure({ width: 640, height: 360 }),
-      Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: `# ${channel} 채널 — 한국어 내용을 입력하세요` }),
-    ],
+    extensions: [...sharedExtensions, Placeholder.configure({ placeholder: `# ${channel} 채널 — 한국어 내용을 입력하세요` })],
     content: '',
     editorProps: { attributes: { class: 'compose-rich-editor' } },
   })
   const editorEn = useEditor({
-    extensions: [
-      StarterKit,
-      Image.configure({ inline: false }),
-      Youtube.configure({ width: 640, height: 360 }),
-      Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: 'English content (optional)' }),
-    ],
+    extensions: [...sharedExtensions, Placeholder.configure({ placeholder: 'English content (optional)' })],
     content: '',
     editorProps: { attributes: { class: 'compose-rich-editor' } },
   })
   const editorFr = useEditor({
-    extensions: [
-      StarterKit,
-      Image.configure({ inline: false }),
-      Youtube.configure({ width: 640, height: 360 }),
-      Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: 'Contenu en français (facultatif)' }),
-    ],
+    extensions: [...sharedExtensions, Placeholder.configure({ placeholder: 'Contenu en français (facultatif)' })],
     content: '',
     editorProps: { attributes: { class: 'compose-rich-editor' } },
   })
@@ -276,7 +283,7 @@ function AdminCompose({
       reader.onload = ev => {
         const src = ev.target?.result as string
         if (file.type.startsWith('video/')) {
-          editor.chain().focus().insertContent(`<p><video src="${src}" controls style="max-width:100%"></video></p>`).run()
+          editor.chain().focus().insertContent({ type: 'video', attrs: { src } }).run()
         } else {
           editor.chain().focus().setImage({ src }).run()
         }
@@ -288,7 +295,7 @@ function AdminCompose({
     setError('')
     const insertFile = (src: string) => {
       if (file.type.startsWith('video/')) {
-        editor.chain().focus().insertContent(`<p><video src="${src}" controls style="max-width:100%"></video></p>`).run()
+        editor.chain().focus().insertContent({ type: 'video', attrs: { src } }).run()
       } else {
         editor.chain().focus().setImage({ src }).run()
       }
