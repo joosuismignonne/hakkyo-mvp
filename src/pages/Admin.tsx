@@ -4492,7 +4492,6 @@ function FaqAdmin() {
 const TABS = [
   { id: 'notifications', label: '🔔 알림',           Component: NotificationsAdmin },
   { id: 'applications',  label: '📋 신청서',          Component: ApplicationsAdmin  },
-  { id: 'community',     label: '🤝 커뮤니티',        Component: CommunityAdmin     },
   { id: 'activities',    label: '🐱 Mini 일정',       Component: ActivitiesAdmin    },
   { id: 'mini-hakkyo',   label: '✏️ Mini 소개글',     Component: MiniHakkyoAdmin    },
   { id: 'sessions',      label: '📚 프로그램',         Component: SessionsAdmin      },
