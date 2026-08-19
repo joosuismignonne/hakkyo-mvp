@@ -211,9 +211,30 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   overflow-x: hidden;
   flex-shrink: 0;
   z-index: 100;
+  transition: width .2s ease, min-width .2s ease;
 }
+.app-sidebar.collapsed { width: 56px; min-width: 56px; }
 .app-sidebar::-webkit-scrollbar { width: 3px; }
 .app-sidebar::-webkit-scrollbar-thumb { background: #2a2a38; border-radius: 2px; }
+
+/* Sidebar collapse button */
+.sidebar-collapse-btn {
+  margin-left: auto; background: none; border: none; color: #44445a;
+  cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px;
+  border-radius: 4px; transition: color .15s, background .15s;
+}
+.sidebar-collapse-btn:hover { color: #e8e8f0; background: rgba(255,255,255,.06); }
+.sidebar-icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; margin: 2px auto;
+  background: none; border: none; color: #a0a0b8; cursor: pointer;
+  font-size: 16px; border-radius: 8px; transition: background .15s, color .15s;
+}
+.sidebar-icon-btn:hover { background: rgba(255,255,255,.07); color: #e8e8f0; }
+.sidebar-item.icon-only { justify-content: center; padding: 8px 0; }
+.sidebar-item.icon-only .sidebar-item-icon { margin: 0; font-size: 18px; }
+.sidebar-ch-row.collapsed { justify-content: center; }
+.sidebar-ch-row.collapsed .sidebar-item.icon-only { padding: 6px 0; }
 .app-main {
   flex: 1;
   overflow-y: auto;
@@ -223,8 +244,8 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   min-width: 0;
 }
 /* Sidebar internals */
-.sidebar-logo { padding: 14px 14px 12px; border-bottom: 1px solid rgba(255,255,255,.06); flex-shrink: 0; }
-.sidebar-logo-link { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.sidebar-logo { padding: 14px 14px 12px; border-bottom: 1px solid rgba(255,255,255,.06); flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
+.sidebar-logo-link { display: flex; align-items: center; gap: 9px; text-decoration: none; flex: 1; min-width: 0; }
 .sidebar-logo-mark {
   width: 30px; height: 30px; background: var(--sidebar-accent);
   border-radius: 7px; display: flex; align-items: center; justify-content: center;
@@ -461,7 +482,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 .ch-scroll { flex: 1; overflow-y: auto; background: var(--main-bg, #f7f7f5); }
 .ch-scroll::-webkit-scrollbar { width: 4px; }
 .ch-scroll::-webkit-scrollbar-thumb { background: #e0e0da; border-radius: 3px; }
-.ch-inner { padding: 18px 22px 40px; display: flex; flex-direction: column; gap: 10px; max-width: 800px; }
+.ch-inner { padding: 18px 24px 40px; display: flex; flex-direction: column; gap: 10px; }
 
 /* Compose box */
 .ch-compose {
@@ -757,39 +778,17 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   align-items: flex-end;
   gap: 10px;
 }
-.compose-avatar-pick {
-  position: relative;
-  font-size: 22px;
-  cursor: pointer;
-  flex-shrink: 0;
-  line-height: 1;
+.compose-avatar-pick { position: relative; flex-shrink: 0; }
+.compose-avatar-upload-btn {
+  position: relative; background: none; border: none; padding: 0; cursor: pointer;
+  display: block; border-radius: 50%;
 }
-.compose-avatar-pick:hover .compose-avatar-menu { display: flex; }
-.compose-avatar-menu {
-  display: none;
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  background: #fff;
-  border: 1px solid #e0e0d8;
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.12);
-  padding: 6px;
-  gap: 4px;
-  flex-wrap: wrap;
-  width: 148px;
-  z-index: 100;
+.compose-avatar-upload-btn:hover .compose-avatar-upload-label { opacity: 1; }
+.compose-avatar-upload-label {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.45); border-radius: 50%; font-size: 14px; opacity: 0;
+  transition: opacity .15s; pointer-events: none;
 }
-.compose-avatar-menu button {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-}
-.compose-avatar-menu button.sel,
-.compose-avatar-menu button:hover { background: #f5f5f0; }
 .compose-body-area {
   flex: 1;
 }

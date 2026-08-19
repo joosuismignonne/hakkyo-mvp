@@ -48,10 +48,16 @@ function sharePost(channel: string, postId: string) {
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
 function Avatar({ avatar, size = 36 }: { avatar: string; size?: number }) {
-  const isEmoji = [...avatar].length <= 2 && /\p{Emoji}/u.test(avatar)
+  const isImage = avatar.startsWith('data:') || avatar.startsWith('http')
+  const isEmoji = !isImage && [...avatar].length <= 2 && /\p{Emoji}/u.test(avatar)
   return (
-    <div className="post-avatar" style={{ width: size, height: size, fontSize: size * 0.5 }}>
-      {isEmoji ? avatar : <span style={{ fontSize: size * 0.45, fontWeight: 700 }}>{avatar.slice(0,2).toUpperCase()}</span>}
+    <div className="post-avatar" style={{ width: size, height: size, fontSize: size * 0.5, overflow: 'hidden', padding: 0 }}>
+      {isImage
+        ? <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+        : isEmoji
+          ? avatar
+          : <span style={{ fontSize: size * 0.45, fontWeight: 700 }}>{avatar.slice(0,2).toUpperCase()}</span>
+      }
     </div>
   )
 }
@@ -187,7 +193,6 @@ function ComposeToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
 }
 
 // ── Admin compose ──────────────────────────────────────────────────────────
-const COMPOSE_AVATARS = ['🐱', '😸', '🎓', '📚', '🌍', '🇰🇷', '🇨🇦', 'H']
 
 function AdminCompose({
   channel, defaultAuthorName, onPosted,
@@ -200,10 +205,13 @@ function AdminCompose({
   const [activeLang, setActiveLang] = useState<Lang>('ko')
   const [authorName, setAuthorName] = useState(defaultAuthorName)
   const [titleKo, setTitleKo] = useState('')
-  const [avatar, setAvatar] = useState('🐱')
+  const [avatar, setAvatar] = useState(() => {
+    try { return localStorage.getItem('admin-avatar') || '🐱' } catch { return '🐱' }
+  })
   const [pinned, setPinned] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   // One editor per language, but only one visible at a time
   const editorKo = useEditor({
@@ -288,12 +296,27 @@ function AdminCompose({
           {/* Profile row */}
           <div className="compose-profile-row">
             <div className="compose-avatar-pick">
-              <Avatar avatar={avatar} size={30} />
-              <div className="compose-avatar-menu">
-                {COMPOSE_AVATARS.map(a => (
-                  <button key={a} onClick={() => setAvatar(a)} className={avatar === a ? 'sel' : ''}>{a}</button>
-                ))}
-              </div>
+              <button className="compose-avatar-upload-btn" onClick={() => avatarInputRef.current?.click()} title="프로필 사진 변경">
+                <Avatar avatar={avatar} size={34} />
+                <span className="compose-avatar-upload-label">📷</span>
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = ev => {
+                    const dataUrl = ev.target?.result as string
+                    setAvatar(dataUrl)
+                    try { localStorage.setItem('admin-avatar', dataUrl) } catch {}
+                  }
+                  reader.readAsDataURL(file)
+                }}
+              />
             </div>
             <input
               className="compose-name-input"

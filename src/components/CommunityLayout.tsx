@@ -230,6 +230,9 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   const { user } = useAuth()
   const [channels, setChannels] = useState<Channel[]>(DEFAULT_CHANNELS)
   const [open, setOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebar-collapsed') === '1' } catch { return false }
+  })
   const [searchOpen, setSearchOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const { lang, setLang } = useLang()
@@ -287,6 +290,14 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
     setChannels(prev => [...prev, ch].sort((a, b) => a.sort_order - b.sort_order))
   }
 
+  function toggleCollapsed() {
+    setCollapsed(c => {
+      const next = !c
+      try { localStorage.setItem('sidebar-collapsed', next ? '1' : '0') } catch {}
+      return next
+    })
+  }
+
   async function handleDeleteChannel(ch: Channel) {
     if (!confirm(`"${ch.name}" 채널을 삭제할까요?`)) return
     setChannels(prev => prev.filter(c => c.id !== ch.id))
@@ -304,36 +315,47 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
         />
       )}
 
-      <div className="app-shell">
+      <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
         {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
 
-        <aside className={`app-sidebar${open ? ' open' : ''}`}>
+        <aside className={`app-sidebar${open ? ' open' : ''}${collapsed ? ' collapsed' : ''}`}>
           {/* Logo */}
           <div className="sidebar-logo">
             <a href="/" className="sidebar-logo-link">
               <div className="sidebar-logo-mark">H</div>
-              <div>
-                <div className="sidebar-wordmark">HAKKYO</div>
-                <div className="sidebar-city">MONTRÉAL · 2026</div>
-              </div>
+              {!collapsed && (
+                <div>
+                  <div className="sidebar-wordmark">HAKKYO</div>
+                  <div className="sidebar-city">MONTRÉAL · 2026</div>
+                </div>
+              )}
             </a>
+            <button className="sidebar-collapse-btn" onClick={toggleCollapsed} title={collapsed ? '사이드바 열기' : '사이드바 닫기'}>
+              {collapsed ? '›' : '‹'}
+            </button>
           </div>
 
           {/* Search button */}
-          <div className="sidebar-search-btn" onClick={() => setSearchOpen(true)}>
-            <span style={{ fontSize: 13 }}>🔍</span>
-            <span style={{ flex: 1 }}>{t.search.label}</span>
-            <span className="sidebar-search-kbd">{t.search.kbd}</span>
-          </div>
+          {!collapsed && (
+            <div className="sidebar-search-btn" onClick={() => setSearchOpen(true)}>
+              <span style={{ fontSize: 13 }}>🔍</span>
+              <span style={{ flex: 1 }}>{t.search.label}</span>
+              <span className="sidebar-search-kbd">{t.search.kbd}</span>
+            </div>
+          )}
+          {collapsed && (
+            <button className="sidebar-icon-btn" onClick={() => setSearchOpen(true)} title={t.search.label}>🔍</button>
+          )}
 
           {/* Main nav */}
           <nav className="sidebar-section">
-            <div className="sidebar-section-label">{t.section.main}</div>
+            {!collapsed && <div className="sidebar-section-label">{t.section.main}</div>}
             {navItems.map(item => (
               <a key={item.href} href={item.href}
-                className={`sidebar-item${isActive(item.href) ? ' active' : ''}`}>
+                className={`sidebar-item${isActive(item.href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
+                title={collapsed ? item.name : undefined}>
                 <span className="sidebar-item-icon">{item.icon}</span>
-                <span>{item.name}</span>
+                {!collapsed && <span>{item.name}</span>}
               </a>
             ))}
           </nav>
@@ -342,21 +364,27 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
 
           {/* Community channels */}
           <nav className="sidebar-section sidebar-channels-section">
-            <div className="sidebar-section-label" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <span>{t.section.community}</span>
-              {isAdmin && (
-                <button className="sidebar-add-ch-btn" onClick={() => setCreateOpen(true)} title="채널 추가">+</button>
-              )}
-            </div>
+            {!collapsed && (
+              <div className="sidebar-section-label" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <span>{t.section.community}</span>
+                {isAdmin && (
+                  <button className="sidebar-add-ch-btn" onClick={() => setCreateOpen(true)} title="채널 추가">+</button>
+                )}
+              </div>
+            )}
+            {collapsed && isAdmin && (
+              <button className="sidebar-icon-btn" onClick={() => setCreateOpen(true)} title="채널 추가">+</button>
+            )}
             {channels.map((ch) => {
               const href = slugToHref(ch.slug)
               return (
-                <div key={ch.id} className="sidebar-ch-row">
-                  <a href={href} className={`sidebar-item sidebar-ch-item${isActive(href) ? ' active' : ''}`}>
-                    <span className="sidebar-item-icon sidebar-ch-hash">#</span>
-                    <span>{channelMap[ch.name] || ch.name}</span>
+                <div key={ch.id} className={`sidebar-ch-row${collapsed ? ' collapsed' : ''}`}>
+                  <a href={href} className={`sidebar-item sidebar-ch-item${isActive(href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
+                    title={collapsed ? (channelMap[ch.name] || ch.name) : undefined}>
+                    <span className="sidebar-item-icon sidebar-ch-hash">{ch.icon || '#'}</span>
+                    {!collapsed && <span>{channelMap[ch.name] || ch.name}</span>}
                   </a>
-                  {isAdmin && (
+                  {isAdmin && !collapsed && (
                     <button className="sidebar-ch-delete" onClick={() => handleDeleteChannel(ch)} title="채널 삭제">✕</button>
                   )}
                 </div>
@@ -365,12 +393,14 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
           </nav>
 
           {/* Footer */}
-          <div className="sidebar-footer">
-            <a href="/apply/community" className="sidebar-footer-cta">{t.footer.apply}</a>
-            <div className="sidebar-footer-links">
-              <a href="/apply/news" className="sidebar-footer-link">{t.footer.subscribe}</a>
+          {!collapsed && (
+            <div className="sidebar-footer">
+              <a href="/apply/community" className="sidebar-footer-cta">{t.footer.apply}</a>
+              <div className="sidebar-footer-links">
+                <a href="/apply/news" className="sidebar-footer-link">{t.footer.subscribe}</a>
+              </div>
             </div>
-          </div>
+          )}
         </aside>
 
         <main className="app-main">

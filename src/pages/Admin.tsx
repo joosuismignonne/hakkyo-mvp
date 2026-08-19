@@ -4105,6 +4105,110 @@ function MiniHakkyoAdmin() {
 }
 
 // ─── Root Admin page ───────────────────────────────────────────────────────────
+// ── FAQ Admin ─────────────────────────────────────────────────────────────────
+function FaqAdmin() {
+  const [items, setItems] = useState<[string, string][]>([])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    if (!supabase) {
+      // fallback to hardcoded
+      import('../data/hakkyo').then(m => setItems(m.faqs as [string, string][]))
+      return
+    }
+    supabase.from('site_content').select('value_ko').eq('page', 'home').eq('key', 'faqs').single()
+      .then(({ data }) => {
+        if (data?.value_ko) {
+          try { setItems(JSON.parse(data.value_ko)) } catch {}
+        } else {
+          import('../data/hakkyo').then(m => setItems(m.faqs as [string, string][]))
+        }
+      })
+  }, [])
+
+  async function save() {
+    setSaving(true); setErr(''); setSaved(false)
+    if (!supabase) { setSaving(false); return }
+    const json = JSON.stringify(items)
+    // upsert into site_content
+    const { error } = await supabase.from('site_content').upsert(
+      { page: 'home', key: 'faqs', value_ko: json, value_en: '', value_fr: '' },
+      { onConflict: 'page,key' }
+    )
+    if (error) setErr(error.message)
+    else { setSaved(true); setTimeout(() => setSaved(false), 2500) }
+    setSaving(false)
+  }
+
+  function update(i: number, field: 0 | 1, val: string) {
+    setItems(prev => prev.map((item, idx) => idx === i ? (field === 0 ? [val, item[1]] : [item[0], val]) : item))
+  }
+
+  function add() { setItems(prev => [...prev, ['', '']]) }
+  function remove(i: number) { setItems(prev => prev.filter((_, idx) => idx !== i)) }
+  function move(i: number, dir: -1 | 1) {
+    setItems(prev => {
+      const arr = [...prev]
+      const j = i + dir
+      if (j < 0 || j >= arr.length) return prev
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      return arr
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <h2 className="text-base font-bold">자주 묻는 질문 (FAQ)</h2>
+        <span className="text-xs text-gray-400">홈 화면 FAQ 섹션</span>
+      </div>
+      <div className="space-y-3">
+        {items.map((item, i) => (
+          <div key={i} className="border border-gray-200 rounded-lg p-3 bg-white">
+            <div className="flex gap-2 mb-2">
+              <span className="text-xs text-gray-400 font-bold w-4 mt-1">{i+1}</span>
+              <input
+                className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm font-medium"
+                placeholder="질문"
+                value={item[0]}
+                onChange={e => update(i, 0, e.target.value)}
+              />
+              <div className="flex gap-1">
+                <button onClick={() => move(i, -1)} className="text-gray-400 hover:text-gray-700 text-xs px-1">↑</button>
+                <button onClick={() => move(i, 1)} className="text-gray-400 hover:text-gray-700 text-xs px-1">↓</button>
+                <button onClick={() => remove(i)} className="text-red-400 hover:text-red-600 text-xs px-1">✕</button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-4" />
+              <textarea
+                className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm text-gray-600 resize-none"
+                rows={2}
+                placeholder="답변"
+                value={item[1]}
+                onChange={e => update(i, 1, e.target.value)}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={add} className="text-sm text-blue-600 hover:text-blue-800 border border-dashed border-blue-300 rounded-lg px-4 py-2 w-full">
+        + FAQ 항목 추가
+      </button>
+      {err && <p className="text-xs text-red-500">{err}</p>}
+      <div className="flex gap-2">
+        <button onClick={save} disabled={saving}
+          className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50">
+          {saving ? '저장 중…' : saved ? '✓ 저장됨' : '저장'}
+        </button>
+        <p className="text-xs text-gray-400 mt-2">저장 후 홈 화면에 즉시 반영돼요</p>
+      </div>
+    </div>
+  )
+}
+
 const TABS = [
   { id: 'notifications', label: '🔔 알림',           Component: NotificationsAdmin },
   { id: 'applications',  label: '📋 신청서',          Component: ApplicationsAdmin  },
@@ -4112,6 +4216,7 @@ const TABS = [
   { id: 'activities',    label: '🐱 Mini 일정',       Component: ActivitiesAdmin    },
   { id: 'mini-hakkyo',   label: '✏️ Mini 소개글',     Component: MiniHakkyoAdmin    },
   { id: 'sessions',      label: '📚 프로그램',         Component: SessionsAdmin      },
+  { id: 'faq',           label: '❓ FAQ',             Component: FaqAdmin           },
   { id: 'theme',         label: '🎨 테마 & 채널',      Component: ThemeChannelAdmin  },
   { id: 'analytics',     label: '📊 통계',            Component: AnalyticsAdmin     },
 ]
@@ -4135,42 +4240,57 @@ export default function Admin() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-xl font-bold">Admin</h1>
-        {!isConfigured && (
-          <span className="text-xs bg-gray-100 text-gray-600 font-semibold px-2 py-0.5 rounded">
-            Demo mode — changes are local only
-          </span>
-        )}
-        <div className="ml-auto">
-          <button
-            onClick={handleLogout}
-            className="text-xs text-gray-400 hover:text-gray-700 transition-colors border border-gray-200 rounded px-2.5 py-1"
-          >
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f7f7f5' }}>
+      {/* Admin sidebar */}
+      <nav style={{
+        width: 200, minWidth: 200, background: '#111116', display: 'flex',
+        flexDirection: 'column', padding: '16px 0', flexShrink: 0, position: 'sticky', top: 0, height: '100vh',
+      }}>
+        <div style={{ padding: '0 16px 16px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#f5c542', letterSpacing: -0.5 }}>HAKKYO</div>
+          <div style={{ fontSize: 9, color: '#44445a', letterSpacing: 1.5, marginTop: 2 }}>ADMIN</div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+          {TABS.map(t => (
+            <button key={t.id}
+              onClick={() => { setTab(t.id); if (t.id === 'notifications') setUnreadCount(0) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                padding: '8px 16px', fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
+                color: tab === t.id ? '#f5c542' : '#a0a0b8', background: tab === t.id ? 'rgba(245,197,66,.08)' : 'none',
+                border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                borderLeft: tab === t.id ? '2px solid #f5c542' : '2px solid transparent',
+                transition: 'all .15s',
+              }}>
+              {t.label}
+              {t.id === 'notifications' && unreadCount > 0 && (
+                <span style={{
+                  background: '#f5c542', color: '#111', fontSize: 9, fontWeight: 800,
+                  borderRadius: 99, padding: '1px 5px', marginLeft: 'auto',
+                }}>
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,.07)' }}>
+          {!isConfigured && (
+            <div style={{ fontSize: 10, color: '#555570', marginBottom: 8, lineHeight: 1.4 }}>
+              Demo mode
+            </div>
+          )}
+          <button onClick={handleLogout}
+            style={{ fontSize: 12, color: '#666680', background: 'none', border: '1px solid rgba(255,255,255,.1)', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
             Sign out
           </button>
         </div>
-      </div>
+      </nav>
 
-      {/* Tab bar */}
-      <div className="flex gap-0 border-b border-gray-200 mb-6 overflow-x-auto">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => { setTab(t.id); if (t.id === 'notifications') setUnreadCount(0) }}
-            className={['inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
-              tab === t.id ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700',
-            ].join(' ')}>
-            {t.label}
-            {t.id === 'notifications' && unreadCount > 0 && (
-              <span className="bg-gray-900 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 leading-none">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Content */}
+      <div style={{ flex: 1, padding: '28px 32px', overflow: 'auto' }}>
+        <active.Component />
       </div>
-
-      <active.Component />
     </div>
   )
 }

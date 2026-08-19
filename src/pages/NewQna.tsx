@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Arrow } from '../components/HakkyoStatus'
-import { faqs } from '../data/hakkyo'
+import { faqs as STATIC_FAQS } from '../data/hakkyo'
 import { submitChatMessage } from '../lib/hakkyoApi'
 import { trackEvent } from '../lib/analytics'
+import { supabase } from '../lib/supabase'
 
 function PageTitle({ no, title, sub }: { no: string; title: string; sub: string }) {
   return (
@@ -26,7 +27,18 @@ const PROMPTS = [
 ]
 
 export default function NewQna() {
+  const [faqs, setFaqs] = useState<[string, string][]>(STATIC_FAQS as [string, string][])
   const [active, setActive] = useState<number | null>(0)
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('value_ko').eq('page', 'home').eq('key', 'faqs').single()
+      .then(({ data }) => {
+        if (data?.value_ko) {
+          try { setFaqs(JSON.parse(data.value_ko)) } catch {}
+        }
+      })
+  }, [])
   const [messages, setMessages] = useState<ChatMsg[]>(INITIAL)
   const [input, setInput] = useState('')
   const [name, setName] = useState('')
