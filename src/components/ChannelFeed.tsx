@@ -293,7 +293,14 @@ function AdminCompose({
         editor.chain().focus().setImage({ src }).run()
       }
     }
+    const isVideo = file.type.startsWith('video/')
     const fallbackToDataUrl = () => {
+      if (isVideo) {
+        // Video data URLs can be 50MB+ — too large for DB. Show error instead.
+        setError('영상 업로드에 실패했어요. Supabase 스토리지(media 버킷)를 확인해 주세요.')
+        setUploading(false)
+        return
+      }
       const reader = new FileReader()
       reader.onload = ev => { if (ev.target?.result) insertFile(ev.target.result as string) }
       reader.readAsDataURL(file)
@@ -303,13 +310,14 @@ function AdminCompose({
       const path = `posts/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
       const { error: upErr } = await supabase.storage.from('media').upload(path, file, { upsert: false })
       if (upErr) {
-        // Bucket may not exist yet — fall back to data URL so the post still works
+        console.error('Storage upload error:', upErr.message)
         fallbackToDataUrl()
       } else {
         const { data } = supabase.storage.from('media').getPublicUrl(path)
         insertFile(data.publicUrl)
       }
-    } catch {
+    } catch (e) {
+      console.error('Upload exception:', e)
       fallbackToDataUrl()
     } finally {
       setUploading(false)
@@ -509,6 +517,7 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
   const [loading, setLoading] = useState(true)
   const isAdmin = isAdminEmail(user?.email)
   const isLoggedIn = !!user
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getChannelPosts(channel)
@@ -516,7 +525,20 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
       .finally(() => setLoading(false))
   }, [channel])
 
-  function handlePosted(post: ChannelPost) { setPosts(prev => [post, ...prev]) }
+  // Scroll to bottom when posts load or channel changes
+  useEffect(() => {
+    if (!loading && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [loading, channel])
+
+  function handlePosted(post: ChannelPost) {
+    setPosts(prev => [...prev, post])
+    // Scroll to bottom after new post
+    setTimeout(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }, 50)
+  }
   function handleDelete(id: string) {
     setPosts(prev => prev.filter(p => p.id !== id))
     deletePost(id).catch(console.error)
@@ -526,10 +548,11 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
     togglePin(id, pinned).catch(console.error)
   }
 
+  // Pinned first, then oldest-to-newest (chat style: scroll down for latest)
   const sorted = [...posts].sort((a, b) => {
     if (a.is_pinned && !b.is_pinned) return -1
     if (!a.is_pinned && b.is_pinned) return 1
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   })
 
   const displayName = user?.email?.split('@')[0] ?? 'Admin'
@@ -537,7 +560,7 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
   return (
     <div className="ch-feed">
       {header}
-      <div className="ch-scroll">
+      <div className="ch-scroll" ref={scrollRef}>
         <div className="ch-inner">
           {!loading && sorted.map(post => (
             <PostCard
