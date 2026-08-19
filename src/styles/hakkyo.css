@@ -1002,3 +1002,76 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   background: #f5c542; border-color: #e0a800;
   transform: scale(1.1);
 }
+
+/* ── Rich compose toolbar ────────────────────────────────────────────────── */
+.compose-toolbar {
+  display: flex; align-items: center; gap: 2px;
+  padding: 4px 6px; background: #f8f8f6; border: 1px solid #e8e8e2;
+  border-radius: 8px; margin-bottom: 6px; flex-wrap: wrap;
+}
+.compose-toolbar-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 4px 7px; border-radius: 5px;
+  font-size: 13px; font-weight: 700; color: #666;
+  min-width: 28px; text-align: center;
+  transition: background .1s, color .1s;
+}
+.compose-toolbar-btn:hover { background: #eeeee8; color: #222; }
+.compose-toolbar-btn.active { background: #11110f; color: #fff; }
+.compose-toolbar-sep {
+  width: 1px; height: 16px; background: #e0e0d8; margin: 0 3px;
+}
+.compose-editor-wrap { padding: 2px 0; }
+.compose-rich-editor {
+  min-height: 80px; max-height: 300px;
+  overflow-y: auto; outline: none;
+  font-size: 14px; line-height: 1.65; color: #222;
+  border: 1px solid #e0e0d8; border-radius: 8px;
+  padding: 10px 12px; background: #fafaf8;
+}
+.compose-rich-editor:focus { border-color: #11110f; background: #fff; }
+.compose-rich-editor p { margin: 0 0 6px; }
+.compose-rich-editor p:last-child { margin-bottom: 0; }
+.compose-rich-editor img { max-width: 100%; border-radius: 6px; margin: 6px 0; }
+.compose-rich-editor iframe { max-width: 100%; border-radius: 6px; margin: 6px 0; }
+.compose-rich-editor ul, .compose-rich-editor ol { padding-left: 20px; margin: 4px 0; }
+.compose-rich-editor blockquote {
+  border-left: 3px solid #f5c542; margin: 6px 0;
+  padding-left: 10px; color: #666; font-style: italic;
+}
+/* TipTap placeholder */
+.compose-rich-editor p.is-editor-empty:first-child::before {
+  color: #bbb; content: attr(data-placeholder); float: left;
+  height: 0; pointer-events: none;
+}
+
+/* ── Post rich body ──────────────────────────────────────────────────────── */
+.post-rich-body img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+.post-rich-body iframe { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+.post-rich-body ul, .post-rich-body ol { padding-left: 20px; }
+.post-rich-body blockquote {
+  border-left: 3px solid #f5c542; padding-left: 10px;
+  color: #777; font-style: italic; margin: 6px 0;
+}
+
+/* ── Non-admin / locked compose ─────────────────────────────────────────── */
+.compose-locked {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px;
+  border-top: 1px solid #ebebE8;
+  background: #fafaf8;
+}
+.compose-locked-join { background: #fffdf5; }
+.compose-locked-soon { background: #f8f8f8; }
+.compose-locked-icon { font-size: 20px; flex-shrink: 0; }
+.compose-locked-title { font-size: 13px; font-weight: 700; color: #333; }
+.compose-locked-sub { font-size: 11.5px; color: #aaa; margin-top: 2px; }
+.compose-locked-btn {
+  margin-left: auto; flex-shrink: 0;
+  background: #11110f; color: #fff;
+  border: none; border-radius: 8px; padding: 7px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: inherit; text-decoration: none;
+  transition: background .12s;
+}
+.compose-locked-btn:hover { background: #333; }

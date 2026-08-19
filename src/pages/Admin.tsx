@@ -354,8 +354,12 @@ function SessionsAdmin() {
       {editing && (
         <FormCard title={editing.id ? 'Edit Program' : 'New Program'}>
           <div className="space-y-4">
+
+            {/* ── 섹션 1: 필수 기본 정보 ── */}
+            <div className="rounded-xl border border-gray-200 p-4 space-y-4 bg-gray-50">
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">① 기본 정보 (필수)</p>
             <div>
-              <p className="label mb-1">Program Name</p>
+              <p className="label mb-1">프로그램 이름</p>
               <LangFields prefix="name"
                 ko={editing.name_ko || ''}
                 en={editing.name_en || ''}
@@ -425,7 +429,7 @@ function SessionsAdmin() {
               </div>
             </div>
             <div>
-              <p className="label mb-1">Description</p>
+              <p className="label mb-1">프로그램 설명</p>
               <LangFields prefix="description"
                 ko={editing.description_ko || ''}
                 en={editing.description_en || ''}
@@ -434,6 +438,14 @@ function SessionsAdmin() {
                 multiline
               />
             </div>
+            </div>{/* end 섹션 1 */}
+
+            {/* ── 섹션 2: 수업 & 일정 ── */}
+            <details open className="rounded-xl border border-gray-200 overflow-hidden">
+              <summary className="flex items-center gap-2 px-4 py-3 bg-gray-50 cursor-pointer text-[11px] font-bold text-gray-500 uppercase tracking-wider select-none">
+                ② 수업 정보 & 일정
+              </summary>
+              <div className="p-4 space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <FL label="Price">
                 <input
@@ -483,12 +495,19 @@ function SessionsAdmin() {
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input type="checkbox" checked={!!editing.is_pinned} onChange={e => set('is_pinned', e.target.checked)}
                      className="w-4 h-4 rounded border-gray-300 accent-gray-900" />
-              <span className="text-sm text-gray-700">Pin to top of homepage feed</span>
+              <span className="text-sm text-gray-700">홈 피드 상단 고정</span>
             </label>
+              </div>
+            </details>{/* end 섹션 2 */}
 
-            <div className="border-t border-gray-100 pt-4 space-y-3">
+            {/* ── 섹션 3: 장소 정보 (선택) ── */}
+            <details className="rounded-xl border border-gray-200 overflow-hidden">
+              <summary className="flex items-center gap-2 px-4 py-3 bg-gray-50 cursor-pointer text-[11px] font-bold text-gray-500 uppercase tracking-wider select-none">
+                ③ 장소 & 일정표 (선택)
+              </summary>
+            <div className="p-4 space-y-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Public Programs page details
+                Programs 페이지 표시 정보
               </p>
               <FL label="Class schedule">
                 <textarea
@@ -528,12 +547,14 @@ function SessionsAdmin() {
                 />
               </FL>
             </div>
+            </details>{/* end 섹션 3 */}
 
-            {/* ── Detail page content ── */}
-            <div className="border-t border-gray-100 pt-4 space-y-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Detail page content
-              </p>
+            {/* ── 섹션 4: 상세 페이지 콘텐츠 (선택) ── */}
+            <details className="rounded-xl border border-gray-200 overflow-hidden">
+              <summary className="flex items-center gap-2 px-4 py-3 bg-gray-50 cursor-pointer text-[11px] font-bold text-gray-500 uppercase tracking-wider select-none">
+                ④ 상세 페이지 콘텐츠 (선택)
+              </summary>
+            <div className="p-4 space-y-4">
 
               <FL label="Overview">
                 <textarea
@@ -621,6 +642,7 @@ function SessionsAdmin() {
                 />
               </div>
             </div>
+            </details>{/* end 섹션 4 */}
 
             <SaveRow onSave={save} onCancel={() => setEditing(null)} saving={saving} />
           </div>
@@ -2055,11 +2077,10 @@ function QuestionsAdmin() {
       {err && <ErrorMsg msg={err} />}
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-gray-500">
-          Questions appear on every registration form.
-          Leave <strong>Class scope</strong> blank to show for all classes.
+          신청 폼 질문 목록이에요. 프로그램을 지정하지 않으면 모든 신청 폼에 표시돼요.
         </p>
         <button onClick={() => { setDraft(blankDraft()); setEditingId('new') }} className="btn-yellow shrink-0">
-          + Add Question
+          + 질문 추가
         </button>
       </div>
 
@@ -2143,53 +2164,67 @@ function QuestionForm({ draft, setD, onSave, onCancel, saving, isNew = false }: 
 }) {
   return (
     <div className="p-4 space-y-4">
+
+      {/* 질문 텍스트 */}
       <div>
-        <p className="label mb-2">Question text</p>
+        <p className="label mb-2">질문 내용</p>
         <div className="space-y-2">
-          {([['KO','question_ko'],['EN','question_en'],['FR','question_fr']] as [string,string][]).map(([lbl,key]) => (
+          {([['🇰🇷 KO','question_ko'],['🇨🇦 EN','question_en'],['🇫🇷 FR','question_fr']] as [string,string][]).map(([lbl,key]) => (
             <div key={key} className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-400 w-6 shrink-0">{lbl}</span>
+              <span className="text-[11px] font-bold text-gray-400 w-14 shrink-0">{lbl}</span>
               <input type="text" className="input-sm flex-1"
                 value={(draft as Record<string,string>)[key]||''}
                 onChange={e => setD(key, e.target.value)}
-                placeholder={lbl==='KO'?'한국어로 질문 입력':lbl==='EN'?'English question':'Question en français'}
+                placeholder={lbl.includes('KO') ? '한국어로 질문 입력 (필수)' : lbl.includes('EN') ? 'English (optional)' : 'Français (facultatif)'}
               />
             </div>
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FL label="Type">
+
+      {/* 타입 + 필수여부 */}
+      <div className="flex flex-wrap gap-3 items-start">
+        <FL label="답변 형식">
           <select className="input-sm" value={draft.type||'text'} onChange={e => setD('type', e.target.value)}>
-            <option value="text">Short text</option>
-            <option value="textarea">Long text</option>
-            <option value="select">Dropdown</option>
+            <option value="text">📝 단답형</option>
+            <option value="textarea">📄 서술형</option>
+            <option value="select">▾ 선택지</option>
           </select>
         </FL>
-        <FL label="Options (if dropdown)">
-          <input className="input-sm" value={draft.options||''} onChange={e => setD('options', e.target.value)}
-            placeholder="A, B, C" disabled={draft.type !== 'select'} />
+        <FL label="필수 여부">
+          <div className="flex gap-2 h-[42px] items-center">
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name={`req-${draft.order_index}`}
+                checked={draft.required === true}
+                onChange={() => setD('required', true)}
+                className="accent-black" />
+              <span className="text-sm text-red-600 font-semibold">필수</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name={`req-${draft.order_index}`}
+                checked={!draft.required}
+                onChange={() => setD('required', false)}
+                className="accent-black" />
+              <span className="text-sm text-gray-500">선택</span>
+            </label>
+          </div>
         </FL>
-        <FL label="Order">
-          <input type="number" className="input-sm" min={1} value={draft.order_index||1}
-            onChange={e => setD('order_index', +e.target.value)} />
-        </FL>
-        <FL label="Required">
-          <label className="flex items-center gap-2 cursor-pointer h-[42px]">
-            <input type="checkbox" checked={draft.required||false} onChange={e => setD('required', e.target.checked)}
-              className="w-4 h-4 accent-black rounded" />
-            <span className="text-sm text-gray-600">Yes</span>
-          </label>
-        </FL>
+        {draft.type === 'select' && (
+          <FL label="선택지 (쉼표로 구분)">
+            <input className="input-sm" value={draft.options||''} onChange={e => setD('options', e.target.value)}
+              placeholder="처음이에요, 한 번 해봤어요, 자주 해요" />
+          </FL>
+        )}
       </div>
-      {/* Tag-based scoping — replaces the legacy UUID field */}
+
+      {/* 어느 프로그램에 표시할지 */}
       <div>
-        <p className="label mb-1">Question applies to</p>
+        <p className="label mb-1">표시 대상 프로그램</p>
         <p className="text-[11px] text-gray-400 mb-2">
-          Leave all unchecked to show on every form. Check tags to show only when a matching program is selected.
+          아무것도 선택 안 하면 모든 신청 폼에 표시돼요
         </p>
         <div className="flex flex-wrap gap-3">
-          {([ ['korean','Korean'], ['english','English'], ['french','French'], ['active_output','Active Output'] ] as [string,string][]).map(([tag, label]) => {
+          {([ ['korean','한국어 프로그램'], ['english','영어 프로그램'], ['french','불어 프로그램'], ['active_output','Active Output'] ] as [string,string][]).map(([tag, label]) => {
             const tags: string[] = Array.isArray(draft.question_tags) ? draft.question_tags as string[] : []
             const checked = tags.includes(tag)
             return (
@@ -2198,10 +2233,7 @@ function QuestionForm({ draft, setD, onSave, onCancel, saving, isNew = false }: 
                   type="checkbox"
                   checked={checked}
                   className="w-4 h-4 accent-black rounded"
-                  onChange={() => {
-                    const next = checked ? tags.filter(t => t !== tag) : [...tags, tag]
-                    setD('question_tags', next)
-                  }}
+                  onChange={() => setD('question_tags', checked ? tags.filter(t => t !== tag) : [...tags, tag])}
                 />
                 <span className="text-sm text-gray-700">{label}</span>
               </label>
@@ -2209,20 +2241,12 @@ function QuestionForm({ draft, setD, onSave, onCancel, saving, isNew = false }: 
           })}
         </div>
       </div>
-      {/* Legacy class scope UUID — kept for backward compat, hidden behind details */}
-      <details className="text-xs text-gray-400">
-        <summary className="cursor-pointer hover:text-gray-600">Legacy: Class scope UUID (advanced)</summary>
-        <div className="mt-2">
-          <input className="input-sm w-full" value={draft.session_id||''}
-            onChange={e => setD('session_id', e.target.value||null)}
-            placeholder="Paste class UUID to limit this question to one class" />
-        </div>
-      </details>
+
       <div className="flex items-center gap-2 pt-1">
         <button onClick={onSave} disabled={saving} className="btn-yellow">
-          {saving ? 'Saving…' : isNew ? 'Add Question' : 'Save Changes'}
+          {saving ? '저장 중…' : isNew ? '+ 질문 추가' : '저장'}
         </button>
-        <button onClick={onCancel} className="btn-outline">Cancel</button>
+        <button onClick={onCancel} className="btn-outline">취소</button>
       </div>
     </div>
   )
