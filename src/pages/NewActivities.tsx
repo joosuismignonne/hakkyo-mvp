@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { activities } from '../data/hakkyo'
 import { supabase } from '../lib/supabase'
 import { trackEvent } from '../lib/analytics'
-import { useT } from '../lib/lang'
+import { useT, useLang } from '../lib/lang'
 
 function getDday(dateIso: string) {
   const today = new Date(); today.setHours(0,0,0,0)
@@ -73,10 +73,22 @@ function useClubMeta(slug: string): ClubMeta {
   return meta
 }
 
-const PREP: Record<string, string[]> = {
-  'book-club':      ['읽고 싶은 책 한 권 (선택)', '필기구', '편하게 이야기할 마음'],
-  'running-club':   ['편한 러닝화', '물', '가볍게 달릴 마음'],
-  'boardgame-club': ['준비물 없음 — 게임과 도구 제공', '함께 웃을 준비'],
+const PREP: Record<string, { ko: string[]; en: string[]; fr: string[] }> = {
+  'book-club': {
+    ko: ['읽고 싶은 책 한 권 (선택)', '필기구', '편하게 이야기할 마음'],
+    en: ['A book you want to read (optional)', 'Something to write with', 'An open mind'],
+    fr: ['Un livre à lire (facultatif)', 'De quoi écrire', 'L\'envie d\'échanger'],
+  },
+  'running-club': {
+    ko: ['편한 러닝화', '물', '가볍게 달릴 마음'],
+    en: ['Comfortable running shoes', 'Water', 'A light spirit'],
+    fr: ['Chaussures de course confortables', 'De l\'eau', 'L\'envie de courir'],
+  },
+  'boardgame-club': {
+    ko: ['준비물 없음 — 게임과 도구 제공', '함께 웃을 준비'],
+    en: ['Nothing to bring — games and materials provided', 'Ready to laugh'],
+    fr: ['Rien à apporter — jeux et matériel fournis', 'Prêt à rire'],
+  },
 }
 
 const POSTER_EMOJI: Record<string, string> = {
@@ -88,6 +100,8 @@ const POSTER_EMOJI: Record<string, string> = {
 function ActivityDetail({ slug }: { slug: string }) {
   const a = activities.find(x => x.slug === slug)
   const m = useClubMeta(slug)
+  const { lang } = useLang()
+  const t = useT()
   const [quoteKo, setQuoteKo] = useState('')
 
   useEffect(() => {
@@ -102,27 +116,51 @@ function ActivityDetail({ slug }: { slug: string }) {
       <div className="ch-header"><span className="ch-header-icon">🐱</span><h1 className="ch-header-title">Mini HAKKYO</h1></div>
       <div className="ch-scroll"><div className="ch-inner">
         <div className="feed-card"><div className="feed-card-inner">
-          <div className="feed-title">클럽을 찾을 수 없어요</div>
-          <div className="feed-footer"><button className="feed-action" onClick={() => window.location.href='/activities'}>← 돌아가기</button></div>
+          <div className="feed-title">{lang === 'en' ? 'Club not found' : lang === 'fr' ? 'Club introuvable' : '클럽을 찾을 수 없어요'}</div>
+          <div className="feed-footer"><button className="feed-action" onClick={() => window.location.href='/activities'}>← {lang === 'en' ? 'Back' : lang === 'fr' ? 'Retour' : '돌아가기'}</button></div>
         </div></div>
       </div></div>
     </div>
   )
 
+  const aa = a as any
   const dday = getDday(a.dateIso)
-  const ddLabel = dday === 0 ? '오늘' : dday === 1 ? '내일' : `D-${dday}`
+  const ddLabel = dday === 0 ? t.home.today : dday === 1 ? t.home.tomorrow : `D-${dday}`
+
+  // Pick localized fields
+  const actTitle   = lang === 'en' ? a.en      : lang === 'fr' ? a.fr      : a.ko
+  const actNote    = lang === 'en' ? (aa.noteEn || a.en)   : lang === 'fr' ? (aa.noteFr || a.fr) : aa.note
+  const actDesc    = lang === 'en' ? (aa.descEn || '')   : lang === 'fr' ? (aa.descFr || '') : (aa.desc || '')
+  const actDate    = lang === 'en' ? aa.dateEn  : lang === 'fr' ? aa.dateFr  : m.date
+  const actDay     = lang === 'en' ? aa.dayEn   : lang === 'fr' ? aa.dayFr   : m.day
+  const actTime    = lang === 'en' ? aa.timeEn  : lang === 'fr' ? aa.timeFr  : m.time
+
+  const applyLabel = lang === 'en' ? 'Apply →' : lang === 'fr' ? 'S\'inscrire →' : '신청하기 →'
+  const backLabel  = lang === 'en' ? '← List'  : lang === 'fr' ? '← Liste'      : '← 목록으로'
+  const prepLabel  = lang === 'en' ? 'What to bring' : lang === 'fr' ? 'Ce qu\'il faut apporter' : '이것만 알고 오면 돼요'
+  const schedLabel = lang === 'en' ? 'Date'   : lang === 'fr' ? 'Date'    : '일정'
+  const timeLabel  = lang === 'en' ? 'Time'   : lang === 'fr' ? 'Heure'   : '시간'
+  const hostLabel  = lang === 'en' ? 'Host'   : lang === 'fr' ? 'Animateur' : '진행'
+  const locLabel   = lang === 'en' ? 'Location' : lang === 'fr' ? 'Lieu'  : '장소'
+  const entryLabel = lang === 'en' ? 'Entry'  : lang === 'fr' ? 'Entrée'  : '참가비'
+  const locVal     = lang === 'en' ? 'Montréal · Location sent upon registration'
+                   : lang === 'fr' ? 'Montréal · Lieu communiqué après inscription'
+                   : 'Montréal · 신청자에게 안내'
+  const yearPrefix = lang === 'ko' ? '2026년 ' : '2026 '
+
+  const prepItems  = (PREP[slug]?.[lang] ?? PREP[slug]?.ko ?? [])
 
   return (
     <div className="ch-feed">
       <div className="ch-header">
         <span className="ch-header-icon">{POSTER_EMOJI[slug] || '🐱'}</span>
-        <h1 className="ch-header-title">{m.title}</h1>
+        <h1 className="ch-header-title">{actTitle}</h1>
         <span className="ch-header-desc">Mini HAKKYO · {a.code}</span>
         <button className="activity-apply-btn activity-apply-btn-sm" onClick={() => {
           trackEvent({ eventName:'activity_apply_click', targetType:'button', targetLabel:slug })
           window.location.href = `/apply/activities/${slug}`
         }}>
-          신청하기 →
+          {applyLabel}
         </button>
       </div>
       <div className="ch-scroll">
@@ -135,9 +173,9 @@ function ActivityDetail({ slug }: { slug: string }) {
               <div className="feed-dday-sub">MINI</div>
             </div>
             <div className="feed-event-body">
-              <div className="feed-event-title">{m.title} · {a.en}</div>
+              <div className="feed-event-title">{a.ko} · {a.en}</div>
               <div className="feed-event-meta">
-                2026년 {m.date} ({m.day}) · {m.time} · w/ {m.host} · {m.entry}
+                {yearPrefix}{actDate} ({actDay}) · {actTime} · w/ {m.host} · {m.entry}
               </div>
             </div>
           </a>
@@ -151,23 +189,23 @@ function ActivityDetail({ slug }: { slug: string }) {
                 <span className="feed-author">HAKKYO · {m.host}</span>
                 <span className="feed-tag feed-tag-mini">MINI</span>
               </div>
-              <div className="feed-title">{m.note}</div>
+              <div className="feed-title">{actNote}</div>
               <div className="feed-body">
                 <ul>
-                  <li>일정: 2026년 {m.date} ({m.day})</li>
-                  <li>시간: {m.time}</li>
-                  <li>진행: Language Exchange w/ {m.host}</li>
-                  <li>장소: Montréal · 신청자에게 안내</li>
-                  <li>참가비: {m.entry}</li>
+                  <li>{schedLabel}: {yearPrefix}{actDate} ({actDay})</li>
+                  <li>{timeLabel}: {actTime}</li>
+                  <li>{hostLabel}: Language Exchange w/ {m.host}</li>
+                  <li>{locLabel}: {locVal}</li>
+                  <li>{entryLabel}: {m.entry}</li>
                 </ul>
-                <p style={{ marginTop:10 }}>잘해야 오는 게 아니에요. Language Exchange는 함께 하다 보면 자연스럽게 말이 나오는 구조예요.</p>
+                {actDesc && <p style={{ marginTop:10 }}>{actDesc}</p>}
               </div>
               <div className="feed-footer activity-apply-row">
                 <button className="activity-apply-btn" onClick={() => {
                   trackEvent({ eventName:'activity_apply_click', targetType:'button', targetLabel:slug })
                   window.location.href = `/apply/activities/${slug}`
-                }}>신청하기 →</button>
-                <button className="feed-action" onClick={() => window.location.href='/activities'}>← 목록으로</button>
+                }}>{applyLabel}</button>
+                <button className="feed-action" onClick={() => window.location.href='/activities'}>{backLabel}</button>
               </div>
             </div>
           </div>
@@ -187,8 +225,8 @@ function ActivityDetail({ slug }: { slug: string }) {
           )}
 
           {/* Prep items */}
-          <div className="feed-divider">이것만 알고 오면 돼요</div>
-          {(PREP[slug] || []).map((item, i) => (
+          <div className="feed-divider">{prepLabel}</div>
+          {prepItems.map((item, i) => (
             <div key={i} className="feed-card">
               <div className="feed-card-inner" style={{ display:'flex', alignItems:'center', gap:14, paddingTop:12, paddingBottom:12 }}>
                 <div style={{ width:28, height:28, background:'#f5c542', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:12, flexShrink:0 }}>
@@ -208,10 +246,18 @@ function ActivityDetail({ slug }: { slug: string }) {
 export default function NewActivities() {
   const { slug } = useParams<{ slug?: string }>()
   const intro = useMiniIntro()
+  const { lang } = useLang()
+  const t = useT()
   if (slug) return <ActivityDetail slug={slug} />
 
   const withDday = activities.map(a => ({ ...a, dday: getDday(a.dateIso) }))
-  const t = useT()
+
+  const endedLabel = lang === 'en' ? 'Ended' : lang === 'fr' ? 'Terminé' : '종료'
+  const schedTitle = lang === 'en' ? 'September Schedule' : lang === 'fr' ? 'Programme de septembre' : '9월 일정'
+  const miniLabel  = lang === 'en' ? 'What is Mini HAKKYO?' : lang === 'fr' ? 'C\'est quoi Mini HAKKYO ?' : 'Mini HAKKYO란?'
+  const ctaTitle   = lang === 'en' ? 'Meet new people in Montréal' : lang === 'fr' ? 'Rencontrez de nouvelles personnes à Montréal' : '몬트리올에서 새로운 사람을 만나요'
+  const ctaBody    = lang === 'en' ? 'Connect with people spending time in the same city.' : lang === 'fr' ? 'Rencontrez des personnes qui vivent le même moment dans la même ville.' : '같은 도시에서 새로운 시간을 보내는 사람들과 연결돼요.'
+  const ctaBtn     = lang === 'en' ? '🤝 Join the Community' : lang === 'fr' ? '🤝 Rejoindre la communauté' : '🤝 커뮤니티 참여하기'
 
   return (
     <div className="ch-feed">
@@ -227,7 +273,7 @@ export default function NewActivities() {
 
           {/* What is Mini */}
           <div className="feed-card feed-card-pinned">
-            <div className="feed-pin-bar">📌 Mini HAKKYO란?</div>
+            <div className="feed-pin-bar">📌 {miniLabel}</div>
             <div className="feed-card-inner">
               <div className="feed-meta">
                 <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
@@ -242,11 +288,18 @@ export default function NewActivities() {
             </div>
           </div>
 
-          <div className="feed-divider">9월 일정</div>
+          <div className="feed-divider">{schedTitle}</div>
 
           {/* Activity cards */}
           {withDday.map(a => {
-            const ddLabel = a.dday === 0 ? '오늘' : a.dday === 1 ? '내일' : a.dday < 0 ? '종료' : `D-${a.dday}`
+            const aa = a as any
+            const ddLabel = a.dday === 0 ? t.home.today : a.dday === 1 ? t.home.tomorrow : a.dday < 0 ? endedLabel : `D-${a.dday}`
+            const actName = lang === 'en' ? a.en : lang === 'fr' ? a.fr : a.ko
+            const actNote = lang === 'en' ? (aa.noteEn || a.en) : lang === 'fr' ? (aa.noteFr || a.fr) : aa.note
+            const actDate = lang === 'en' ? aa.dateEn : lang === 'fr' ? aa.dateFr : aa.date
+            const actDay  = lang === 'en' ? aa.dayEn  : lang === 'fr' ? aa.dayFr  : aa.day
+            const actTime = lang === 'en' ? aa.timeEn : lang === 'fr' ? aa.timeFr : aa.time
+            const yearPfx = lang === 'ko' ? '2026년 ' : '2026 '
             return (
               <a key={a.code} href={`/activities/${a.slug}`}
                 className="feed-event-card"
@@ -257,11 +310,11 @@ export default function NewActivities() {
                   <div className="feed-dday-sub">{POSTER_EMOJI[a.slug]}</div>
                 </div>
                 <div className="feed-event-body">
-                  <div className="feed-event-title">{a.ko} · {a.en}</div>
+                  <div className="feed-event-title">{actName}</div>
                   <div className="feed-event-meta">
-                    2026년 {(a as any).date} ({(a as any).day}) · {(a as any).time} · w/ {(a as any).host} · {(a as any).entry}
+                    {yearPfx}{actDate} ({actDay}) · {actTime} · w/ {aa.host} · {aa.entry}
                   </div>
-                  <div className="feed-event-meta" style={{ marginTop:3 }}>{a.note}</div>
+                  <div className="feed-event-meta" style={{ marginTop:3 }}>{actNote}</div>
                 </div>
                 <div className="feed-event-arrow">→</div>
               </a>
@@ -275,11 +328,11 @@ export default function NewActivities() {
                 <div className="feed-avatar" style={{ background:'#111', color:'#f5c542' }}>🐱</div>
                 <span className="feed-author">HAKKYO</span>
               </div>
-              <div className="feed-title">몬트리올에서 새로운 사람을 만나요</div>
-              <div className="feed-body"><p>같은 도시에서 새로운 시간을 보내는 사람들과 연결돼요.</p></div>
+              <div className="feed-title">{ctaTitle}</div>
+              <div className="feed-body"><p>{ctaBody}</p></div>
               <div className="feed-footer">
                 <button className="feed-action subscribed" onClick={() => window.location.href='/apply/community'}>
-                  🤝 커뮤니티 참여하기
+                  {ctaBtn}
                 </button>
               </div>
             </div>
