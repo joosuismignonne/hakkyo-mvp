@@ -1,8 +1,61 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Status, { Arrow } from '../components/HakkyoStatus'
 import { programs, activities } from '../data/hakkyo'
 import { submitApplication } from '../lib/hakkyoApi'
 import { trackEvent } from '../lib/analytics'
+import { getNotices } from '../lib/db'
+import type { Notice } from '../types'
+
+const TYPE_LABEL: Record<string, string> = { notice: 'HAKKYO', event: 'EVENT', hiring: 'COMMUNITY' }
+
+const FALLBACK: Notice[] = [
+  { id:'f1', date:'2026-08-05', type:'notice', is_pinned:true,  title_ko:'4기 언어 프로그램은 10월에 시작합니다', title_en:'', title_fr:'', body_ko:'', body_en:'', body_fr:'' },
+  { id:'f2', date:'2026-08-01', type:'event',                   title_ko:'9월, Mini HAKKYO 시리즈를 시작합니다', title_en:'', title_fr:'', body_ko:'', body_en:'', body_fr:'' },
+  { id:'f3', date:'2026-07-26', type:'notice',                  title_ko:'HAKKYO 3기를 함께해 주셔서 감사합니다', title_en:'', title_fr:'', body_ko:'', body_en:'', body_fr:'' },
+]
+
+function HomeBoardSection() {
+  const [notices, setNotices] = useState<Notice[]>(FALLBACK)
+
+  useEffect(() => {
+    getNotices()
+      .then(data => { if (data.length > 0) setNotices(data) })
+      .catch(() => {})
+  }, [])
+
+  const top3 = [...notices]
+    .sort((a, b) => {
+      if (a.is_pinned && !b.is_pinned) return -1
+      if (!a.is_pinned && b.is_pinned) return 1
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
+    .slice(0, 3)
+
+  return (
+    <section className="home-board section-pad">
+      <div>
+        <span className="section-label">NOTICE BOARD</span>
+        <h2>놓치지 말아야 할<br />HAKKYO 공지</h2>
+        <p className="board-intro">프로그램 모집, 액티비티 일정과 운영 소식을 가장 먼저 확인하세요.</p>
+        <a className="text-link" href="/board">공지 게시판 바로가기 <Arrow /></a>
+      </div>
+      <div className="home-board-list">
+        {top3.map(n => {
+          const d = new Date(n.date)
+          const label = `${String(d.getMonth() + 1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`
+          return (
+            <a href="/board" key={n.id}>
+              <small>{label}</small>
+              <span className="notice-tag">{TYPE_LABEL[n.type] ?? n.type}</span>
+              <strong>{n.title_ko || n.title_en}</strong>
+              <Arrow />
+            </a>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
 
 function NewsletterForm() {
   const [email, setEmail] = useState('')
@@ -125,28 +178,7 @@ export default function NewHome() {
         </div>
       </section>
 
-      <section className="home-board section-pad">
-        <div>
-          <span className="section-label">NOTICE BOARD</span>
-          <h2>놓치지 말아야 할<br />HAKKYO 공지</h2>
-          <p className="board-intro">프로그램 모집, 액티비티 일정과 운영 소식을 가장 먼저 확인하세요.</p>
-          <a className="text-link" href="/board">공지 게시판 바로가기 <Arrow /></a>
-        </div>
-        <div className="home-board-list">
-          {[
-            ["08.05", "PROGRAM", "4기 언어 프로그램은 10월에 시작합니다"],
-            ["08.01", "ACTIVITY", "9월, 수요일 액티비티를 시작합니다"],
-            ["07.26", "HAKKYO", "HAKKYO 3기를 함께해 주셔서 감사합니다"],
-          ].map((n, i) => (
-            <a href="/board" key={n[2]}>
-              <small>{n[0]}</small>
-              <span className="notice-tag">{i === 0 ? 'PROGRAM' : i === 1 ? 'ACTIVITY' : 'HAKKYO'}</span>
-              <strong>{n[2]}</strong>
-              <Arrow />
-            </a>
-          ))}
-        </div>
-      </section>
+      <HomeBoardSection />
 
       <section className="city-note section-pad">
         <span>MONTRÉAL NOTE · 001</span>
