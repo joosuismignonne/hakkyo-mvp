@@ -1,177 +1,177 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import Status, { Arrow } from '../components/HakkyoStatus'
 import { programs } from '../data/hakkyo'
-import { trackEvent } from '../lib/analytics'
 
-function PageTitle({ no, title, sub }: { no: string; title: string; sub: string }) {
-  return (
-    <section className="page-title section-pad">
-      <span>{no}</span>
-      <h1>{title}</h1>
-      <p>{sub}</p>
-    </section>
-  )
-}
-
-function Curriculum() {
-  return (
-    <section className="curriculum section-pad">
-      <div className="section-head">
-        <span>HOW WE LEARN</span>
-        <span>LEARN → ACTIVE OUTPUT</span>
-      </div>
-      <h2>알고 있는 것에서<br />한 조각만 더.</h2>
-      <ol>
-        {["오늘 필요한 표현을 이해해요","내 일상에 맞는 문장으로 바꿔요","상대와 대화를 이어보며 연습해요","Active Output에서 실제로 말해봐요"].map((x, i) => (
-          <li key={x}><b>{String(i + 1).padStart(2, '0')}</b><span>{x}</span></li>
-        ))}
-      </ol>
-    </section>
-  )
-}
-
-function ProgramPass({ lang }: { lang: string }) {
-  const scenes: Record<string, string[]> = {
-    Korean: ["카페에서 주문하기","친구와 약속 잡기","오늘 하루 말하기"],
-    English: ["처음 만난 사람과 인사하기","직장에서 도움 요청하기","내 생각 이어 말하기"],
-    French: ["가게에서 질문하기","동네 이웃과 인사하기","몬트리올 일정 잡기"],
-    "Full Course": ["영어로 내 근황 말하기","불어로 몬트리올 생활 말하기","두 언어로 질문을 이어가기"],
-  }
-  const [scene, setScene] = useState(0)
-  const list = scenes[lang] || scenes.English
-  return (
-    <div className="program-ticket scene-pass" data-cursor="NEXT">
-      <span>ONE CLASS PREVIEW · SCENE 0{scene + 1}</span>
-      <strong>{list[scene]}</strong>
-      <small>티켓을 누르면 수업에서 연습할 다음 생활 장면이 나와요.</small>
-      <button type="button" aria-label="다음 수업 장면" onClick={() => setScene((scene + 1) % list.length)}>NEXT</button>
-      <i>OCT / 04</i>
-    </div>
-  )
+const PROGRAM_DETAIL: Record<string, { scene: string; active: string; classes: string }> = {
+  korean:      { scene: '카페에서 주문하고, 친구와 약속을 잡고, 내 하루를 한국어로 말해봐요.', active: '배운 표현을 바로 말해보는 별도 실전 시간', classes: '총 8회' },
+  english:     { scene: '머릿속에 있던 영어를 꺼내 실제 대화로 연결하는 연습을 해요.', active: '매주 말하기 중심 Active Output 포함', classes: '총 8회' },
+  french:      { scene: '가게, 직장, 이웃과의 짧은 대화부터 몬트리올 생활 불어를 시작해요.', active: '매주 말하기 중심 Active Output 포함', classes: '총 8회' },
+  'full-course': { scene: '두 언어를 따로 외우는 대신, 한 주 안에서 배우고 말하고 다시 연결해요.', active: 'English · French · Active Output 모두 포함', classes: '총 12회' },
 }
 
 function ProgramDetail({ slug }: { slug: string }) {
-  const p = programs.find(x => x.en.toLowerCase().replace(/ /g, '-') === slug)
-  if (!p) return <NotFound />
+  const p = programs.find(x => x.href === `/programs/${slug}`)
+  const detail = PROGRAM_DETAIL[slug]
 
-  return (
-    <>
-      <PageTitle no={`PROGRAM 0${programs.indexOf(p) + 1}`} title={p.lang} sub={`${p.en} · ${p.fr}`} />
-      <section className="detail section-pad">
-        <div className="program-poster" data-cursor="HELLO">
-          <span>{p.en.toUpperCase()}</span>
-          <strong>{p.mark}</strong>
-          <small>SAY IT YOUR WAY · SESSION 04</small>
+  if (!p) return (
+    <div className="ch-feed">
+      <div className="ch-header">
+        <span className="ch-header-icon">📚</span>
+        <h1 className="ch-header-title">프로그램</h1>
+      </div>
+      <div className="ch-scroll">
+        <div className="ch-inner">
+          <div className="feed-card"><div className="feed-card-inner"><div className="feed-title">프로그램을 찾을 수 없어요</div><div className="feed-footer"><button className="feed-action" onClick={() => window.location.href='/programs'}>← 돌아가기</button></div></div></div>
         </div>
-        <div className="detail-copy">
-          <Status>SESSION 04 · OCTOBER</Status>
-          <h2>
-            {p.en === 'Full Course'
-              ? <>영어와 불어를 배우고,<br />Active Output으로 말해요.</>
-              : <>시험을 위한 말보다,<br />오늘 써볼 수 있는 말.</>}
-          </h2>
-          <p>{p.scene}</p>
-          <dl>
-            <div><dt>구성</dt><dd>{p.focus}</dd></div>
-            <div><dt>레벨</dt><dd>{p.level}</dd></div>
-            <div><dt>수업 횟수</dt><dd><strong>{p.classes}</strong></dd></div>
-            <div><dt>수강료</dt><dd><strong>{p.total}</strong></dd></div>
-            <div><dt>시작</dt><dd>2026년 10월</dd></div>
-            <div><dt>시간·장소</dt><dd>확정되는 즉시 신청자에게 이메일로 먼저 안내</dd></div>
-          </dl>
-          <div className="active-output-note">
-            <span>ACTIVE OUTPUT</span>
-            <strong>배운 언어를 내 말로 꺼내는 시간</strong>
-            <p>{p.active}. 모든 HAKKYO 언어 클래스에는 배운 표현을 실제 대화로 사용해보는 Active Output 시간이 있습니다.</p>
-          </div>
-          <button className="cta" disabled style={{ opacity: 0.45, cursor: 'not-allowed' }}>10월 시작 예정 <Arrow /></button>
-        </div>
-      </section>
-      <section className="fit section-pad">
-        <div>
-          <span>IS THIS FOR ME?</span>
-          <h2>이런 마음으로<br />오면 좋아요.</h2>
-        </div>
-        <div className="fit-grid">
-          {["공부는 했지만 실제로 말할 기회가 적었어요","틀릴까 봐 아는 표현도 쉽게 꺼내지 못해요","교재보다 내 생활에 필요한 문장을 배우고 싶어요"].map((x, i) => (
-            <article key={x}><b>0{i + 1}</b><p>{x}</p></article>
-          ))}
-        </div>
-      </section>
-      <Curriculum />
-      <section className="class-day section-pad">
-        <div>
-          <Status>ONE CLASS, FOUR MOMENTS</Status>
-          <h2>한 번의 수업은<br />이렇게 흘러가요.</h2>
-        </div>
-        <ol>
-          {["가볍게 안부를 나누며 입 열기","지난 표현을 실제 대화로 다시 사용하기","오늘의 장면과 표현을 함께 연습하기","Active Output에서 내 이야기로 바꿔 말하기"].map((x, i) => (
-            <li key={x}><b>{String(i + 1).padStart(2, '0')}</b><span>{x}</span></li>
-          ))}
-        </ol>
-      </section>
-      <section className="friendly-note section-pad">
-        <div className="mini-mimi" data-cursor="MEOW">●</div>
-        <div>
-          <span>MINI'S NOTE</span>
-          <h2>잘해야 오는 수업이 아니에요.</h2>
-          <p>막히면 다른 언어를 섞어도 괜찮고, 잠시 듣고 있어도 괜찮아요. 멘토가 각자의 속도에 맞춰 대화에 들어올 수 있도록 도와드립니다.</p>
-        </div>
-      </section>
-    </>
+      </div>
+    </div>
   )
-}
 
-function NotFound() {
   return (
-    <>
-      <PageTitle no="APPLICATION" title="페이지를 찾을 수 없어요" sub="Please choose a program or activity" />
-      <section className="simple-cta section-pad">
-        <a className="cta" href="/programs">프로그램으로 돌아가기 <Arrow /></a>
-      </section>
-    </>
+    <div className="ch-feed">
+      <div className="ch-header">
+        <span className="ch-header-icon">📚</span>
+        <h1 className="ch-header-title">{p.lang}</h1>
+        <span className="ch-header-desc">{p.level} · SESSION 04</span>
+        <button className="ch-header-action" onClick={() => window.location.href='/apply/news'}>
+          🔔 소식 받기
+        </button>
+      </div>
+      <div className="ch-scroll">
+        <div className="ch-inner">
+          {/* main card */}
+          <div className="feed-card feed-card-pinned">
+            <div className="feed-pin-bar">📌 {p.lang} 프로그램</div>
+            <div className="feed-card-inner">
+              <div className="feed-meta">
+                <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
+                <span className="feed-author">HAKKYO</span>
+                <span className="feed-tag feed-tag-program">PROGRAM</span>
+                <span className="feed-time">2026 FALL</span>
+              </div>
+              <div className="feed-title">{p.lang} · {p.en}</div>
+              <div className="feed-body">
+                <p>{detail?.scene || p.audience}</p>
+                <ul>
+                  <li>레벨: {p.level}</li>
+                  <li>수업 횟수: {detail?.classes || '총 8회'}</li>
+                  <li>Active Output: {detail?.active}</li>
+                  <li>참가비: {p.price || '추후 공개'}</li>
+                </ul>
+              </div>
+              <div className="feed-footer">
+                <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}>
+                  🔔 4기 소식 받기
+                </button>
+                <button className="feed-action" onClick={() => window.location.href='/programs'}>
+                  ← 전체 보기
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* MINI's note */}
+          <div className="feed-card">
+            <div className="feed-card-inner">
+              <div className="feed-meta">
+                <div className="feed-avatar" style={{ background:'#111', color:'#f5c542', fontSize:14 }}>🐱</div>
+                <span className="feed-author">MINI</span>
+                <span className="feed-tag">MINI'S NOTE</span>
+              </div>
+              <div className="feed-title">잘해야 오는 게 아니에요</div>
+              <div className="feed-body">
+                <p>HAKKYO는 완벽하게 말하는 사람보다, 말해보고 싶은 사람을 위한 곳이에요. 틀려도 괜찮아요. 함께 이야기하다 보면 어느새 표현이 나와요.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
 export default function NewPrograms() {
   const { slug } = useParams<{ slug?: string }>()
-
   if (slug) return <ProgramDetail slug={slug} />
 
   return (
-    <>
-      <PageTitle no="01 — PROGRAMS" title="언어를 배우는 새로운 이유" sub="Korean · English · French · Active Output" />
-      <section className="program-summary section-pad">
-        <div>
-          <Status>SESSION 04</Status>
-          <h2>모든 클래스는<br />말하는 시간까지.</h2>
-        </div>
-        <p>한국어·영어·불어 수업 모두 Active Output 시간을 포함합니다. 배운 표현을 이해하는 데서 끝내지 않고, 내 상황과 내 문장으로 바꾸어 실제로 말해봅니다.</p>
-      </section>
-      <section className="program-list section-pad">
-        {programs.map((x, i) => (
-          <a href={x.href} className={x.en === 'Full Course' ? 'program-full-card' : ''} key={x.en} onClick={() => trackEvent({ eventName: 'program_card_clicked', targetType: 'program', targetLabel: x.en })}>
-            <span>0{i + 1}</span>
-            <b>{x.mark}</b>
-            <h2>{x.lang}</h2>
-            <p>{x.en} / {x.fr}</p>
-            <small>{x.focus}</small>
-            <strong className="program-price">10월 시작 예정</strong>
-            <Status>COMING SOON</Status>
-          </a>
-        ))}
-      </section>
-      <section className="community-cta section-pad">
-        <div className="community-cta-inner">
-          <div>
-            <span style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700 }}>HAKKYO COMMUNITY</span>
-            <h2>수업 안에서<br />함께하는 시간.</h2>
-            <p>HAKKYO 커뮤니티는 매주 일요일 오후 수업 시간 안에서 열려요. 학생들이 Active Output을 함께 하는 시간 — 말하고, 듣고, 연결되는 자리예요.</p>
+    <div className="ch-feed">
+      <div className="ch-header">
+        <span className="ch-header-icon">📚</span>
+        <h1 className="ch-header-title">프로그램</h1>
+        <span className="ch-header-desc">SESSION 04 · 2026 FALL</span>
+        <button className="ch-header-action" onClick={() => window.location.href='/apply/news'}>
+          🔔 소식 받기
+        </button>
+      </div>
+      <div className="ch-scroll">
+        <div className="ch-inner">
+
+          {/* 4기 announcement */}
+          <div className="feed-card feed-card-pinned">
+            <div className="feed-pin-bar">📌 4기 안내</div>
+            <div className="feed-card-inner">
+              <div className="feed-meta">
+                <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
+                <span className="feed-author">HAKKYO</span>
+                <span className="feed-tag feed-tag-program">PROGRAM</span>
+                <span className="feed-time">2026 FALL</span>
+              </div>
+              <div className="feed-title">4기 언어 프로그램 — 2026년 10월 시작 예정</div>
+              <div className="feed-body">
+                <p>한국어·영어·불어 프로그램 4기 모집이 곧 시작돼요. 정확한 일정과 참가비는 소식 신청자에게 가장 먼저 알려드릴게요.</p>
+              </div>
+              <div className="feed-footer">
+                <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}>
+                  🔔 소식 신청하기
+                </button>
+              </div>
+            </div>
           </div>
-          <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
+
+          <div className="feed-divider">프로그램 목록</div>
+
+          {/* Program cards */}
+          <div className="feed-programs-grid">
+            {programs.map(p => (
+              <a key={p.en} href={p.href} className="feed-prog-card">
+                <div className="feed-prog-mark">{p.mark}</div>
+                <div className="feed-prog-lang">{p.lang}</div>
+                <div className="feed-prog-level">{p.level}</div>
+                <div className="feed-prog-desc">{p.scene}</div>
+              </a>
+            ))}
+          </div>
+
+          {/* FAQ cards */}
+          <div className="feed-divider">자주 묻는 질문</div>
+
+          {[
+            ['언어를 잘하지 못해도 참여할 수 있나요?', 'HAKKYO는 완벽하게 말하는 사람보다, 말해보고 싶은 사람을 위한 곳이에요. 프로그램별 레벨 안내를 확인한 뒤 자신에게 맞는 수업을 선택할 수 있어요.'],
+            ['4기 일정과 참가비는 언제 공개되나요?', '2026년 10월 시작을 준비하고 있어요. 정확한 일정과 참가비가 정해지면 소식 신청자에게 가장 먼저 알려드려요.'],
+            ['수업은 어떤 언어로 진행되나요?', '한국어·영어·불어 프로그램별로 목표 언어를 중심으로 진행하되, 이해가 필요할 때는 멘토가 다른 언어로 자연스럽게 도와드려요.'],
+          ].map(([q, a], i) => (
+            <FaqCard key={i} q={q} a={a} />
+          ))}
+
         </div>
-      </section>
-    </>
+      </div>
+    </div>
+  )
+}
+
+function FaqCard({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="feed-card" onClick={() => setOpen(o => !o)}>
+      <div className="feed-card-inner">
+        <div className="feed-meta">
+          <div className="feed-avatar" style={{ background:'#e8e8e0', fontSize:14 }}>Q</div>
+          <span className="feed-author" style={{ fontWeight:600 }}>{q}</span>
+          <span style={{ marginLeft:'auto', color:'#bbb', fontSize:16 }}>{open ? '▲' : '▼'}</span>
+        </div>
+        {open && <div className="feed-body"><p>{a}</p></div>}
+      </div>
+    </div>
   )
 }

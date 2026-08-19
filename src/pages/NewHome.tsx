@@ -1,245 +1,195 @@
 import { useState, useEffect } from 'react'
-import { Arrow } from '../components/HakkyoStatus'
 import { programs, activities } from '../data/hakkyo'
-import { submitApplication } from '../lib/hakkyoApi'
-import { trackEvent } from '../lib/analytics'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
 
-// ─── Latest notice ticker ──────────────────────────────────────────────────────
-const FALLBACK_NOTICE: Notice = {
-  id: 'f1', date: '2026-08-05', type: 'notice', is_pinned: true,
-  title_ko: '4기 언어 프로그램은 10월에 시작합니다 — 소식 신청하면 가장 먼저 알려드려요',
-  title_en: '', title_fr: '', body_ko: '', body_en: '', body_fr: '',
-}
-
-function LatestNoticeBanner() {
-  const [notice, setNotice] = useState<Notice>(FALLBACK_NOTICE)
-  useEffect(() => {
-    getNotices()
-      .then(data => {
-        if (!data.length) return
-        const pinned = data.find(n => n.is_pinned)
-        const latest = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-        setNotice(pinned ?? latest)
-      })
-      .catch(() => {})
-  }, [])
-  return (
-    <a href="/board" className="home-latest-banner">
-      <span className="home-latest-tag">NEW</span>
-      <span className="home-latest-title">{notice.title_ko || notice.title_en}</span>
-      <span className="home-latest-arrow"><Arrow /></span>
-    </a>
-  )
-}
-
-// ─── D-day helpers ────────────────────────────────────────────────────────────
 function getDday(dateIso: string) {
   const today = new Date(); today.setHours(0,0,0,0)
   const target = new Date(dateIso); target.setHours(0,0,0,0)
   return Math.ceil((target.getTime() - today.getTime()) / 86400000)
 }
 
-// 히어로 안에 들어가는 다음 일정 블록
-function HeroNextEvent() {
-  const upcoming = activities
+function fmtDate(d: string) {
+  const dt = new Date(d)
+  if (isNaN(dt.getTime())) return d
+  return `${dt.getMonth()+1}월 ${dt.getDate()}일`
+}
+
+function strip(html: string) {
+  return html.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()
+}
+
+const TYPE_TAG: Record<string, { label: string; cls: string }> = {
+  notice: { label: 'HAKKYO', cls: '' },
+  event:  { label: 'EVENT',  cls: 'feed-tag-event' },
+  hiring: { label: 'COMMUNITY', cls: '' },
+}
+
+const FALLBACK: Notice[] = [
+  {
+    id:'f1', date:'2026-08-05', type:'notice', is_pinned:true,
+    title_ko:'4기 언어 프로그램은 10월에 시작합니다',
+    title_en:'', title_fr:'',
+    body_ko:'HAKKYO 4기 언어 프로그램(한국어·영어·불어)은 2026년 10월부터 시작해요. 소식 신청자에게 가장 먼저 알려드릴게요.',
+    body_en:'', body_fr:'',
+  },
+  {
+    id:'f2', date:'2026-08-01', type:'event', is_pinned:false,
+    title_ko:'9월, Mini HAKKYO 시리즈를 시작합니다',
+    title_en:'', title_fr:'',
+    body_ko:'북클럽·러닝클럽·보드게임클럽 — 9월 매주 수요일 저녁에 만나요. 수업 수강생이 아니어도 참여할 수 있어요.',
+    body_en:'', body_fr:'',
+  },
+  {
+    id:'f3', date:'2026-07-26', type:'notice', is_pinned:false,
+    title_ko:'HAKKYO 3기를 함께해 주셔서 감사합니다',
+    title_en:'', title_fr:'',
+    body_ko:'3기 수업이 마무리됐어요. 함께해 주신 모든 분들께 진심으로 감사드립니다.',
+    body_en:'', body_fr:'',
+  },
+]
+
+function NoticeCard({ n }: { n: Notice }) {
+  const [open, setOpen] = useState(false)
+  const tag = TYPE_TAG[n.type] ?? TYPE_TAG.notice
+  const preview = strip(n.body_ko || '').slice(0, 120)
+  const hasBody = !!(n.body_ko || n.body_en)
+
+  return (
+    <div className={`feed-card${n.is_pinned ? ' feed-card-pinned' : ''}`} onClick={() => hasBody && setOpen(o => !o)}>
+      {n.is_pinned && <div className="feed-pin-bar">📌 고정된 공지</div>}
+      <div className="feed-card-inner">
+        <div className="feed-meta">
+          <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
+          <span className="feed-author">HAKKYO</span>
+          <span className={`feed-tag ${tag.cls}`}>{tag.label}</span>
+          <span className="feed-time">{fmtDate(n.date)}</span>
+        </div>
+        <div className="feed-title">{n.title_ko || n.title_en}</div>
+        {!open && preview && <div className="feed-body" style={{ marginBottom: 14 }}><p>{preview}{preview.length >= 120 ? '…' : ''}</p></div>}
+        {open && n.body_ko && (
+          <div className="feed-body" dangerouslySetInnerHTML={{ __html: n.body_ko }} />
+        )}
+        <div className="feed-footer">
+          <button className="feed-action">👍 좋아요</button>
+          {hasBody && (
+            <button className="feed-action" onClick={e => { e.stopPropagation(); setOpen(o => !o) }}>
+              {open ? '접기' : '더 보기'}
+            </button>
+          )}
+          <button className="feed-action subscribed" onClick={e => { e.stopPropagation(); window.location.href='/apply/news' }}>
+            🔔 소식 받기
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function NewHome() {
+  const [notices, setNotices] = useState<Notice[]>(FALLBACK)
+
+  useEffect(() => {
+    getNotices()
+      .then(data => { if (data.length) setNotices(data) })
+      .catch(() => {})
+  }, [])
+
+  const pinned = notices.find(n => n.is_pinned)
+  const rest = notices.filter(n => !n.is_pinned)
+
+  const upcomingEvents = activities
     .map(a => ({ ...a, dday: getDday(a.dateIso) }))
     .filter(a => a.dday >= 0)
     .sort((a, b) => a.dday - b.dday)
 
-  const next = upcoming[0]
-  if (!next) return null
-
-  const ddayLabel = next.dday === 0 ? '오늘' : next.dday === 1 ? '내일' : `D-${next.dday}`
-
   return (
-    <a href={`/activities/${next.slug}`} className="hero-next-block">
-      <div className="hero-next-dday">{ddayLabel}</div>
-      <div className="hero-next-body">
-        <strong>{next.ko}</strong>
-        <span>{next.date} ({next.day}) · {next.time} · w/ {next.host}</span>
+    <div className="ch-feed">
+      <div className="ch-header">
+        <span className="ch-header-icon">🏠</span>
+        <h1 className="ch-header-title">홈</h1>
+        <span className="ch-header-desc">Montréal Learning Community · 2026</span>
       </div>
-      <span className="hero-next-arrow">→</span>
-    </a>
-  )
-}
 
-// ─── Notice feed cards ────────────────────────────────────────────────────────
-const FALLBACK_FEED: Notice[] = [
-  {
-    id: 'f1', date: '2026-08-05', type: 'notice', is_pinned: true,
-    title_ko: '4기 언어 프로그램은 10월에 시작합니다',
-    title_en: '', title_fr: '',
-    body_ko: 'HAKKYO 4기 언어 프로그램(한국어·영어·불어)은 2026년 10월부터 시작할 예정이에요.',
-    body_en: '', body_fr: '',
-  },
-  {
-    id: 'f2', date: '2026-08-01', type: 'event',
-    title_ko: '9월, Mini HAKKYO 시리즈를 시작합니다',
-    title_en: '', title_fr: '',
-    body_ko: '북클럽, 러닝클럽, 보드게임클럽 — 9월 매주 수요일 저녁에 만나요.',
-    body_en: '', body_fr: '',
-  },
-  {
-    id: 'f3', date: '2026-07-26', type: 'notice',
-    title_ko: 'HAKKYO 3기를 함께해 주셔서 감사합니다',
-    title_en: '', title_fr: '',
-    body_ko: '3기 수업이 마무리됐어요. 함께해 주신 모든 분들께 진심으로 감사드립니다.',
-    body_en: '', body_fr: '',
-  },
-]
+      <div className="ch-scroll">
+        <div className="ch-inner">
 
-const TYPE_COLOR: Record<string, string> = {
-  notice: '#f0eee8',
-  event: '#fff8d6',
-  hiring: '#e8f4e8',
-}
-const TYPE_LABEL: Record<string, string> = {
-  notice: 'HAKKYO',
-  event: 'EVENT',
-  hiring: 'COMMUNITY',
-}
+          {/* Compose */}
+          <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
+            <div className="ch-compose-avatar">😺</div>
+            <span className="ch-compose-ph">HAKKYO 커뮤니티에 참여하고 싶으신가요?</span>
+            <button className="ch-compose-btn">커뮤니티 신청</button>
+          </div>
 
-function formatDate(d: string) {
-  const dt = new Date(d)
-  if (isNaN(dt.getTime())) return d
-  return `${dt.getMonth() + 1}월 ${dt.getDate()}일`
-}
+          {/* Pinned notice */}
+          {pinned && <NoticeCard n={pinned} />}
 
-function strip(html: string) {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-}
+          {/* Next Mini HAKKYO events */}
+          {upcomingEvents.length > 0 && (
+            <>
+              <div className="feed-divider">MINI HAKKYO · 다음 일정</div>
+              {upcomingEvents.map(a => {
+                const ddLabel = a.dday === 0 ? '오늘' : a.dday === 1 ? '내일' : `D-${a.dday}`
+                return (
+                  <a key={a.code} href={`/activities/${a.slug}`} className="feed-event-card">
+                    <div className="feed-dday">
+                      {ddLabel}
+                      <div className="feed-dday-sub">MINI</div>
+                    </div>
+                    <div className="feed-event-body">
+                      <div className="feed-event-title">{a.ko} · {a.en}</div>
+                      <div className="feed-event-meta">
+                        {(a as any).date} ({(a as any).day}) · {(a as any).time} · w/ {(a as any).host} · {(a as any).entry}
+                      </div>
+                    </div>
+                    <div className="feed-event-arrow">→</div>
+                  </a>
+                )
+              })}
+            </>
+          )}
 
-function NoticeFeed() {
-  const [notices, setNotices] = useState<Notice[]>(FALLBACK_FEED)
-  useEffect(() => {
-    getNotices()
-      .then(data => { if (data.length) setNotices(data.slice(0, 3)) })
-      .catch(() => {})
-  }, [])
+          {/* Programs */}
+          <div className="feed-divider">언어 프로그램 · SESSION 04</div>
+          <div className="feed-programs-grid">
+            {programs.slice(0, 4).map(p => (
+              <a key={p.en} href={p.href} className="feed-prog-card">
+                <div className="feed-prog-mark">{p.mark}</div>
+                <div className="feed-prog-lang">{p.lang}</div>
+                <div className="feed-prog-level">{p.level}</div>
+                <div className="feed-prog-desc">{p.scene}</div>
+              </a>
+            ))}
+          </div>
 
-  return (
-    <section className="home-feed section-pad">
-      <div className="home-feed-head">
-        <h2>최신 소식</h2>
-        <a href="/board" className="home-feed-more">전체 보기 →</a>
-      </div>
-      <div className="home-feed-grid">
-        {notices.slice(0, 3).map(n => {
-          const preview = strip(n.body_ko || n.body_en || '').slice(0, 90)
-          return (
-            <a href="/board" key={n.id} className="home-feed-card">
-              <div className="home-feed-card-top">
-                <span className="home-feed-tag" style={{ background: TYPE_COLOR[n.type] ?? '#f0eee8' }}>
-                  {TYPE_LABEL[n.type] ?? n.type}
-                </span>
-                {n.is_pinned && <span className="home-feed-pin">📌</span>}
-                <time className="home-feed-date">{formatDate(n.date)}</time>
+          {/* 4기 announcement card */}
+          <div className="feed-card">
+            <div className="feed-card-inner">
+              <div className="feed-meta">
+                <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
+                <span className="feed-author">HAKKYO</span>
+                <span className="feed-tag feed-tag-program">PROGRAM</span>
+                <span className="feed-time">2026 FALL</span>
               </div>
-              <strong className="home-feed-title">{n.title_ko || n.title_en}</strong>
-              {preview && <p className="home-feed-preview">{preview}…</p>}
-            </a>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-// ─── Newsletter ───────────────────────────────────────────────────────────────
-function NewsletterForm() {
-  const [email, setEmail] = useState('')
-  const [done, setDone] = useState(false)
-  const [error, setError] = useState(false)
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(false)
-    try {
-      await submitApplication({ kind: 'newsletter', selection: 'SESSION 04 NEWS', email })
-      trackEvent({ eventName: 'newsletter_submitted', targetType: 'form', targetLabel: 'home' })
-      setDone(true)
-    } catch {
-      setError(true)
-    }
-  }
-
-  return (
-    <section id="notify" className="newsletter section-pad">
-      <div>
-        <h2>4기 소식을<br />가장 먼저 받아보세요.</h2>
-        <p>모집 일정이 정해지면 이메일로 먼저 알려드려요.</p>
-      </div>
-      {done ? (
-        <strong className="newsletter-success">신청됐어요. 곧 이메일로 만나요.</strong>
-      ) : (
-        <form onSubmit={submit}>
-          <label>
-            <span>EMAIL</span>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
-          </label>
-          <button className="cta">소식 신청하기 <Arrow /></button>
-          {error && <p>잠시 후 다시 시도해 주세요.</p>}
-        </form>
-      )}
-    </section>
-  )
-}
-
-// ─── Main ──────────────────────────────────────────────────────────────────────
-export default function NewHome() {
-  return (
-    <>
-      {/* ── Hero ── */}
-      <section className="hero hero-calm section-pad">
-        <div className="flower-confetti" aria-hidden="true">
-          {Array.from({ length: 9 }).map((_, i) => <i key={i} />)}
-        </div>
-        <div className="hero-stage">
-          <div className="hero-copy">
-            <p className="hero-where">Montréal Learning Community · 2026</p>
-
-            {/* 다음 일정 인라인 */}
-            <HeroNextEvent />
-
-            {/* 진입 링크 */}
-            <div className="hero-entry-links">
-              <a href="/programs">언어 프로그램 →</a>
-              <a href="/activities">Mini HAKKYO →</a>
-              <a href="/apply/community">커뮤니티 신청 →</a>
+              <div className="feed-title">4기 모집은 10월 — 지금 소식 신청하면 가장 먼저 알려드려요</div>
+              <div className="feed-body"><p>수강료와 세부 일정이 확정되는 즉시 소식 신청자에게 이메일로 먼저 안내드려요.</p></div>
+              <div className="feed-footer">
+                <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}>
+                  🔔 소식 신청하기
+                </button>
+                <button className="feed-action" onClick={() => window.location.href='/programs'}>
+                  📚 프로그램 보기
+                </button>
+              </div>
             </div>
           </div>
-          <div className="mimi mimi-natural" aria-label="HAKKYO 마스코트 미니">
-            <img className="mimi-character" src="/mascot/mimi-poster-v3.png" alt="" />
-            <span className="cat-name">HAKKYO CAT · MINI</span>
-          </div>
+
+          {/* Rest of notices */}
+          {rest.length > 0 && <div className="feed-divider">최신 소식</div>}
+          {rest.map(n => <NoticeCard key={n.id} n={n} />)}
+
         </div>
-      </section>
-
-      {/* ── 공지 배너 ── */}
-      <LatestNoticeBanner />
-
-      {/* ── 최신 소식 피드 ── */}
-      <NoticeFeed />
-
-      {/* ── 프로그램 진입 ── */}
-      <section className="home-programs-slim section-pad">
-        <h2 className="home-slim-title">언어 프로그램</h2>
-        <div className="home-slim-list">
-          {programs.slice(0, 3).map(p => (
-            <a href={p.href} key={p.en} className="home-slim-row">
-              <b>{p.mark}</b>
-              <strong>{p.lang}</strong>
-              <span>{p.level}</span>
-              <em>→</em>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 뉴스레터 ── */}
-      <NewsletterForm />
-    </>
+      </div>
+    </div>
   )
 }
