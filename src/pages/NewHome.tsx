@@ -115,6 +115,83 @@ function NoticeCard({ n }: { n: Notice }) {
   )
 }
 
+// ── Calendar ───────────────────────────────────────────────────────────────
+const WEEKDAYS_KO = ['일','월','화','수','목','금','토']
+const WEEKDAYS_EN = ['Su','Mo','Tu','We','Th','Fr','Sa']
+const WEEKDAYS_FR = ['Di','Lu','Ma','Me','Je','Ve','Sa']
+
+interface CalEvent { date: string; label: string; href: string; color: string }
+
+function HakkyoCalendar({ events, lang: l }: { events: CalEvent[]; lang: string }) {
+  const today = new Date()
+  const [viewYear, setViewYear] = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth()) // 0-indexed
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({length: daysInMonth}, (_, i) => i + 1)]
+
+  const eventsByDay: Record<number, CalEvent[]> = {}
+  events.forEach(e => {
+    const d = new Date(e.date)
+    if (d.getFullYear() === viewYear && d.getMonth() === viewMonth) {
+      const day = d.getDate();
+      (eventsByDay[day] ??= []).push(e)
+    }
+  })
+
+  const MONTH_NAMES_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
+  const MONTH_NAMES_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const MONTH_NAMES_FR = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Août','Sep','Oct','Nov','Déc']
+  const monthName = l === 'en' ? MONTH_NAMES_EN[viewMonth] : l === 'fr' ? MONTH_NAMES_FR[viewMonth] : MONTH_NAMES_KO[viewMonth]
+  const weekdays = l === 'en' ? WEEKDAYS_EN : l === 'fr' ? WEEKDAYS_FR : WEEKDAYS_KO
+
+  function prev() {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
+    else setViewMonth(m => m - 1)
+  }
+  function next() {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
+    else setViewMonth(m => m + 1)
+  }
+
+  return (
+    <div className="hk-calendar">
+      <div className="hk-cal-header">
+        <button className="hk-cal-nav" onClick={prev}>‹</button>
+        <span className="hk-cal-month">{viewYear}년 {monthName}</span>
+        <button className="hk-cal-nav" onClick={next}>›</button>
+      </div>
+      <div className="hk-cal-grid">
+        {weekdays.map(d => <div key={d} className="hk-cal-weekday">{d}</div>)}
+        {cells.map((day, i) => {
+          if (!day) return <div key={`e${i}`} className="hk-cal-cell empty" />
+          const evs = eventsByDay[day] ?? []
+          const isToday = day === today.getDate() && viewYear === today.getFullYear() && viewMonth === today.getMonth()
+          return (
+            <div key={day} className={`hk-cal-cell${isToday ? ' today' : ''}${evs.length ? ' has-event' : ''}`}>
+              <span className="hk-cal-day">{day}</span>
+              {evs.length > 0 && (
+                <div className="hk-cal-dots">
+                  {evs.slice(0, 3).map((e, j) => (
+                    <a key={j} href={e.href} title={e.label}
+                      className="hk-cal-dot" style={{ background: e.color }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {/* Legend */}
+      <div className="hk-cal-legend">
+        <span className="hk-cal-legend-item"><span className="hk-cal-dot" style={{ background:'#f5c542' }} />Mini HAKKYO</span>
+        <span className="hk-cal-legend-item"><span className="hk-cal-dot" style={{ background:'#5b8af5' }} />프로그램 시작</span>
+      </div>
+    </div>
+  )
+}
+
 export default function NewHome() {
   const [notices, setNotices] = useState<Notice[]>(FALLBACK)
   const { lang } = useLang()
@@ -133,6 +210,18 @@ export default function NewHome() {
     .map(a => ({ ...a, dday: getDday(a.dateIso) }))
     .filter(a => a.dday >= 0)
     .sort((a, b) => a.dday - b.dday)
+
+  const calEvents: CalEvent[] = [
+    // Mini HAKKYO activities
+    ...activities.map(a => ({
+      date: a.dateIso,
+      label: a.ko + ' · ' + a.host,
+      href: `/activities/${a.slug}`,
+      color: '#f5c542',
+    })),
+    // Program start (October 2026)
+    { date: '2026-10-01', label: '4기 프로그램 시작', href: '/programs', color: '#5b8af5' },
+  ]
 
   return (
     <div className="ch-feed">
@@ -180,6 +269,10 @@ export default function NewHome() {
               })}
             </>
           )}
+
+          {/* Calendar */}
+          <div className="feed-divider">📅 {lang === 'en' ? 'Schedule' : lang === 'fr' ? 'Calendrier' : '일정 캘린더'}</div>
+          <HakkyoCalendar events={calEvents} lang={lang} />
 
           <div className="feed-divider">{t.home.programSection}</div>
           <div className="feed-programs-grid">

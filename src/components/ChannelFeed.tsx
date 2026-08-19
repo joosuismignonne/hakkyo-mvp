@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
@@ -12,6 +12,7 @@ import {
   getChannelPosts, createPost, deletePost, togglePin, isAdminEmail,
   type ChannelPost,
 } from '../lib/posts'
+import { supabase } from '../lib/supabase'
 
 // Channels where only admins can write (non-admins see a locked state)
 export const ADMIN_ONLY_CHANNELS = new Set(['board', 'exchange'])
@@ -162,7 +163,12 @@ function PostCard({
 }
 
 // ── Rich compose toolbar ───────────────────────────────────────────────────
-function ComposeToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+function ComposeToolbar({ editor, onFileUpload, uploading }: {
+  editor: ReturnType<typeof useEditor>
+  onFileUpload: (file: File) => Promise<void>
+  uploading: boolean
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
   if (!editor) return null
   const btn = (label: string, title: string, active: boolean, onClick: () => void) => (
     <button type="button" title={title}
@@ -176,6 +182,17 @@ function ComposeToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       {btn('•', 'Bullet list', editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run())}
       {btn('"', 'Blockquote', editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run())}
       <span className="compose-toolbar-sep" />
+      <button type="button" title="파일 업로드 (이미지·영상)"
+        className={`compose-toolbar-btn${uploading ? ' active' : ''}`}
+        disabled={uploading}
+        onClick={() => fileInputRef.current?.click()}>
+        {uploading ? '⏳' : '📎'}
+      </button>
+      <input ref={fileInputRef} type="file" accept="image/*,video/*" style={{ display: 'none' }}
+        onChange={async e => {
+          const file = e.target.files?.[0]
+          if (file) { await onFileUpload(file); e.target.value = '' }
+        }} />
       {btn('🖼', 'Image URL', false, () => {
         const url = window.prompt('이미지 URL을 입력하세요')
         if (url?.trim()) editor.chain().focus().setImage({ src: url.trim() }).run()
@@ -210,6 +227,7 @@ function AdminCompose({
   })
   const [pinned, setPinned] = useState(false)
   const [sending, setSending] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
@@ -249,6 +267,43 @@ function AdminCompose({
   })
 
   const activeEditor = activeLang === 'ko' ? editorKo : activeLang === 'en' ? editorEn : editorFr
+
+  const handleFileUpload = useCallback(async (file: File) => {
+    const editor = activeLang === 'ko' ? editorKo : activeLang === 'en' ? editorEn : editorFr
+    if (!editor) return
+    if (!supabase) {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const src = ev.target?.result as string
+        if (file.type.startsWith('video/')) {
+          editor.chain().focus().insertContent(`<p><video src="${src}" controls style="max-width:100%"></video></p>`).run()
+        } else {
+          editor.chain().focus().setImage({ src }).run()
+        }
+      }
+      reader.readAsDataURL(file)
+      return
+    }
+    setUploading(true)
+    setError('')
+    try {
+      const ext = file.name.split('.').pop() || 'bin'
+      const path = `posts/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+      const { error: upErr } = await supabase.storage.from('media').upload(path, file, { upsert: false })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('media').getPublicUrl(path)
+      const url = data.publicUrl
+      if (file.type.startsWith('video/')) {
+        editor.chain().focus().insertContent(`<p><video src="${url}" controls style="max-width:100%"></video></p>`).run()
+      } else {
+        editor.chain().focus().setImage({ src: url }).run()
+      }
+    } catch (e: unknown) {
+      setError('파일 업로드 실패: ' + (e instanceof Error ? e.message : '알 수 없는 오류'))
+    } finally {
+      setUploading(false)
+    }
+  }, [activeLang, editorKo, editorEn, editorFr])
 
   function getHtml(editor: ReturnType<typeof useEditor>) {
     if (!editor) return ''
@@ -343,7 +398,7 @@ function AdminCompose({
               </button>
             ))}
           </div>
-          <ComposeToolbar editor={activeEditor} />
+          <ComposeToolbar editor={activeEditor} onFileUpload={handleFileUpload} uploading={uploading} />
 
           {/* Editors (hidden when not active lang) */}
           <div style={{ display: activeLang === 'ko' ? 'block' : 'none' }}>
@@ -385,7 +440,7 @@ function AdminCompose({
       {error && <div className="compose-error">{error}</div>}
       {expanded && (
         <div className="compose-hint">
-          🖼 이미지 URL · ▶ YouTube URL · 다른 언어 탭으로 EN/FR 버전 추가 가능 · 📌 공지 고정
+          📎 파일 첨부 (이미지·영상) · 🖼 이미지 URL · ▶ YouTube URL · EN/FR 버전 추가 가능 · 📌 공지 고정
         </div>
       )}
     </div>
@@ -483,7 +538,8 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
               channel={channel}
             />
           ))}
-          {children}
+          {/* children (empty state) only shown when no DB posts exist */}
+          {!loading && sorted.length === 0 && children}
         </div>
       </div>
 

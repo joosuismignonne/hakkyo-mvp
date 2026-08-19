@@ -635,6 +635,56 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   content: ''; flex: 1; height: 1px; background: #ebebeb;
 }
 
+/* ── Calendar ─────────────────────────────────────────────────────────────── */
+.hk-calendar {
+  background: #fff; border: 1.5px solid #ebebE8; border-radius: 16px;
+  padding: 16px; overflow: hidden;
+}
+.hk-cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.hk-cal-month { font-size: 14px; font-weight: 800; color: #111; letter-spacing: -.3px; }
+.hk-cal-nav {
+  background: none; border: 1px solid #e8e8e4; border-radius: 8px;
+  width: 28px; height: 28px; font-size: 16px; cursor: pointer; color: #555;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, border-color .15s;
+}
+.hk-cal-nav:hover { background: #f5f5f1; border-color: #ccc; }
+.hk-cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+}
+.hk-cal-weekday {
+  text-align: center; font-size: 10px; font-weight: 700; color: #bbb;
+  letter-spacing: .5px; padding: 4px 0; text-transform: uppercase;
+}
+.hk-cal-cell {
+  min-height: 44px; border-radius: 8px; padding: 4px 2px 2px;
+  display: flex; flex-direction: column; align-items: center;
+  transition: background .1s;
+}
+.hk-cal-cell:not(.empty):hover { background: #f7f7f4; }
+.hk-cal-cell.has-event { cursor: pointer; }
+.hk-cal-cell.today .hk-cal-day {
+  background: #111; color: #fff; border-radius: 50%;
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+}
+.hk-cal-day { font-size: 12px; color: #333; font-weight: 500; line-height: 1; padding: 2px 0; }
+.hk-cal-cell.empty .hk-cal-day { color: transparent; }
+.hk-cal-dots { display: flex; gap: 2px; justify-content: center; margin-top: 2px; flex-wrap: wrap; }
+.hk-cal-dot {
+  width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+}
+.hk-cal-legend {
+  display: flex; gap: 14px; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid #f0f0ea; flex-wrap: wrap;
+}
+.hk-cal-legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: #888;
+}
+
 /* ── Activity apply button ────────────────────────────────────────────────── */
 .activity-apply-btn {
   display: inline-flex; align-items: center; gap: 6px;
