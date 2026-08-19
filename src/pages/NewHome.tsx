@@ -89,7 +89,6 @@ export default function NewHome() {
         <div className="hero-stage">
           <div className="hero-copy">
             <p className="hero-where">Montréal Learning Community</p>
-            <h1>말이 잘 안 돼도,<br /><em>여기선 괜찮아요.</em></h1>
             <div className="hero-cta-group">
               <a className="hero-cta-card" href="/programs">
                 <span className="hero-cta-label">언어 프로그램</span>
