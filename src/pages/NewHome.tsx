@@ -315,10 +315,14 @@ export default function NewHome() {
             <button className="ch-compose-btn">{t.home.applyBtn}</button>
           </div>
 
-          {/* Calendar — top of feed */}
-          <HakkyoCalendar events={calEvents} lang={lang} />
-
-          {pinned && <NoticeCard n={pinned} />}
+          {/* Calendar + notices — side-by-side */}
+          <div className="home-split-row">
+            <HakkyoCalendar events={calEvents} lang={lang} />
+            <div className="home-split-notices">
+              {pinned && <NoticeCard n={pinned} />}
+              {rest.slice(0, 2).map(n => <NoticeCard key={n.id} n={n} />)}
+            </div>
+          </div>
 
           {upcomingEvents.length > 0 && (
             <>
@@ -413,8 +417,8 @@ export default function NewHome() {
             </div>
           </a>
 
-          {rest.length > 0 && <div className="feed-divider">{t.home.noticeSection}</div>}
-          {rest.map(n => <NoticeCard key={n.id} n={n} />)}
+          {rest.length > 2 && <div className="feed-divider">{t.home.noticeSection}</div>}
+          {rest.slice(2).map(n => <NoticeCard key={n.id} n={n} />)}
 
         </div>
       </div>

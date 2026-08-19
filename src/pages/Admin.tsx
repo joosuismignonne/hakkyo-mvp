@@ -4233,6 +4233,137 @@ const DEFAULT_CHANNELS_CONFIG = [
   { icon: '📅', name: '이벤트·모임', href: '/board' },
 ]
 
+const BLANK_NOTICE = (): Partial<Notice> => ({
+  type: 'notice', is_pinned: false, date: new Date().toISOString().slice(0,10),
+  title_ko:'', title_en:'', title_fr:'', body_ko:'', body_en:'', body_fr:'',
+})
+
+function HomeNoticesAdmin() {
+  const [notices, setNotices] = useState<Notice[]>([])
+  const [editing, setEditing] = useState<Partial<Notice> | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+
+  useEffect(() => { getNotices().then(setNotices).catch(() => {}) }, [])
+
+  async function handleSave() {
+    if (!editing) return
+    setSaving(true); setErr('')
+    try {
+      await saveNotice({
+        id: editing.id,
+        type: editing.type || 'notice',
+        is_pinned: !!editing.is_pinned,
+        date: editing.date || new Date().toISOString().slice(0,10),
+        title_ko: editing.title_ko || '',
+        title_en: editing.title_en || '',
+        title_fr: editing.title_fr || '',
+        body_ko: editing.body_ko || '',
+        body_en: editing.body_en || '',
+        body_fr: editing.body_fr || '',
+      })
+      setEditing(null)
+      getNotices().then(setNotices).catch(() => {})
+    } catch(e: any) { setErr(e.message || '저장 실패') }
+    setSaving(false)
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('삭제할까요?')) return
+    await deleteNotice(id)
+    setNotices(prev => prev.filter(n => n.id !== id))
+  }
+
+  function field(label: string, key: keyof Notice, multiline = false) {
+    const val = (editing as any)?.[key] ?? ''
+    return (
+      <div>
+        <label className="label">{label}</label>
+        {multiline
+          ? <textarea className="input w-full" rows={3} value={val}
+              onChange={e => setEditing(prev => ({ ...prev, [key]: e.target.value }))} />
+          : <input className="input w-full" value={val}
+              onChange={e => setEditing(prev => ({ ...prev, [key]: e.target.value }))} />
+        }
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-gray-700">홈 공지 카드</span>
+        <button className="btn-yellow text-xs py-1 px-3" onClick={() => setEditing(BLANK_NOTICE())}>+ 공지 추가</button>
+      </div>
+
+      {editing && (
+        <div className="border border-yellow-300 rounded-xl p-4 mb-4 space-y-3 bg-yellow-50">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">타입</label>
+              <select className="input w-full" value={editing.type || 'notice'}
+                onChange={e => setEditing(prev => ({ ...prev, type: e.target.value as Notice['type'] }))}>
+                <option value="notice">공지 (notice)</option>
+                <option value="event">이벤트 (event)</option>
+                <option value="hiring">커뮤니티 (hiring)</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">날짜</label>
+              <input type="date" className="input w-full" value={editing.date || ''}
+                onChange={e => setEditing(prev => ({ ...prev, date: e.target.value }))} />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={!!editing.is_pinned}
+              onChange={e => setEditing(prev => ({ ...prev, is_pinned: e.target.checked }))} />
+            📌 상단 고정
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            {field('제목 (한국어)', 'title_ko')}
+            {field('제목 (English)', 'title_en')}
+            {field('Titre (français)', 'title_fr')}
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {field('본문 (한국어)', 'body_ko', true)}
+            {field('Body (English)', 'body_en', true)}
+            {field('Corps (français)', 'body_fr', true)}
+          </div>
+          {err && <p className="text-red-500 text-xs">{err}</p>}
+          <div className="flex gap-2">
+            <button className="btn-yellow text-sm" onClick={handleSave} disabled={saving}>
+              {saving ? '저장 중…' : '저장'}
+            </button>
+            <button className="text-sm text-gray-400 hover:text-gray-600" onClick={() => setEditing(null)}>취소</button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {notices.length === 0 && <p className="text-xs text-gray-400">공지가 없어요. 위에서 추가해 보세요.</p>}
+        {notices.map(n => (
+          <div key={n.id} className="border border-gray-100 rounded-lg px-3 py-2 flex items-start gap-2 bg-white">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {n.is_pinned && <span className="text-xs">📌</span>}
+                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${n.type === 'event' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{n.type}</span>
+                <span className="text-xs text-gray-400">{n.date}</span>
+              </div>
+              <p className="text-sm font-medium mt-0.5 truncate">{n.title_ko || n.title_en || '(제목 없음)'}</p>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <button className="text-xs text-blue-500 hover:text-blue-700"
+                onClick={() => setEditing({ ...n })}>편집</button>
+              <button className="text-xs text-red-400 hover:text-red-600"
+                onClick={() => handleDelete(n.id)}>삭제</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ThemeChannelAdmin() {
   const [colors, setColors] = useState({ color_sidebar: '#111116', color_accent: '#f5c542', color_main_bg: '#fafaf7' })
   const [channels, setChannels] = useState(DEFAULT_CHANNELS_CONFIG)
@@ -4332,6 +4463,10 @@ function ThemeChannelAdmin() {
         </div>
         <button type="button" onClick={() => setChannels(prev => [...prev, { icon: '💬', name: '새 채널', href: '/board' }])}
           className="text-xs text-gray-400 hover:text-gray-700">+ 채널 추가</button>
+      </FormCard>
+
+      <FormCard title="홈 공지 카드">
+        <HomeNoticesAdmin />
       </FormCard>
 
       <button onClick={save} disabled={saving} className="btn-yellow">
