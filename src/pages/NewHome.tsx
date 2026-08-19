@@ -51,12 +51,13 @@ const FALLBACK: Notice[] = [
 
 function NoticeCard({ n }: { n: Notice }) {
   const [open, setOpen] = useState(false)
+  const [liked, setLiked] = useState(false)
   const tag = TYPE_TAG[n.type] ?? TYPE_TAG.notice
   const preview = strip(n.body_ko || '').slice(0, 120)
   const hasBody = !!(n.body_ko || n.body_en)
 
   return (
-    <div className={`feed-card${n.is_pinned ? ' feed-card-pinned' : ''}`} onClick={() => hasBody && setOpen(o => !o)}>
+    <div className={`feed-card${n.is_pinned ? ' feed-card-pinned' : ''}`}>
       {n.is_pinned && <div className="feed-pin-bar">📌 고정된 공지</div>}
       <div className="feed-card-inner">
         <div className="feed-meta">
@@ -65,19 +66,23 @@ function NoticeCard({ n }: { n: Notice }) {
           <span className={`feed-tag ${tag.cls}`}>{tag.label}</span>
           <span className="feed-time">{fmtDate(n.date)}</span>
         </div>
-        <div className="feed-title">{n.title_ko || n.title_en}</div>
-        {!open && preview && <div className="feed-body" style={{ marginBottom: 14 }}><p>{preview}{preview.length >= 120 ? '…' : ''}</p></div>}
+        <div className="feed-title" onClick={() => hasBody && setOpen(o => !o)} style={{ cursor: hasBody ? 'pointer' : 'default' }}>
+          {n.title_ko || n.title_en}
+        </div>
+        {!open && preview && <div className="feed-body"><p>{preview}{preview.length >= 120 ? '…' : ''}</p></div>}
         {open && n.body_ko && (
           <div className="feed-body" dangerouslySetInnerHTML={{ __html: n.body_ko }} />
         )}
         <div className="feed-footer">
-          <button className="feed-action">👍 좋아요</button>
+          <button className={`feed-action${liked ? ' liked' : ''}`} onClick={() => setLiked(l => !l)}>
+            {liked ? '❤️ 좋아요' : '🤍 좋아요'}
+          </button>
           {hasBody && (
-            <button className="feed-action" onClick={e => { e.stopPropagation(); setOpen(o => !o) }}>
-              {open ? '접기' : '더 보기'}
+            <button className="feed-action" onClick={() => setOpen(o => !o)}>
+              💬 {open ? '접기' : '더 보기'}
             </button>
           )}
-          <button className="feed-action subscribed" onClick={e => { e.stopPropagation(); window.location.href='/apply/news' }}>
+          <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}>
             🔔 소식 받기
           </button>
         </div>

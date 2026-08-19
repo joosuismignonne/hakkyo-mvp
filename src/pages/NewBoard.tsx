@@ -51,6 +51,7 @@ function strip(html: string) {
 
 function NoticeCard({ n }: { n: Notice }) {
   const [open, setOpen] = useState(false)
+  const [liked, setLiked] = useState(false)
   const tag = TYPE_TAG[n.type] ?? TYPE_TAG.notice
   const preview = strip(n.body_ko || '').slice(0, 140)
   const hasBody = !!(n.body_ko || n.body_en)
@@ -75,7 +76,9 @@ function NoticeCard({ n }: { n: Notice }) {
           <div className="feed-body" dangerouslySetInnerHTML={{ __html: n.body_ko }} />
         )}
         <div className="feed-footer">
-          <button className="feed-action">👍 좋아요</button>
+          <button className={`feed-action${liked ? ' liked' : ''}`} onClick={() => setLiked(l => !l)}>
+            {liked ? '❤️ 좋아요' : '🤍 좋아요'}
+          </button>
           {hasBody && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
               💬 {open ? '접기' : '더 보기'}
