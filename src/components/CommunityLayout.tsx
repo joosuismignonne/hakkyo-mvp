@@ -353,7 +353,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             {navItems.map(item => (
               <a key={item.href} href={item.href}
                 className={`sidebar-item${isActive(item.href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
-                title={collapsed ? item.name : undefined}>
+                data-tooltip={item.name}>
                 <span className="sidebar-item-icon">{item.icon}</span>
                 {!collapsed && <span>{item.name}</span>}
               </a>
@@ -380,7 +380,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
               return (
                 <div key={ch.id} className={`sidebar-ch-row${collapsed ? ' collapsed' : ''}`}>
                   <a href={href} className={`sidebar-item sidebar-ch-item${isActive(href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
-                    title={collapsed ? (channelMap[ch.name] || ch.name) : undefined}>
+                    data-tooltip={channelMap[ch.name] || ch.name}>
                     <span className="sidebar-item-icon sidebar-ch-hash">{ch.icon || '#'}</span>
                     {!collapsed && <span>{channelMap[ch.name] || ch.name}</span>}
                   </a>
