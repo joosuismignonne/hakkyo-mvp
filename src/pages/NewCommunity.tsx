@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom'
+import { useT } from '../lib/lang'
 
 interface ChannelConfig {
   icon: string
@@ -40,6 +41,8 @@ const CHANNELS: Record<string, ChannelConfig> = {
 export default function NewCommunity() {
   const { channel } = useParams<{ channel?: string }>()
   const cfg = channel ? CHANNELS[channel] : undefined
+  const t = useT()
+  const channelMap = t.channels as Record<string, string>
 
   if (!cfg) {
     return (
@@ -68,11 +71,15 @@ export default function NewCommunity() {
     <div className="ch-feed">
       <div className="ch-header">
         <span className="ch-header-icon">{cfg.icon}</span>
-        <h1 className="ch-header-title">{cfg.title}</h1>
-        <span className="ch-header-desc">{cfg.desc}</span>
-        <button className="ch-header-action" onClick={() => window.location.href='/apply/community'}>
-          ✋ 커뮤니티 신청
-        </button>
+        <div className="ch-header-text">
+          <h1 className="ch-header-title">{channelMap[cfg.title] || cfg.title}</h1>
+          <span className="ch-header-desc">{cfg.desc}</span>
+        </div>
+        <div className="ch-header-right">
+          <button className="ch-header-action" onClick={() => window.location.href='/apply/community'}>
+            {t.footer.apply}
+          </button>
+        </div>
       </div>
       <div className="ch-scroll">
         <div className="ch-inner">
@@ -81,7 +88,7 @@ export default function NewCommunity() {
           <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
             <div className="ch-compose-avatar">😺</div>
             <span className="ch-compose-ph">{cfg.placeholder}</span>
-            <button className="ch-compose-btn">커뮤니티 가입 후 이용</button>
+            <button className="ch-compose-btn">{t.footer.apply}</button>
           </div>
 
           {/* Coming soon card */}

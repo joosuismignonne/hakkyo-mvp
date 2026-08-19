@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
+import { useT } from '../lib/lang'
 
 const FALLBACK: Notice[] = [
   {
@@ -96,6 +97,7 @@ function NoticeCard({ n }: { n: Notice }) {
 export default function NewBoard() {
   const [notices, setNotices] = useState<Notice[]>(FALLBACK)
   const [loading, setLoading] = useState(true)
+  const t = useT()
 
   useEffect(() => {
     getNotices()
@@ -111,11 +113,15 @@ export default function NewBoard() {
     <div className="ch-feed">
       <div className="ch-header">
         <span className="ch-header-icon">📢</span>
-        <h1 className="ch-header-title">공지</h1>
-        <span className="ch-header-desc">HAKKYO 공식 소식</span>
-        <button className="ch-header-action" onClick={() => window.location.href='/apply/news'}>
-          🔔 소식 받기
-        </button>
+        <div className="ch-header-text">
+          <h1 className="ch-header-title">{t.board.title}</h1>
+          <span className="ch-header-desc">{t.board.desc}</span>
+        </div>
+        <div className="ch-header-right">
+          <button className="ch-header-action" onClick={() => window.location.href='/apply/news'}>
+            🔔 {t.footer.subscribe}
+          </button>
+        </div>
       </div>
 
       <div className="ch-scroll">

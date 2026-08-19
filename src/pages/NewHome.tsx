@@ -3,7 +3,6 @@ import { programs, activities } from '../data/hakkyo'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
 import { useLang, useT, pick } from '../lib/lang'
-import { HeaderSearch } from '../components/CommunityLayout'
 
 function getDday(dateIso: string) {
   const today = new Date(); today.setHours(0,0,0,0)
@@ -118,6 +117,7 @@ function NoticeCard({ n }: { n: Notice }) {
 
 export default function NewHome() {
   const [notices, setNotices] = useState<Notice[]>(FALLBACK)
+  const { lang } = useLang()
   const t = useT()
 
   useEffect(() => {
@@ -141,9 +141,6 @@ export default function NewHome() {
         <div className="ch-header-text">
           <h1 className="ch-header-title">{t.home.title}</h1>
           <span className="ch-header-desc">{t.home.desc}</span>
-        </div>
-        <div className="ch-header-right">
-          <HeaderSearch />
         </div>
       </div>
 
@@ -220,26 +217,16 @@ export default function NewHome() {
             </div>
           </div>
 
-          <div className="feed-divider">{t.home.reviewSection}</div>
-          {[
-            { name:'Minji K.', avatar:'🇰🇷', tag:'KOREAN', quote:'처음엔 주문도 못 했는데 이제 카페에서 한국어로 수다 떨어요.', label:'한국어 3기' },
-            { name:'Lucas B.', avatar:'🇨🇦', tag:'FRENCH', quote:'Montréal에 살면서도 프랑스어가 두려웠는데, 여기서 처음으로 틀려도 괜찮다는 걸 느꼈어요.', label:'불어 2기' },
-            { name:'Yuna S.',  avatar:'🇰🇷', tag:'ENGLISH', quote:'영어 말할 때 머릿속에선 있는데 입이 안 열렸는데, 여기서 바뀌었어요.', label:'영어 3기' },
-          ].map((r, i) => (
-            <div key={i} className="feed-card review-card">
-              <div className="feed-card-inner">
-                <div className="feed-meta">
-                  <div className="feed-avatar review-avatar">{r.avatar}</div>
-                  <div className="feed-meta-text">
-                    <span className="feed-author">{r.name}</span>
-                    <span className="feed-time">{r.label}</span>
-                  </div>
-                  <span className="feed-tag">{r.tag}</span>
-                </div>
-                <div className="review-quote">"{r.quote}"</div>
+          {/* Reviews channel teaser */}
+          <a href="/community/reviews" className="feed-event-card" style={{ textDecoration:'none' }}>
+            <div className="feed-dday" style={{ background:'#f5f5f0', fontSize:22 }}>⭐</div>
+            <div className="feed-event-body">
+              <div className="feed-event-title">{t.home.reviewSection}</div>
+              <div className="feed-event-meta">
+                {lang === 'fr' ? 'Avis honnêtes des étudiants HAKKYO →' : lang === 'en' ? 'Honest reviews from HAKKYO students →' : 'HAKKYO 수강생 솔직 후기 보러가기 →'}
               </div>
             </div>
-          ))}
+          </a>
 
           {rest.length > 0 && <div className="feed-divider">{t.home.noticeSection}</div>}
           {rest.map(n => <NoticeCard key={n.id} n={n} />)}

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { activities } from '../data/hakkyo'
 import { supabase } from '../lib/supabase'
 import { trackEvent } from '../lib/analytics'
+import { useT } from '../lib/lang'
 
 function getDday(dateIso: string) {
   const today = new Date(); today.setHours(0,0,0,0)
@@ -210,13 +211,16 @@ export default function NewActivities() {
   if (slug) return <ActivityDetail slug={slug} />
 
   const withDday = activities.map(a => ({ ...a, dday: getDday(a.dateIso) }))
+  const t = useT()
 
   return (
     <div className="ch-feed">
       <div className="ch-header">
         <span className="ch-header-icon">🐱</span>
-        <h1 className="ch-header-title">Mini HAKKYO</h1>
-        <span className="ch-header-desc">매주 수요일 · Language Exchange</span>
+        <div className="ch-header-text">
+          <h1 className="ch-header-title">{t.activities.title}</h1>
+          <span className="ch-header-desc">{t.activities.desc}</span>
+        </div>
       </div>
       <div className="ch-scroll">
         <div className="ch-inner">

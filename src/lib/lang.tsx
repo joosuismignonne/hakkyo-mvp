@@ -34,6 +34,14 @@ export const UI = {
       '주거': '주거',
       '취업·이민': '취업·이민',
       '이벤트·모임': '이벤트·모임',
+      '리뷰': '리뷰',
+    },
+    reviews: {
+      title: '리뷰', desc: '수강생 솔직 후기', tag: 'REVIEW',
+      compose: '후기를 작성하고 싶으신가요?', joinBtn: '커뮤니티 가입 후 이용',
+      comingSoonTitle: '리뷰 채널이 곧 열려요',
+      comingSoonBody: 'HAKKYO 수강생이라면 누구나 솔직한 후기를 올릴 수 있어요. 커뮤니티에 신청하면 채널이 열릴 때 가장 먼저 알려드려요.',
+      joinCta: '✋ 커뮤니티 신청하기', subscribeCta: '🔔 소식 받기',
     },
     searchItems: {
       home: ['홈', 'HAKKYO 메인'],
@@ -75,6 +83,14 @@ export const UI = {
       '주거': 'Housing',
       '취업·이민': 'Jobs & Immigration',
       '이벤트·모임': 'Events',
+      '리뷰': 'Reviews',
+    },
+    reviews: {
+      title: 'Reviews', desc: 'Honest student reviews', tag: 'REVIEW',
+      compose: 'Want to share your experience?', joinBtn: 'Join to post',
+      comingSoonTitle: 'Reviews channel coming soon',
+      comingSoonBody: 'Any HAKKYO student can share an honest review. Apply to the community and we\'ll notify you when this channel opens.',
+      joinCta: '✋ Join Community', subscribeCta: '🔔 Subscribe',
     },
     searchItems: {
       home: ['Home', 'HAKKYO Main'],
@@ -116,6 +132,14 @@ export const UI = {
       '주거': 'Logement',
       '취업·이민': 'Emploi & Immigration',
       '이벤트·모임': 'Événements',
+      '리뷰': 'Avis',
+    },
+    reviews: {
+      title: 'Avis', desc: 'Avis honnêtes des étudiants', tag: 'AVIS',
+      compose: 'Envie de partager votre expérience ?', joinBtn: 'Rejoindre pour écrire',
+      comingSoonTitle: 'Canal d\'avis bientôt disponible',
+      comingSoonBody: 'Tout étudiant HAKKYO peut partager un avis honnête. Rejoignez la communauté pour être notifié à l\'ouverture.',
+      joinCta: '✋ Rejoindre', subscribeCta: '🔔 S\'abonner',
     },
     searchItems: {
       home: ['Accueil', 'Principal HAKKYO'],

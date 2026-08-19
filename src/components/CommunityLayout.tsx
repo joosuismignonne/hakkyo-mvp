@@ -16,10 +16,12 @@ const CHANNEL_HREF: Record<string, string> = {
   '주거':       '/community/housing',
   '취업·이민':  '/community/jobs',
   '이벤트·모임': '/community/events',
+  '리뷰':       '/community/reviews',
 }
 
 const DEFAULT_CHANNELS: Channel[] = [
   { icon: '📢', name: '공지',       href: '/board' },
+  { icon: '⭐', name: '리뷰',       href: '/community/reviews' },
   { icon: '💬', name: '자유게시판', href: '/community/chat' },
   { icon: '🌐', name: '언어교환',   href: '/community/exchange' },
   { icon: '🏠', name: '주거',       href: '/community/housing' },
@@ -260,17 +262,6 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             ))}
           </nav>
 
-          {/* Language switcher */}
-          <div className="sidebar-lang-switcher">
-            {LANG_LABELS.map(l => (
-              <button
-                key={l.code}
-                className={`lang-btn${lang === l.code ? ' active' : ''}`}
-                onClick={() => setLang(l.code)}
-              >{l.label}</button>
-            ))}
-          </div>
-
           {/* Footer */}
           <div className="sidebar-footer">
             <a href="/apply/community" className="sidebar-footer-cta">{t.footer.apply}</a>
@@ -285,7 +276,25 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
           <div className="mobile-topbar">
             <button className="mobile-menu-btn" onClick={() => setOpen(true)}>☰</button>
             <span className="mobile-logo">HAKKYO</span>
-            <button className="mobile-search-btn" onClick={() => setSearchOpen(true)}>🔍</button>
+            <div className="mobile-topbar-right">
+              {LANG_LABELS.map(l => (
+                <button key={l.code} className={`lang-btn-mobile${lang === l.code ? ' active' : ''}`} onClick={() => setLang(l.code)}>{l.label}</button>
+              ))}
+              <button className="mobile-search-btn" onClick={() => setSearchOpen(true)}>🔍</button>
+            </div>
+          </div>
+          {/* Desktop global topbar — shows on ALL pages */}
+          <div className="global-topbar">
+            <div className="global-lang-switcher">
+              {LANG_LABELS.map(l => (
+                <button key={l.code} className={`glang-btn${lang === l.code ? ' active' : ''}`} onClick={() => setLang(l.code)}>{l.label}</button>
+              ))}
+            </div>
+            <button className="global-search-btn" onClick={() => setSearchOpen(true)}>
+              <span>🔍</span>
+              <span className="global-search-label">{t.search.label}</span>
+              <kbd className="global-search-kbd">{t.search.kbd}</kbd>
+            </button>
           </div>
           {children}
         </main>
