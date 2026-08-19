@@ -75,6 +75,7 @@ export default function App() {
           <Route path="/board" element={<PublicLayout><NewBoard /></PublicLayout>} />
           <Route path="/qna" element={<PublicLayout><NewQna /></PublicLayout>} />
           <Route path="/apply/:type/:slug" element={<PublicLayout><NewApply /></PublicLayout>} />
+          <Route path="/apply/:type" element={<PublicLayout><NewApply /></PublicLayout>} />
           <Route path="/apply/news" element={<PublicLayout><NewApply /></PublicLayout>} />
 
           {/* Auth pages (no public layout) */}

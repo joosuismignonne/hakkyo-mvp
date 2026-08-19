@@ -92,9 +92,9 @@ export default function NewHome() {
             <h1>말이 잘 안 돼도,<br /><em>여기선 괜찮아요.</em></h1>
             <p className="hero-desc">몬트리올에서 사람을 만나며 언어를 배우는 곳이에요.<br />언어 실력은 상관없어요.</p>
             <div className="hero-cta-group">
-              <a className="hero-cta-card" href="/apply">
+              <a className="hero-cta-card" href="/programs">
                 <span className="hero-cta-label">언어 프로그램</span>
-                <strong>수업 신청하기</strong>
+                <strong>수업 보러가기</strong>
                 <small>한국어 · 영어 · 불어</small>
               </a>
               <a className="hero-cta-card" href="/activities">
