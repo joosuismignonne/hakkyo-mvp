@@ -4280,9 +4280,18 @@ function CalendarAdmin() {
     setSaved(false)
   }
 
-  function remove(i: number) {
-    setEvents(prev => prev.filter((_, idx) => idx !== i))
+  async function remove(i: number) {
+    const next = events.filter((_, idx) => idx !== i)
+    setEvents(next)
     setSaved(false)
+    if (!supabase) return
+    setSaving(true)
+    await supabase.from('site_content').upsert(
+      { page: 'home', key: 'cal_events', value_ko: JSON.stringify(next), value_en: '', value_fr: '' },
+      { onConflict: 'page,key' }
+    )
+    setSaving(false); setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
   }
 
   function move(i: number, dir: -1 | 1) {

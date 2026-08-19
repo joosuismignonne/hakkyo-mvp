@@ -326,6 +326,10 @@ export default function NewHome() {
               {upcomingEvents.map(a => {
                 const dday = (a as any).dday as number
                 const ddLabel = dday === 0 ? t.home.today : dday === 1 ? t.home.tomorrow : `D-${dday}`
+                const aDate = lang === 'en' ? (a as any).dateEn : lang === 'fr' ? (a as any).dateFr : (a as any).date
+                const aTime = lang === 'en' ? (a as any).timeEn : (a as any).time
+                const aDay = t.home.wednesday
+                const aTitle = lang === 'fr' ? (a as any).fr : lang === 'en' ? (a as any).en : (a as any).ko
                 return (
                   <a key={a.code} href={`/activities/${a.slug}`} className="feed-event-card">
                     <div className="feed-dday">
@@ -333,9 +337,9 @@ export default function NewHome() {
                       <div className="feed-dday-sub">MINI</div>
                     </div>
                     <div className="feed-event-body">
-                      <div className="feed-event-title">{a.ko} · {a.en}</div>
+                      <div className="feed-event-title">{aTitle}</div>
                       <div className="feed-event-meta">
-                        {(a as any).date} ({(a as any).day}) · {(a as any).time} · w/ {(a as any).host} · {(a as any).entry}
+                        {aDate} ({aDay}) · {aTime} · w/ {(a as any).host} · {(a as any).entry}
                       </div>
                     </div>
                     <div className="feed-event-arrow">→</div>
@@ -347,14 +351,33 @@ export default function NewHome() {
 
           <div className="feed-divider">{t.home.programSection}</div>
           <div className="feed-programs-grid">
-            {programs.slice(0, 4).map(p => (
-              <a key={p.en} href={p.href} className="feed-prog-card">
-                <div className="feed-prog-mark">{p.mark}</div>
-                <div className="feed-prog-lang">{p.lang}</div>
-                <div className="feed-prog-level">{p.level}</div>
-                <div className="feed-prog-desc">{p.scene}</div>
-              </a>
-            ))}
+            {programs.slice(0, 4).map(p => {
+              const pName = lang === 'fr' ? (p as any).fr : lang === 'en' ? p.en : p.lang
+              const pLevel = lang === 'en'
+                ? (p as any).level?.replace('입문–초급','Beginner').replace('초급–중급','Intermediate').replace('레벨 상담 후 안내','Level TBD')
+                : lang === 'fr'
+                ? (p as any).level?.replace('입문–초급','Débutant').replace('초급–중급','Intermédiaire').replace('레벨 상담 후 안내','Niveau à confirmer')
+                : (p as any).level
+              const pScene = lang === 'en'
+                ? (p as any).scene?.replace('카페에서 주문하고, 친구와 약속을 잡고, 내 하루를 한국어로 말해봐요.','Order at a café, make plans with friends, and talk about your day in Korean.')
+                  .replace('머릿속에 있던 영어를 꺼내 실제 대화로 연결하는 연습을 해요.','Practice turning your English vocabulary into real, flowing conversations.')
+                  .replace('가게, 직장, 이웃과의 짧은 대화부터 몬트리올 생활 불어를 시작해요.','Start with everyday French for shops, work, and neighbours in Montréal.')
+                  .replace('두 언어를 따로 외우는 대신, 한 주 안에서 배우고 말하고 다시 연결해요.','Instead of studying two languages separately, learn, speak, and connect them all in one week.')
+                : lang === 'fr'
+                ? (p as any).scene?.replace('카페에서 주문하고, 친구와 약속을 잡고, 내 하루를 한국어로 말해봐요.','Commandez un café, planifiez avec des amis et parlez de votre journée en coréen.')
+                  .replace('머릿속에 있던 영어를 꺼내 실제 대화로 연결하는 연습을 해요.','Transformez votre vocabulaire en anglais en vraies conversations fluides.')
+                  .replace('가게, 직장, 이웃과의 짧은 대화부터 몬트리올 생활 불어를 시작해요.','Commencez par le français du quotidien pour les commerces, le travail et les voisins à Montréal.')
+                  .replace('두 언어를 따로 외우는 대신, 한 주 안에서 배우고 말하고 다시 연결해요.','Plutôt que d\'étudier deux langues séparément, apprenez, parlez et connectez-les en une semaine.')
+                : (p as any).scene
+              return (
+                <a key={p.en} href={p.href} className="feed-prog-card">
+                  <div className="feed-prog-mark">{p.mark}</div>
+                  <div className="feed-prog-lang">{pName}</div>
+                  <div className="feed-prog-level">{pLevel}</div>
+                  <div className="feed-prog-desc">{pScene}</div>
+                </a>
+              )
+            })}
           </div>
 
           <div className="feed-card feed-cta-card">
@@ -367,9 +390,7 @@ export default function NewHome() {
                 </div>
                 <span className="feed-tag feed-tag-program">PROGRAM</span>
               </div>
-              <div className="feed-title">
-                {t.home.programSection.includes('SESSION') ? '4기 모집은 10월 — 지금 소식 신청하면 가장 먼저 알려드려요' : 'Session 4 in October — subscribe now to be notified first'}
-              </div>
+              <div className="feed-title">{t.home.ctaTitle}</div>
               <div className="feed-footer">
                 <button className="feed-action feed-action-accent" onClick={() => window.location.href='/apply/news'}>
                   🔔 {t.home.subscribeBtn}
