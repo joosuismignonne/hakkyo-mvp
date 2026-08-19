@@ -224,6 +224,38 @@ const LANG_LABELS: { code: Lang; label: string }[] = [
   { code: 'fr', label: 'FR' },
 ]
 
+// ── Sidebar tooltip (fixed-position, not clipped by overflow) ──────────────
+function SidebarTooltip({ text, anchorRef }: { text: string; anchorRef: HTMLElement | null }) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  useEffect(() => {
+    if (!anchorRef) { setPos(null); return }
+    const rect = anchorRef.getBoundingClientRect()
+    setPos({ top: rect.top + rect.height / 2, left: rect.right + 10 })
+  }, [anchorRef])
+  if (!pos || !text) return null
+  return (
+    <div style={{
+      position: 'fixed', top: pos.top, left: pos.left,
+      transform: 'translateY(-50%)',
+      background: '#1e1e2e', color: '#e8e8f0',
+      fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
+      padding: '6px 12px', borderRadius: 9,
+      border: '1px solid rgba(255,255,255,.1)',
+      boxShadow: '0 4px 16px rgba(0,0,0,.35)',
+      pointerEvents: 'none', zIndex: 99999,
+      animation: 'tooltipIn .15s ease forwards',
+    }}>
+      <span style={{
+        position: 'absolute', right: '100%', top: '50%', transform: 'translateY(-50%)',
+        borderWidth: 5, borderStyle: 'solid',
+        borderColor: 'transparent #1e1e2e transparent transparent',
+        width: 0, height: 0,
+      }} />
+      {text}
+    </div>
+  )
+}
+
 // ── Main layout ────────────────────────────────────────────────────────────
 export default function CommunityLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
@@ -237,6 +269,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   const [createOpen, setCreateOpen] = useState(false)
   const { lang, setLang } = useLang()
   const t = useT()
+  const [tooltip, setTooltip] = useState<{ text: string; el: HTMLElement } | null>(null)
 
   const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email)
 
@@ -304,9 +337,14 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
     await deleteChannel(ch.id)
   }
 
+  const showTip = (e: React.MouseEvent<HTMLElement>, text: string) =>
+    setTooltip({ text, el: e.currentTarget })
+  const hideTip = () => setTooltip(null)
+
   return (
     <>
       <SiteDetails />
+      {tooltip && <SidebarTooltip text={tooltip.text} anchorRef={tooltip.el} />}
       {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} channels={channels} />}
       {createOpen && (
         <CreateChannelModal
@@ -353,7 +391,8 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             {navItems.map(item => (
               <a key={item.href} href={item.href}
                 className={`sidebar-item${isActive(item.href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
-                data-tooltip={item.name}>
+                onMouseEnter={e => showTip(e, item.name)}
+                onMouseLeave={hideTip}>
                 <span className="sidebar-item-icon">{item.icon}</span>
                 {!collapsed && <span>{item.name}</span>}
               </a>
@@ -380,7 +419,8 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
               return (
                 <div key={ch.id} className={`sidebar-ch-row${collapsed ? ' collapsed' : ''}`}>
                   <a href={href} className={`sidebar-item sidebar-ch-item${isActive(href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
-                    data-tooltip={channelMap[ch.name] || ch.name}>
+                    onMouseEnter={e => showTip(e, channelMap[ch.name] || ch.name)}
+                    onMouseLeave={hideTip}>
                     <span className="sidebar-item-icon sidebar-ch-hash">{ch.icon || '#'}</span>
                     {!collapsed && <span>{channelMap[ch.name] || ch.name}</span>}
                   </a>
