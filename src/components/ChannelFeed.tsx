@@ -286,20 +286,31 @@ function AdminCompose({
     }
     setUploading(true)
     setError('')
+    const insertFile = (src: string) => {
+      if (file.type.startsWith('video/')) {
+        editor.chain().focus().insertContent(`<p><video src="${src}" controls style="max-width:100%"></video></p>`).run()
+      } else {
+        editor.chain().focus().setImage({ src }).run()
+      }
+    }
+    const fallbackToDataUrl = () => {
+      const reader = new FileReader()
+      reader.onload = ev => { if (ev.target?.result) insertFile(ev.target.result as string) }
+      reader.readAsDataURL(file)
+    }
     try {
       const ext = file.name.split('.').pop() || 'bin'
       const path = `posts/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
       const { error: upErr } = await supabase.storage.from('media').upload(path, file, { upsert: false })
-      if (upErr) throw upErr
-      const { data } = supabase.storage.from('media').getPublicUrl(path)
-      const url = data.publicUrl
-      if (file.type.startsWith('video/')) {
-        editor.chain().focus().insertContent(`<p><video src="${url}" controls style="max-width:100%"></video></p>`).run()
+      if (upErr) {
+        // Bucket may not exist yet — fall back to data URL so the post still works
+        fallbackToDataUrl()
       } else {
-        editor.chain().focus().setImage({ src: url }).run()
+        const { data } = supabase.storage.from('media').getPublicUrl(path)
+        insertFile(data.publicUrl)
       }
-    } catch (e: unknown) {
-      setError('파일 업로드 실패: ' + (e instanceof Error ? e.message : '알 수 없는 오류'))
+    } catch {
+      fallbackToDataUrl()
     } finally {
       setUploading(false)
     }

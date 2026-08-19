@@ -3,6 +3,7 @@ import { programs, activities } from '../data/hakkyo'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
 import { useLang, useT, pick } from '../lib/lang'
+import { supabase } from '../lib/supabase'
 
 function getDday(dateIso: string) {
   const today = new Date(); today.setHours(0,0,0,0)
@@ -192,10 +193,38 @@ function HakkyoCalendar({ events, lang: l }: { events: CalEvent[]; lang: string 
   )
 }
 
+const DEFAULT_CAL_EVENTS: CalEvent[] = [
+  ...activities.map(a => ({
+    date: a.dateIso,
+    label: (a as any).ko + ' · ' + (a as any).host,
+    href: `/activities/${a.slug}`,
+    color: '#f5c542',
+  })),
+  { date: '2026-10-01', label: '4기 프로그램 시작', href: '/programs', color: '#5b8af5' },
+]
+
+function useCalEvents(): CalEvent[] {
+  const [events, setEvents] = useState<CalEvent[]>(DEFAULT_CAL_EVENTS)
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('value_ko').eq('page', 'home').eq('key', 'cal_events').single()
+      .then(({ data }) => {
+        if (data?.value_ko) {
+          try {
+            const parsed = JSON.parse(data.value_ko) as CalEvent[]
+            if (Array.isArray(parsed) && parsed.length > 0) setEvents(parsed)
+          } catch {}
+        }
+      })
+  }, [])
+  return events
+}
+
 export default function NewHome() {
   const [notices, setNotices] = useState<Notice[]>(FALLBACK)
   const { lang } = useLang()
   const t = useT()
+  const calEvents = useCalEvents()
 
   useEffect(() => {
     getNotices()
@@ -210,18 +239,6 @@ export default function NewHome() {
     .map(a => ({ ...a, dday: getDday(a.dateIso) }))
     .filter(a => a.dday >= 0)
     .sort((a, b) => a.dday - b.dday)
-
-  const calEvents: CalEvent[] = [
-    // Mini HAKKYO activities
-    ...activities.map(a => ({
-      date: a.dateIso,
-      label: a.ko + ' · ' + a.host,
-      href: `/activities/${a.slug}`,
-      color: '#f5c542',
-    })),
-    // Program start (October 2026)
-    { date: '2026-10-01', label: '4기 프로그램 시작', href: '/programs', color: '#5b8af5' },
-  ]
 
   return (
     <div className="ch-feed">
@@ -242,6 +259,10 @@ export default function NewHome() {
             <span className="ch-compose-ph">{t.home.compose}</span>
             <button className="ch-compose-btn">{t.home.applyBtn}</button>
           </div>
+
+          {/* Calendar — top of feed */}
+          <div className="feed-divider">📅 {lang === 'en' ? 'Schedule' : lang === 'fr' ? 'Calendrier' : '일정 캘린더'}</div>
+          <HakkyoCalendar events={calEvents} lang={lang} />
 
           {pinned && <NoticeCard n={pinned} />}
 
@@ -269,10 +290,6 @@ export default function NewHome() {
               })}
             </>
           )}
-
-          {/* Calendar */}
-          <div className="feed-divider">📅 {lang === 'en' ? 'Schedule' : lang === 'fr' ? 'Calendrier' : '일정 캘린더'}</div>
-          <HakkyoCalendar events={calEvents} lang={lang} />
 
           <div className="feed-divider">{t.home.programSection}</div>
           <div className="feed-programs-grid">

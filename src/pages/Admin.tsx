@@ -4233,6 +4233,148 @@ function MiniHakkyoAdmin() {
   )
 }
 
+// ── Calendar Admin ────────────────────────────────────────────────────────────
+interface AdminCalEvent { date: string; label: string; href: string; color: string }
+
+const DEFAULT_ADMIN_CAL: AdminCalEvent[] = [
+  { date: '2026-09-09', label: '북클럽 · Book Club', href: '/activities/book-club', color: '#f5c542' },
+  { date: '2026-09-16', label: '러닝클럽 · Running Club', href: '/activities/running-club', color: '#f5c542' },
+  { date: '2026-09-23', label: '보드게임클럽 · Boardgame Club', href: '/activities/boardgame-club', color: '#f5c542' },
+  { date: '2026-10-01', label: '4기 프로그램 시작', href: '/programs', color: '#5b8af5' },
+]
+
+const CAL_COLOR_OPTIONS = [
+  { value: '#f5c542', label: '🟡 노랑 (Mini HAKKYO)' },
+  { value: '#5b8af5', label: '🔵 파랑 (프로그램)' },
+  { value: '#4caf50', label: '🟢 초록' },
+  { value: '#e57373', label: '🔴 빨강' },
+  { value: '#ab78d8', label: '🟣 보라' },
+]
+
+function CalendarAdmin() {
+  const [events, setEvents] = useState<AdminCalEvent[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) { setEvents(DEFAULT_ADMIN_CAL); return }
+    supabase.from('site_content').select('value_ko').eq('page', 'home').eq('key', 'cal_events').single()
+      .then(({ data }) => {
+        if (data?.value_ko) {
+          try {
+            const parsed = JSON.parse(data.value_ko)
+            if (Array.isArray(parsed) && parsed.length > 0) { setEvents(parsed); return }
+          } catch {}
+        }
+        setEvents(DEFAULT_ADMIN_CAL)
+      })
+  }, [])
+
+  function update(i: number, field: keyof AdminCalEvent, val: string) {
+    setEvents(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: val } : e))
+    setSaved(false)
+  }
+
+  function addEvent() {
+    setEvents(prev => [...prev, { date: '', label: '', href: '', color: '#f5c542' }])
+    setSaved(false)
+  }
+
+  function remove(i: number) {
+    setEvents(prev => prev.filter((_, idx) => idx !== i))
+    setSaved(false)
+  }
+
+  function move(i: number, dir: -1 | 1) {
+    setEvents(prev => {
+      const arr = [...prev]; const j = i + dir
+      if (j < 0 || j >= arr.length) return prev
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]; return arr
+    })
+    setSaved(false)
+  }
+
+  async function save() {
+    if (!supabase) return
+    setSaving(true); setSaved(false)
+    await supabase.from('site_content').upsert(
+      { page: 'home', key: 'cal_events', value_ko: JSON.stringify(events), value_en: '', value_fr: '' },
+      { onConflict: 'page,key' }
+    )
+    setSaving(false); setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h2 className="text-base font-bold">📅 홈 캘린더 이벤트</h2>
+          <span className="text-xs text-gray-400">홈 화면 캘린더에 표시되는 일정</span>
+        </div>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+        >
+          {saving ? '저장 중…' : saved ? '✓ 저장됨' : '저장'}
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {events.map((ev, i) => (
+          <div key={i} className="border border-gray-200 rounded-xl p-3 bg-white space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 font-bold w-5">{i+1}</span>
+              <input
+                type="date"
+                className="border border-gray-200 rounded px-2 py-1 text-sm flex-shrink-0"
+                value={ev.date}
+                onChange={e => update(i, 'date', e.target.value)}
+              />
+              <input
+                className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm"
+                placeholder="이벤트 이름"
+                value={ev.label}
+                onChange={e => update(i, 'label', e.target.value)}
+              />
+              <div className="flex gap-1 flex-shrink-0">
+                <button onClick={() => move(i, -1)} className="text-gray-300 hover:text-gray-700 text-xs px-1">↑</button>
+                <button onClick={() => move(i, 1)} className="text-gray-300 hover:text-gray-700 text-xs px-1">↓</button>
+                <button onClick={() => remove(i)} className="text-red-300 hover:text-red-600 text-xs px-1">✕</button>
+              </div>
+            </div>
+            <div className="flex gap-2 pl-7">
+              <input
+                className="flex-1 border border-gray-200 rounded px-2 py-1 text-xs text-gray-500"
+                placeholder="링크 (예: /activities/book-club)"
+                value={ev.href}
+                onChange={e => update(i, 'href', e.target.value)}
+              />
+              <select
+                className="border border-gray-200 rounded px-2 py-1 text-xs"
+                value={ev.color}
+                onChange={e => update(i, 'color', e.target.value)}
+              >
+                {CAL_COLOR_OPTIONS.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={addEvent}
+        className="w-full py-2 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors"
+      >
+        + 이벤트 추가
+      </button>
+    </div>
+  )
+}
+
 // ─── Root Admin page ───────────────────────────────────────────────────────────
 // ── FAQ Admin ─────────────────────────────────────────────────────────────────
 function FaqAdmin() {
@@ -4345,6 +4487,7 @@ const TABS = [
   { id: 'activities',    label: '🐱 Mini 일정',       Component: ActivitiesAdmin    },
   { id: 'mini-hakkyo',   label: '✏️ Mini 소개글',     Component: MiniHakkyoAdmin    },
   { id: 'sessions',      label: '📚 프로그램',         Component: SessionsAdmin      },
+  { id: 'calendar',      label: '📅 캘린더',           Component: CalendarAdmin      },
   { id: 'faq',           label: '❓ FAQ',             Component: FaqAdmin           },
   { id: 'theme',         label: '🎨 테마 & 채널',      Component: ThemeChannelAdmin  },
   { id: 'analytics',     label: '📊 통계',            Component: AnalyticsAdmin     },
