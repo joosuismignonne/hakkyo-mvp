@@ -189,6 +189,26 @@ export default function NewHome() {
             </div>
           </div>
 
+          {/* Reviews */}
+          <div className="feed-divider">수강생 이야기</div>
+          {[
+            { name:'Minji K.', avatar:'🇰🇷', tag:'KOREAN', quote:'처음엔 주문도 못 했는데 이제 카페에서 한국어로 수다 떨어요. 같은 고민을 가진 사람들이랑 같이 배우니까 진짜 달라요.', label:'한국어 3기 수강생' },
+            { name:'Lucas B.', avatar:'🇨🇦', tag:'FRENCH', quote:'Montréal에 살면서도 프랑스어가 두려웠는데, HAKKYO에서 처음으로 틀려도 괜찮다는 걸 느꼈어요.', label:'불어 2기 수강생' },
+            { name:'Yuna S.',  avatar:'🇰🇷', tag:'ENGLISH', quote:'영어 말할 때 머릿속에선 있는데 입이 안 열렸는데, 여기서 Active Output 하고 나서 바뀌었어요.', label:'영어 3기 수강생' },
+          ].map((r, i) => (
+            <div key={i} className="feed-card review-card">
+              <div className="feed-card-inner">
+                <div className="feed-meta">
+                  <div className="feed-avatar review-avatar">{r.avatar}</div>
+                  <span className="feed-author">{r.name}</span>
+                  <span className="feed-tag">{r.tag}</span>
+                </div>
+                <div className="review-quote">"{r.quote}"</div>
+                <div className="review-label">{r.label}</div>
+              </div>
+            </div>
+          ))}
+
           {/* Rest of notices */}
           {rest.length > 0 && <div className="feed-divider">최신 소식</div>}
           {rest.map(n => <NoticeCard key={n.id} n={n} />)}

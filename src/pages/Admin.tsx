@@ -3976,11 +3976,18 @@ function ThemeChannelAdmin() {
   )
 }
 
-// ─── Mini HAKKYO 소개글 편집 ───────────────────────────────────────────────────
+// ─── Mini HAKKYO 소개글 + 신청폼 질문 편집 ────────────────────────────────────
+const DEFAULT_ACTIVITY_QUESTIONS = [
+  { key: 'aq1', hint: 'Experience', label: '이 액티비티를 해본 경험이 있나요?', type: 'choice', options: '처음이에요,한두 번 해봤어요,가끔 즐겨요,자주 하고 있어요' },
+  { key: 'aq2', hint: 'Why join?',  label: '이번 액티비티에 함께하고 싶은 이유는 무엇인가요?', type: 'textarea', options: '' },
+  { key: 'aq3', hint: 'Anything we should know? · 선택', label: '미리 알아두면 좋은 점이 있나요?', type: 'textarea', options: '' },
+]
+
 function MiniHakkyoAdmin() {
   const [title, setTitle] = useState('같이 하다 보면 말이 나와요')
   const [body1, setBody1] = useState('수업 외에도 매주 수요일 저녁, 몬트리올에서 함께 모여요. 북클럽·러닝클럽·보드게임클럽 — 활동을 하면서 자연스럽게 언어 교환이 이루어져요.')
   const [body2, setBody2] = useState('수업 수강생이 아니어도 참여할 수 있어요. 참가비 $10.')
+  const [aqs, setAqs] = useState(DEFAULT_ACTIVITY_QUESTIONS)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -3993,32 +4000,79 @@ function MiniHakkyoAdmin() {
       if (get('intro_body1')) setBody1(get('intro_body1'))
       if (get('intro_body2')) setBody2(get('intro_body2'))
     })
+    supabase.from('site_content').select('key,value_ko').eq('page', 'activity_questions').then(({ data }) => {
+      if (!data?.length) return
+      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      setAqs(DEFAULT_ACTIVITY_QUESTIONS.map(q => ({
+        ...q,
+        label: get(`${q.key}_label`) || q.label,
+        hint:  get(`${q.key}_hint`)  || q.hint,
+        options: get(`${q.key}_options`) || q.options,
+      })))
+    })
   }, [])
 
   async function save() {
     if (!supabase) return
     setSaving(true)
-    await supabase.from('site_content').upsert([
-      { page: 'mini_hakkyo', key: 'intro_title', label: 'Mini HAKKYO 소개 제목', value_ko: title, value_en: title, value_fr: title },
-      { page: 'mini_hakkyo', key: 'intro_body1', label: 'Mini HAKKYO 소개 본문1', value_ko: body1, value_en: body1, value_fr: body1 },
-      { page: 'mini_hakkyo', key: 'intro_body2', label: 'Mini HAKKYO 소개 본문2', value_ko: body2, value_en: body2, value_fr: body2 },
-    ], { onConflict: 'page,key' })
+    const introRows = [
+      { page: 'mini_hakkyo', key: 'intro_title', label: '소개 제목', value_ko: title, value_en: title, value_fr: title },
+      { page: 'mini_hakkyo', key: 'intro_body1', label: '소개 본문1', value_ko: body1, value_en: body1, value_fr: body1 },
+      { page: 'mini_hakkyo', key: 'intro_body2', label: '소개 본문2', value_ko: body2, value_en: body2, value_fr: body2 },
+    ]
+    const aqRows = aqs.flatMap(q => [
+      { page: 'activity_questions', key: `${q.key}_label`,   label: `${q.key} 질문`, value_ko: q.label,   value_en: q.label,   value_fr: q.label },
+      { page: 'activity_questions', key: `${q.key}_hint`,    label: `${q.key} 힌트`, value_ko: q.hint,    value_en: q.hint,    value_fr: q.hint },
+      { page: 'activity_questions', key: `${q.key}_options`, label: `${q.key} 선택지`, value_ko: q.options, value_en: q.options, value_fr: q.options },
+    ])
+    await supabase.from('site_content').upsert([...introRows, ...aqRows], { onConflict: 'page,key' })
     setSaving(false); setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => setSaved(false), 2200)
+  }
+
+  function updateAq(i: number, field: 'label'|'hint'|'options', val: string) {
+    setAqs(prev => prev.map((q, idx) => idx === i ? { ...q, [field]: val } : q))
   }
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-gray-500">Mini HAKKYO 페이지 상단 소개글을 편집해요. 저장하면 바로 반영돼요.</p>
-      <FormCard title="소개글 제목">
-        <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="같이 하다 보면 말이 나와요" />
+      <p className="text-sm text-gray-500">Mini HAKKYO 페이지 소개글과 신청 폼 질문을 편집해요. 저장하면 바로 반영돼요.</p>
+
+      <FormCard title="🐱 소개글 제목">
+        <input className="input" value={title} onChange={e => setTitle(e.target.value)} />
       </FormCard>
       <FormCard title="소개 본문 1">
         <textarea className="input resize-y min-h-[80px]" value={body1} onChange={e => setBody1(e.target.value)} />
       </FormCard>
       <FormCard title="소개 본문 2 (참가비 등 짧은 안내)">
-        <textarea className="input resize-y min-h-[60px]" value={body2} onChange={e => setBody2(e.target.value)} />
+        <textarea className="input resize-y min-h-[55px]" value={body2} onChange={e => setBody2(e.target.value)} />
       </FormCard>
+
+      <FormCard title="✏️ 신청 폼 — 액티비티 전용 질문">
+        <p className="text-xs text-gray-400 mb-4">아래 질문들이 북클럽/러닝클럽/보드게임클럽 신청 폼에 표시돼요.</p>
+        <div className="space-y-4">
+          {aqs.map((q, i) => (
+            <div key={q.key} className="border border-gray-100 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold text-gray-400 uppercase">질문 {i + 1}</span>
+                <span className="text-xs text-gray-300">({q.type === 'choice' ? '객관식' : '주관식'})</span>
+              </div>
+              <FL label="힌트 (영문 레이블)">
+                <input className="input text-sm" value={q.hint} onChange={e => updateAq(i, 'hint', e.target.value)} />
+              </FL>
+              <FL label="질문 (한국어)">
+                <input className="input" value={q.label} onChange={e => updateAq(i, 'label', e.target.value)} />
+              </FL>
+              {q.type === 'choice' && (
+                <FL label="선택지 (쉼표로 구분)">
+                  <input className="input text-sm font-mono" value={q.options} onChange={e => updateAq(i, 'options', e.target.value)} placeholder="선택지1,선택지2,선택지3" />
+                </FL>
+              )}
+            </div>
+          ))}
+        </div>
+      </FormCard>
+
       <button onClick={save} disabled={saving} className="btn-yellow">
         {saving ? '저장 중…' : saved ? '저장됨 ✓' : '저장하기'}
       </button>

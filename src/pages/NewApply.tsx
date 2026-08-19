@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Arrow } from '../components/HakkyoStatus'
+import { supabase } from '../lib/supabase'
 import { programs, activities } from '../data/hakkyo'
 import { submitApplication, ApplicationPayload } from '../lib/hakkyoApi'
 import { trackEvent } from '../lib/analytics'
@@ -128,10 +129,38 @@ interface Question {
   options?: string[]
 }
 
+const DEFAULT_ACTIVITY_QUESTIONS: Question[] = [
+  { name:'experience', label:'이 액티비티를 해본 경험이 있나요?',       hint:'Experience',                      type:'choice',   options:['처음이에요','한두 번 해봤어요','가끔 즐겨요','자주 하고 있어요'], required:true },
+  { name:'joinReason', label:'이번 액티비티에 함께하고 싶은 이유는?',   hint:'Why join?',                       type:'textarea', placeholder:'기대하는 점이나 만나고 싶은 사람들을 편하게 적어주세요', required:true },
+  { name:'comfort',    label:'미리 알아두면 좋은 점이 있나요?',         hint:'Anything we should know? · 선택', type:'textarea', placeholder:'속도, 알레르기, 이동 관련 사항 등' },
+]
+
+function useActivityQuestions(): Question[] {
+  const [qs, setQs] = useState<Question[]>(DEFAULT_ACTIVITY_QUESTIONS)
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('key,value_ko').eq('page', 'activity_questions').then(({ data }) => {
+      if (!data?.length) return
+      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      const updated = DEFAULT_ACTIVITY_QUESTIONS.map((q, i) => {
+        const key = `aq${i+1}`
+        const label = get(`${key}_label`) || q.label
+        const hint  = get(`${key}_hint`)  || q.hint
+        const optStr = get(`${key}_options`)
+        const options = optStr ? optStr.split(',').map((s: string) => s.trim()).filter(Boolean) : q.options
+        return { ...q, label, hint, options }
+      })
+      setQs(updated)
+    })
+  }, [])
+  return qs
+}
+
 function ApplicationForm({ kind, selection, backHref }: { kind: 'program' | 'activity' | 'community'; selection: string; backHref: string }) {
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const dynamicActivityQuestions = useActivityQuestions()
 
   const commonQuestions: Question[] = [
     { name:'name',           label:'이름을 알려주세요.',                          hint:'Name',             type:'text',     placeholder:'이름을 적어주세요',         required:true },
@@ -149,11 +178,7 @@ function ApplicationForm({ kind, selection, backHref }: { kind: 'program' | 'act
     { name:'goal',               label:'이번 프로그램을 통해 이루고 싶은 것은?',    hint:'Your goal',            type:'textarea', placeholder:'구체적인 장면이나 목표가 있다면 함께 적어주세요', required:true },
     { name:'preferredClassStyle', label:'수업에서 어떤 활동을 가장 해보고 싶나요?', hint:'Preferred class style', type:'choice',   options:['생활 표현 배우기','1:1 대화 연습','그룹 대화·게임','발음 교정','쓰기와 피드백','골고루 해보고 싶어요'], required:true },
   ]
-  const activityQuestions: Question[] = [
-    { name:'experience', label:'이 액티비티를 해본 경험이 있나요?',                hint:'Experience',               type:'choice',   options:['처음이에요','한두 번 해봤어요','가끔 즐겨요','자주 하고 있어요'], required:true },
-    { name:'joinReason', label:'이번 액티비티에 함께하고 싶은 이유는?',            hint:'Why join?',                 type:'textarea', placeholder:'기대하는 점이나 만나고 싶은 사람들을 편하게 적어주세요', required:true },
-    { name:'comfort',    label:'미리 알아두면 좋은 점이 있나요?',                  hint:'Anything we should know? · 선택', type:'textarea', placeholder:'속도, 알레르기, 이동 관련 사항 등' },
-  ]
+  const activityQuestions = dynamicActivityQuestions
   const communityQuestions: Question[] = [
     { name:'joinReason', label:'HAKKYO 커뮤니티와 함께하고 싶은 이유는?',          hint:'Why join?',       type:'textarea', placeholder:'배우고 싶은 것, 만나고 싶은 사람, 함께 나누고 싶은 이야기를 적어주세요', required:true },
     { name:'interests',  label:'어떤 모임과 소식에 관심이 있나요?',                hint:'Your interests',  type:'choice',   options:['언어 교환과 클래스','수요일 액티비티','몬트리올 정착 정보','새로운 친구와 커뮤니티','모두 궁금해요'], required:true },
