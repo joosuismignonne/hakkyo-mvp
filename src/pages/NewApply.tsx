@@ -149,15 +149,21 @@ function useActivityQuestions(): Question[] {
     supabase.from('site_content').select('key,value_ko').eq('page', 'activity_questions').then(({ data }) => {
       if (!data?.length) return
       const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
-      const updated = DEFAULT_ACTIVITY_QUESTIONS.map((q, i) => {
-        const key = `aq${i+1}`
-        const label = get(`${key}_label`) || q.label
-        const hint  = get(`${key}_hint`)  || q.hint
-        const optStr = get(`${key}_options`)
-        const options = optStr ? optStr.split(',').map((s: string) => s.trim()).filter(Boolean) : q.options
-        return { ...q, label, hint, options }
+      const countStr = get('aq_count')
+      const count = countStr ? parseInt(countStr) : DEFAULT_ACTIVITY_QUESTIONS.length
+      const loaded: Question[] = Array.from({ length: count }, (_, i) => {
+        const key = `aq${i + 1}`
+        const def = DEFAULT_ACTIVITY_QUESTIONS[i]
+        const label   = get(`${key}_label`)   || def?.label   || ''
+        const hint    = get(`${key}_hint`)    || def?.hint    || ''
+        const type    = get(`${key}_type`)    || def?.type    || 'textarea'
+        const reqStr  = get(`${key}_required`)
+        const required = reqStr === 'false' ? false : (def?.required ?? true)
+        const optStr  = get(`${key}_options`)
+        const options = optStr ? optStr.split(',').map((s: string) => s.trim()).filter(Boolean) : def?.options
+        return { name: key, label, hint, type, options, required }
       })
-      setQs(updated)
+      if (loaded.length) setQs(loaded)
     })
   }, [])
   return qs

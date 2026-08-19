@@ -4130,17 +4130,35 @@ function ThemeChannelAdmin() {
 }
 
 // ─── Mini HAKKYO 소개글 + 신청폼 질문 편집 ────────────────────────────────────
-const DEFAULT_ACTIVITY_QUESTIONS = [
-  { key: 'aq1', hint: 'Experience', label: '이 액티비티를 해본 경험이 있나요?', type: 'choice', options: '처음이에요,한두 번 해봤어요,가끔 즐겨요,자주 하고 있어요' },
-  { key: 'aq2', hint: 'Why join?',  label: '이번 액티비티에 함께하고 싶은 이유는 무엇인가요?', type: 'textarea', options: '' },
-  { key: 'aq3', hint: 'Anything we should know? · 선택', label: '미리 알아두면 좋은 점이 있나요?', type: 'textarea', options: '' },
+
+interface AqItem { key: string; hint: string; label: string; type: 'choice'|'textarea'|'text'; options: string; required: boolean }
+
+const DEFAULT_ACTIVITY_QUESTIONS: AqItem[] = [
+  { key: 'aq1', hint: 'Experience',                      label: '이 액티비티를 해본 경험이 있나요?',         type: 'choice',   options: '처음이에요,한두 번 해봤어요,가끔 즐겨요,자주 하고 있어요', required: true },
+  { key: 'aq2', hint: 'Why join?',                       label: '이번 액티비티에 함께하고 싶은 이유는?',     type: 'textarea', options: '', required: true },
+  { key: 'aq3', hint: 'Anything we should know? · 선택', label: '미리 알아두면 좋은 점이 있나요?',           type: 'textarea', options: '', required: false },
+]
+
+const COMMON_QUESTIONS_DISPLAY = [
+  { hint: 'Name *',             label: '이름을 알려주세요.',                            type: '텍스트' },
+  { hint: 'Email *',            label: '연락받을 이메일은 무엇인가요?',                  type: '이메일' },
+  { hint: 'Phone · 선택',       label: '전화번호를 알려주세요.',                         type: '텍스트' },
+  { hint: 'Instagram · 선택',   label: '인스타그램 계정이 있나요?',                      type: '텍스트' },
+  { hint: 'Current city *',     label: '현재 어느 도시에 거주하고 있나요?',              type: '텍스트' },
+  { hint: 'Time in Montréal *', label: '몬트리올에 온 지 얼마나 되었나요?',              type: '객관식' },
+  { hint: 'Your current stage *', label: '현재 몬트리올에서 어떤 시간을 보내고 있나요?', type: '객관식' },
+]
+
+const CLOSING_QUESTIONS_DISPLAY = [
+  { hint: 'How did you hear about us? *', label: 'HAKKYO를 어떻게 알게 되었나요?',           type: '객관식' },
+  { hint: 'Final message · 선택',          label: '마지막으로 HAKKYO에 전하고 싶은 말이 있나요?', type: '주관식' },
 ]
 
 function MiniHakkyoAdmin() {
   const [title, setTitle] = useState('같이 하다 보면 말이 나와요')
   const [body1, setBody1] = useState('수업 외에도 매주 수요일 저녁, 몬트리올에서 함께 모여요. 북클럽·러닝클럽·보드게임클럽 — 활동을 하면서 자연스럽게 언어 교환이 이루어져요.')
   const [body2, setBody2] = useState('수업 수강생이 아니어도 참여할 수 있어요. 참가비 $10.')
-  const [aqs, setAqs] = useState(DEFAULT_ACTIVITY_QUESTIONS)
+  const [aqs, setAqs] = useState<AqItem[]>(DEFAULT_ACTIVITY_QUESTIONS)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -4156,12 +4174,21 @@ function MiniHakkyoAdmin() {
     supabase.from('site_content').select('key,value_ko').eq('page', 'activity_questions').then(({ data }) => {
       if (!data?.length) return
       const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
-      setAqs(DEFAULT_ACTIVITY_QUESTIONS.map(q => ({
-        ...q,
-        label: get(`${q.key}_label`) || q.label,
-        hint:  get(`${q.key}_hint`)  || q.hint,
-        options: get(`${q.key}_options`) || q.options,
-      })))
+      const countStr = get('aq_count')
+      const count = countStr ? parseInt(countStr) : DEFAULT_ACTIVITY_QUESTIONS.length
+      const loaded: AqItem[] = Array.from({ length: count }, (_, i) => {
+        const key = `aq${i + 1}`
+        const def = DEFAULT_ACTIVITY_QUESTIONS[i]
+        return {
+          key,
+          label:    get(`${key}_label`)    || def?.label    || '',
+          hint:     get(`${key}_hint`)     || def?.hint     || '',
+          type:     (get(`${key}_type`)    || def?.type     || 'textarea') as AqItem['type'],
+          options:  get(`${key}_options`)  || def?.options  || '',
+          required: get(`${key}_required`) === 'false' ? false : (def?.required ?? true),
+        }
+      })
+      if (loaded.length) setAqs(loaded)
     })
   }, [])
 
@@ -4173,23 +4200,50 @@ function MiniHakkyoAdmin() {
       { page: 'mini_hakkyo', key: 'intro_body1', label: '소개 본문1', value_ko: body1, value_en: body1, value_fr: body1 },
       { page: 'mini_hakkyo', key: 'intro_body2', label: '소개 본문2', value_ko: body2, value_en: body2, value_fr: body2 },
     ]
-    const aqRows = aqs.flatMap(q => [
-      { page: 'activity_questions', key: `${q.key}_label`,   label: `${q.key} 질문`, value_ko: q.label,   value_en: q.label,   value_fr: q.label },
-      { page: 'activity_questions', key: `${q.key}_hint`,    label: `${q.key} 힌트`, value_ko: q.hint,    value_en: q.hint,    value_fr: q.hint },
-      { page: 'activity_questions', key: `${q.key}_options`, label: `${q.key} 선택지`, value_ko: q.options, value_en: q.options, value_fr: q.options },
-    ])
-    await supabase.from('site_content').upsert([...introRows, ...aqRows], { onConflict: 'page,key' })
+    const countRow = { page: 'activity_questions', key: 'aq_count', label: '질문 수', value_ko: String(aqs.length), value_en: String(aqs.length), value_fr: String(aqs.length) }
+    const aqRows = aqs.flatMap((q, i) => {
+      const key = `aq${i + 1}`
+      return [
+        { page: 'activity_questions', key: `${key}_label`,    label: `${key} 질문`,   value_ko: q.label,              value_en: q.label,              value_fr: q.label },
+        { page: 'activity_questions', key: `${key}_hint`,     label: `${key} 힌트`,   value_ko: q.hint,               value_en: q.hint,               value_fr: q.hint },
+        { page: 'activity_questions', key: `${key}_type`,     label: `${key} 유형`,   value_ko: q.type,               value_en: q.type,               value_fr: q.type },
+        { page: 'activity_questions', key: `${key}_options`,  label: `${key} 선택지`, value_ko: q.options,            value_en: q.options,            value_fr: q.options },
+        { page: 'activity_questions', key: `${key}_required`, label: `${key} 필수`,   value_ko: String(q.required),   value_en: String(q.required),   value_fr: String(q.required) },
+      ]
+    })
+    await supabase.from('site_content').upsert([...introRows, countRow, ...aqRows], { onConflict: 'page,key' })
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2200)
   }
 
-  function updateAq(i: number, field: 'label'|'hint'|'options', val: string) {
+  function updateAq(i: number, field: keyof AqItem, val: string | boolean) {
     setAqs(prev => prev.map((q, idx) => idx === i ? { ...q, [field]: val } : q))
   }
 
+  function addAq() {
+    const newKey = `aq${aqs.length + 1}`
+    setAqs(prev => [...prev, { key: newKey, hint: '', label: '', type: 'textarea', options: '', required: false }])
+  }
+
+  function removeAq(i: number) {
+    setAqs(prev => prev.filter((_, idx) => idx !== i).map((q, idx) => ({ ...q, key: `aq${idx + 1}` })))
+  }
+
+  function moveAq(i: number, dir: -1 | 1) {
+    const next = i + dir
+    if (next < 0 || next >= aqs.length) return
+    setAqs(prev => {
+      const arr = [...prev]
+      ;[arr[i], arr[next]] = [arr[next], arr[i]]
+      return arr.map((q, idx) => ({ ...q, key: `aq${idx + 1}` }))
+    })
+  }
+
+  const readOnlyStyle = { background: '#f9f9f6', borderRadius: 8, border: '1px solid #eee', padding: '8px 12px', marginBottom: 4 }
+
   return (
     <div className="space-y-5">
-      <p className="text-sm text-gray-500">Mini HAKKYO 페이지 소개글과 신청 폼 질문을 편집해요. 저장하면 바로 반영돼요.</p>
+      <p className="text-sm text-gray-500">Mini HAKKYO 소개글과 신청 폼 질문을 편집해요. 저장하면 바로 반영돼요.</p>
 
       <FormCard title="🐱 소개글 제목">
         <input className="input" value={title} onChange={e => setTitle(e.target.value)} />
@@ -4201,28 +4255,87 @@ function MiniHakkyoAdmin() {
         <textarea className="input resize-y min-h-[55px]" value={body2} onChange={e => setBody2(e.target.value)} />
       </FormCard>
 
-      <FormCard title="✏️ 신청 폼 — 액티비티 전용 질문">
-        <p className="text-xs text-gray-400 mb-4">아래 질문들이 북클럽/러닝클럽/보드게임클럽 신청 폼에 표시돼요.</p>
-        <div className="space-y-4">
-          {aqs.map((q, i) => (
-            <div key={q.key} className="border border-gray-100 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold text-gray-400 uppercase">질문 {i + 1}</span>
-                <span className="text-xs text-gray-300">({q.type === 'choice' ? '객관식' : '주관식'})</span>
+      {/* ── 신청 폼 전체 구조 ── */}
+      <FormCard title="📋 신청 폼 — 전체 질문 구조">
+        <p className="text-xs text-gray-400 mb-5">실제 신청서와 동일한 순서로 표시돼요. 회색 항목은 고정 질문이고, 아래 <strong>액티비티 전용 질문</strong>만 편집·추가·삭제할 수 있어요.</p>
+
+        {/* 공통 질문 (고정) */}
+        <div className="mb-2">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">공통 질문 (고정 · {COMMON_QUESTIONS_DISPLAY.length}개)</p>
+          <div className="space-y-1">
+            {COMMON_QUESTIONS_DISPLAY.map((q, i) => (
+              <div key={i} style={readOnlyStyle} className="flex items-center gap-3">
+                <span className="text-[11px] text-gray-300 w-4 shrink-0">{i + 1}</span>
+                <span className="text-[11px] text-gray-400 w-28 shrink-0">{q.hint}</span>
+                <span className="text-sm text-gray-600 flex-1">{q.label}</span>
+                <span className="text-[10px] text-gray-300 shrink-0">{q.type}</span>
               </div>
-              <FL label="힌트 (영문 레이블)">
-                <input className="input text-sm" value={q.hint} onChange={e => updateAq(i, 'hint', e.target.value)} />
-              </FL>
-              <FL label="질문 (한국어)">
-                <input className="input" value={q.label} onChange={e => updateAq(i, 'label', e.target.value)} />
-              </FL>
-              {q.type === 'choice' && (
-                <FL label="선택지 (쉼표로 구분)">
-                  <input className="input text-sm font-mono" value={q.options} onChange={e => updateAq(i, 'options', e.target.value)} placeholder="선택지1,선택지2,선택지3" />
+            ))}
+          </div>
+        </div>
+
+        {/* 액티비티 전용 질문 (편집 가능) */}
+        <div className="mt-5 mb-2">
+          <p className="text-[11px] font-bold text-[#b8860b] uppercase tracking-wider mb-3">✏️ 액티비티 전용 질문 (편집 가능 · {aqs.length}개)</p>
+          <div className="space-y-3">
+            {aqs.map((q, i) => (
+              <div key={q.key} className="border border-yellow-100 rounded-xl p-4 space-y-3 bg-yellow-50/30">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-yellow-700">질문 {COMMON_QUESTIONS_DISPLAY.length + i + 1}</span>
+                  <span className="text-[10px] text-gray-400">({q.type === 'choice' ? '객관식' : '주관식'})</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    <button onClick={() => moveAq(i, -1)} disabled={i === 0}
+                      className="text-[11px] px-2 py-0.5 rounded border border-gray-200 text-gray-400 disabled:opacity-30 hover:bg-gray-50">↑</button>
+                    <button onClick={() => moveAq(i, 1)} disabled={i === aqs.length - 1}
+                      className="text-[11px] px-2 py-0.5 rounded border border-gray-200 text-gray-400 disabled:opacity-30 hover:bg-gray-50">↓</button>
+                    <button onClick={() => removeAq(i)}
+                      className="text-[11px] px-2 py-0.5 rounded border border-red-200 text-red-400 hover:bg-red-50 ml-1">삭제</button>
+                  </div>
+                </div>
+                <FL label="힌트 (영문 레이블)">
+                  <input className="input text-sm" value={q.hint} onChange={e => updateAq(i, 'hint', e.target.value)} placeholder="예: Why join?" />
                 </FL>
-              )}
-            </div>
-          ))}
+                <FL label="질문 (한국어)">
+                  <input className="input" value={q.label} onChange={e => updateAq(i, 'label', e.target.value)} placeholder="질문 내용을 입력해주세요" />
+                </FL>
+                <FL label="유형">
+                  <select className="input" value={q.type} onChange={e => updateAq(i, 'type', e.target.value as AqItem['type'])}>
+                    <option value="textarea">주관식 (텍스트)</option>
+                    <option value="choice">객관식 (선택지)</option>
+                    <option value="text">단답형 (한 줄)</option>
+                  </select>
+                </FL>
+                {q.type === 'choice' && (
+                  <FL label="선택지 (쉼표로 구분)">
+                    <input className="input text-sm font-mono" value={q.options} onChange={e => updateAq(i, 'options', e.target.value)} placeholder="선택지1,선택지2,선택지3" />
+                  </FL>
+                )}
+                <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+                  <input type="checkbox" checked={q.required} onChange={e => updateAq(i, 'required', e.target.checked)} />
+                  필수 질문
+                </label>
+              </div>
+            ))}
+          </div>
+          <button onClick={addAq}
+            className="mt-3 w-full py-2 rounded-xl border border-dashed border-yellow-300 text-sm text-yellow-700 hover:bg-yellow-50 transition-colors">
+            + 질문 추가
+          </button>
+        </div>
+
+        {/* 마무리 질문 (고정) */}
+        <div className="mt-5">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">마무리 질문 (고정 · {CLOSING_QUESTIONS_DISPLAY.length}개)</p>
+          <div className="space-y-1">
+            {CLOSING_QUESTIONS_DISPLAY.map((q, i) => (
+              <div key={i} style={readOnlyStyle} className="flex items-center gap-3">
+                <span className="text-[11px] text-gray-300 w-4 shrink-0">{COMMON_QUESTIONS_DISPLAY.length + aqs.length + i + 1}</span>
+                <span className="text-[11px] text-gray-400 w-28 shrink-0">{q.hint}</span>
+                <span className="text-sm text-gray-600 flex-1">{q.label}</span>
+                <span className="text-[10px] text-gray-300 shrink-0">{q.type}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </FormCard>
 
