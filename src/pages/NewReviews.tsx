@@ -1,3 +1,4 @@
+import ChannelFeed from '../components/ChannelFeed'
 import { useT, useLang } from '../lib/lang'
 
 const SAMPLE_REVIEWS = [
@@ -28,76 +29,72 @@ export default function NewReviews() {
   const { lang } = useLang()
   const r = t.reviews
 
+  const header = (
+    <div className="ch-header">
+      <span className="ch-header-icon">⭐</span>
+      <div className="ch-header-text">
+        <h1 className="ch-header-title">{r.title}</h1>
+        <span className="ch-header-desc">{r.desc}</span>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="ch-feed">
-      <div className="ch-header">
-        <span className="ch-header-icon">⭐</span>
-        <div className="ch-header-text">
-          <h1 className="ch-header-title">{r.title}</h1>
-          <span className="ch-header-desc">{r.desc}</span>
-        </div>
+    <ChannelFeed channel="reviews" header={header}>
+      {/* Compose stub for non-admins */}
+      <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
+        <div className="ch-compose-avatar">😺</div>
+        <span className="ch-compose-ph">{r.compose}</span>
+        <button className="ch-compose-btn">{r.joinBtn}</button>
       </div>
 
-      <div className="ch-scroll">
-        <div className="ch-inner">
-
-          {/* Compose stub */}
-          <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
-            <div className="ch-compose-avatar">😺</div>
-            <span className="ch-compose-ph">{r.compose}</span>
-            <button className="ch-compose-btn">{r.joinBtn}</button>
-          </div>
-
-          {/* Sample reviews */}
-          {SAMPLE_REVIEWS.map((rev, i) => {
-            const quote = lang === 'en' ? rev.quote_en : lang === 'fr' ? rev.quote_fr : rev.quote_ko
-            const label = lang === 'en' ? rev.label_en : lang === 'fr' ? rev.label_fr : rev.label_ko
-            return (
-              <div key={i} className="feed-card">
-                <div className="feed-card-inner">
-                  <div className="feed-meta">
-                    <div className="feed-avatar" style={{ fontSize:18, background:'transparent' }}>{rev.avatar}</div>
-                    <div className="feed-meta-text">
-                      <span className="feed-author">{rev.name}</span>
-                      <span className="feed-time">{fmtDate(rev.date)}</span>
-                    </div>
-                    <span className="feed-tag">{rev.tag}</span>
-                  </div>
-                  <div className="review-quote">"{quote}"</div>
-                  <div className="feed-footer">
-                    <span style={{ fontSize:11, color:'#bbb', padding:'4px 10px' }}>{label}</span>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-
-          {/* Coming soon card */}
-          <div className="feed-card">
+      {/* Sample reviews */}
+      {SAMPLE_REVIEWS.map((rev, i) => {
+        const quote = lang === 'en' ? rev.quote_en : lang === 'fr' ? rev.quote_fr : rev.quote_ko
+        const label = lang === 'en' ? rev.label_en : lang === 'fr' ? rev.label_fr : rev.label_ko
+        return (
+          <div key={i} className="feed-card">
             <div className="feed-card-inner">
               <div className="feed-meta">
-                <div className="feed-avatar feed-avatar-h">H</div>
+                <div className="feed-avatar" style={{ fontSize:18, background:'transparent' }}>{rev.avatar}</div>
                 <div className="feed-meta-text">
-                  <span className="feed-author">HAKKYO</span>
-                  <span className="feed-time">2026 FALL</span>
+                  <span className="feed-author">{rev.name}</span>
+                  <span className="feed-time">{fmtDate(rev.date)}</span>
                 </div>
-                <span className="feed-tag">{r.tag}</span>
+                <span className="feed-tag">{rev.tag}</span>
               </div>
-              <div className="feed-title">{r.comingSoonTitle}</div>
-              <div className="feed-body"><p>{r.comingSoonBody}</p></div>
+              <div className="review-quote">"{quote}"</div>
               <div className="feed-footer">
-                <button className="feed-action feed-action-accent" onClick={() => window.location.href='/apply/community'}>
-                  {r.joinCta}
-                </button>
-                <button className="feed-action" onClick={() => window.location.href='/apply/news'}>
-                  {r.subscribeCta}
-                </button>
+                <span style={{ fontSize:11, color:'#bbb', padding:'4px 10px' }}>{label}</span>
               </div>
             </div>
           </div>
+        )
+      })}
 
+      {/* Coming soon card */}
+      <div className="feed-card">
+        <div className="feed-card-inner">
+          <div className="feed-meta">
+            <div className="feed-avatar feed-avatar-h">H</div>
+            <div className="feed-meta-text">
+              <span className="feed-author">HAKKYO</span>
+              <span className="feed-time">2026 FALL</span>
+            </div>
+            <span className="feed-tag">{r.tag}</span>
+          </div>
+          <div className="feed-title">{r.comingSoonTitle}</div>
+          <div className="feed-body"><p>{r.comingSoonBody}</p></div>
+          <div className="feed-footer">
+            <button className="feed-action feed-action-accent" onClick={() => window.location.href='/apply/community'}>
+              {r.joinCta}
+            </button>
+            <button className="feed-action" onClick={() => window.location.href='/apply/news'}>
+              {r.subscribeCta}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </ChannelFeed>
   )
 }
