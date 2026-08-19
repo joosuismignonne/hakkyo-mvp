@@ -77,6 +77,19 @@ function NewsletterForm() {
   )
 }
 
+// ─── Founder note ─────────────────────────────────────────────────────────────
+function FounderNote() {
+  return (
+    <div className="home-founder-note">
+      <p>
+        "몬트리올에 처음 왔을 때, 언어보다 사람이 더 필요했어요.<br />
+        HAKKYO는 그때 있었으면 했던 곳을 만들어봤어요."
+      </p>
+      <span>— Joo, HAKKYO 운영자</span>
+    </div>
+  )
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────────
 export default function NewHome() {
   return (
@@ -84,15 +97,15 @@ export default function NewHome() {
       {/* ── Hero ── */}
       <section className="hero hero-calm section-pad">
         <div className="hero-top">
-          <div className="eyebrow">FIRST LISTENER · LEARNING COMMUNITY · MONTRÉAL</div>
+          <div className="eyebrow">HAKKYO · Montréal · 2026</div>
         </div>
         <div className="flower-confetti" aria-hidden="true">
           {Array.from({ length: 9 }).map((_, i) => <i key={i} />)}
         </div>
         <div className="hero-stage">
           <div className="hero-copy">
-            <h1>How do we help people<br /><em>build real relationships</em><br />through language?</h1>
-            <p>사람을 만나며 언어를 배우는 Montréal Learning Community</p>
+            <h1>말이 잘 안 돼도,<br /><em>여기선 괜찮아요.</em></h1>
+            <p>몬트리올에서 사람을 만나며 언어를 배우는 곳이에요</p>
           </div>
           <div className="mimi mimi-natural" aria-label="HAKKYO 포스터의 까만 고양이 마스코트">
             <img className="mimi-character" src="/mascot/mimi-poster-v3.png" alt="" />
@@ -100,7 +113,7 @@ export default function NewHome() {
           </div>
         </div>
         <div className="hero-bottom">
-          <p>사람은 낯선 도시에서 어떻게 배우고, 연결되고, 자기 삶을 만들어가는가. HAKKYO는 그 질문에서 시작한 Montréal Learning Community입니다.</p>
+          <p>몬트리올에서 새로운 사람을 만나고 싶은데 어디서 시작해야 할지 모르겠다면 — 여기서 시작해도 돼요. 언어 실력은 상관없어요.</p>
           <div className="hero-actions">
             <a className="hero-button" href="/programs">함께할 시간 보기 <Arrow /></a>
           </div>
@@ -110,15 +123,19 @@ export default function NewHome() {
       {/* ── 최신 공지 배너 ── */}
       <LatestNoticeBanner />
 
+      {/* ── 운영자 한 마디 ── */}
+      <FounderNote />
+
       {/* ── 프로그램 ── */}
       <section className="home-programs section-pad">
         <div className="home-section-head">
           <div>
             <p className="home-section-label">LANGUAGE EXPERIENCES · SESSION 04</p>
-            <h2>어떤 언어를 써볼까요?</h2>
+            <h2>어떤 언어로<br />시작해볼까요?</h2>
           </div>
           <a href="/programs" className="home-see-all">모든 프로그램 보기 <Arrow /></a>
         </div>
+        <p className="home-programs-sub">각 언어마다 작은 커뮤니티가 있어요. 잘해야 오는 게 아니라, 말해보고 싶은 마음이면 충분해요.</p>
         <div className="home-program-list">
           {programs.slice(0, 3).map((p, i) => (
             <a href={p.href} key={p.en} className="home-program-row">
@@ -140,16 +157,16 @@ export default function NewHome() {
         <div className="home-mini-head">
           <div>
             <p className="home-section-label">MINI HAKKYO · SEPTEMBER</p>
-            <h2>같이 하다 보면<br />말이 나옵니다.</h2>
-            <p>북클럽, 러닝클럽, 보드게임클럽 — Language Exchange와 함께하는 9월 수요일 시리즈예요.</p>
-            <a className="cta" href="/activities" style={{ marginTop: 20 }}>Mini HAKKYO 보기 <Arrow /></a>
+            <h2>수요일마다<br />잠깐 만나요.</h2>
+            <p>수업을 듣지 않아도 괜찮아요. 북클럽・러닝클럽・보드게임클럽 — 9월 매주 수요일, 편한 분들과 자연스럽게 이야기해요.</p>
+            <a className="cta" href="/activities" style={{ marginTop: 20 }}>일정 보기 <Arrow /></a>
           </div>
           <div className="home-mini-list">
             {activities.map(a => (
               <a href={`/activities/${a.slug}`} key={a.code} className="home-mini-row">
                 <small>{(a as any).date}</small>
                 <strong>{a.ko}</strong>
-                <span>{(a as any).host}</span>
+                <span>w/ {(a as any).host}</span>
                 <Arrow />
               </a>
             ))}
@@ -162,8 +179,8 @@ export default function NewHome() {
         <div className="home-settling-inner">
           <div>
             <p className="home-section-label">MONTRÉAL NOTE · 001</p>
-            <h2>처음 도착한 날부터<br />익숙해지는 날까지</h2>
-            <p>렌트, 교통, 동네 — 몬트리올에서 살아가는 데 필요한 것들을 모았어요.</p>
+            <h2>처음엔 다들<br />막막하더라고요.</h2>
+            <p>렌트, 교통, 동네 — 몬트리올에서 살면서 막막했던 것들을 한 곳에 모았어요. 살다 보면 도움이 될 거예요.</p>
           </div>
           <a href="/settling" className="home-settling-link">정착 가이드 보기 <Arrow /></a>
         </div>
@@ -174,8 +191,8 @@ export default function NewHome() {
         <div className="community-cta-inner">
           <div>
             <p className="home-section-label" style={{ color: 'rgba(255,255,255,.6)' }}>HAKKYO COMMUNITY</p>
-            <h2>HAKKYO 커뮤니티에<br />함께하세요.</h2>
-            <p>매주 일요일 오후, 수업 안의 Active Output 시간을 함께 해요.</p>
+            <h2>혼자 공부하는 게<br />조금 지겨워졌다면.</h2>
+            <p>매주 일요일 오후, 배운 언어를 실제로 써보는 시간이에요. 말해보고 싶은 마음이면 충분해요.</p>
           </div>
           <a className="cta" href="/apply/community">커뮤니티 참여하기 <Arrow /></a>
         </div>
