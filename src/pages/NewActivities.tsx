@@ -15,6 +15,30 @@ interface ClubMeta {
   date: string; day: string; time: string; entry: string
 }
 
+interface MiniIntro { title: string; body1: string; body2: string }
+const DEFAULT_MINI_INTRO: MiniIntro = {
+  title: '같이 하다 보면 말이 나와요',
+  body1: '수업 외에도 매주 수요일 저녁, 몬트리올에서 함께 모여요. 북클럽·러닝클럽·보드게임클럽 — 활동을 하면서 자연스럽게 언어 교환이 이루어져요.',
+  body2: '수업 수강생이 아니어도 참여할 수 있어요. 참가비 $10.',
+}
+
+function useMiniIntro(): MiniIntro {
+  const [intro, setIntro] = useState<MiniIntro>(DEFAULT_MINI_INTRO)
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('key,value_ko').eq('page', 'mini_hakkyo').then(({ data }) => {
+      if (!data?.length) return
+      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      setIntro({
+        title: get('intro_title') || DEFAULT_MINI_INTRO.title,
+        body1: get('intro_body1') || DEFAULT_MINI_INTRO.body1,
+        body2: get('intro_body2') || DEFAULT_MINI_INTRO.body2,
+      })
+    })
+  }, [])
+  return intro
+}
+
 function useClubMeta(slug: string): ClubMeta {
   const a = activities.find(x => x.slug === slug)!
   const base: ClubMeta = {
@@ -93,8 +117,11 @@ function ActivityDetail({ slug }: { slug: string }) {
         <span className="ch-header-icon">{POSTER_EMOJI[slug] || '🐱'}</span>
         <h1 className="ch-header-title">{m.title}</h1>
         <span className="ch-header-desc">Mini HAKKYO · {a.code}</span>
-        <button className="ch-header-action" onClick={() => trackEvent({ eventName:'activity_apply_click', targetType:'button', targetLabel:slug })}>
-          9월 모집 예정
+        <button className="ch-header-action" onClick={() => {
+          trackEvent({ eventName:'activity_apply_click', targetType:'button', targetLabel:slug })
+          window.location.href = `/apply/activities/${slug}`
+        }}>
+          ✋ 신청하기
         </button>
       </div>
       <div className="ch-scroll">
@@ -135,7 +162,10 @@ function ActivityDetail({ slug }: { slug: string }) {
                 <p style={{ marginTop:10 }}>잘해야 오는 게 아니에요. Language Exchange는 함께 하다 보면 자연스럽게 말이 나오는 구조예요.</p>
               </div>
               <div className="feed-footer">
-                <button className="feed-action" style={{ opacity:.5, cursor:'not-allowed' }}>9월 모집 예정</button>
+                <button className="feed-action subscribed" onClick={() => {
+                  trackEvent({ eventName:'activity_apply_click', targetType:'button', targetLabel:slug })
+                  window.location.href = `/apply/activities/${slug}`
+                }}>✋ 신청하기</button>
                 <button className="feed-action" onClick={() => window.location.href='/activities'}>← 목록으로</button>
               </div>
             </div>
@@ -176,6 +206,7 @@ function ActivityDetail({ slug }: { slug: string }) {
 
 export default function NewActivities() {
   const { slug } = useParams<{ slug?: string }>()
+  const intro = useMiniIntro()
   if (slug) return <ActivityDetail slug={slug} />
 
   const withDday = activities.map(a => ({ ...a, dday: getDday(a.dateIso) }))
@@ -199,10 +230,10 @@ export default function NewActivities() {
                 <span className="feed-author">HAKKYO</span>
                 <span className="feed-tag feed-tag-mini">MINI</span>
               </div>
-              <div className="feed-title">같이 하다 보면 말이 나와요</div>
+              <div className="feed-title">{intro.title}</div>
               <div className="feed-body">
-                <p>수업 외에도 매주 수요일 저녁, 몬트리올에서 함께 모여요. 북클럽·러닝클럽·보드게임클럽 — 활동을 하면서 자연스럽게 언어 교환이 이루어져요.</p>
-                <p>수업 수강생이 아니어도 참여할 수 있어요. 참가비 $10.</p>
+                <p>{intro.body1}</p>
+                {intro.body2 && <p>{intro.body2}</p>}
               </div>
             </div>
           </div>

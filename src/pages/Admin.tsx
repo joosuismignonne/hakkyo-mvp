@@ -3976,20 +3976,66 @@ function ThemeChannelAdmin() {
   )
 }
 
+// ─── Mini HAKKYO 소개글 편집 ───────────────────────────────────────────────────
+function MiniHakkyoAdmin() {
+  const [title, setTitle] = useState('같이 하다 보면 말이 나와요')
+  const [body1, setBody1] = useState('수업 외에도 매주 수요일 저녁, 몬트리올에서 함께 모여요. 북클럽·러닝클럽·보드게임클럽 — 활동을 하면서 자연스럽게 언어 교환이 이루어져요.')
+  const [body2, setBody2] = useState('수업 수강생이 아니어도 참여할 수 있어요. 참가비 $10.')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('site_content').select('key,value_ko').eq('page', 'mini_hakkyo').then(({ data }) => {
+      if (!data?.length) return
+      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      if (get('intro_title')) setTitle(get('intro_title'))
+      if (get('intro_body1')) setBody1(get('intro_body1'))
+      if (get('intro_body2')) setBody2(get('intro_body2'))
+    })
+  }, [])
+
+  async function save() {
+    if (!supabase) return
+    setSaving(true)
+    await supabase.from('site_content').upsert([
+      { page: 'mini_hakkyo', key: 'intro_title', label: 'Mini HAKKYO 소개 제목', value_ko: title, value_en: title, value_fr: title },
+      { page: 'mini_hakkyo', key: 'intro_body1', label: 'Mini HAKKYO 소개 본문1', value_ko: body1, value_en: body1, value_fr: body1 },
+      { page: 'mini_hakkyo', key: 'intro_body2', label: 'Mini HAKKYO 소개 본문2', value_ko: body2, value_en: body2, value_fr: body2 },
+    ], { onConflict: 'page,key' })
+    setSaving(false); setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-gray-500">Mini HAKKYO 페이지 상단 소개글을 편집해요. 저장하면 바로 반영돼요.</p>
+      <FormCard title="소개글 제목">
+        <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="같이 하다 보면 말이 나와요" />
+      </FormCard>
+      <FormCard title="소개 본문 1">
+        <textarea className="input resize-y min-h-[80px]" value={body1} onChange={e => setBody1(e.target.value)} />
+      </FormCard>
+      <FormCard title="소개 본문 2 (참가비 등 짧은 안내)">
+        <textarea className="input resize-y min-h-[60px]" value={body2} onChange={e => setBody2(e.target.value)} />
+      </FormCard>
+      <button onClick={save} disabled={saving} className="btn-yellow">
+        {saving ? '저장 중…' : saved ? '저장됨 ✓' : '저장하기'}
+      </button>
+    </div>
+  )
+}
+
 // ─── Root Admin page ───────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'notifications', label: 'Notifications',   Component: NotificationsAdmin },
-  { id: 'sessions',      label: 'Programs',         Component: SessionsAdmin      },
-  { id: 'content',       label: 'Content',           Component: UnifiedContentAdmin },
-  { id: 'community',     label: 'Community',         Component: CommunityAdmin     },
-  { id: 'questions',     label: 'Questions',         Component: QuestionsAdmin     },
-  { id: 'applications',  label: 'Applications',      Component: ApplicationsAdmin  },
-  { id: 'le',            label: 'Lang. Exchange',    Component: LeSettingsAdmin    },
-  { id: 'activities',    label: 'Activities',        Component: ActivitiesAdmin    },
-  { id: 'site-content',  label: 'Page Content',      Component: SiteContentAdmin   },
-  { id: 'settings',      label: 'Site Settings',     Component: SiteSettingsAdmin  },
-  { id: 'analytics',     label: 'Analytics',         Component: AnalyticsAdmin     },
-  { id: 'theme',         label: '테마 & 채널',        Component: ThemeChannelAdmin  },
+  { id: 'notifications', label: '🔔 알림',           Component: NotificationsAdmin },
+  { id: 'applications',  label: '📋 신청서',          Component: ApplicationsAdmin  },
+  { id: 'community',     label: '🤝 커뮤니티',        Component: CommunityAdmin     },
+  { id: 'activities',    label: '🐱 Mini 일정',       Component: ActivitiesAdmin    },
+  { id: 'mini-hakkyo',   label: '✏️ Mini 소개글',     Component: MiniHakkyoAdmin    },
+  { id: 'sessions',      label: '📚 프로그램',         Component: SessionsAdmin      },
+  { id: 'theme',         label: '🎨 테마 & 채널',      Component: ThemeChannelAdmin  },
+  { id: 'analytics',     label: '📊 통계',            Component: AnalyticsAdmin     },
 ]
 
 export default function Admin() {
