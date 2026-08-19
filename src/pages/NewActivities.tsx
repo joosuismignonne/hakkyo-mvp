@@ -19,29 +19,30 @@ const prep: Record<string, string[]> = {
   'boardgame-club': ["준비물 없음","게임과 도구는 제공","함께 웃을 준비"],
 }
 
-interface LeaderQuote { value_ko: string; value_en: string; value_fr: string }
+interface ContentRow { value_ko: string; value_en: string; value_fr: string }
 
-function useLeaderQuote(slug: string): LeaderQuote | null {
-  const [quote, setQuote] = useState<LeaderQuote | null>(null)
+function useSiteContent(slug: string, key: string): ContentRow | null {
+  const [row, setRow] = useState<ContentRow | null>(null)
   useEffect(() => {
     if (!supabase) return
     void supabase
       .from('site_content')
       .select('value_ko, value_en, value_fr')
       .eq('page', `activity_${slug}`)
-      .eq('key', 'leader_quote')
+      .eq('key', key)
       .single()
       .then(({ data }) => {
         if (data && (data.value_ko || data.value_en || data.value_fr)) {
-          setQuote(data as LeaderQuote)
+          setRow(data as ContentRow)
         }
       })
-  }, [slug])
-  return quote
+  }, [slug, key])
+  return row
 }
 
 function ActivityDetail({ slug }: { slug: string }) {
-  const quote = useLeaderQuote(slug)
+  const quote = useSiteContent(slug, 'leader_quote')
+  const prepContent = useSiteContent(slug, 'prep_items')
   const [lang, setLang] = useState<'ko' | 'en' | 'fr'>('ko')
 
   const a = activities.find(x => x.slug === slug)
@@ -106,8 +107,11 @@ function ActivityDetail({ slug }: { slug: string }) {
           <p>자세한 장소와 안내는 신청 후 이메일로 드려요.</p>
         </div>
         <div className="prep-cards">
-          {(prep[a.slug] || []).map((x, i) => (
-            <article key={x} data-cursor="OK"><b>0{i + 1}</b><p>{x}</p></article>
+          {(prepContent
+            ? (prepContent[`value_${lang}`] || prepContent.value_ko).split('|')
+            : (prep[a.slug] || [])
+          ).map((x: string, i: number) => (
+            <article key={i} data-cursor="OK"><b>0{i + 1}</b><p>{x}</p></article>
           ))}
         </div>
       </section>

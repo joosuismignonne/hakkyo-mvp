@@ -56,8 +56,8 @@ export default function NewHome() {
         </div>
         <div className="hero-stage">
           <div className="hero-copy">
-            <h1>나는 이 언어로<br /><em>누구와 이야기하고 싶은가.</em></h1>
-            <p>How do we help people build real relationships through language?<br />사람을 만나며 언어를 배우는 Montréal Learning Community</p>
+            <h1>How do we help people<br /><em>build real relationships</em><br />through language?</h1>
+            <p>사람을 만나며 언어를 배우는 Montréal Learning Community</p>
           </div>
           <div className="mimi mimi-natural" aria-label="HAKKYO 포스터의 까만 고양이 마스코트">
             <img className="mimi-character" src="/mascot/mimi-poster-v3.png" alt="" />
@@ -72,20 +72,6 @@ export default function NewHome() {
         </div>
       </section>
 
-      <section id="first-listener" className="announcement first-listener-intro section-pad">
-        <div>
-          <div className="upcoming-lockup">
-            <Status>OUR FIRST PRINCIPLE</Status>
-            <span>FIRST LISTENER</span>
-          </div>
-          <h2>First Listener는<br />가장 먼저<br />들어주는 사람입니다.</h2>
-        </div>
-        <div className="announcement-copy">
-          <p className="lead">언어를 가장 잘하는 사람이 아니라, 말하고자 하는 마음을 가장 먼저 이해하는 사람.</p>
-          <p>틀린 문장을 먼저 찾지 않습니다. 설명하기보다 질문하고, 평가하기보다 기다리며, 정답보다 대화를 먼저 이어 갑니다. HAKKYO의 모든 시간은 First Listener와 함께 시작됩니다.</p>
-          <a className="cta" href="/apply/community">나의 첫 대화 시작하기 <Arrow /></a>
-        </div>
-      </section>
 
       <section className="program-strip home-programs section-pad">
         <div className="section-head">

@@ -33,6 +33,22 @@ INSERT INTO site_content (page, key, label, value_ko, value_en, value_fr) VALUES
 ('home', 'hero_title',     '히어로 메인 문장',   '', 'How do we help people build real relationships through language?', ''),
 ('home', 'hero_sub',       '히어로 서브 문장',   '사람을 만나며 언어를 배우는 Montréal Learning Community', '', ''),
 ('home', 'hero_bottom',    '히어로 하단 설명',   '사람은 낯선 도시에서 어떻게 배우고, 연결되고, 자기 삶을 만들어가는가. HAKKYO는 그 질문에서 시작한 Montréal Learning Community입니다.', '', '')
+-- Before you join — prep cards (pipe-separated list: item1|item2|item3)
+('activity_book-club', 'prep_items', 'Before You Join 준비물',
+  '읽고 싶은 책 한 권 (선택)|필기구|편하게 이야기할 마음',
+  'One book you want to read (optional)|Notebook or pen|An open mind to chat',
+  'Un livre que tu veux lire (optionnel)|Un carnet ou un stylo|L''envie de discuter'
+),
+('activity_running-club', 'prep_items', 'Before You Join 준비물',
+  '편한 러닝화|물|가볍게 달릴 마음',
+  'Comfortable running shoes|Water|A light spirit',
+  'Des chaussures confortables|De l''eau|L''envie de courir'
+),
+('activity_boardgame-club', 'prep_items', 'Before You Join 준비물',
+  '준비물 없음|게임과 도구는 제공|함께 웃을 준비',
+  'Nothing to bring|Games and tools provided|Ready to laugh',
+  'Rien à apporter|Jeux et matériel fournis|Prêt·e à rire'
+)
 ON CONFLICT (page, key) DO UPDATE
   SET value_ko = EXCLUDED.value_ko,
       value_en = EXCLUDED.value_en,
