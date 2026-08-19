@@ -69,7 +69,7 @@ function ActivityDetail({ slug }: { slug: string }) {
           <h2>{a.note}</h2>
           <p>잘해야 오는 게 아니에요. Language Exchange는 함께 하다 보면 자연스럽게 말이 나오는 구조예요. 언어 실력과 상관없이 누구나 참여할 수 있어요.</p>
           <dl>
-            <div><dt>일정</dt><dd>2026년 {(a as any).date} (수요일)</dd></div>
+            <div><dt>일정</dt><dd>2026년 {(a as any).date} ({(a as any).day})</dd></div>
             <div><dt>시간</dt><dd>{(a as any).time}</dd></div>
             <div><dt>진행</dt><dd>Language Exchange w/ {(a as any).host}</dd></div>
             <div><dt>장소</dt><dd>Montréal · 신청자에게 안내</dd></div>
@@ -143,7 +143,7 @@ export default function NewActivities() {
             <div>
               <h2>{a.ko}</h2>
               <p>{a.en} · Language Exchange w/ {(a as any).host}</p>
-              <small>{(a as any).date} · {(a as any).time}</small>
+              <small>2026년 {(a as any).date} · {(a as any).time}</small>
             </div>
             <b>9월 모집 예정</b>
           </a>
