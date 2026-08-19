@@ -4483,25 +4483,31 @@ function ThemeChannelAdmin() {
 // ─── Home Layout Block Editor ──────────────────────────────────────────────────
 
 export const HOME_BLOCKS_DEFAULT = [
-  { id: 'calendar_notices', label: '📅 캘린더 + 공지', desc: '달력과 공지 카드 (가로 배치)' },
-  { id: 'mini_hakkyo',      label: '🐱 MINI HAKKYO',   desc: '다가오는 액티비티 일정' },
-  { id: 'programs',         label: '📚 프로그램',        desc: '언어 프로그램 카드 목록' },
-  { id: 'cta',              label: '🔔 소식 신청',       desc: '4기 시작 소식 CTA 카드' },
-  { id: 'reviews',          label: '⭐ 리뷰',           desc: '수강생 후기 채널 링크' },
+  { id: 'calendar_notices', label: '📅 캘린더 + 공지', desc: '달력과 공지 카드 (가로 배치)',  defaultTitle: '' },
+  { id: 'mini_hakkyo',      label: '🐱 MINI HAKKYO',   desc: '다가오는 액티비티 일정',       defaultTitle: 'MINI HAKKYO · 다음 일정' },
+  { id: 'programs',         label: '📚 프로그램',        desc: '언어 프로그램 카드 목록',      defaultTitle: '언어 프로그램' },
+  { id: 'cta',              label: '🔔 소식 신청',       desc: '4기 시작 소식 CTA 카드',      defaultTitle: '' },
+  { id: 'reviews',          label: '⭐ 리뷰',           desc: '수강생 후기 채널 링크',        defaultTitle: '' },
 ] as const
 
 export type HomeBlockId = typeof HOME_BLOCKS_DEFAULT[number]['id']
 
-export interface HomeBlockConfig { id: HomeBlockId; visible: boolean }
+export interface HomeBlockConfig {
+  id: HomeBlockId
+  visible: boolean
+  size: 'full' | 'half'
+  title: string
+}
 
 function HomeLayoutAdmin() {
   const [blocks, setBlocks] = useState<HomeBlockConfig[]>(
-    HOME_BLOCKS_DEFAULT.map(b => ({ id: b.id, visible: true }))
+    HOME_BLOCKS_DEFAULT.map(b => ({ id: b.id, visible: true, size: 'full', title: b.defaultTitle }))
   )
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [dragging, setDragging] = useState<number | null>(null)
   const [dragOver, setDragOver] = useState<number | null>(null)
+  const [editingTitle, setEditingTitle] = useState<number | null>(null)
 
   useEffect(() => {
     if (!supabase) return
@@ -4510,10 +4516,15 @@ function HomeLayoutAdmin() {
         if (data?.value_ko) {
           try {
             const saved = JSON.parse(data.value_ko) as HomeBlockConfig[]
-            // merge: include any new blocks not yet in DB, preserve order of saved ones
             const ids = saved.map(b => b.id)
-            const rest = HOME_BLOCKS_DEFAULT.filter(b => !ids.includes(b.id)).map(b => ({ id: b.id, visible: true }))
-            setBlocks([...saved, ...rest])
+            const rest = HOME_BLOCKS_DEFAULT.filter(b => !ids.includes(b.id))
+              .map(b => ({ id: b.id, visible: true, size: 'full' as const, title: b.defaultTitle }))
+            // backfill size/title for old saves that didn't have them
+            const merged = saved.map(b => ({
+              ...{ size: 'full' as const, title: HOME_BLOCKS_DEFAULT.find(d => d.id === b.id)?.defaultTitle ?? '' },
+              ...b,
+            }))
+            setBlocks([...merged, ...rest])
           } catch {}
         }
       })
@@ -4532,6 +4543,10 @@ function HomeLayoutAdmin() {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  function update(i: number, patch: Partial<HomeBlockConfig>) {
+    setBlocks(prev => prev.map((b, idx) => idx === i ? { ...b, ...patch } : b))
+  }
+
   function move(from: number, to: number) {
     setBlocks(prev => {
       const arr = [...prev]
@@ -4544,9 +4559,7 @@ function HomeLayoutAdmin() {
   function onDragStart(i: number) { setDragging(i) }
   function onDragEnter(i: number) { setDragOver(i) }
   function onDragEnd() {
-    if (dragging !== null && dragOver !== null && dragging !== dragOver) {
-      move(dragging, dragOver)
-    }
+    if (dragging !== null && dragOver !== null && dragging !== dragOver) move(dragging, dragOver)
     setDragging(null); setDragOver(null)
   }
 
@@ -4554,52 +4567,91 @@ function HomeLayoutAdmin() {
 
   return (
     <div>
-      <p className="text-xs text-gray-400 mb-3">드래그하거나 화살표로 순서를 바꾸고, 눈 아이콘으로 블록을 숨길 수 있어요.</p>
+      <p className="text-xs text-gray-400 mb-3">드래그 또는 ↑↓로 순서 변경 · 👁 숨기기 · ◻ 크기 · ✏️ 타이틀 편집</p>
       <div className="space-y-2">
         {blocks.map((b, i) => {
           const info = meta[b.id]
           const isDraggingOver = dragOver === i && dragging !== i
+          const isEditingTitle = editingTitle === i
           return (
-            <div
-              key={b.id}
-              draggable
-              onDragStart={() => onDragStart(i)}
+            <div key={b.id}
+              draggable={!isEditingTitle}
+              onDragStart={() => !isEditingTitle && onDragStart(i)}
               onDragEnter={() => onDragEnter(i)}
               onDragOver={e => { e.preventDefault(); onDragEnter(i) }}
               onDragEnd={onDragEnd}
-              className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all cursor-grab active:cursor-grabbing select-none"
+              className="rounded-xl transition-all"
               style={{
                 background: isDraggingOver ? '#fef9e7' : b.visible ? '#fff' : '#f9f9f7',
                 border: isDraggingOver ? '1.5px dashed #f5c542' : '1.5px solid #e8e7e2',
                 opacity: dragging === i ? 0.4 : 1,
-                transform: isDraggingOver ? 'scale(1.01)' : 'none',
               }}
             >
-              {/* Drag handle */}
-              <span className="text-gray-300 text-base leading-none shrink-0">⠿</span>
+              {/* Main row */}
+              <div className="flex items-center gap-2 px-3 py-2.5 cursor-grab active:cursor-grabbing">
+                <span className="text-gray-300 text-base leading-none shrink-0 select-none">⠿</span>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className={`text-sm font-semibold ${b.visible ? 'text-gray-800' : 'text-gray-400'}`}>{info?.label}</div>
-                <div className="text-xs text-gray-400">{info?.desc}</div>
+                {/* Label + desc */}
+                <div className="flex-1 min-w-0 select-none">
+                  <div className={`text-sm font-semibold ${b.visible ? 'text-gray-800' : 'text-gray-400'}`}>{info?.label}</div>
+                  <div className="text-xs text-gray-400">{info?.desc}</div>
+                </div>
+
+                {/* Size toggle */}
+                <button type="button"
+                  onClick={() => update(i, { size: b.size === 'full' ? 'half' : 'full' })}
+                  title={b.size === 'full' ? '절반 너비로 전환' : '전체 너비로 전환'}
+                  className="shrink-0 text-xs font-bold px-2 py-1 rounded-md border transition-colors"
+                  style={b.size === 'half'
+                    ? { background: '#111', color: '#f5c542', border: '1px solid #111' }
+                    : { background: 'transparent', color: '#9ca3af', border: '1px solid #e5e7eb' }
+                  }
+                >
+                  {b.size === 'full' ? '전체' : '½'}
+                </button>
+
+                {/* Title edit toggle */}
+                {info?.defaultTitle !== '' && (
+                  <button type="button"
+                    onClick={() => setEditingTitle(isEditingTitle ? null : i)}
+                    title="섹션 타이틀 편집"
+                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-colors ${isEditingTitle ? 'bg-yellow-100 text-yellow-700' : 'text-gray-400 hover:bg-gray-100'}`}
+                  >✏️</button>
+                )}
+
+                {/* Up / Down */}
+                <button type="button" onClick={() => i > 0 && move(i, i - 1)} disabled={i === 0}
+                  className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-20 text-xs select-none">↑</button>
+                <button type="button" onClick={() => i < blocks.length - 1 && move(i, i + 1)} disabled={i === blocks.length - 1}
+                  className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-20 text-xs select-none">↓</button>
+
+                {/* Visibility */}
+                <button type="button"
+                  onClick={() => update(i, { visible: !b.visible })}
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-base transition-colors ${b.visible ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-100'}`}
+                  title={b.visible ? '숨기기' : '표시하기'}
+                >
+                  {b.visible ? '👁' : '🙈'}
+                </button>
               </div>
 
-              {/* Up / Down */}
-              <button type="button" onClick={() => i > 0 && move(i, i - 1)}
-                disabled={i === 0}
-                className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-20 text-xs">↑</button>
-              <button type="button" onClick={() => i < blocks.length - 1 && move(i, i + 1)}
-                disabled={i === blocks.length - 1}
-                className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-20 text-xs">↓</button>
-
-              {/* Visibility toggle */}
-              <button type="button"
-                onClick={() => setBlocks(prev => prev.map((x, idx) => idx === i ? { ...x, visible: !x.visible } : x))}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg text-base transition-colors ${b.visible ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-100'}`}
-                title={b.visible ? '숨기기' : '표시하기'}
-              >
-                {b.visible ? '👁' : '🙈'}
-              </button>
+              {/* Title edit row */}
+              {isEditingTitle && (
+                <div className="px-3 pb-2.5 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                  <span className="text-xs text-gray-400 shrink-0">구분선 제목</span>
+                  <input
+                    type="text"
+                    className="input flex-1 text-sm py-1"
+                    value={b.title}
+                    placeholder={info?.defaultTitle}
+                    onChange={e => update(i, { title: e.target.value })}
+                    onKeyDown={e => e.key === 'Enter' && setEditingTitle(null)}
+                    autoFocus
+                  />
+                  <button type="button" className="text-xs text-gray-400 hover:text-gray-700"
+                    onClick={() => setEditingTitle(null)}>완료</button>
+                </div>
+              )}
             </div>
           )
         })}

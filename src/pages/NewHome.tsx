@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { programs, activities } from '../data/hakkyo'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
@@ -278,7 +278,9 @@ function useCalEvents(): CalEvent[] {
 import type { HomeBlockConfig } from './Admin'
 import { HOME_BLOCKS_DEFAULT } from './Admin'
 
-const DEFAULT_LAYOUT: HomeBlockConfig[] = HOME_BLOCKS_DEFAULT.map(b => ({ id: b.id, visible: true }))
+const DEFAULT_LAYOUT: HomeBlockConfig[] = HOME_BLOCKS_DEFAULT.map(b => ({
+  id: b.id, visible: true, size: 'full' as const, title: b.defaultTitle,
+}))
 
 function useHomeLayout(): HomeBlockConfig[] {
   const [layout, setLayout] = useState<HomeBlockConfig[]>(DEFAULT_LAYOUT)
@@ -291,7 +293,11 @@ function useHomeLayout(): HomeBlockConfig[] {
             const saved = JSON.parse(data.value_ko) as HomeBlockConfig[]
             const ids = saved.map(b => b.id)
             const rest = DEFAULT_LAYOUT.filter(b => !ids.includes(b.id))
-            setLayout([...saved, ...rest])
+            const merged = saved.map(b => ({
+              ...{ size: 'full' as const, title: HOME_BLOCKS_DEFAULT.find(d => d.id === b.id)?.defaultTitle ?? '' },
+              ...b,
+            }))
+            setLayout([...merged, ...rest])
           } catch {}
         }
       })
@@ -320,11 +326,12 @@ export default function NewHome() {
     .filter(a => a.dday >= 0)
     .sort((a, b) => a.dday - b.dday)
 
-  function renderBlock(id: string) {
-    switch (id) {
+  function blockContent(b: HomeBlockConfig) {
+    const title = b.title || undefined
+    switch (b.id) {
       case 'calendar_notices':
         return (
-          <div key="calendar_notices" className="home-split-row">
+          <div className="home-split-row">
             <HakkyoCalendar events={calEvents} lang={lang} />
             <div className="home-split-notices">
               {pinned && <NoticeCard n={pinned} />}
@@ -335,8 +342,8 @@ export default function NewHome() {
       case 'mini_hakkyo':
         if (!upcomingEvents.length) return null
         return (
-          <div key="mini_hakkyo">
-            <div className="feed-divider">{t.home.miniSection}</div>
+          <div>
+            {title && <div className="feed-divider">{title}</div>}
             {upcomingEvents.map(a => {
               const dd = (a as any).dday as number
               const ddLabel = dd === 0 ? t.home.today : dd === 1 ? t.home.tomorrow : `D-${dd}`
@@ -358,8 +365,8 @@ export default function NewHome() {
         )
       case 'programs':
         return (
-          <div key="programs">
-            <div className="feed-divider">{t.home.programSection}</div>
+          <div>
+            {title && <div className="feed-divider">{title}</div>}
             <div className="feed-programs-grid">
               {programs.slice(0, 4).map(p => {
                 const pName = lang === 'fr' ? (p as any).fr : lang === 'en' ? p.en : p.lang
@@ -395,7 +402,7 @@ export default function NewHome() {
         )
       case 'cta':
         return (
-          <div key="cta" className="feed-card feed-cta-card">
+          <div className="feed-card feed-cta-card">
             <div className="feed-card-inner">
               <div className="feed-meta">
                 <div className="feed-avatar feed-avatar-h">H</div>
@@ -419,7 +426,7 @@ export default function NewHome() {
         )
       case 'reviews':
         return (
-          <a key="reviews" href="/community/reviews" className="feed-event-card" style={{ textDecoration:'none' }}>
+          <a href="/community/reviews" className="feed-event-card" style={{ textDecoration:'none' }}>
             <div className="feed-dday" style={{ background:'#f5f5f0', fontSize:22 }}>⭐</div>
             <div className="feed-event-body">
               <div className="feed-event-title">{t.home.reviewSection}</div>
@@ -432,6 +439,33 @@ export default function NewHome() {
       default:
         return null
     }
+  }
+
+  // Group visible blocks: consecutive 'half' blocks pair up side-by-side
+  function renderBlocks() {
+    const visible = layout.filter(b => b.visible)
+    const result: React.ReactNode[] = []
+    let i = 0
+    while (i < visible.length) {
+      const b = visible[i]
+      const content = blockContent(b)
+      if (!content) { i++; continue }
+      if (b.size === 'half' && i + 1 < visible.length && visible[i + 1].size === 'half') {
+        const b2 = visible[i + 1]
+        const content2 = blockContent(b2)
+        result.push(
+          <div key={`pair-${b.id}-${b2.id}`} style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, alignItems:'start' }}>
+            <div>{content}</div>
+            <div>{content2 ?? null}</div>
+          </div>
+        )
+        i += 2
+      } else {
+        result.push(<div key={b.id}>{content}</div>)
+        i++
+      }
+    }
+    return result
   }
 
   return (
@@ -452,7 +486,7 @@ export default function NewHome() {
             <button className="ch-compose-btn">{t.home.applyBtn}</button>
           </div>
 
-          {layout.filter(b => b.visible).map(b => renderBlock(b.id))}
+          {renderBlocks()}
 
           {rest.length > 2 && <div className="feed-divider">{t.home.noticeSection}</div>}
           {rest.slice(2).map(n => <NoticeCard key={n.id} n={n} />)}
