@@ -147,8 +147,12 @@ function HakkyoCalendar({ events, lang: l }: { events: CalEvent[]; lang: string 
     }
   })
 
-  // unique colors for legend
-  const legendColors = [...new Map(events.map(e => [e.color, e])).values()]
+  // All upcoming events from today (across all months)
+  const allUpcoming = events
+    .map(e => ({ ...e, dd: dday(e.date) }))
+    .filter(e => e.dd >= 0)
+    .sort((a, b) => a.dd - b.dd)
+    .slice(0, 6)
 
   const MONTH_NAMES_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
   const MONTH_NAMES_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -165,62 +169,81 @@ function HakkyoCalendar({ events, lang: l }: { events: CalEvent[]; lang: string 
     else setViewMonth(m => m + 1)
   }
 
-  // Upcoming events in this month sorted by date
-  const upcomingThisMonth = Object.entries(eventsByDay)
-    .flatMap(([d, evs]) => evs.map(e => ({ ...e, day: Number(d), dd: dday(e.date) })))
-    .filter(e => e.dd >= 0)
-    .sort((a, b) => a.dd - b.dd)
-    .slice(0, 5)
-
   return (
     <div className="hk-calendar">
+      {/* Top bar */}
       <div className="hk-cal-header">
-        <div>
-          <div className="hk-cal-title">HAKKYO 캘린더</div>
-          <div className="hk-cal-month">{viewYear}년 {monthName}</div>
-        </div>
+        <div className="hk-cal-title">HAKKYO 캘린더</div>
         <div style={{ display:'flex', gap:4 }}>
           <button className="hk-cal-nav" onClick={prev}>‹</button>
           <button className="hk-cal-nav" onClick={next}>›</button>
         </div>
       </div>
 
-      <div className="hk-cal-grid">
-        {weekdays.map(d => <div key={d} className="hk-cal-weekday">{d}</div>)}
-        {cells.map((day, i) => {
-          if (!day) return <div key={`e${i}`} className="hk-cal-cell empty" />
-          const evs = eventsByDay[day] ?? []
-          const isToday = day === today.getDate() && viewYear === today.getFullYear() && viewMonth === today.getMonth()
-          return (
-            <div key={day} className={`hk-cal-cell${isToday ? ' today' : ''}${evs.length ? ' has-event' : ''}`}>
-              <span className="hk-cal-day">{day}</span>
-              {evs.slice(0, 2).map((e, j) => (
-                <a key={j} href={e.href} title={e.label} className="hk-cal-event-bar"
-                  style={{ background: e.color + '22', borderLeft: `2.5px solid ${e.color}`, color: e.color === '#f5c542' ? '#996b00' : e.color }}>
-                  {e.label.split('·')[0].trim()}
-                </a>
-              ))}
-            </div>
-          )
-        })}
-      </div>
+      {/* Two-column body */}
+      <div className="hk-cal-body">
 
-      {/* Upcoming D-day list */}
-      {upcomingThisMonth.length > 0 && (
-        <div className="hk-cal-upcoming">
-          {upcomingThisMonth.map((e, i) => {
-            const ddLabel = e.dd === 0 ? (l === 'en' ? 'TODAY' : l === 'fr' ? "AUJ." : '오늘') : `D-${e.dd}`
-            return (
-              <a key={i} href={e.href} className="hk-cal-upcoming-row">
-                <span className="hk-cal-upcoming-dday" style={{ color: e.color === '#f5c542' ? '#996b00' : e.color, background: e.color + '18' }}>
-                  {ddLabel}
-                </span>
-                <span className="hk-cal-upcoming-label">{e.label}</span>
-              </a>
-            )
-          })}
+        {/* Left: grid */}
+        <div className="hk-cal-grid-col">
+          <div className="hk-cal-month">{viewYear}년 {monthName}</div>
+          <div className="hk-cal-grid">
+            {weekdays.map(d => <div key={d} className="hk-cal-weekday">{d}</div>)}
+            {cells.map((day, i) => {
+              if (!day) return <div key={`e${i}`} className="hk-cal-cell empty" />
+              const evs = eventsByDay[day] ?? []
+              const isToday = day === today.getDate() && viewYear === today.getFullYear() && viewMonth === today.getMonth()
+              return (
+                <div key={day} className={`hk-cal-cell${isToday ? ' today' : ''}${evs.length ? ' has-event' : ''}`}>
+                  <span className="hk-cal-day">{day}</span>
+                  {evs.slice(0, 2).map((e, j) => (
+                    <a key={j} href={e.href} title={e.label} className="hk-cal-event-bar"
+                      style={{ background: e.color + '22', borderLeft: `2.5px solid ${e.color}`, color: e.color === '#f5c542' ? '#8a6000' : e.color }}>
+                      {e.label.split('·')[0].trim()}
+                    </a>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
         </div>
-      )}
+
+        {/* Right: D-day list (always today-based, not month-view-based) */}
+        {allUpcoming.length > 0 && (
+          <div className="hk-cal-sidebar">
+            <div className="hk-cal-sidebar-title">
+              {l === 'en' ? 'Upcoming' : l === 'fr' ? 'À venir' : '다가오는 일정'}
+            </div>
+            <div className="hk-cal-upcoming">
+              {allUpcoming.map((e, i) => {
+                const ddLabel = e.dd === 0
+                  ? (l === 'en' ? 'TODAY' : l === 'fr' ? "AUJ." : '오늘')
+                  : e.dd === 1
+                  ? (l === 'en' ? 'TMRW' : l === 'fr' ? 'DEMAIN' : '내일')
+                  : `D-${e.dd}`
+                const accentColor = e.color === '#f5c542' ? '#8a6000' : e.color
+                const d = new Date(e.date)
+                const dateStr = l === 'en'
+                  ? `${MONTH_NAMES_EN[d.getMonth()]} ${d.getDate()}`
+                  : l === 'fr'
+                  ? `${d.getDate()} ${MONTH_NAMES_FR[d.getMonth()]}`
+                  : `${d.getMonth()+1}월 ${d.getDate()}일`
+                return (
+                  <a key={i} href={e.href} className="hk-cal-upcoming-row">
+                    <span className="hk-cal-upcoming-dday"
+                      style={{ color: accentColor, background: e.color + '20', borderColor: e.color + '40' }}>
+                      {ddLabel}
+                    </span>
+                    <div className="hk-cal-upcoming-info">
+                      <span className="hk-cal-upcoming-label">{e.label.split('·')[0].trim()}</span>
+                      <span className="hk-cal-upcoming-date">{dateStr}</span>
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
