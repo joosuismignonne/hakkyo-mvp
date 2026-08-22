@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react'
+import { getChannels, createChannel, deleteChannel, reorderChannel, type Channel } from '../lib/channels'
 import { useNavigate } from 'react-router-dom'
 import { supabase, isConfigured } from '../lib/supabase'
 import {
@@ -4364,9 +4365,118 @@ function HomeNoticesAdmin() {
   )
 }
 
+function ChannelsDBAdmin() {
+  const [channels, setChannels] = useState<Channel[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState<string | null>(null)
+  const [newCh, setNewCh]       = useState({ icon: '💬', name: '', slug: '', description: '' })
+  const [err, setErr]           = useState('')
+
+  const load = () => getChannels().then(setChannels).finally(() => setLoading(false))
+  useEffect(() => { load() }, [])
+
+  async function handleMove(ch: Channel, dir: -1 | 1) {
+    const idx = channels.findIndex(c => c.id === ch.id)
+    const other = channels[idx + dir]
+    if (!other) return
+    setSaving(ch.id)
+    await Promise.all([
+      reorderChannel(ch.id, other.sort_order),
+      reorderChannel(other.id, ch.sort_order),
+    ])
+    await load()
+    setSaving(null)
+  }
+
+  async function handleEdit(id: string, field: keyof Channel, value: string) {
+    setChannels(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c))
+  }
+
+  async function handleSaveEdit(ch: Channel) {
+    if (!supabase) return
+    setSaving(ch.id)
+    await supabase.from('channels').update({ icon: ch.icon, name: ch.name, description: ch.description }).eq('id', ch.id)
+    setSaving(null)
+  }
+
+  async function handleDelete(ch: Channel) {
+    if (!confirm(`"${ch.name}" 채널을 삭제할까요? 채널의 글도 모두 사라져요.`)) return
+    setSaving(ch.id)
+    await deleteChannel(ch.id)
+    setChannels(prev => prev.filter(c => c.id !== ch.id))
+    setSaving(null)
+  }
+
+  async function handleCreate() {
+    setErr('')
+    if (!newCh.name.trim()) { setErr('채널 이름을 입력해 주세요.'); return }
+    const slug = newCh.slug.trim() || newCh.name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    setSaving('new')
+    try {
+      const sort_order = channels.length ? Math.max(...channels.map(c => c.sort_order)) + 1 : 1
+      await createChannel({ icon: newCh.icon, name: newCh.name.trim(), slug, description: newCh.description.trim(), sort_order })
+      setNewCh({ icon: '💬', name: '', slug: '', description: '' })
+      await load()
+    } catch(e) { setErr((e as Error).message) }
+    finally { setSaving(null) }
+  }
+
+  if (loading) return <Spinner />
+  return (
+    <div className="space-y-4">
+      {err && <div className="text-red-500 text-sm">{err}</div>}
+      <p className="text-xs text-gray-400">채널 이름·아이콘을 수정하고 저장, ↑↓로 순서 변경, ×로 삭제. 사이드바에 즉시 반영돼요.</p>
+      <div className="space-y-2">
+        {channels.map((ch, i) => (
+          <div key={ch.id} className="grid grid-cols-[36px_36px_1fr_1fr_auto] gap-2 items-center bg-gray-50 rounded-lg px-2 py-1.5">
+            <input className="input text-center text-base p-1" value={ch.icon}
+              onChange={e => handleEdit(ch.id, 'icon', e.target.value)} />
+            <span className="text-xs text-gray-300 text-center font-mono">{ch.slug}</span>
+            <input className="input text-sm" value={ch.name}
+              onChange={e => handleEdit(ch.id, 'name', e.target.value)} placeholder="채널 이름" />
+            <input className="input text-xs" value={ch.description}
+              onChange={e => handleEdit(ch.id, 'description', e.target.value)} placeholder="설명 (선택)" />
+            <div className="flex gap-1 items-center">
+              <button disabled={i === 0 || saving === ch.id}
+                onClick={() => handleMove(ch, -1)}
+                className="text-gray-400 hover:text-gray-700 disabled:opacity-20 px-1 text-sm">↑</button>
+              <button disabled={i === channels.length - 1 || saving === ch.id}
+                onClick={() => handleMove(ch, 1)}
+                className="text-gray-400 hover:text-gray-700 disabled:opacity-20 px-1 text-sm">↓</button>
+              <button disabled={saving === ch.id}
+                onClick={() => handleSaveEdit(ch)}
+                className="text-xs text-blue-500 hover:text-blue-700 px-1 font-medium">
+                {saving === ch.id ? '…' : '저장'}
+              </button>
+              <button onClick={() => handleDelete(ch)}
+                className="text-gray-300 hover:text-red-500 text-xl leading-none px-1">×</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t pt-3 mt-3">
+        <p className="text-xs font-semibold text-gray-500 mb-2">+ 새 채널 추가</p>
+        <div className="grid grid-cols-[44px_1fr_1fr_1fr] gap-2 items-center">
+          <input className="input text-center text-lg" value={newCh.icon}
+            onChange={e => setNewCh(p => ({ ...p, icon: e.target.value }))} placeholder="💬" />
+          <input className="input" value={newCh.name}
+            onChange={e => setNewCh(p => ({ ...p, name: e.target.value }))} placeholder="채널 이름 *" />
+          <input className="input font-mono text-xs" value={newCh.slug}
+            onChange={e => setNewCh(p => ({ ...p, slug: e.target.value }))} placeholder="slug (자동생성)" />
+          <input className="input text-xs" value={newCh.description}
+            onChange={e => setNewCh(p => ({ ...p, description: e.target.value }))} placeholder="설명 (선택)" />
+        </div>
+        <button onClick={handleCreate} disabled={saving === 'new'} className="btn-yellow mt-2 text-sm">
+          {saving === 'new' ? '추가 중…' : '채널 추가'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ThemeChannelAdmin() {
   const [colors, setColors] = useState({ color_sidebar: '#111116', color_accent: '#f5c542', color_main_bg: '#fafaf7' })
-  const [channels, setChannels] = useState(DEFAULT_CHANNELS_CONFIG)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -4381,42 +4491,21 @@ function ThemeChannelAdmin() {
         color_main_bg: get('color_main_bg') || '#fafaf7',
       })
     })
-    supabase.from('site_content').select('key,value_ko').eq('page','community_channels').then(({data}) => {
-      if (!data?.length) return
-      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
-      const chs = []
-      for (let i = 1; i <= 8; i++) {
-        const name = get(`ch${i}_name`)
-        if (!name) break
-        chs.push({ icon: get(`ch${i}_icon`), name, href: get(`ch${i}_href`) || '/board' })
-      }
-      if (chs.length) setChannels(chs)
-    })
   }, [])
 
-  async function save() {
+  async function saveTheme() {
     if (!supabase) return
     setSaving(true)
     const themeRows = Object.entries(colors).map(([key, value]) => ({
       page: 'theme', key, label: key, value_ko: value, value_en: value, value_fr: value,
     }))
-    const chRows = channels.flatMap((ch, i) => [
-      { page: 'community_channels', key: `ch${i+1}_icon`, label: `채널${i+1} 아이콘`, value_ko: ch.icon, value_en: ch.icon, value_fr: ch.icon },
-      { page: 'community_channels', key: `ch${i+1}_name`, label: `채널${i+1} 이름`, value_ko: ch.name, value_en: ch.name, value_fr: ch.name },
-      { page: 'community_channels', key: `ch${i+1}_href`, label: `채널${i+1} 링크`, value_ko: ch.href, value_en: ch.href, value_fr: ch.href },
-    ])
-    await supabase.from('site_content').upsert([...themeRows, ...chRows], { onConflict: 'page,key' })
+    await supabase.from('site_content').upsert(themeRows, { onConflict: 'page,key' })
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2000)
-    // Apply immediately
     const r = document.documentElement
     r.style.setProperty('--sidebar-bg', colors.color_sidebar)
     r.style.setProperty('--sidebar-accent', colors.color_accent)
     r.style.setProperty('--main-bg', colors.color_main_bg)
-  }
-
-  function updateCh(i: number, k: 'icon'|'name'|'href', v: string) {
-    setChannels(prev => prev.map((ch, idx) => idx === i ? { ...ch, [k]: v } : ch))
   }
 
   return (
@@ -4444,37 +4533,13 @@ function ThemeChannelAdmin() {
             </div>
           ))}
         </div>
+        <button onClick={saveTheme} disabled={saving} className="btn-yellow mt-4">
+          {saving ? '저장 중…' : saved ? '저장됨 ✓' : '색상 저장'}
+        </button>
       </FormCard>
 
-      <FormCard title="커뮤니티 채널">
-        <p className="text-xs text-gray-400 mb-3">아이콘 · 이름 · 링크를 편집하고, ↑↓로 순서를 바꾸고, ×로 삭제해요. 저장하면 사이드바에 바로 반영돼요.</p>
-        <div className="space-y-2 mb-3">
-          {channels.map((ch, i) => (
-            <div key={i} className="grid grid-cols-[44px_1fr_1fr_auto] gap-2 items-center">
-              <input className="input text-center text-lg" value={ch.icon}
-                onChange={e => updateCh(i, 'icon', e.target.value)} placeholder="🏠" />
-              <input className="input" value={ch.name}
-                onChange={e => updateCh(i, 'name', e.target.value)} placeholder="채널 이름" />
-              <input className="input font-mono text-xs" value={ch.href}
-                onChange={e => updateCh(i, 'href', e.target.value)} placeholder="/board" />
-              <div className="flex gap-1 items-center">
-                <button type="button" title="위로"
-                  disabled={i === 0}
-                  onClick={() => setChannels(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a })}
-                  className="text-gray-400 hover:text-gray-700 disabled:opacity-20 text-sm px-1">↑</button>
-                <button type="button" title="아래로"
-                  disabled={i === channels.length - 1}
-                  onClick={() => setChannels(prev => { const a=[...prev]; [a[i],a[i+1]]=[a[i+1],a[i]]; return a })}
-                  className="text-gray-400 hover:text-gray-700 disabled:opacity-20 text-sm px-1">↓</button>
-                <button type="button" title="삭제"
-                  onClick={() => { if(confirm(`"${ch.name}" 채널을 삭제할까요?`)) setChannels(prev => prev.filter((_,idx) => idx !== i)) }}
-                  className="text-gray-300 hover:text-red-500 text-xl leading-none px-1">×</button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <button type="button" onClick={() => setChannels(prev => [...prev, { icon: '💬', name: '새 채널', href: '/community/new' }])}
-          className="text-xs text-gray-400 hover:text-gray-700">+ 채널 추가</button>
+      <FormCard title="커뮤니티 채널 관리">
+        <ChannelsDBAdmin />
       </FormCard>
 
       <FormCard title="홈 공지 카드">
@@ -4484,10 +4549,6 @@ function ThemeChannelAdmin() {
       <FormCard title="홈 레이아웃 순서">
         <HomeLayoutAdmin />
       </FormCard>
-
-      <button onClick={save} disabled={saving} className="btn-yellow">
-        {saving ? '저장 중…' : saved ? '저장됨 ✓' : '저장하기'}
-      </button>
     </div>
   )
 }
