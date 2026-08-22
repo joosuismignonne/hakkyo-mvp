@@ -2567,10 +2567,21 @@ const HAKKYO_SUB_FIELDS: { key: string; label: string }[] = [
   { key: 'message',            label: '마지막 메시지' },
 ]
 
-function HakkyoSubCard({ s, index }: { s: Record<string, unknown>; index: number }) {
+function HakkyoSubCard({ s, index, onDelete }: { s: Record<string, unknown>; index: number; onDelete: (id: string) => void }) {
   const [open, setOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const str = (k: string) => s[k] != null ? String(s[k]) : ''
   const kindLabel: Record<string, string> = { activity: '🐱 액티비티', community: '🤝 커뮤니티', newsletter: '🔔 소식', program: '📚 프로그램' }
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!confirm(`${str('name') || '이 신청'}을 삭제할까요?`)) return
+    setDeleting(true)
+    const { error } = await supabase!.from('hakkyo_submissions').delete().eq('id', str('id'))
+    if (!error) onDelete(str('id'))
+    else { alert('삭제 실패: ' + error.message); setDeleting(false) }
+  }
+
   return (
     <div key={str('id') || index} className="border border-gray-200 rounded-xl overflow-hidden mb-3">
       <div
@@ -2593,7 +2604,16 @@ function HakkyoSubCard({ s, index }: { s: Record<string, unknown>; index: number
             <p className="text-xs text-gray-400 mt-1 line-clamp-2">{str('join_reason')}</p>
           )}
         </div>
-        <span className="text-gray-300 text-sm flex-shrink-0 mt-1">{open ? '▲' : '▼'}</span>
+        <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="text-[10px] text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded px-1.5 py-0.5 transition-colors"
+          >
+            {deleting ? '…' : '삭제'}
+          </button>
+          <span className="text-gray-300 text-sm">{open ? '▲' : '▼'}</span>
+        </div>
       </div>
       {open && (
         <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-2">
@@ -2613,13 +2633,13 @@ function HakkyoSubCard({ s, index }: { s: Record<string, unknown>; index: number
   )
 }
 
-function HakkyoSubList({ subs }: { subs: Record<string, unknown>[] }) {
+function HakkyoSubList({ subs, onDelete }: { subs: Record<string, unknown>[]; onDelete: (id: string) => void }) {
   return (
     <div>
       <div className="text-[11px] font-bold text-gray-400 tracking-wide uppercase mb-3">
         액티비티 · 커뮤니티 · 소식 신청 ({subs.length}건)
       </div>
-      {subs.map((s, i) => <HakkyoSubCard key={String(s['id'] ?? i)} s={s} index={i} />)}
+      {subs.map((s, i) => <HakkyoSubCard key={String(s['id'] ?? i)} s={s} index={i} onDelete={onDelete} />)}
     </div>
   )
 }
@@ -2823,6 +2843,14 @@ function ApplicationsAdmin() {
 
   const showHakkyo = kindFilter === 'all' || kindFilter === 'activity' || kindFilter === 'community' || kindFilter === 'newsletter'
 
+  async function deleteApp(a: UnifiedApp) {
+    if (!confirm(`${a.name || '이 신청'}을 삭제할까요?`)) return
+    const table = a._source === 'program_applications' ? 'program_applications' : 'applications'
+    const { error } = await supabase!.from(table).delete().eq('id', a.id)
+    if (!error) { setApps(prev => prev.filter(x => x.id !== a.id)); if (selected?.id === a.id) setSelected(null) }
+    else alert('삭제 실패: ' + error.message)
+  }
+
   if (loading) return <Spinner />
 
   const PROGRAM_APP_STATUSES: ProgramApplicationStatus[] = ['new','reviewing','accepted','waitlist','payment_pending','enrolled','cancelled']
@@ -2987,7 +3015,7 @@ function ApplicationsAdmin() {
 
       {/* hakkyo_submissions (activity / community / newsletter) */}
       {showHakkyo && visibleHakkyo.length > 0 && (
-        <HakkyoSubList subs={visibleHakkyo} />
+        <HakkyoSubList subs={visibleHakkyo} onDelete={id => setHakkyoSubs(prev => prev.filter(s => String(s['id']) !== id))} />
       )}
       {showHakkyo && visibleHakkyo.length === 0 && kindFilter !== 'all' && (kindFilter === 'activity' || kindFilter === 'community' || kindFilter === 'newsletter') && (
         <p className="text-sm text-gray-400 text-center py-8">신청 내역이 없어요.</p>
@@ -3050,9 +3078,15 @@ function ApplicationsAdmin() {
                       <span className="text-[11px] text-gray-400 truncate max-w-[120px]">{a.program_name}</span>
                     )}
                   </div>
-                  {a.created_at && (
-                    <p className="text-[10px] text-gray-300 mt-1">{a.created_at.split('T')[0]}</p>
-                  )}
+                  <div className="flex items-center justify-between mt-1">
+                    {a.created_at && (
+                      <p className="text-[10px] text-gray-300">{a.created_at.split('T')[0]}</p>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); deleteApp(a) }}
+                      className="text-[10px] text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded px-1.5 py-0.5 transition-colors ml-auto"
+                    >삭제</button>
+                  </div>
                 </div>
               ))
             )}
