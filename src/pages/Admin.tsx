@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react'
+import {
+  Bell, ClipboardText, CalendarCheck, NotePencil, BookOpen,
+  CalendarBlank, Question, PaintBucket, ChartBar,
+} from '@phosphor-icons/react'
 import { getChannels, createChannel, deleteChannel, reorderChannel, type Channel } from '../lib/channels'
 import { useNavigate } from 'react-router-dom'
 import { supabase, isConfigured } from '../lib/supabase'
@@ -5340,15 +5344,15 @@ function FaqAdmin() {
 }
 
 const TABS = [
-  { id: 'notifications', label: '🔔 알림',           Component: NotificationsAdmin },
-  { id: 'applications',  label: '📋 신청서',          Component: ApplicationsAdmin  },
-  { id: 'activities',    label: '🐱 Mini 일정',       Component: ActivitiesAdmin    },
-  { id: 'mini-hakkyo',   label: '✏️ Mini 소개글',     Component: MiniHakkyoAdmin    },
-  { id: 'sessions',      label: '📚 프로그램',         Component: SessionsAdmin      },
-  { id: 'calendar',      label: '📅 캘린더',           Component: CalendarAdmin      },
-  { id: 'faq',           label: '❓ FAQ',             Component: FaqAdmin           },
-  { id: 'theme',         label: '🎨 테마 & 채널',      Component: ThemeChannelAdmin  },
-  { id: 'analytics',     label: '📊 통계',            Component: AnalyticsAdmin     },
+  { id: 'notifications', label: '알림',       Icon: Bell,          Component: NotificationsAdmin },
+  { id: 'applications',  label: '신청서',      Icon: ClipboardText, Component: ApplicationsAdmin  },
+  { id: 'activities',    label: 'Mini 일정',   Icon: CalendarCheck, Component: ActivitiesAdmin    },
+  { id: 'mini-hakkyo',   label: 'Mini 소개글', Icon: NotePencil,    Component: MiniHakkyoAdmin    },
+  { id: 'sessions',      label: '프로그램',    Icon: BookOpen,      Component: SessionsAdmin      },
+  { id: 'calendar',      label: '캘린더',      Icon: CalendarBlank, Component: CalendarAdmin      },
+  { id: 'faq',           label: 'FAQ',        Icon: Question,      Component: FaqAdmin           },
+  { id: 'theme',         label: '테마 & 채널', Icon: PaintBucket,   Component: ThemeChannelAdmin  },
+  { id: 'analytics',     label: '통계',       Icon: ChartBar,      Component: AnalyticsAdmin     },
 ]
 
 export default function Admin() {
@@ -5381,28 +5385,32 @@ export default function Admin() {
           <div style={{ fontSize: 9, color: '#44445a', letterSpacing: 1.5, marginTop: 2 }}>ADMIN</div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-          {TABS.map(t => (
-            <button key={t.id}
-              onClick={() => { setTab(t.id); if (t.id === 'notifications') setUnreadCount(0) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                padding: '8px 16px', fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
-                color: tab === t.id ? '#f5c542' : '#a0a0b8', background: tab === t.id ? 'rgba(245,197,66,.08)' : 'none',
-                border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-                borderLeft: tab === t.id ? '2px solid #f5c542' : '2px solid transparent',
-                transition: 'all .15s',
-              }}>
-              {t.label}
-              {t.id === 'notifications' && unreadCount > 0 && (
-                <span style={{
-                  background: '#f5c542', color: '#111', fontSize: 9, fontWeight: 800,
-                  borderRadius: 99, padding: '1px 5px', marginLeft: 'auto',
+          {TABS.map(t => {
+            const isActive = tab === t.id
+            return (
+              <button key={t.id}
+                onClick={() => { setTab(t.id); if (t.id === 'notifications') setUnreadCount(0) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 9, width: '100%',
+                  padding: '9px 16px', fontSize: 13, fontWeight: isActive ? 700 : 400,
+                  color: isActive ? '#f5c542' : '#7070a0', background: isActive ? 'rgba(245,197,66,.08)' : 'none',
+                  border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                  borderLeft: isActive ? '2px solid #f5c542' : '2px solid transparent',
+                  transition: 'all .15s',
                 }}>
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-          ))}
+                <t.Icon size={16} weight="bold" />
+                <span>{t.label}</span>
+                {t.id === 'notifications' && unreadCount > 0 && (
+                  <span style={{
+                    background: '#f5c542', color: '#111', fontSize: 9, fontWeight: 800,
+                    borderRadius: 99, padding: '1px 5px', marginLeft: 'auto',
+                  }}>
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
         <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,.07)' }}>
           {!isConfigured && (
