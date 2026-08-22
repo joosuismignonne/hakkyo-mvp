@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLang } from '../lib/lang'
 
-const WEBHOOK = import.meta.env.VITE_DISCORD_WEBHOOK as string | undefined
+const WEBHOOK = import.meta.env.VITE_DISCORD_WEBHOOK || 'https://discord.com/api/webhooks/1540525315179151442/h-F9NxAIXscf6Twl1lwM1SrsQGJOo4Y0grFSVXvzf22aS0b2koytBVm_8vuLoOjxMEVc'
 
 const PAGE_THRESHOLD = 3  // show after this many page navigations without converting
 
