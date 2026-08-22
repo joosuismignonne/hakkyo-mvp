@@ -29,7 +29,9 @@ function RouteTracker() {
   useEffect(() => {
     const path = location.pathname + location.search
     trackPageView(path)
-    trackEvent({ eventName: 'page_view', targetType: 'page', targetLabel: path })
+    if (!location.pathname.startsWith('/admin')) {
+      trackEvent({ eventName: 'page_view', targetType: 'page', targetLabel: path })
+    }
   }, [location])
   return null
 }
