@@ -4447,21 +4447,33 @@ function ThemeChannelAdmin() {
       </FormCard>
 
       <FormCard title="커뮤니티 채널">
+        <p className="text-xs text-gray-400 mb-3">아이콘 · 이름 · 링크를 편집하고, ↑↓로 순서를 바꾸고, ×로 삭제해요. 저장하면 사이드바에 바로 반영돼요.</p>
         <div className="space-y-2 mb-3">
           {channels.map((ch, i) => (
-            <div key={i} className="grid grid-cols-[44px_1fr_1fr_24px] gap-2 items-center">
+            <div key={i} className="grid grid-cols-[44px_1fr_1fr_auto] gap-2 items-center">
               <input className="input text-center text-lg" value={ch.icon}
                 onChange={e => updateCh(i, 'icon', e.target.value)} placeholder="🏠" />
               <input className="input" value={ch.name}
                 onChange={e => updateCh(i, 'name', e.target.value)} placeholder="채널 이름" />
               <input className="input font-mono text-xs" value={ch.href}
                 onChange={e => updateCh(i, 'href', e.target.value)} placeholder="/board" />
-              <button type="button" onClick={() => setChannels(prev => prev.filter((_,idx) => idx !== i))}
-                className="text-gray-300 hover:text-red-500 text-xl leading-none">×</button>
+              <div className="flex gap-1 items-center">
+                <button type="button" title="위로"
+                  disabled={i === 0}
+                  onClick={() => setChannels(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a })}
+                  className="text-gray-400 hover:text-gray-700 disabled:opacity-20 text-sm px-1">↑</button>
+                <button type="button" title="아래로"
+                  disabled={i === channels.length - 1}
+                  onClick={() => setChannels(prev => { const a=[...prev]; [a[i],a[i+1]]=[a[i+1],a[i]]; return a })}
+                  className="text-gray-400 hover:text-gray-700 disabled:opacity-20 text-sm px-1">↓</button>
+                <button type="button" title="삭제"
+                  onClick={() => { if(confirm(`"${ch.name}" 채널을 삭제할까요?`)) setChannels(prev => prev.filter((_,idx) => idx !== i)) }}
+                  className="text-gray-300 hover:text-red-500 text-xl leading-none px-1">×</button>
+              </div>
             </div>
           ))}
         </div>
-        <button type="button" onClick={() => setChannels(prev => [...prev, { icon: '💬', name: '새 채널', href: '/board' }])}
+        <button type="button" onClick={() => setChannels(prev => [...prev, { icon: '💬', name: '새 채널', href: '/community/new' }])}
           className="text-xs text-gray-400 hover:text-gray-700">+ 채널 추가</button>
       </FormCard>
 
