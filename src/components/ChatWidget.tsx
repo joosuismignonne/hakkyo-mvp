@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLang } from '../lib/lang'
 
-// Replace with your Discord webhook URL
-const DISCORD_WEBHOOK_URL = import.meta.env.VITE_DISCORD_WEBHOOK_URL || ''
+// Proxied through /api/discord-notify (server-side) to avoid CORS
+const NOTIFY_API = '/api/discord-notify'
 
 const PAGE_THRESHOLD = 3  // show after this many page navigations without converting
 
@@ -87,25 +87,12 @@ export default function ChatWidget() {
     if (!msg.trim()) { setFieldErr(t.msgRequired); return }
     setStatus('sending')
     try {
-      const payload = {
-        embeds: [{
-          title: '💬 HAKKYO 문의',
-          color: 0x6C63FF,
-          fields: [
-            { name: '이메일', value: email.trim(), inline: true },
-            { name: '언어', value: lang.toUpperCase(), inline: true },
-            { name: '메세지', value: msg.trim() },
-          ],
-          timestamp: new Date().toISOString(),
-        }],
-      }
-      if (!DISCORD_WEBHOOK_URL) throw new Error('No webhook URL')
-      const res = await fetch(DISCORD_WEBHOOK_URL, {
+      const res = await fetch(NOTIFY_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email: email.trim(), message: msg.trim(), lang }),
       })
-      if (!res.ok) throw new Error('Webhook failed')
+      if (!res.ok) throw new Error('Notify failed')
       setStatus('success')
       setDismissed()
     } catch {

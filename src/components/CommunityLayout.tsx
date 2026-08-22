@@ -10,6 +10,26 @@ import {
   getChannels, createChannel, deleteChannel,
   type Channel, ADMIN_EMAILS,
 } from '../lib/channels'
+import {
+  House, Books, Cat,
+  Megaphone, Star, Chat, Globe, Buildings, Briefcase, CalendarBlank,
+  MagnifyingGlass, Hash, type Icon,
+} from '@phosphor-icons/react'
+
+const CHANNEL_ICON: Record<string, Icon> = {
+  board:    Megaphone,
+  reviews:  Star,
+  chat:     Chat,
+  exchange: Globe,
+  housing:  Buildings,
+  jobs:     Briefcase,
+  events:   CalendarBlank,
+}
+
+function ChanIcon({ slug, size = 15 }: { slug: string; size?: number }) {
+  const Ic = CHANNEL_ICON[slug] || Hash
+  return <Ic size={size} weight="bold" />
+}
 
 // href mapping for special channels
 function slugToHref(slug: string) {
@@ -100,7 +120,7 @@ function SearchOverlay({
     <div className="search-overlay" onClick={onClose}>
       <div className="search-modal" onClick={e => e.stopPropagation()}>
         <div className="search-input-row">
-          <span className="search-icon-label">🔍</span>
+          <span className="search-icon-label"><MagnifyingGlass size={15} weight="bold" /></span>
           <input
             ref={inputRef}
             className="search-input"
@@ -308,10 +328,10 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   const path = location.pathname
   const channelMap = t.channels as Record<string, string>
 
-  const navItems = [
-    { icon: '🏠', name: t.nav.home,     href: '/' },
-    { icon: '📚', name: t.nav.programs, href: '/programs' },
-    { icon: '🐱', name: t.nav.mini,     href: '/activities' },
+  const navItems: { Ic: Icon; name: string; href: string }[] = [
+    { Ic: House,  name: t.nav.home,     href: '/' },
+    { Ic: Books,  name: t.nav.programs, href: '/programs' },
+    { Ic: Cat,    name: t.nav.mini,     href: '/activities' },
   ]
 
   function isActive(href: string) {
@@ -376,13 +396,13 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
           {/* Search button */}
           {!collapsed && (
             <div className="sidebar-search-btn" onClick={() => setSearchOpen(true)}>
-              <span style={{ fontSize: 13 }}>🔍</span>
+              <MagnifyingGlass size={13} weight="bold" />
               <span style={{ flex: 1 }}>{t.search.label}</span>
               <span className="sidebar-search-kbd">{t.search.kbd}</span>
             </div>
           )}
           {collapsed && (
-            <button className="sidebar-icon-btn" onClick={() => setSearchOpen(true)} title={t.search.label}>🔍</button>
+            <button className="sidebar-icon-btn" onClick={() => setSearchOpen(true)} title={t.search.label}><MagnifyingGlass size={15} weight="bold" /></button>
           )}
 
           {/* Main nav */}
@@ -393,7 +413,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
                 className={`sidebar-item${isActive(item.href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
                 onMouseEnter={e => showTip(e, item.name)}
                 onMouseLeave={hideTip}>
-                <span className="sidebar-item-icon">{item.icon}</span>
+                <span className="sidebar-item-icon"><item.Ic size={16} weight="bold" /></span>
                 {!collapsed && <span>{item.name}</span>}
               </a>
             ))}
@@ -421,7 +441,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
                   <a href={href} className={`sidebar-item sidebar-ch-item${isActive(href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
                     onMouseEnter={e => showTip(e, channelMap[ch.name] || ch.name)}
                     onMouseLeave={hideTip}>
-                    <span className="sidebar-item-icon sidebar-ch-hash">{ch.icon || '#'}</span>
+                    <span className="sidebar-item-icon sidebar-ch-hash"><ChanIcon slug={ch.slug} /></span>
                     {!collapsed && <span>{channelMap[ch.name] || ch.name}</span>}
                   </a>
                   {isAdmin && !collapsed && (
