@@ -20,7 +20,7 @@ body.has-custom-cursor a,body.has-custom-cursor button,body.has-custom-cursor in
 
 body{background:#fff;font-family:var(--font-geist-sans),Arial,"Noto Sans KR",sans-serif;font-size:15px}
 a,button,input,select,textarea,[data-cursor]{font-family:inherit}
-.custom-cursor{position:fixed;pointer-events:none;z-index:9999;font-size:22px;line-height:1;transform:translate(-50%,-50%);transition:font-size .12s;user-select:none}
+.custom-cursor{position:fixed;pointer-events:none;z-index:10001;font-size:22px;line-height:1;transform:translate(-50%,-50%);transition:font-size .12s;user-select:none}
 .custom-cursor::after{content:"🐱"}
 .custom-cursor.is-hovering{font-size:26px}
 .custom-cursor.is-hovering::after{content:"😸"}
@@ -1265,7 +1265,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   position: fixed;
   bottom: 24px;
   right: 20px;
-  z-index: 9999;
+  z-index: 9000;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
