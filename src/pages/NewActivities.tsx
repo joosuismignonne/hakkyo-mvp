@@ -24,25 +24,31 @@ const DEFAULT_MINI_INTRO: MiniIntro = {
 }
 
 function useMiniIntro(): MiniIntro {
+  const { lang } = useLang()
   const [intro, setIntro] = useState<MiniIntro>(DEFAULT_MINI_INTRO)
   useEffect(() => {
     if (!supabase) return
-    supabase.from('site_content').select('key,value_ko').eq('page', 'mini_hakkyo').then(({ data }) => {
+    supabase.from('site_content').select('key,value_ko,value_en,value_fr').eq('page', 'mini_hakkyo').then(({ data }) => {
       if (!data?.length) return
-      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      const g = (k: string) => {
+        const row = data.find((r: Record<string,string>) => r.key === k)
+        if (!row) return ''
+        return (lang === 'en' ? row.value_en : lang === 'fr' ? row.value_fr : row.value_ko) || row.value_ko || ''
+      }
       setIntro({
-        title: get('intro_title') || DEFAULT_MINI_INTRO.title,
-        body1: get('intro_body1') || DEFAULT_MINI_INTRO.body1,
-        body2: get('intro_body2') || DEFAULT_MINI_INTRO.body2,
+        title: g('intro_title') || DEFAULT_MINI_INTRO.title,
+        body1: g('intro_body1') || DEFAULT_MINI_INTRO.body1,
+        body2: g('intro_body2') || DEFAULT_MINI_INTRO.body2,
       })
     })
-  }, [])
+  }, [lang])
   return intro
 }
 
 interface ClubExtra { desc: string; prep: string[]; quote: string }
 
 function useClubMeta(slug: string): ClubMeta & ClubExtra {
+  const { lang } = useLang()
   const a = activities.find(x => x.slug === slug)!
   const aa = a as any
   const base: ClubMeta = {
@@ -57,32 +63,36 @@ function useClubMeta(slug: string): ClubMeta & ClubExtra {
     'boardgame-club': ['준비물 없음 — 게임과 도구 제공', '함께 웃을 준비'],
   }
   const [meta, setMeta] = useState<ClubMeta & ClubExtra>({
-    ...base, desc: aa?.desc || '', prep: defaultPrep[slug] || [], quote: '',
+    ...base, desc: '', prep: defaultPrep[slug] || [], quote: '',
   })
 
   useEffect(() => {
     if (!supabase) return
-    supabase.from('site_content').select('key,value_ko')
+    supabase.from('site_content').select('key,value_ko,value_en,value_fr')
       .eq('page', `activity_${slug}`)
       .in('key', ['club_title','club_note','club_host','club_date','club_day','club_time','club_entry','club_desc','prep_items','leader_quote'])
       .then(({ data }) => {
         if (!data?.length) return
-        const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
-        const prepRaw = get('prep_items')
+        const g = (k: string) => {
+          const row = data.find((r: Record<string,string>) => r.key === k)
+          if (!row) return ''
+          return (lang === 'en' ? row.value_en : lang === 'fr' ? row.value_fr : row.value_ko) || row.value_ko || ''
+        }
+        const prepRaw = g('prep_items')
         setMeta({
-          title: get('club_title') || base.title,
-          note:  get('club_note')  || base.note,
-          host:  get('club_host')  || base.host,
-          date:  get('club_date')  || base.date,
-          day:   get('club_day')   || base.day,
-          time:  get('club_time')  || base.time,
-          entry: get('club_entry') || base.entry,
-          desc:  get('club_desc')  || aa?.desc || '',
+          title: g('club_title') || base.title,
+          note:  g('club_note')  || base.note,
+          host:  g('club_host')  || base.host,
+          date:  g('club_date')  || base.date,
+          day:   g('club_day')   || base.day,
+          time:  g('club_time')  || base.time,
+          entry: g('club_entry') || base.entry,
+          desc:  g('club_desc')  || '',
           prep:  prepRaw ? prepRaw.split('\n').filter(Boolean) : (defaultPrep[slug] || []),
-          quote: get('leader_quote') || '',
+          quote: g('leader_quote') || '',
         })
       })
-  }, [slug])
+  }, [slug, lang])
 
   return meta
 }

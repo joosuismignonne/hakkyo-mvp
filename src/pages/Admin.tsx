@@ -4762,21 +4762,25 @@ const CLOSING_QUESTIONS_DISPLAY = [
 ]
 
 function MiniHakkyoAdmin() {
-  const [title, setTitle] = useState('같이 하다 보면 말이 나와요')
-  const [body1, setBody1] = useState('수업 외에도 매주 수요일 저녁, 몬트리올에서 함께 모여요. 북클럽·러닝클럽·보드게임클럽 — 활동을 하면서 자연스럽게 언어 교환이 이루어져요.')
-  const [body2, setBody2] = useState('수업 수강생이 아니어도 참여할 수 있어요. 참가비 $10.')
+  const [title, setTitle] = useState({ ko: '같이 하다 보면 말이 나와요', en: 'The words come as you go', fr: 'Les mots viennent en faisant' })
+  const [body1, setBody1] = useState({ ko: '수업 외에도 매주 수요일 저녁, 몬트리올에서 함께 모여요. 북클럽·러닝클럽·보드게임클럽 — 활동을 하면서 자연스럽게 언어 교환이 이루어져요.', en: 'Beyond class, we meet every Wednesday evening in Montréal. Book Club, Running Club, Boardgame Club — language exchange flows naturally through activity.', fr: 'En dehors des cours, on se retrouve tous les mercredis soirs à Montréal. Club lecture, club course, club de jeux — l\'échange linguistique vient naturellement par l\'activité.' })
+  const [body2, setBody2] = useState({ ko: '수업 수강생이 아니어도 참여할 수 있어요. 참가비 $10.', en: 'Open to everyone, not just students. Entry $10.', fr: 'Ouvert à tous, pas seulement aux étudiants. Participation $10.' })
   const [aqs, setAqs] = useState<AqItem[]>(DEFAULT_ACTIVITY_QUESTIONS)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
-    supabase.from('site_content').select('key,value_ko').eq('page', 'mini_hakkyo').then(({ data }) => {
+    supabase.from('site_content').select('key,value_ko,value_en,value_fr').eq('page', 'mini_hakkyo').then(({ data }) => {
       if (!data?.length) return
-      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
-      if (get('intro_title')) setTitle(get('intro_title'))
-      if (get('intro_body1')) setBody1(get('intro_body1'))
-      if (get('intro_body2')) setBody2(get('intro_body2'))
+      type Row = { key: string; value_ko: string; value_en: string; value_fr: string }
+      const g = (k: string, l: 'ko'|'en'|'fr') => { const r = data.find((x: Row) => x.key === k); return r ? (l==='en'?r.value_en:l==='fr'?r.value_fr:r.value_ko)||'' : '' }
+      const tko = g('intro_title','ko'); const ten = g('intro_title','en'); const tfr = g('intro_title','fr')
+      const b1ko = g('intro_body1','ko'); const b1en = g('intro_body1','en'); const b1fr = g('intro_body1','fr')
+      const b2ko = g('intro_body2','ko'); const b2en = g('intro_body2','en'); const b2fr = g('intro_body2','fr')
+      if (tko || ten || tfr) setTitle(prev => ({ ko: tko || prev.ko, en: ten || prev.en, fr: tfr || prev.fr }))
+      if (b1ko || b1en || b1fr) setBody1(prev => ({ ko: b1ko || prev.ko, en: b1en || prev.en, fr: b1fr || prev.fr }))
+      if (b2ko || b2en || b2fr) setBody2(prev => ({ ko: b2ko || prev.ko, en: b2en || prev.en, fr: b2fr || prev.fr }))
     })
     supabase.from('site_content').select('key,value_ko').eq('page', 'activity_questions').then(({ data }) => {
       if (!data?.length) return
@@ -4803,9 +4807,9 @@ function MiniHakkyoAdmin() {
     if (!supabase) return
     setSaving(true)
     const introRows = [
-      { page: 'mini_hakkyo', key: 'intro_title', label: '소개 제목', value_ko: title, value_en: title, value_fr: title },
-      { page: 'mini_hakkyo', key: 'intro_body1', label: '소개 본문1', value_ko: body1, value_en: body1, value_fr: body1 },
-      { page: 'mini_hakkyo', key: 'intro_body2', label: '소개 본문2', value_ko: body2, value_en: body2, value_fr: body2 },
+      { page: 'mini_hakkyo', key: 'intro_title', label: '소개 제목', value_ko: title.ko, value_en: title.en, value_fr: title.fr },
+      { page: 'mini_hakkyo', key: 'intro_body1', label: '소개 본문1', value_ko: body1.ko, value_en: body1.en, value_fr: body1.fr },
+      { page: 'mini_hakkyo', key: 'intro_body2', label: '소개 본문2', value_ko: body2.ko, value_en: body2.en, value_fr: body2.fr },
     ]
     const countRow = { page: 'activity_questions', key: 'aq_count', label: '질문 수', value_ko: String(aqs.length), value_en: String(aqs.length), value_fr: String(aqs.length) }
     const aqRows = aqs.flatMap((q, i) => {
@@ -4853,13 +4857,17 @@ function MiniHakkyoAdmin() {
       <p className="text-sm text-gray-500">Mini HAKKYO 소개글과 신청 폼 질문을 편집해요. 저장하면 바로 반영돼요.</p>
 
       <FormCard title="🐱 소개글 제목">
-        <input className="input" value={title} onChange={e => setTitle(e.target.value)} />
+        <LangFields prefix="intro_title" ko={title.ko} en={title.en} fr={title.fr}
+          onChange={(k, v) => setTitle(prev => ({ ...prev, [k === 'intro_title_ko' ? 'ko' : k === 'intro_title_en' ? 'en' : 'fr']: v }))} />
       </FormCard>
       <FormCard title="소개 본문 1">
-        <textarea className="input resize-y min-h-[80px]" value={body1} onChange={e => setBody1(e.target.value)} />
+        <LangFields prefix="intro_body1" ko={body1.ko} en={body1.en} fr={body1.fr}
+          onChange={(k, v) => setBody1(prev => ({ ...prev, [k === 'intro_body1_ko' ? 'ko' : k === 'intro_body1_en' ? 'en' : 'fr']: v }))}
+          multiline textareaRows={3} />
       </FormCard>
       <FormCard title="소개 본문 2 (참가비 등 짧은 안내)">
-        <textarea className="input resize-y min-h-[55px]" value={body2} onChange={e => setBody2(e.target.value)} />
+        <LangFields prefix="intro_body2" ko={body2.ko} en={body2.en} fr={body2.fr}
+          onChange={(k, v) => setBody2(prev => ({ ...prev, [k === 'intro_body2_ko' ? 'ko' : k === 'intro_body2_en' ? 'en' : 'fr']: v }))} />
       </FormCard>
 
       {/* ── 신청 폼 전체 구조 ── */}
@@ -4962,48 +4970,62 @@ const CLUB_SLUGS = [
   { slug: 'boardgame-club', emoji: '🎮', label: '보드게임클럽' },
 ]
 
+type ClubLangData = {
+  desc_ko: string; desc_en: string; desc_fr: string
+  prep_ko: string; prep_en: string; prep_fr: string
+  quote_ko: string; quote_en: string; quote_fr: string
+}
+const emptyClubLang = (): ClubLangData => ({ desc_ko:'', desc_en:'', desc_fr:'', prep_ko:'', prep_en:'', prep_fr:'', quote_ko:'', quote_en:'', quote_fr:'' })
+
 function ClubContentAdmin() {
-  const [data, setData] = useState<Record<string, { quote: string; prep: string; desc: string }>>({})
+  const [data, setData] = useState<Record<string, ClubLangData>>({})
   const [saving, setSaving] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
 
   useEffect(() => {
     if (!supabase) return
     CLUB_SLUGS.forEach(({ slug }) => {
-      supabase!.from('site_content').select('key,value_ko')
+      supabase!.from('site_content').select('key,value_ko,value_en,value_fr')
         .eq('page', `activity_${slug}`)
         .in('key', ['leader_quote', 'prep_items', 'club_desc'])
         .then(({ data: rows }) => {
-          const get = (k: string) => rows?.find(r => r.key === k)?.value_ko || ''
-          setData(prev => ({ ...prev, [slug]: { quote: get('leader_quote'), prep: get('prep_items'), desc: get('club_desc') } }))
+          type Row2 = { key: string; value_ko: string; value_en: string; value_fr: string }
+          const g = (k: string, l: 'ko'|'en'|'fr') => { const r = rows?.find((x: Row2) => x.key === k); return r ? (l==='en'?r.value_en:l==='fr'?r.value_fr:r.value_ko)||'' : '' }
+          setData(prev => ({ ...prev, [slug]: {
+            desc_ko: g('club_desc','ko'), desc_en: g('club_desc','en'), desc_fr: g('club_desc','fr'),
+            prep_ko: g('prep_items','ko'), prep_en: g('prep_items','en'), prep_fr: g('prep_items','fr'),
+            quote_ko: g('leader_quote','ko'), quote_en: g('leader_quote','en'), quote_fr: g('leader_quote','fr'),
+          }}))
         })
     })
   }, [])
 
-  function update(slug: string, field: string, val: string) {
-    setData(prev => ({ ...prev, [slug]: { ...prev[slug], [field]: val } }))
+  function update(slug: string, field: keyof ClubLangData, val: string) {
+    setData(prev => ({ ...prev, [slug]: { ...(prev[slug] || emptyClubLang()), [field]: val } }))
   }
 
   async function saveClub(slug: string) {
     if (!supabase) return
     setSaving(slug)
-    const d = data[slug] || { quote: '', prep: '', desc: '' }
+    const d = data[slug] || emptyClubLang()
     const rows = [
-      { page: `activity_${slug}`, key: 'leader_quote', label: '리더 인용문', value_ko: d.quote, value_en: d.quote, value_fr: d.quote },
-      { page: `activity_${slug}`, key: 'prep_items',   label: '준비물',      value_ko: d.prep,  value_en: d.prep,  value_fr: d.prep  },
-      { page: `activity_${slug}`, key: 'club_desc',    label: '클럽 소개',   value_ko: d.desc,  value_en: d.desc,  value_fr: d.desc  },
+      { page: `activity_${slug}`, key: 'leader_quote', label: '리더 인용문', value_ko: d.quote_ko, value_en: d.quote_en, value_fr: d.quote_fr },
+      { page: `activity_${slug}`, key: 'prep_items',   label: '준비물',      value_ko: d.prep_ko,  value_en: d.prep_en,  value_fr: d.prep_fr  },
+      { page: `activity_${slug}`, key: 'club_desc',    label: '클럽 소개',   value_ko: d.desc_ko,  value_en: d.desc_en,  value_fr: d.desc_fr  },
     ]
     await supabase.from('site_content').upsert(rows, { onConflict: 'page,key' })
     setSaving(null); setSaved(slug)
     setTimeout(() => setSaved(null), 2000)
   }
 
+  const prepPlaceholder = '준비물 없음 — 게임과 도구 제공\n함께 웃을 준비'
+
   return (
     <FormCard title="🐱 클럽별 내용 편집">
-      <p className="text-xs text-gray-400 mb-4">각 클럽의 소개·준비물·리더 인용문을 편집해요. 클럽마다 따로 저장해요.</p>
+      <p className="text-xs text-gray-400 mb-4">각 클럽의 소개·준비물·리더 인용문을 한/영/불 각각 편집해요. 클럽마다 따로 저장해요.</p>
       <div className="space-y-6">
         {CLUB_SLUGS.map(({ slug, emoji, label }) => {
-          const d = data[slug] || { quote: '', prep: '', desc: '' }
+          const d = data[slug] || emptyClubLang()
           return (
             <div key={slug} className="border border-gray-100 rounded-xl p-4 space-y-3">
               <div className="flex items-center gap-2 mb-1">
@@ -5011,22 +5033,31 @@ function ClubContentAdmin() {
                 <span className="font-semibold text-sm text-gray-700">{label}</span>
                 <span className="text-xs text-gray-300 font-mono ml-1">{slug}</span>
               </div>
-              <FL label="클럽 소개 (카드 하단 설명)">
-                <textarea className="input resize-y min-h-[60px] text-sm" value={d.desc}
-                  onChange={e => update(slug, 'desc', e.target.value)}
-                  placeholder="잘해야 오는 게 아니에요. 함께 하다 보면…" />
-              </FL>
-              <FL label="이것만 알고 오면 돼요 (한 줄에 하나씩)">
-                <textarea className="input resize-y min-h-[80px] font-mono text-sm" value={d.prep}
-                  onChange={e => update(slug, 'prep', e.target.value)}
-                  placeholder={"준비물 없음 — 게임과 도구 제공\n함께 웃을 준비"} />
-                <p className="text-xs text-gray-300 mt-1">↵ 엔터로 구분, 각 줄이 번호 항목이 돼요</p>
-              </FL>
-              <FL label="리더 인용문 (따옴표 카드)">
-                <textarea className="input resize-y min-h-[60px] text-sm" value={d.quote}
-                  onChange={e => update(slug, 'quote', e.target.value)}
-                  placeholder="달리면서 나누는 대화는 뭔가 달라요…" />
-              </FL>
+              <div>
+                <p className="label mb-1">클럽 소개</p>
+                <LangFields prefix={`desc_${slug}`} ko={d.desc_ko} en={d.desc_en} fr={d.desc_fr}
+                  onChange={(k, v) => {
+                    const lang = k.endsWith('_ko') ? 'ko' : k.endsWith('_en') ? 'en' : 'fr'
+                    update(slug, `desc_${lang}` as keyof ClubLangData, v)
+                  }} multiline textareaRows={2} />
+              </div>
+              <div>
+                <p className="label mb-1">이것만 알고 오면 돼요 (↵ 엔터로 구분)</p>
+                <LangFields prefix={`prep_${slug}`} ko={d.prep_ko} en={d.prep_en} fr={d.prep_fr}
+                  onChange={(k, v) => {
+                    const lang = k.endsWith('_ko') ? 'ko' : k.endsWith('_en') ? 'en' : 'fr'
+                    update(slug, `prep_${lang}` as keyof ClubLangData, v)
+                  }} multiline textareaRows={3} />
+                <p className="text-xs text-gray-300 mt-1">각 줄이 번호 항목이 돼요</p>
+              </div>
+              <div>
+                <p className="label mb-1">리더 인용문</p>
+                <LangFields prefix={`quote_${slug}`} ko={d.quote_ko} en={d.quote_en} fr={d.quote_fr}
+                  onChange={(k, v) => {
+                    const lang = k.endsWith('_ko') ? 'ko' : k.endsWith('_en') ? 'en' : 'fr'
+                    update(slug, `quote_${lang}` as keyof ClubLangData, v)
+                  }} multiline textareaRows={2} />
+              </div>
               <button onClick={() => saveClub(slug)} disabled={saving === slug}
                 className="btn-yellow text-sm">
                 {saving === slug ? '저장 중…' : saved === slug ? '저장됨 ✓' : `${label} 저장`}
