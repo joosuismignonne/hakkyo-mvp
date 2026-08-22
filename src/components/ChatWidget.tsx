@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLang } from '../lib/lang'
 
-// Proxied through /api/discord-notify (server-side) to avoid CORS
-const NOTIFY_API = '/api/discord-notify'
+const WEBHOOK = import.meta.env.VITE_DISCORD_WEBHOOK as string | undefined
 
 const PAGE_THRESHOLD = 3  // show after this many page navigations without converting
 
@@ -87,12 +86,25 @@ export default function ChatWidget() {
     if (!msg.trim()) { setFieldErr(t.msgRequired); return }
     setStatus('sending')
     try {
-      const res = await fetch(NOTIFY_API, {
+      if (!WEBHOOK) throw new Error('No webhook')
+      const payload = {
+        embeds: [{
+          title: '💬 HAKKYO 문의',
+          color: 0x6C63FF,
+          fields: [
+            { name: '이메일', value: email.trim(), inline: true },
+            { name: '언어',   value: lang.toUpperCase(), inline: true },
+            { name: '메세지', value: msg.trim() },
+          ],
+          timestamp: new Date().toISOString(),
+        }],
+      }
+      const res = await fetch(WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), message: msg.trim(), lang }),
+        body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error('Notify failed')
+      if (!res.ok) throw new Error('Discord error')
       setStatus('success')
       setDismissed()
     } catch {
