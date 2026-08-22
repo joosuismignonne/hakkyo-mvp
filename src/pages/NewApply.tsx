@@ -131,6 +131,8 @@ function NewsletterForm() {
 interface Question {
   name: string
   label: string
+  label_en?: string
+  label_fr?: string
   hint: string
   type: string
   placeholder?: string
@@ -139,35 +141,38 @@ interface Question {
 }
 
 const DEFAULT_ACTIVITY_QUESTIONS: Question[] = [
-  { name:'experience', label:'이 액티비티를 해본 경험이 있나요?',       hint:'Experience',                      type:'choice',   options:['처음이에요','한두 번 해봤어요','가끔 즐겨요','자주 하고 있어요'], required:true },
-  { name:'joinReason', label:'이번 액티비티에 함께하고 싶은 이유는?',   hint:'Why join?',                       type:'textarea', placeholder:'기대하는 점이나 만나고 싶은 사람들을 편하게 적어주세요', required:true },
-  { name:'comfort',    label:'미리 알아두면 좋은 점이 있나요?',         hint:'Anything we should know? · 선택', type:'textarea', placeholder:'속도, 알레르기, 이동 관련 사항 등' },
+  { name:'experience', label:'이 액티비티를 해본 경험이 있나요?',     label_en:'Have you done this activity before?',            label_fr:'Avez-vous déjà participé à cette activité ?',      hint:'Experience',                      type:'choice',   options:['처음이에요','한두 번 해봤어요','가끔 즐겨요','자주 하고 있어요'], required:true },
+  { name:'joinReason', label:'이번 액티비티에 함께하고 싶은 이유는?', label_en:'Why do you want to join this activity?',         label_fr:'Pourquoi souhaitez-vous rejoindre cette activité ?', hint:'Why join?',                       type:'textarea', placeholder:'기대하는 점이나 만나고 싶은 사람들을 편하게 적어주세요', required:true },
+  { name:'comfort',    label:'미리 알아두면 좋은 점이 있나요?',       label_en:'Anything we should know in advance? (optional)', label_fr:"Quelque chose à savoir à l'avance ? (facultatif)",  hint:'Anything we should know? · 선택', type:'textarea', placeholder:'속도, 알레르기, 이동 관련 사항 등' },
 ]
 
-function useActivityQuestions(): Question[] {
+function useActivityQuestions(lang: string): Question[] {
   const [qs, setQs] = useState<Question[]>(DEFAULT_ACTIVITY_QUESTIONS)
   useEffect(() => {
     if (!supabase) return
-    supabase.from('site_content').select('key,value_ko').eq('page', 'activity_questions').then(({ data }) => {
+    supabase.from('site_content').select('key,value_ko,value_en,value_fr').eq('page', 'activity_questions').then(({ data }) => {
       if (!data?.length) return
-      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
-      const countStr = get('aq_count')
+      type AqRow = { key: string; value_ko: string; value_en: string; value_fr: string }
+      const pick = (row: AqRow | undefined) => row ? (lang === 'en' ? row.value_en : lang === 'fr' ? row.value_fr : row.value_ko) || row.value_ko || '' : ''
+      const getKo = (k: string) => data.find((r: AqRow) => r.key === k)?.value_ko || ''
+      const getL  = (k: string) => pick(data.find((r: AqRow) => r.key === k))
+      const countStr = getKo('aq_count')
       const count = countStr ? parseInt(countStr) : DEFAULT_ACTIVITY_QUESTIONS.length
       const loaded: Question[] = Array.from({ length: count }, (_, i) => {
         const key = `aq${i + 1}`
         const def = DEFAULT_ACTIVITY_QUESTIONS[i]
-        const label   = get(`${key}_label`)   || def?.label   || ''
-        const hint    = get(`${key}_hint`)    || def?.hint    || ''
-        const type    = get(`${key}_type`)    || def?.type    || 'textarea'
-        const reqStr  = get(`${key}_required`)
+        const label   = getL(`${key}_label`)   || (lang === 'en' ? def?.label_en : lang === 'fr' ? def?.label_fr : def?.label) || def?.label || ''
+        const hint    = getKo(`${key}_hint`)   || def?.hint    || ''
+        const type    = getKo(`${key}_type`)   || def?.type    || 'textarea'
+        const reqStr  = getKo(`${key}_required`)
         const required = reqStr === 'false' ? false : (def?.required ?? true)
-        const optStr  = get(`${key}_options`)
+        const optStr  = getKo(`${key}_options`)
         const options = optStr ? optStr.split(',').map((s: string) => s.trim()).filter(Boolean) : def?.options
         return { name: key, label, hint, type, options, required }
       })
       if (loaded.length) setQs(loaded)
     })
-  }, [])
+  }, [lang])
   return qs
 }
 
@@ -219,29 +224,62 @@ function ApplicationForm({ kind, selection, trackSlug, backHref }: { kind: 'prog
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const { lang } = useLang()
   const ui = APPLY_UI[lang as keyof typeof APPLY_UI] ?? APPLY_UI.ko
-  const dynamicActivityQuestions = useActivityQuestions()
+  const dynamicActivityQuestions = useActivityQuestions(lang)
   const { pqs: dynamicProgramQuestions, sqs: dynamicSchedulingQuestions } = useProgramQuestions()
 
+  const lq = <T extends string>(ko: T, en: string, fr: string): string =>
+    lang === 'en' ? en : lang === 'fr' ? fr : ko
+  const lp = (ko: string, en: string, fr: string): string =>
+    lang === 'en' ? en : lang === 'fr' ? fr : ko
+
   const commonQuestions: Question[] = [
-    { name:'name',           label:'이름을 알려주세요.',                          hint:'Name',             type:'text',     placeholder:'이름을 적어주세요',         required:true },
-    { name:'email',          label:'연락받을 이메일은 무엇인가요?',               hint:'Email',            type:'email',    placeholder:'email@example.com',         required:true },
-    { name:'phone',          label:'전화번호를 알려주세요.',                      hint:'Phone · 선택',     type:'tel',      placeholder:'514-000-0000' },
-    { name:'instagram',      label:'인스타그램 계정이 있나요?',                   hint:'Instagram · 선택', type:'text',     placeholder:'@username' },
-    { name:'city',           label:'현재 어느 도시에 거주하고 있나요?',           hint:'Current city',     type:'text',     placeholder:'예: Montréal',              required:true },
-    { name:'timeInMontreal', label:'몬트리올에 온 지 얼마나 되었나요?',           hint:'Time in Montréal', type:'choice',   options:['아직 오기 전이에요','3개월 미만','3–6개월','6개월–1년','1–3년','3년 이상'], required:true },
-    { name:'currentStage',   label:'현재 몬트리올에서 어떤 시간을 보내고 있나요?', hint:'Your current stage', type:'choice', options:['유학 중','워킹홀리데이 중','직장 생활 중','이민·정착 중','여행·단기 체류 중','그 외'], required:true },
+    { name:'name',           label: lq('이름을 알려주세요.','What\'s your name?','Quel est votre prénom ?'),                                                         hint:'Name',             type:'text',  placeholder: lp('이름을 적어주세요','Enter your name','Votre prénom'),        required:true },
+    { name:'email',          label: lq('연락받을 이메일은 무엇인가요?','What email can we reach you at?','Quelle est votre adresse e-mail ?'),                         hint:'Email',            type:'email', placeholder:'email@example.com',                                              required:true },
+    { name:'phone',          label: lq('전화번호를 알려주세요.','Phone number (optional)','Numéro de téléphone (facultatif)'),                                         hint:'Phone · 선택',     type:'tel',   placeholder:'514-000-0000' },
+    { name:'instagram',      label: lq('인스타그램 계정이 있나요?','Instagram handle (optional)','Compte Instagram (facultatif)'),                                     hint:'Instagram · 선택', type:'text',  placeholder:'@username' },
+    { name:'city',           label: lq('현재 어느 도시에 거주하고 있나요?','What city do you currently live in?','Dans quelle ville habitez-vous ?'),                    hint:'Current city',     type:'text',  placeholder:'Montréal',                                                       required:true },
+    { name:'timeInMontreal', label: lq('몬트리올에 온 지 얼마나 되었나요?','How long have you been in Montréal?','Depuis combien de temps êtes-vous à Montréal ?'),     hint:'Time in Montréal', type:'choice',
+      options: lang === 'en'
+        ? ['Not yet arrived','Less than 3 months','3–6 months','6 months–1 year','1–3 years','3+ years']
+        : lang === 'fr'
+        ? ['Pas encore arrivé·e','Moins de 3 mois','3–6 mois','6 mois–1 an','1–3 ans','3 ans et plus']
+        : ['아직 오기 전이에요','3개월 미만','3–6개월','6개월–1년','1–3년','3년 이상'],
+      required:true },
+    { name:'currentStage',   label: lq('현재 몬트리올에서 어떤 시간을 보내고 있나요?','What brings you to Montréal?','Qu\'est-ce qui vous amène à Montréal ?'),        hint:'Your current stage', type:'choice',
+      options: lang === 'en'
+        ? ['Student','Working Holiday','Working','Immigrating / Settling','Travelling / Short stay','Other']
+        : lang === 'fr'
+        ? ['Étudiant·e','Vacances-travail','Emploi','Immigration / Installation','Voyage / Court séjour','Autre']
+        : ['유학 중','워킹홀리데이 중','직장 생활 중','이민·정착 중','여행·단기 체류 중','그 외'],
+      required:true },
   ]
   const programQuestions: Question[] = dynamicProgramQuestions
   const activityQuestions = dynamicActivityQuestions
   const communityQuestions: Question[] = [
-    { name:'joinReason', label:'HAKKYO 커뮤니티와 함께하고 싶은 이유는?',          hint:'Why join?',       type:'textarea', placeholder:'배우고 싶은 것, 만나고 싶은 사람, 함께 나누고 싶은 이야기를 적어주세요', required:true },
-    { name:'interests',  label:'어떤 모임과 소식에 관심이 있나요?',                hint:'Your interests',  type:'choice',   options:['언어 교환과 클래스','수요일 액티비티','몬트리올 정착 정보','새로운 친구와 커뮤니티','모두 궁금해요'], required:true },
-    { name:'language',   label:'편하게 이야기할 수 있는 언어를 알려주세요.',       hint:'Languages',       type:'text',     placeholder:'예: 한국어, English, Français', required:true },
+    { name:'joinReason', label: lq('HAKKYO 커뮤니티와 함께하고 싶은 이유는?','Why do you want to join the HAKKYO community?','Pourquoi souhaitez-vous rejoindre la communauté HAKKYO ?'),
+      hint:'Why join?', type:'textarea',
+      placeholder: lp('배우고 싶은 것, 만나고 싶은 사람, 함께 나누고 싶은 이야기를 적어주세요','What you want to learn, who you want to meet, what you want to share','Ce que vous souhaitez apprendre, rencontrer ou partager'),
+      required:true },
+    { name:'interests', label: lq('어떤 모임과 소식에 관심이 있나요?','What events and news are you interested in?','Quels événements et actualités vous intéressent ?'),
+      hint:'Your interests', type:'choice',
+      options: lang === 'en'
+        ? ['Language Exchange & Classes','Wednesday Activities','Montréal Settlement Info','New Friends & Community','All of the above']
+        : lang === 'fr'
+        ? ['Échange linguistique et cours','Activités du mercredi','Infos installation à Montréal','Nouveaux amis et communauté','Tout cela']
+        : ['언어 교환과 클래스','수요일 액티비티','몬트리올 정착 정보','새로운 친구와 커뮤니티','모두 궁금해요'],
+      required:true },
+    { name:'language', label: lq('편하게 이야기할 수 있는 언어를 알려주세요.','Which languages are you comfortable speaking?','Quelles langues parlez-vous à l\'aise ?'),
+      hint:'Languages', type:'text', placeholder:'예: 한국어, English, Français', required:true },
   ]
   const schedulingQuestions: Question[] = dynamicSchedulingQuestions
   const closingQuestions: Question[] = [
-    { name:'discovery', label:'HAKKYO를 어떻게 알게 되었나요?',              hint:'How did you hear about us?', type:'choice',   options:['Instagram','네이버 카페','한카','친구·지인 추천','Google 검색','HAKKYO 수업·행사','기타'], required:true },
-    { name:'message',   label:'마지막으로 HAKKYO에 전하고 싶은 말이 있나요?', hint:'Final message · 선택',       type:'textarea', placeholder:'궁금한 점이나 함께 나누고 싶은 이야기를 적어주세요' },
+    { name:'discovery', label: lq('HAKKYO를 어떻게 알게 되었나요?','How did you hear about HAKKYO?','Comment avez-vous connu HAKKYO ?'),
+      hint:'How did you hear about us?', type:'choice',
+      options:['Instagram','네이버 카페','한카','친구·지인 추천','Google 검색','HAKKYO 수업·행사','기타'],
+      required:true },
+    { name:'message', label: lq('마지막으로 HAKKYO에 전하고 싶은 말이 있나요?','Anything else you\'d like to tell us? (optional)','Autre chose à nous dire ? (facultatif)'),
+      hint:'Final message · 선택', type:'textarea',
+      placeholder: lp('궁금한 점이나 함께 나누고 싶은 이야기를 적어주세요','Any questions or things you\'d like to share','Des questions ou quelque chose à partager') },
   ]
 
   const questions: Question[] = [

@@ -4738,12 +4738,12 @@ function HomeLayoutAdmin() {
 
 // ─── Mini HAKKYO 소개글 + 신청폼 질문 편집 ────────────────────────────────────
 
-interface AqItem { key: string; hint: string; label: string; type: 'choice'|'textarea'|'text'; options: string; required: boolean }
+interface AqItem { key: string; hint: string; label: string; label_en: string; label_fr: string; type: 'choice'|'textarea'|'text'; options: string; required: boolean }
 
 const DEFAULT_ACTIVITY_QUESTIONS: AqItem[] = [
-  { key: 'aq1', hint: 'Experience',                      label: '이 액티비티를 해본 경험이 있나요?',         type: 'choice',   options: '처음이에요,한두 번 해봤어요,가끔 즐겨요,자주 하고 있어요', required: true },
-  { key: 'aq2', hint: 'Why join?',                       label: '이번 액티비티에 함께하고 싶은 이유는?',     type: 'textarea', options: '', required: true },
-  { key: 'aq3', hint: 'Anything we should know? · 선택', label: '미리 알아두면 좋은 점이 있나요?',           type: 'textarea', options: '', required: false },
+  { key: 'aq1', hint: 'Experience',                      label: '이 액티비티를 해본 경험이 있나요?',       label_en: 'Have you done this activity before?',              label_fr: 'Avez-vous déjà participé à cette activité ?',   type: 'choice',   options: '처음이에요,한두 번 해봤어요,가끔 즐겨요,자주 하고 있어요', required: true },
+  { key: 'aq2', hint: 'Why join?',                       label: '이번 액티비티에 함께하고 싶은 이유는?',   label_en: 'Why do you want to join this activity?',           label_fr: 'Pourquoi souhaitez-vous rejoindre cette activité ?', type: 'textarea', options: '', required: true },
+  { key: 'aq3', hint: 'Anything we should know? · 선택', label: '미리 알아두면 좋은 점이 있나요?',         label_en: 'Anything we should know in advance? (optional)',   label_fr: 'Quelque chose à savoir à l\'avance ? (facultatif)', type: 'textarea', options: '', required: false },
 ]
 
 const COMMON_QUESTIONS_DISPLAY = [
@@ -4782,9 +4782,12 @@ function MiniHakkyoAdmin() {
       if (b1ko || b1en || b1fr) setBody1(prev => ({ ko: b1ko || prev.ko, en: b1en || prev.en, fr: b1fr || prev.fr }))
       if (b2ko || b2en || b2fr) setBody2(prev => ({ ko: b2ko || prev.ko, en: b2en || prev.en, fr: b2fr || prev.fr }))
     })
-    supabase.from('site_content').select('key,value_ko').eq('page', 'activity_questions').then(({ data }) => {
+    supabase.from('site_content').select('key,value_ko,value_en,value_fr').eq('page', 'activity_questions').then(({ data }) => {
       if (!data?.length) return
-      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      type AqRow = { key: string; value_ko: string; value_en: string; value_fr: string }
+      const get = (k: string) => data.find((r: AqRow) => r.key === k)?.value_ko || ''
+      const getEn = (k: string) => data.find((r: AqRow) => r.key === k)?.value_en || ''
+      const getFr = (k: string) => data.find((r: AqRow) => r.key === k)?.value_fr || ''
       const countStr = get('aq_count')
       const count = countStr ? parseInt(countStr) : DEFAULT_ACTIVITY_QUESTIONS.length
       const loaded: AqItem[] = Array.from({ length: count }, (_, i) => {
@@ -4793,6 +4796,8 @@ function MiniHakkyoAdmin() {
         return {
           key,
           label:    get(`${key}_label`)    || def?.label    || '',
+          label_en: getEn(`${key}_label`)  || def?.label_en || '',
+          label_fr: getFr(`${key}_label`)  || def?.label_fr || '',
           hint:     get(`${key}_hint`)     || def?.hint     || '',
           type:     (get(`${key}_type`)    || def?.type     || 'textarea') as AqItem['type'],
           options:  get(`${key}_options`)  || def?.options  || '',
@@ -4815,7 +4820,7 @@ function MiniHakkyoAdmin() {
     const aqRows = aqs.flatMap((q, i) => {
       const key = `aq${i + 1}`
       return [
-        { page: 'activity_questions', key: `${key}_label`,    label: `${key} 질문`,   value_ko: q.label,              value_en: q.label,              value_fr: q.label },
+        { page: 'activity_questions', key: `${key}_label`,    label: `${key} 질문`,   value_ko: q.label,              value_en: q.label_en || q.label, value_fr: q.label_fr || q.label },
         { page: 'activity_questions', key: `${key}_hint`,     label: `${key} 힌트`,   value_ko: q.hint,               value_en: q.hint,               value_fr: q.hint },
         { page: 'activity_questions', key: `${key}_type`,     label: `${key} 유형`,   value_ko: q.type,               value_en: q.type,               value_fr: q.type },
         { page: 'activity_questions', key: `${key}_options`,  label: `${key} 선택지`, value_ko: q.options,            value_en: q.options,            value_fr: q.options },
@@ -4827,13 +4832,13 @@ function MiniHakkyoAdmin() {
     setTimeout(() => setSaved(false), 2200)
   }
 
-  function updateAq(i: number, field: keyof AqItem, val: string | boolean) {
+  function updateAq(i: number, field: keyof AqItem | 'label_en' | 'label_fr', val: string | boolean) {
     setAqs(prev => prev.map((q, idx) => idx === i ? { ...q, [field]: val } : q))
   }
 
   function addAq() {
     const newKey = `aq${aqs.length + 1}`
-    setAqs(prev => [...prev, { key: newKey, hint: '', label: '', type: 'textarea', options: '', required: false }])
+    setAqs(prev => [...prev, { key: newKey, hint: '', label: '', label_en: '', label_fr: '', type: 'textarea', options: '', required: false }])
   }
 
   function removeAq(i: number) {
@@ -4910,9 +4915,17 @@ function MiniHakkyoAdmin() {
                 <FL label="힌트 (영문 레이블)">
                   <input className="input text-sm" value={q.hint} onChange={e => updateAq(i, 'hint', e.target.value)} placeholder="예: Why join?" />
                 </FL>
-                <FL label="질문 (한국어)">
-                  <input className="input" value={q.label} onChange={e => updateAq(i, 'label', e.target.value)} placeholder="질문 내용을 입력해주세요" />
-                </FL>
+                <div>
+                  <p className="label mb-1">질문</p>
+                  <LangFields prefix={`aq_label_${i}`}
+                    ko={q.label} en={q.label_en} fr={q.label_fr}
+                    onChange={(k, v) => {
+                      if (k.endsWith('_ko')) updateAq(i, 'label', v)
+                      else if (k.endsWith('_en')) updateAq(i, 'label_en', v)
+                      else updateAq(i, 'label_fr', v)
+                    }}
+                  />
+                </div>
                 <FL label="유형">
                   <select className="input" value={q.type} onChange={e => updateAq(i, 'type', e.target.value as AqItem['type'])}>
                     <option value="textarea">주관식 (텍스트)</option>
