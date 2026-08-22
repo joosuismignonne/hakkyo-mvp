@@ -136,7 +136,7 @@ function ActivityDetail({ slug }: { slug: string }) {
   // Pick localized fields
   const actTitle   = lang === 'en' ? a.en      : lang === 'fr' ? a.fr      : a.ko
   const actNote    = lang === 'en' ? (aa.noteEn || a.en)   : lang === 'fr' ? (aa.noteFr || a.fr) : aa.note
-  const actDesc    = lang === 'en' ? (aa.descEn || '')   : lang === 'fr' ? (aa.descFr || '') : (aa.desc || '')
+  const actDesc    = m.desc || (lang === 'en' ? (aa.descEn || '') : lang === 'fr' ? (aa.descFr || '') : (aa.desc || ''))
   const actDate    = lang === 'en' ? aa.dateEn  : lang === 'fr' ? aa.dateFr  : m.date
   const actDay     = lang === 'en' ? aa.dayEn   : lang === 'fr' ? aa.dayFr   : m.day
   const actTime    = lang === 'en' ? aa.timeEn  : lang === 'fr' ? aa.timeFr  : m.time
