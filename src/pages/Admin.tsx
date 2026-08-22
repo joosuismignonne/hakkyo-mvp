@@ -4099,8 +4099,8 @@ function AnalyticsAdmin() {
     async function load() {
       try {
         const [todayRes, weekRes, applyRes, postRes, hoodRes, recentRes] = await Promise.all([
-          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
-          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).gte('created_at', weekStart),
+          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'page_view').gte('created_at', todayStart),
+          supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'page_view').gte('created_at', weekStart),
           supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'program_apply_clicked'),
           supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'application_submitted'),
           supabase!.from('analytics_events').select('id', { count: 'exact', head: true }).eq('event_name', 'neighbourhood_comment_submitted'),
@@ -4138,11 +4138,11 @@ function AnalyticsAdmin() {
   if (error) return <ErrorMsg msg={error} />
 
   const statCards = [
-    { label: 'Today Events',           value: todayCount },
-    { label: 'This Week Events',        value: weekCount  },
-    { label: 'Program Apply Clicks',    value: applyCount },
-    { label: 'Post Submissions',        value: postCount  },
-    { label: 'Neighbourhood Comments',  value: hoodCount  },
+    { label: '오늘 방문자 (페이지뷰)',    value: todayCount },
+    { label: '7일 방문자 (페이지뷰)',     value: weekCount  },
+    { label: '프로그램 신청 클릭',        value: applyCount },
+    { label: '신청서 제출',              value: postCount  },
+    { label: '이웃 댓글 작성',           value: hoodCount  },
   ]
 
   function fmtTime(iso: string) {

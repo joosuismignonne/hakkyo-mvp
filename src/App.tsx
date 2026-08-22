@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Analytics } from '@vercel/analytics/react'
-import { trackPageView } from './lib/analytics'
+import { trackPageView, trackEvent } from './lib/analytics'
 import { AuthProvider } from './context/AuthContext'
 import { LangProvider } from './lib/lang'
 import { supabase } from './lib/supabase'
@@ -27,7 +27,9 @@ import RequireAdmin from './components/RequireAdmin'
 function RouteTracker() {
   const location = useLocation()
   useEffect(() => {
-    trackPageView(location.pathname + location.search)
+    const path = location.pathname + location.search
+    trackPageView(path)
+    trackEvent({ eventName: 'page_view', targetType: 'page', targetLabel: path })
   }, [location])
   return null
 }
