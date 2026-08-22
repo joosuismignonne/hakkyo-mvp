@@ -468,8 +468,15 @@ export default function NewHome() {
     return result
   }
 
+  const ctaBtnLabel = lang === 'fr' ? 'Rejoindre →' : lang === 'en' ? 'Join Now →' : '커뮤니티 참여하기 →'
+  const ctaSubLabel = lang === 'fr'
+    ? 'Rencontrez des gens à Montréal · $10'
+    : lang === 'en'
+    ? 'Meet people in Montréal · $10'
+    : '몬트리올에서 새 사람 만나기 · $10'
+
   return (
-    <div className="ch-feed">
+    <div className="ch-feed" style={{ position: 'relative' }}>
       <div className="ch-header">
         <span className="ch-header-icon">🏠</span>
         <div className="ch-header-text">
@@ -479,7 +486,7 @@ export default function NewHome() {
       </div>
 
       <div className="ch-scroll">
-        <div className="ch-inner">
+        <div className="ch-inner" style={{ paddingBottom: 88 }}>
           <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
             <div className="ch-compose-avatar">😺</div>
             <span className="ch-compose-ph">{t.home.compose}</span>
@@ -491,6 +498,28 @@ export default function NewHome() {
           {rest.length > 2 && <div className="feed-divider">{t.home.noticeSection}</div>}
           {rest.slice(2).map(n => <NoticeCard key={n.id} n={n} />)}
         </div>
+      </div>
+
+      {/* Sticky CTA */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        background: 'linear-gradient(to top, #fff 60%, transparent)',
+        padding: '16px 16px 20px',
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>{ctaSubLabel}</div>
+        </div>
+        <button
+          onClick={() => window.location.href = '/apply/community'}
+          style={{
+            background: '#111', color: '#f5c542', fontWeight: 700, fontSize: 14,
+            border: 'none', borderRadius: 10, padding: '12px 20px',
+            cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+          }}
+        >
+          {ctaBtnLabel}
+        </button>
       </div>
     </div>
   )

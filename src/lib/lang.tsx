@@ -164,10 +164,17 @@ const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void }>({
   lang: 'ko', setLang: () => {},
 })
 
+function detectBrowserLang(): Lang {
+  const stored = localStorage.getItem('hakkyo_lang') as Lang | null
+  if (stored === 'ko' || stored === 'en' || stored === 'fr') return stored
+  const bl = navigator.language.toLowerCase()
+  if (bl.startsWith('fr')) return 'fr'
+  if (bl.startsWith('ko')) return 'ko'
+  return 'en'
+}
+
 export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() =>
-    (localStorage.getItem('hakkyo_lang') as Lang) || 'ko'
-  )
+  const [lang, setLangState] = useState<Lang>(detectBrowserLang)
   function setLang(l: Lang) {
     setLangState(l)
     localStorage.setItem('hakkyo_lang', l)
