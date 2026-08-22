@@ -15,6 +15,7 @@ import NewSettling from './pages/NewSettling'
 import NewBoard from './pages/NewBoard'
 import NewQna from './pages/NewQna'
 import NewApply from './pages/NewApply'
+import ChatWidget from './components/ChatWidget'
 import NewCommunity from './pages/NewCommunity'
 import NewReviews from './pages/NewReviews'
 import Login from './pages/Login'
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/community/:id" element={<Navigate to="/" replace />} />
         </Routes>
         <Analytics />
+        <ChatWidget />
       </BrowserRouter>
     </AuthProvider>
     </LangProvider>

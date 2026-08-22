@@ -189,32 +189,37 @@ const DEFAULT_SCHEDULING_QUESTIONS_APPLY: Question[] = [
   { name:'sq2', label:'몬트리올에서 참여하기 편한 지역은 어디인가요?', hint:'Preferred area', type:'text',     required:true },
 ]
 
-function useProgramQuestions(): { pqs: Question[]; sqs: Question[] } {
+function useProgramQuestions(lang: string): { pqs: Question[]; sqs: Question[] } {
   const [pqs, setPqs] = useState<Question[]>(DEFAULT_PROGRAM_QUESTIONS_APPLY)
   const [sqs, setSqs] = useState<Question[]>(DEFAULT_SCHEDULING_QUESTIONS_APPLY)
   useEffect(() => {
     if (!supabase) return
-    supabase.from('site_content').select('key,value_ko').eq('page', 'program_questions').then(({ data }) => {
+    supabase.from('site_content').select('key,value_ko,value_en,value_fr').eq('page', 'program_questions').then(({ data }) => {
       if (!data?.length) return
-      const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+      type PqRow = { key: string; value_ko: string; value_en: string; value_fr: string }
+      const pick = (row: PqRow | undefined) => row
+        ? (lang === 'en' ? row.value_en : lang === 'fr' ? row.value_fr : row.value_ko) || row.value_ko || ''
+        : ''
+      const get = (k: string) => pick(data.find((r: PqRow) => r.key === k))
+      const getKo = (k: string) => data.find((r: PqRow) => r.key === k)?.value_ko || ''
       const loadGroup = (prefix: string, count: number, defaults: Question[]): Question[] =>
         Array.from({ length: count }, (_, i) => {
           const key = `${prefix}${i + 1}`
           const def = defaults[i]
           const label   = get(`${key}_label`)   || def?.label   || ''
-          const hint    = get(`${key}_hint`)    || def?.hint    || ''
-          const type    = get(`${key}_type`)    || def?.type    || 'textarea'
-          const required = get(`${key}_required`) === 'false' ? false : (def?.required ?? true)
-          const optStr  = get(`${key}_options`)
+          const hint    = getKo(`${key}_hint`)  || def?.hint    || ''
+          const type    = getKo(`${key}_type`)  || def?.type    || 'textarea'
+          const required = getKo(`${key}_required`) === 'false' ? false : (def?.required ?? true)
+          const optStr  = getKo(`${key}_options`)
           const options = optStr ? optStr.split(',').map((s: string) => s.trim()).filter(Boolean) : def?.options
           return { name: key, label, hint, type, options, required }
         })
-      const pCount = parseInt(get('pq_count') || String(DEFAULT_PROGRAM_QUESTIONS_APPLY.length))
-      const sCount = parseInt(get('sq_count') || String(DEFAULT_SCHEDULING_QUESTIONS_APPLY.length))
+      const pCount = parseInt(getKo('pq_count') || String(DEFAULT_PROGRAM_QUESTIONS_APPLY.length))
+      const sCount = parseInt(getKo('sq_count') || String(DEFAULT_SCHEDULING_QUESTIONS_APPLY.length))
       setPqs(loadGroup('pq', pCount, DEFAULT_PROGRAM_QUESTIONS_APPLY))
       setSqs(loadGroup('sq', sCount, DEFAULT_SCHEDULING_QUESTIONS_APPLY))
     })
-  }, [])
+  }, [lang])
   return { pqs, sqs }
 }
 
@@ -225,7 +230,7 @@ function ApplicationForm({ kind, selection, trackSlug, backHref }: { kind: 'prog
   const { lang } = useLang()
   const ui = APPLY_UI[lang as keyof typeof APPLY_UI] ?? APPLY_UI.ko
   const dynamicActivityQuestions = useActivityQuestions(lang)
-  const { pqs: dynamicProgramQuestions, sqs: dynamicSchedulingQuestions } = useProgramQuestions()
+  const { pqs: dynamicProgramQuestions, sqs: dynamicSchedulingQuestions } = useProgramQuestions(lang)
 
   const lq = <T extends string>(ko: T, en: string, fr: string): string =>
     lang === 'en' ? en : lang === 'fr' ? fr : ko
