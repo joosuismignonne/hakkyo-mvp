@@ -462,7 +462,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   .mobile-topbar {
     display: flex; align-items: center; gap: 12px;
     padding: 0 16px; height: 52px;
-    background: var(--sidebar-bg);
+    background: #0e0e12;
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   }
   .mobile-menu-btn {
