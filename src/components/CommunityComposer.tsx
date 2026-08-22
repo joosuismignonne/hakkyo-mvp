@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { trackEvent } from '../lib/analytics'
+import { notifyCommunityPost } from '../lib/discord'
 import { X, Image, MapPin, Lock } from 'lucide-react'
 import { submitCommunityPost } from '../lib/db'
 import { uploadContentImage, isImageFile } from '../lib/contentStorage'
@@ -239,6 +240,7 @@ export default function CommunityComposer() {
       recordPost(); recordAuthored(postId); getAuthorId()
       try { localStorage.setItem(NICKNAME_KEY, nick) } catch {}
       trackEvent({ eventName: 'post_submit_success', targetType: 'inline_composer', targetLabel: tag, metadata: { tag } })
+      notifyCommunityPost({ author: nick, title, type: tag })
       window.dispatchEvent(new CustomEvent('hakkyo:community-post'))
 
       setContent(''); setContact(''); setLocation(''); setShowLocation(false)

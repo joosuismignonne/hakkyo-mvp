@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { programs, activities } from '../data/hakkyo'
 import { submitApplication, ApplicationPayload } from '../lib/hakkyoApi'
 import { trackEvent } from '../lib/analytics'
+import { notifyNewsletterSubscription, notifyActivityApplication, notifyProgramApplication } from '../lib/discord'
 import { useLang } from '../lib/lang'
 
 const APPLY_UI = {
@@ -26,6 +27,7 @@ function NewsletterForm() {
     try {
       await submitApplication({ kind: 'newsletter', selection: 'SESSION 04 NEWS', email })
       trackEvent({ eventName: 'newsletter_submitted', targetType: 'form', targetLabel: 'apply-page' })
+      notifyNewsletterSubscription({ email })
       setDone(true)
     } catch {
       setError(true)
@@ -261,6 +263,13 @@ function ApplicationForm({ kind, selection, trackSlug, backHref }: { kind: 'prog
       const payload: ApplicationPayload = { kind, selection, ...answers }
       await submitApplication(payload)
       trackEvent({ eventName: 'application_submitted', targetType: kind, targetLabel: trackSlug ?? selection })
+      const name  = (answers['name']  || answers['이름'] || '(미입력)') as string
+      const email = (answers['email'] || answers['이메일'] || '(미입력)') as string
+      if (kind === 'program') {
+        notifyProgramApplication({ name, email, track: selection })
+      } else if (kind === 'activity') {
+        notifyActivityApplication({ name, email, activity: selection })
+      }
       setState('done')
     } catch {
       setState('error')
