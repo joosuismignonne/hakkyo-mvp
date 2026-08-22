@@ -1,4 +1,4 @@
-const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || process.env.VITE_DISCORD_WEBHOOK_URL || ''
+const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || process.env.VITE_DISCORD_WEBHOOK_URL || process.env.VITE_DISCORD_WEBHOOK || ''
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
