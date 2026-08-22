@@ -40,24 +40,35 @@ function useMiniIntro(): MiniIntro {
   return intro
 }
 
-function useClubMeta(slug: string): ClubMeta {
+interface ClubExtra { desc: string; prep: string[]; quote: string }
+
+function useClubMeta(slug: string): ClubMeta & ClubExtra {
   const a = activities.find(x => x.slug === slug)!
+  const aa = a as any
   const base: ClubMeta = {
-    title: a?.ko || '', note: a?.note || '',
-    host: (a as any)?.host || '', date: (a as any)?.date || '',
-    day: (a as any)?.day || '', time: (a as any)?.time || '',
-    entry: (a as any)?.entry || '',
+    title: a?.ko || '', note: aa?.note || '',
+    host: aa?.host || '', date: aa?.date || '',
+    day: aa?.day || '', time: aa?.time || '',
+    entry: aa?.entry || '',
   }
-  const [meta, setMeta] = useState<ClubMeta>(base)
+  const defaultPrep: Record<string, string[]> = {
+    'book-club':      ['읽고 싶은 책 한 권 (선택)', '필기구', '편하게 이야기할 마음'],
+    'running-club':   ['편한 러닝화', '물', '가볍게 달릴 마음'],
+    'boardgame-club': ['준비물 없음 — 게임과 도구 제공', '함께 웃을 준비'],
+  }
+  const [meta, setMeta] = useState<ClubMeta & ClubExtra>({
+    ...base, desc: aa?.desc || '', prep: defaultPrep[slug] || [], quote: '',
+  })
 
   useEffect(() => {
     if (!supabase) return
     supabase.from('site_content').select('key,value_ko')
       .eq('page', `activity_${slug}`)
-      .in('key', ['club_title','club_note','club_host','club_date','club_day','club_time','club_entry'])
+      .in('key', ['club_title','club_note','club_host','club_date','club_day','club_time','club_entry','club_desc','prep_items','leader_quote'])
       .then(({ data }) => {
         if (!data?.length) return
         const get = (k: string) => data.find(r => r.key === k)?.value_ko || ''
+        const prepRaw = get('prep_items')
         setMeta({
           title: get('club_title') || base.title,
           note:  get('club_note')  || base.note,
@@ -66,6 +77,9 @@ function useClubMeta(slug: string): ClubMeta {
           day:   get('club_day')   || base.day,
           time:  get('club_time')  || base.time,
           entry: get('club_entry') || base.entry,
+          desc:  get('club_desc')  || aa?.desc || '',
+          prep:  prepRaw ? prepRaw.split('\n').filter(Boolean) : (defaultPrep[slug] || []),
+          quote: get('leader_quote') || '',
         })
       })
   }, [slug])
@@ -102,14 +116,6 @@ function ActivityDetail({ slug }: { slug: string }) {
   const m = useClubMeta(slug)
   const { lang } = useLang()
   const t = useT()
-  const [quoteKo, setQuoteKo] = useState('')
-
-  useEffect(() => {
-    if (!supabase || !a) return
-    supabase.from('site_content').select('value_ko')
-      .eq('page', `activity_${slug}`).eq('key', 'leader_quote').single()
-      .then(({ data }) => { if (data?.value_ko) setQuoteKo(data.value_ko) })
-  }, [slug, a])
 
   if (!a) return (
     <div className="ch-feed">
@@ -148,7 +154,7 @@ function ActivityDetail({ slug }: { slug: string }) {
                    : 'Montréal · 신청자에게 안내'
   const yearPrefix = lang === 'ko' ? '2026년 ' : '2026 '
 
-  const prepItems  = (PREP[slug]?.[lang] ?? PREP[slug]?.ko ?? [])
+  const prepItems  = m.prep.length ? m.prep : (PREP[slug]?.[lang] ?? PREP[slug]?.ko ?? [])
 
   return (
     <div className="ch-feed">
@@ -211,7 +217,7 @@ function ActivityDetail({ slug }: { slug: string }) {
           </div>
 
           {/* Leader quote */}
-          {quoteKo && (
+          {m.quote && (
             <div className="feed-card">
               <div className="feed-card-inner">
                 <div className="feed-meta">
@@ -219,7 +225,7 @@ function ActivityDetail({ slug }: { slug: string }) {
                   <span className="feed-author">{m.host}</span>
                   <span className="feed-tag">WHY THIS CLUB</span>
                 </div>
-                <div className="feed-body"><p>"{quoteKo}"</p></div>
+                <div className="feed-body"><p>"{m.quote}"</p></div>
               </div>
             </div>
           )}

@@ -4946,10 +4946,96 @@ function MiniHakkyoAdmin() {
         </div>
       </FormCard>
 
+      <ClubContentAdmin />
+
       <button onClick={save} disabled={saving} className="btn-yellow">
         {saving ? '저장 중…' : saved ? '저장됨 ✓' : '저장하기'}
       </button>
     </div>
+  )
+}
+
+// ── 클럽별 내용 편집 ─────────────────────────────────────────────────────────
+const CLUB_SLUGS = [
+  { slug: 'book-club',      emoji: '📚', label: '북클럽' },
+  { slug: 'running-club',   emoji: '🏃', label: '러닝클럽' },
+  { slug: 'boardgame-club', emoji: '🎮', label: '보드게임클럽' },
+]
+
+function ClubContentAdmin() {
+  const [data, setData] = useState<Record<string, { quote: string; prep: string; desc: string }>>({})
+  const [saving, setSaving] = useState<string | null>(null)
+  const [saved, setSaved] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!supabase) return
+    CLUB_SLUGS.forEach(({ slug }) => {
+      supabase!.from('site_content').select('key,value_ko')
+        .eq('page', `activity_${slug}`)
+        .in('key', ['leader_quote', 'prep_items', 'club_desc'])
+        .then(({ data: rows }) => {
+          const get = (k: string) => rows?.find(r => r.key === k)?.value_ko || ''
+          setData(prev => ({ ...prev, [slug]: { quote: get('leader_quote'), prep: get('prep_items'), desc: get('club_desc') } }))
+        })
+    })
+  }, [])
+
+  function update(slug: string, field: string, val: string) {
+    setData(prev => ({ ...prev, [slug]: { ...prev[slug], [field]: val } }))
+  }
+
+  async function saveClub(slug: string) {
+    if (!supabase) return
+    setSaving(slug)
+    const d = data[slug] || { quote: '', prep: '', desc: '' }
+    const rows = [
+      { page: `activity_${slug}`, key: 'leader_quote', label: '리더 인용문', value_ko: d.quote, value_en: d.quote, value_fr: d.quote },
+      { page: `activity_${slug}`, key: 'prep_items',   label: '준비물',      value_ko: d.prep,  value_en: d.prep,  value_fr: d.prep  },
+      { page: `activity_${slug}`, key: 'club_desc',    label: '클럽 소개',   value_ko: d.desc,  value_en: d.desc,  value_fr: d.desc  },
+    ]
+    await supabase.from('site_content').upsert(rows, { onConflict: 'page,key' })
+    setSaving(null); setSaved(slug)
+    setTimeout(() => setSaved(null), 2000)
+  }
+
+  return (
+    <FormCard title="🐱 클럽별 내용 편집">
+      <p className="text-xs text-gray-400 mb-4">각 클럽의 소개·준비물·리더 인용문을 편집해요. 클럽마다 따로 저장해요.</p>
+      <div className="space-y-6">
+        {CLUB_SLUGS.map(({ slug, emoji, label }) => {
+          const d = data[slug] || { quote: '', prep: '', desc: '' }
+          return (
+            <div key={slug} className="border border-gray-100 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{emoji}</span>
+                <span className="font-semibold text-sm text-gray-700">{label}</span>
+                <span className="text-xs text-gray-300 font-mono ml-1">{slug}</span>
+              </div>
+              <FL label="클럽 소개 (카드 하단 설명)">
+                <textarea className="input resize-y min-h-[60px] text-sm" value={d.desc}
+                  onChange={e => update(slug, 'desc', e.target.value)}
+                  placeholder="잘해야 오는 게 아니에요. 함께 하다 보면…" />
+              </FL>
+              <FL label="이것만 알고 오면 돼요 (한 줄에 하나씩)">
+                <textarea className="input resize-y min-h-[80px] font-mono text-sm" value={d.prep}
+                  onChange={e => update(slug, 'prep', e.target.value)}
+                  placeholder={"준비물 없음 — 게임과 도구 제공\n함께 웃을 준비"} />
+                <p className="text-xs text-gray-300 mt-1">↵ 엔터로 구분, 각 줄이 번호 항목이 돼요</p>
+              </FL>
+              <FL label="리더 인용문 (따옴표 카드)">
+                <textarea className="input resize-y min-h-[60px] text-sm" value={d.quote}
+                  onChange={e => update(slug, 'quote', e.target.value)}
+                  placeholder="달리면서 나누는 대화는 뭔가 달라요…" />
+              </FL>
+              <button onClick={() => saveClub(slug)} disabled={saving === slug}
+                className="btn-yellow text-sm">
+                {saving === slug ? '저장 중…' : saved === slug ? '저장됨 ✓' : `${label} 저장`}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </FormCard>
   )
 }
 
