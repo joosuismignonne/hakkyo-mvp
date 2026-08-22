@@ -441,8 +441,8 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   .global-topbar { display: none; }
   .mobile-topbar-right { display: flex; align-items: center; gap: 3px; margin-left: auto; }
   .lang-btn-mobile {
-    padding: 3px 7px; border: 1px solid rgba(255,255,255,.3); border-radius: 5px;
-    background: rgba(255,255,255,.12); color: rgba(255,255,255,.7); font-size: 10px; font-weight: 700;
+    padding: 3px 7px; border: 1px solid rgba(255,255,255,.5); border-radius: 5px;
+    background: rgba(255,255,255,.15); color: #fff; font-size: 10px; font-weight: 700;
     cursor: pointer; font-family: inherit;
   }
   .lang-btn-mobile.active { background: var(--sidebar-accent); border-color: var(--sidebar-accent); color: #111; }
