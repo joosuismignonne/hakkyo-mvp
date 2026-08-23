@@ -106,6 +106,8 @@ function PostCard({
   const [commentsLoaded, setCommentsLoaded] = useState(false)
   const [commentBody, setCommentBody] = useState('')
   const [commentSending, setCommentSending] = useState(false)
+  const [commentPrivate, setCommentPrivate] = useState(false)
+  const [guestName, setGuestName] = useState('')
   const { lang } = useLang()
   const t = useT()
 
@@ -150,15 +152,22 @@ function PostCard({
   }
 
   async function handleAddComment() {
-    if (!commentBody.trim() || !userId) return
+    const trimmed = commentBody.trim()
+    if (!trimmed) return
+    const effectiveName = userId ? (userNickname || userAvatar) : guestName.trim()
+    if (!effectiveName) return
     setCommentSending(true)
     try {
-      const comment = await addComment(post.id, userNickname, userAvatar, commentBody.trim())
+      const name = userId ? (userNickname || '익명') : guestName.trim()
+      const avatar = userId ? userAvatar : guestName.trim()[0]?.toUpperCase() || '?'
+      const comment = await addComment(post.id, name, avatar, trimmed, commentPrivate, userId ? undefined : guestName.trim())
       if (comment) {
         setComments(prev => [...prev, comment])
         setCommentBody('')
       }
-    } catch { /* noop */ } finally {
+    } catch (e) {
+      console.error('comment error', e)
+    } finally {
       setCommentSending(false)
     }
   }
@@ -244,23 +253,36 @@ function PostCard({
               <div className="post-comments-empty">첫 댓글을 남겨보세요</div>
             )}
             {comments.map(c => (
-              <div key={c.id} className="post-comment-item">
+              <div key={c.id} className={`post-comment-item${c.is_private ? ' post-comment-private' : ''}`}>
                 <div className="post-comment-avatar">
                   <Avatar avatar={c.author_avatar || c.author_name[0]?.toUpperCase() || '?'} size={26} />
                 </div>
                 <div className="post-comment-content">
                   <div className="post-comment-header">
                     <span className="post-comment-author">{c.author_name}</span>
+                    {c.is_private && <span className="post-comment-private-badge">🔒 비공개</span>}
                     <span className="post-comment-time">{relTime(c.created_at, lang)}</span>
                   </div>
                   <div className="post-comment-body">{c.body}</div>
                 </div>
               </div>
             ))}
-            {userId && (
-              <div className="post-comment-compose">
+            <div className="post-comment-compose">
+              {!userId && (
+                <input
+                  className="post-comment-guest-name"
+                  placeholder="이름 (닉네임)"
+                  value={guestName}
+                  onChange={e => setGuestName(e.target.value)}
+                  maxLength={20}
+                />
+              )}
+              <div className="post-comment-compose-row">
                 <div className="post-comment-avatar">
-                  <Avatar avatar={userAvatar || userNickname[0]?.toUpperCase() || '?'} size={26} />
+                  {userId
+                    ? <Avatar avatar={userAvatar || userNickname[0]?.toUpperCase() || '?'} size={26} />
+                    : <div className="post-comment-avatar-placeholder">{guestName[0]?.toUpperCase() || '?'}</div>
+                  }
                 </div>
                 <input
                   className="post-comment-input"
@@ -270,14 +292,22 @@ function PostCard({
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }}
                 />
                 <button
+                  className={`post-comment-privacy${commentPrivate ? ' active' : ''}`}
+                  onClick={() => setCommentPrivate(p => !p)}
+                  title={commentPrivate ? '비공개 댓글' : '공개 댓글'}
+                  type="button"
+                >
+                  {commentPrivate ? '🔒' : '🌐'}
+                </button>
+                <button
                   className="post-comment-send"
                   onClick={handleAddComment}
-                  disabled={!commentBody.trim() || commentSending}
+                  disabled={!commentBody.trim() || commentSending || (!userId && !guestName.trim())}
                 >
                   {commentSending ? '…' : '등록'}
                 </button>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>

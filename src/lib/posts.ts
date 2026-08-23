@@ -23,6 +23,8 @@ export interface PostComment {
   author_name: string
   author_avatar: string
   body: string
+  is_private: boolean
+  guest_name?: string
   created_at: string
 }
 
@@ -103,11 +105,18 @@ export async function getComments(postId: string): Promise<PostComment[]> {
   return data ?? []
 }
 
-export async function addComment(postId: string, authorName: string, authorAvatar: string, body: string): Promise<PostComment | null> {
+export async function addComment(
+  postId: string,
+  authorName: string,
+  authorAvatar: string,
+  body: string,
+  isPrivate = false,
+  guestName?: string,
+): Promise<PostComment | null> {
   if (!supabase) return null
   const { data, error } = await supabase
     .from('post_comments')
-    .insert([{ post_id: postId, author_name: authorName, author_avatar: authorAvatar, body }])
+    .insert([{ post_id: postId, author_name: authorName, author_avatar: authorAvatar, body, is_private: isPrivate, guest_name: guestName ?? null }])
     .select()
     .single()
   if (error) throw new Error(error.message)

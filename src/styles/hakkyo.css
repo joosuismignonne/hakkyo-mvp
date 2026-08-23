@@ -1513,3 +1513,62 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   opacity: .45;
   cursor: default;
 }
+
+/* ── Comment compose updates ─────────────────────────────────────────────── */
+.post-comment-compose-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.post-comment-guest-name {
+  width: 100%;
+  border: 1px solid #e0dfd8;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  background: #fafaf8;
+  outline: none;
+  margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.post-comment-guest-name:focus {
+  border-color: #111;
+  background: #fff;
+}
+.post-comment-avatar-placeholder {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e0dfd8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #666;
+  flex-shrink: 0;
+}
+.post-comment-privacy {
+  background: none;
+  border: 1px solid #e0dfd8;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .12s;
+}
+.post-comment-privacy.active {
+  background: #fff7e0;
+  border-color: #f5c542;
+}
+.post-comment-private {
+  background: #fdf9ef;
+}
+.post-comment-private-badge {
+  font-size: 11px;
+  color: #9a7800;
+  background: #fff7cc;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
