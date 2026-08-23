@@ -213,7 +213,7 @@ function PostCard({
   isAdmin: boolean
   onDelete: (id: string) => void
   onPin: (id: string, pinned: boolean) => void
-  onEdit: (id: string, fields: { title_ko?: string; body_ko?: string }) => void
+  onEdit: (id: string, fields: { title_ko?: string; body_ko?: string; body_en?: string; body_fr?: string }) => void
   channel: string
   userId?: string
   likedByMe: boolean
@@ -247,7 +247,7 @@ function PostCard({
 
   function handleEdit() { setEditing(true) }
 
-  async function handleSaveEdit(fields: { title_ko: string; body_ko: string }) {
+  async function handleSaveEdit(fields: { title_ko: string; body_ko: string; body_en: string; body_fr: string }) {
     await updatePost(post.id, fields)
     onEdit(post.id, fields)
     setEditing(false)
@@ -497,66 +497,49 @@ function PostEditInline({
   post, onSave, onCancel,
 }: {
   post: ChannelPost
-  onSave: (fields: { title_ko: string; body_ko: string }) => Promise<void>
+  onSave: (fields: { title_ko: string; body_ko: string; body_en: string; body_fr: string }) => Promise<void>
   onCancel: () => void
 }) {
   const [title, setTitle] = useState(post.title_ko)
+  const [activeLang, setActiveLang] = useState<Lang>('ko')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Image.configure({ inline: false }),
-      Youtube.configure({ width: 640, height: 360 }),
-      Link.configure({ openOnClick: false }),
-      VideoNode,
-      Placeholder.configure({ placeholder: '내용을 입력하세요…' }),
-    ],
-    content: post.body_ko || '',
-    editorProps: { attributes: { class: 'compose-rich-editor' } },
-  })
+  const sharedExt = [StarterKit, Image.configure({ inline: false }), Youtube.configure({ width: 640, height: 360 }), Link.configure({ openOnClick: false }), VideoNode]
+  const editorKo = useEditor({ extensions: [...sharedExt, Placeholder.configure({ placeholder: '한국어 내용' })], content: post.body_ko || '', editorProps: { attributes: { class: 'compose-rich-editor' } } })
+  const editorEn = useEditor({ extensions: [...sharedExt, Placeholder.configure({ placeholder: 'English content (optional)' })], content: (post as any).body_en || '', editorProps: { attributes: { class: 'compose-rich-editor' } } })
+  const editorFr = useEditor({ extensions: [...sharedExt, Placeholder.configure({ placeholder: 'Contenu en français (facultatif)' })], content: (post as any).body_fr || '', editorProps: { attributes: { class: 'compose-rich-editor' } } })
+
+  const activeEditor = activeLang === 'ko' ? editorKo : activeLang === 'en' ? editorEn : editorFr
 
   const handleFileUpload = useCallback(async (file: File) => {
+    const editor = activeLang === 'ko' ? editorKo : activeLang === 'en' ? editorEn : editorFr
     if (!editor) return
     const insertFile = (src: string) => {
-      if (file.type.startsWith('video/')) {
-        editor.chain().focus().insertContent({ type: 'video', attrs: { src } }).run()
-      } else {
-        editor.chain().focus().setImage({ src }).run()
-      }
+      if (file.type.startsWith('video/')) editor.chain().focus().insertContent({ type: 'video', attrs: { src } }).run()
+      else editor.chain().focus().setImage({ src }).run()
     }
-    if (!supabase) {
-      const reader = new FileReader()
-      reader.onload = ev => { if (ev.target?.result) insertFile(ev.target.result as string) }
-      reader.readAsDataURL(file); return
-    }
+    if (!supabase) { const r = new FileReader(); r.onload = e => { if (e.target?.result) insertFile(e.target.result as string) }; r.readAsDataURL(file); return }
     setUploading(true)
     try {
       const ext = file.name.split('.').pop() || 'bin'
       const path = `posts/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
       const { error: upErr } = await supabase.storage.from('media').upload(path, file, { upsert: false })
-      if (upErr) {
-        const reader = new FileReader()
-        reader.onload = ev => { if (ev.target?.result) insertFile(ev.target.result as string) }
-        reader.readAsDataURL(file)
-      } else {
-        insertFile(supabase.storage.from('media').getPublicUrl(path).data.publicUrl)
-      }
+      if (upErr) { const r = new FileReader(); r.onload = e => { if (e.target?.result) insertFile(e.target.result as string) }; r.readAsDataURL(file) }
+      else insertFile(supabase.storage.from('media').getPublicUrl(path).data.publicUrl)
     } finally { setUploading(false) }
-  }, [editor])
+  }, [activeLang, editorKo, editorEn, editorFr])
+
+  function getHtml(ed: ReturnType<typeof useEditor>) {
+    if (!ed) return ''; const h = ed.getHTML(); return h === '<p></p>' ? '' : h
+  }
 
   async function handleSave() {
-    if (!editor) return
-    const html = editor.getHTML()
-    const body = html === '<p></p>' ? '' : html
     setSaving(true); setError('')
     try {
-      await onSave({ title_ko: title, body_ko: body })
-    } catch (e: any) {
-      setError(e.message || '저장 실패')
-    } finally { setSaving(false) }
+      await onSave({ title_ko: title, body_ko: getHtml(editorKo), body_en: getHtml(editorEn), body_fr: getHtml(editorFr) })
+    } catch (e: any) { setError(e.message || '저장 실패') } finally { setSaving(false) }
   }
 
   return (
@@ -573,8 +556,17 @@ function PostEditInline({
             onChange={e => setTitle(e.target.value)}
             placeholder="제목 (선택사항)"
           />
-          <ComposeToolbar editor={editor} onFileUpload={handleFileUpload} uploading={uploading} />
-          <EditorContent editor={editor} className="compose-editor-wrap" />
+          <div className="member-compose-lang-tabs" style={{ padding: '0 14px', borderBottom: '1px solid #e8e7e0' }}>
+            {(['ko','en','fr'] as Lang[]).map(l => (
+              <button key={l} className={`member-compose-lang-tab${activeLang === l ? ' active' : ''}`} onClick={() => setActiveLang(l)}>
+                {l === 'ko' ? '한국어' : l === 'en' ? 'English' : 'Français'}
+              </button>
+            ))}
+          </div>
+          <ComposeToolbar editor={activeEditor} onFileUpload={handleFileUpload} uploading={uploading} />
+          <div style={{ display: activeLang === 'ko' ? 'block' : 'none' }}><EditorContent editor={editorKo} className="compose-editor-wrap" /></div>
+          <div style={{ display: activeLang === 'en' ? 'block' : 'none' }}><EditorContent editor={editorEn} className="compose-editor-wrap" /></div>
+          <div style={{ display: activeLang === 'fr' ? 'block' : 'none' }}><EditorContent editor={editorFr} className="compose-editor-wrap" /></div>
           {error && <div className="compose-error">{error}</div>}
         </div>
         <div className="post-edit-footer">
@@ -1029,7 +1021,7 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
     }
   }, [loading, channel])
 
-  function handleEdit(id: string, fields: { title_ko?: string; body_ko?: string }) {
+  function handleEdit(id: string, fields: { title_ko?: string; body_ko?: string; body_en?: string; body_fr?: string }) {
     setPosts(prev => prev.map(p => p.id === id ? { ...p, ...fields } : p))
   }
   function handlePosted(post: ChannelPost) {
