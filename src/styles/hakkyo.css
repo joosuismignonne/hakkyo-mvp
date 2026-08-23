@@ -538,12 +538,10 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   border-color: #eae9e4;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,.06);
-  border-left: 3px solid #f5c542;
   transition: border-color .25s cubic-bezier(.4,0,.2,1), box-shadow .25s cubic-bezier(.4,0,.2,1), transform .25s cubic-bezier(.34,1.4,.64,1);
 }
 .feed-card-pinned:hover {
   border-color: #d4d3cc;
-  border-left-color: #e0b030;
   box-shadow: 0 8px 24px rgba(0,0,0,.10);
   transform: translateY(-3px);
 }

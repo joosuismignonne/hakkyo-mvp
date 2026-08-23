@@ -82,13 +82,6 @@ export default function NewCommunity() {
 
   return (
     <ChannelFeed channel={channel!} header={header}>
-      {/* Compose stub for non-admins */}
-      <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
-        <div className="ch-compose-avatar"><Cat size={18} weight="bold" /></div>
-        <span className="ch-compose-ph">{cfg.placeholder}</span>
-        <button className="ch-compose-btn"><HandWaving size={14} weight="bold" style={{marginRight:4}} />{t.footer.apply}</button>
-      </div>
-
       {/* Coming soon card */}
       <div className="feed-card">
         <div className="feed-card-inner">
