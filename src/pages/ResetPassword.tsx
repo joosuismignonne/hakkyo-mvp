@@ -42,7 +42,7 @@ export default function ResetPassword() {
       const { error: updateError } = await supabase.auth.updateUser({ password })
       if (updateError) throw updateError
       setStage('success')
-      setTimeout(() => navigate('/', { replace: true }), 2000)
+      setTimeout(() => navigate(isInvite ? '/welcome' : '/', { replace: true }), 2000)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '오류가 발생했어요.')
     } finally {

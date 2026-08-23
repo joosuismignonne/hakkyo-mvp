@@ -24,6 +24,7 @@ import Account from './pages/Account'
 import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
 import RequireAdmin from './components/RequireAdmin'
+import Welcome from './pages/Welcome'
 
 function RouteTracker() {
   const location = useLocation()
@@ -84,6 +85,7 @@ export default function App() {
           <Route path="/signup" element={<Navigate to="/" replace />} />
           <Route path="/account" element={<Account />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/welcome" element={<Welcome />} />
           <Route path="/admin/*" element={<RequireAdmin><Admin /></RequireAdmin>} />
 
           {/* Legacy redirects */}
