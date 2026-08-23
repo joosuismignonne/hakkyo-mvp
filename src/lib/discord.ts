@@ -38,6 +38,23 @@ export function notifyProgramApplication(opts: {
   })
 }
 
+// ─── 🏘️ 커뮤니티 신청 ────────────────────────────────────────────────────────
+export function notifyCommunityApplication(opts: {
+  name: string
+  email: string
+}) {
+  return send({
+    title: '🏘️ 새 커뮤니티 신청',
+    color: 0xff6b35,
+    fields: [
+      { name: '이름',   value: opts.name,  inline: true },
+      { name: '이메일', value: opts.email, inline: true },
+    ],
+    footer: { text: 'HAKKYO Admin' },
+    timestamp: new Date().toISOString(),
+  })
+}
+
 // ─── 🏃 Mini HAKKYO 액티비티 신청 ───────────────────────────────────────────
 export function notifyActivityApplication(opts: {
   name: string

@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { programs, activities } from '../data/hakkyo'
 import { submitApplication, ApplicationPayload } from '../lib/hakkyoApi'
 import { trackEvent } from '../lib/analytics'
-import { notifyNewsletterSubscription, notifyActivityApplication, notifyProgramApplication } from '../lib/discord'
+import { notifyNewsletterSubscription, notifyActivityApplication, notifyProgramApplication, notifyCommunityApplication } from '../lib/discord'
 import { useLang } from '../lib/lang'
 import { Bell, Books, Cat } from '@phosphor-icons/react'
 
@@ -313,6 +313,8 @@ function ApplicationForm({ kind, selection, trackSlug, backHref }: { kind: 'prog
         notifyProgramApplication({ name, email, track: selection })
       } else if (kind === 'activity') {
         notifyActivityApplication({ name, email, activity: selection })
+      } else if (kind === 'community') {
+        notifyCommunityApplication({ name, email })
       }
       setState('done')
     } catch {
