@@ -1892,3 +1892,14 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   padding: 4px 8px;
 }
 .login-prompt-close:hover { color: #666; }
+
+/* ── Comment compose full-width fix ─────────────────────────────────────── */
+.post-comments { width: 100%; box-sizing: border-box; }
+.post-comment-compose { width: 100%; box-sizing: border-box; }
+.post-comment-compose-row { width: 100%; box-sizing: border-box; }
+.post-comment-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
