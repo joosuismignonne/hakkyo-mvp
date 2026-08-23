@@ -81,7 +81,7 @@ export default function App() {
 
           {/* Auth pages (no public layout) */}
           <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/signup" element={<Navigate to="/" replace />} />
           <Route path="/account" element={<Account />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin/*" element={<RequireAdmin><Admin /></RequireAdmin>} />
