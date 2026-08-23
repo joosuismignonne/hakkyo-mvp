@@ -1664,3 +1664,33 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 .share-dropdown a:last-child { border-bottom: none; }
 .share-dropdown button:hover,
 .share-dropdown a:hover { background: #f7f6f1; }
+
+/* ── Post edit rich override ─────────────────────────────────────────────── */
+.post-edit-rich {
+  margin: 10px 0;
+  border: 1.5px solid #d0cfc8;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.post-edit-rich .post-edit-title {
+  border: none;
+  border-bottom: 1px solid #e8e7e0;
+  border-radius: 0;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fafaf8;
+}
+.post-edit-rich .post-edit-title:focus { background: #fff; outline: none; }
+.post-edit-rich .compose-toolbar { border-bottom: 1px solid #e8e7e0; border-radius: 0; }
+.post-edit-rich .compose-editor-wrap { min-height: 120px; padding: 10px 14px; }
+.post-edit-rich .post-edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid #e8e7e0;
+  background: #fafaf8;
+}

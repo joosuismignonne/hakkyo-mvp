@@ -127,9 +127,6 @@ function PostCard({
   const [commentPrivate, setCommentPrivate] = useState(false)
   const [guestName, setGuestName] = useState('')
   const [editing, setEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState(post.title_ko)
-  const [editBody, setEditBody] = useState('')
-  const [editSaving, setEditSaving] = useState(false)
   const isComposingRef = useRef(false)
   const { lang } = useLang()
   const t = useT()
@@ -141,19 +138,12 @@ function PostCard({
   const hasBody = !!body
   const hasMedia = /<img|<video|<iframe|youtube/.test(body)
 
-  async function handleEdit() {
-    const bodyKo = post.body_ko
-    setEditBody(bodyKo.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim())
-    setEditing(true)
-  }
+  function handleEdit() { setEditing(true) }
 
-  async function handleSaveEdit() {
-    setEditSaving(true)
-    try {
-      await updatePost(post.id, { title_ko: editTitle, body_ko: editBody })
-      onEdit(post.id, { title_ko: editTitle, body_ko: editBody })
-      setEditing(false)
-    } catch (e) { console.error(e) } finally { setEditSaving(false) }
+  async function handleSaveEdit(fields: { title_ko: string; body_ko: string }) {
+    await updatePost(post.id, fields)
+    onEdit(post.id, fields)
+    setEditing(false)
   }
 
   async function handleLike() {
@@ -238,26 +228,7 @@ function PostCard({
         </div>
 
         {editing ? (
-          <div className="post-edit-wrap">
-            <input
-              className="post-edit-title"
-              value={editTitle}
-              onChange={e => setEditTitle(e.target.value)}
-              placeholder="제목"
-            />
-            <textarea
-              className="post-edit-body"
-              value={editBody}
-              onChange={e => setEditBody(e.target.value)}
-              rows={6}
-            />
-            <div className="post-edit-footer">
-              <button className="post-edit-cancel" onClick={() => setEditing(false)}>취소</button>
-              <button className="post-edit-save" onClick={handleSaveEdit} disabled={editSaving}>
-                {editSaving ? '저장 중…' : '저장'}
-              </button>
-            </div>
-          </div>
+          <PostEditInline post={post} onSave={handleSaveEdit} onCancel={() => setEditing(false)} />
         ) : (
           <>
             {title && (
@@ -415,6 +386,94 @@ function ComposeToolbar({ editor, onFileUpload, uploading }: {
         const url = window.prompt('링크 URL을 입력하세요')
         if (url?.trim()) editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run()
       })}
+    </div>
+  )
+}
+
+// ── Post edit (rich) ──────────────────────────────────────────────────────
+function PostEditInline({
+  post, onSave, onCancel,
+}: {
+  post: ChannelPost
+  onSave: (fields: { title_ko: string; body_ko: string }) => Promise<void>
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState(post.title_ko)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Image.configure({ inline: false }),
+      Youtube.configure({ width: 640, height: 360 }),
+      Link.configure({ openOnClick: false }),
+      VideoNode,
+      Placeholder.configure({ placeholder: '내용을 입력하세요…' }),
+    ],
+    content: post.body_ko || '',
+    editorProps: { attributes: { class: 'compose-rich-editor' } },
+  })
+
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (!editor) return
+    const insertFile = (src: string) => {
+      if (file.type.startsWith('video/')) {
+        editor.chain().focus().insertContent({ type: 'video', attrs: { src } }).run()
+      } else {
+        editor.chain().focus().setImage({ src }).run()
+      }
+    }
+    if (!supabase) {
+      const reader = new FileReader()
+      reader.onload = ev => { if (ev.target?.result) insertFile(ev.target.result as string) }
+      reader.readAsDataURL(file); return
+    }
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop() || 'bin'
+      const path = `posts/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+      const { error: upErr } = await supabase.storage.from('media').upload(path, file, { upsert: false })
+      if (upErr) {
+        const reader = new FileReader()
+        reader.onload = ev => { if (ev.target?.result) insertFile(ev.target.result as string) }
+        reader.readAsDataURL(file)
+      } else {
+        insertFile(supabase.storage.from('media').getPublicUrl(path).data.publicUrl)
+      }
+    } finally { setUploading(false) }
+  }, [editor])
+
+  async function handleSave() {
+    if (!editor) return
+    const html = editor.getHTML()
+    const body = html === '<p></p>' ? '' : html
+    setSaving(true); setError('')
+    try {
+      await onSave({ title_ko: title, body_ko: body })
+    } catch (e: any) {
+      setError(e.message || '저장 실패')
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="post-edit-rich">
+      <input
+        className="post-edit-title"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        placeholder="제목 (선택사항)"
+      />
+      <ComposeToolbar editor={editor} onFileUpload={handleFileUpload} uploading={uploading} />
+      <EditorContent editor={editor} className="compose-editor-wrap" />
+      {error && <div className="compose-error">{error}</div>}
+      <div className="post-edit-footer">
+        <button className="post-edit-cancel" onClick={onCancel}>취소</button>
+        <button className="post-edit-save" onClick={handleSave} disabled={saving}>
+          {saving ? '저장 중…' : '저장'}
+        </button>
+      </div>
     </div>
   )
 }
