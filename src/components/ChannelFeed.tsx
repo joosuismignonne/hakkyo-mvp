@@ -27,11 +27,11 @@ import { useAuth } from '../context/AuthContext'
 import { useLang, useT, pick } from '../lib/lang'
 import type { Lang } from '../lib/lang'
 import {
-  getChannelPosts, createPost, deletePost, togglePin, isAdminEmail,
+  getChannelPosts, createPost, deletePost, togglePin, updatePost, isAdminEmail,
   getLikedPostIds, toggleLike, getComments, addComment,
   type ChannelPost, type PostComment,
 } from '../lib/posts'
-import { Heart, ChatCircle, CheckCircle, ShareNetwork, HandWaving, Lock as LockIcon } from '@phosphor-icons/react'
+import { Heart, ChatCircle, ShareNetwork, HandWaving, Lock as LockIcon } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 
 // Channels where only admins can write (non-admins see a locked state)
@@ -52,17 +52,35 @@ function relTime(iso: string, lang: Lang): string {
 }
 
 // ── Share ──────────────────────────────────────────────────────────────────
-function sharePost(channel: string, postId: string) {
-  const url = `${window.location.origin}/community/${channel}?post=${postId}`
+function copyLink(url: string) {
   navigator.clipboard.writeText(url).then(() => {
     const t = document.createElement('div')
     t.textContent = '🔗 링크 복사됨'
     t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#11110f;color:#fff;padding:8px 18px;border-radius:99px;font-size:13px;z-index:9999;pointer-events:none;white-space:nowrap'
     document.body.appendChild(t)
     setTimeout(() => t.remove(), 2000)
-  }).catch(() => {
-    prompt('링크를 복사해 주세요:', url)
-  })
+  }).catch(() => prompt('링크를 복사해 주세요:', url))
+}
+
+function ShareDropdown({ channel, postId }: { channel: string; postId: string }) {
+  const [open, setOpen] = useState(false)
+  const url = `${window.location.origin}/community/${channel}?post=${postId}`
+  const encodedUrl = encodeURIComponent(url)
+  return (
+    <div className="share-dropdown-wrap" onMouseLeave={() => setOpen(false)}>
+      <button className="feed-action" onClick={() => setOpen(o => !o)}>
+        <ShareNetwork size={13} weight="bold" style={{marginRight:3}} /> 공유
+      </button>
+      {open && (
+        <div className="share-dropdown">
+          <button onClick={() => { copyLink(url); setOpen(false) }}>🔗 링크 복사</button>
+          <a href={`https://www.threads.net/intent/post?text=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>🧵 Threads</a>
+          <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>𝕏 Twitter</a>
+          <a href={`https://www.instagram.com/`} target="_blank" rel="noopener noreferrer" onClick={() => { copyLink(url); setOpen(false) }}>📷 Instagram (링크 복사)</a>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
@@ -83,12 +101,13 @@ function Avatar({ avatar, size = 36 }: { avatar: string; size?: number }) {
 
 // ── PostCard ───────────────────────────────────────────────────────────────
 function PostCard({
-  post, isAdmin, onDelete, onPin, channel, userId, likedByMe, userNickname, userAvatar,
+  post, isAdmin, onDelete, onPin, onEdit, channel, userId, likedByMe, userNickname, userAvatar,
 }: {
   post: ChannelPost
   isAdmin: boolean
   onDelete: (id: string) => void
   onPin: (id: string, pinned: boolean) => void
+  onEdit: (id: string, fields: { title_ko?: string; body_ko?: string }) => void
   channel: string
   userId?: string
   likedByMe: boolean
@@ -100,7 +119,6 @@ function PostCard({
   const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
   const [likePending, setLikePending] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [shared, setShared] = useState(false)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [comments, setComments] = useState<PostComment[]>([])
   const [commentsLoaded, setCommentsLoaded] = useState(false)
@@ -108,6 +126,11 @@ function PostCard({
   const [commentSending, setCommentSending] = useState(false)
   const [commentPrivate, setCommentPrivate] = useState(false)
   const [guestName, setGuestName] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(post.title_ko)
+  const [editBody, setEditBody] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const isComposingRef = useRef(false)
   const { lang } = useLang()
   const t = useT()
 
@@ -118,10 +141,19 @@ function PostCard({
   const hasBody = !!body
   const hasMedia = /<img|<video|<iframe|youtube/.test(body)
 
-  function handleShare() {
-    sharePost(channel, post.id)
-    setShared(true)
-    setTimeout(() => setShared(false), 2000)
+  async function handleEdit() {
+    const bodyKo = post.body_ko
+    setEditBody(bodyKo.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim())
+    setEditing(true)
+  }
+
+  async function handleSaveEdit() {
+    setEditSaving(true)
+    try {
+      await updatePost(post.id, { title_ko: editTitle, body_ko: editBody })
+      onEdit(post.id, { title_ko: editTitle, body_ko: editBody })
+      setEditing(false)
+    } catch (e) { console.error(e) } finally { setEditSaving(false) }
   }
 
   async function handleLike() {
@@ -192,6 +224,7 @@ function PostCard({
               <button className="post-menu-btn" onClick={() => setMenuOpen(m => !m)}>⋯</button>
               {menuOpen && (
                 <div className="post-menu-dropdown" onMouseLeave={() => setMenuOpen(false)}>
+                  <button onClick={() => { handleEdit(); setMenuOpen(false) }}>✏️ 수정</button>
                   <button onClick={() => { onPin(post.id, !post.is_pinned); setMenuOpen(false) }}>
                     {post.is_pinned ? '📌 unpin' : '📌 pin'}
                   </button>
@@ -204,23 +237,47 @@ function PostCard({
           )}
         </div>
 
-        {title && (
-          <div className="feed-title" onClick={() => hasBody && setOpen(o => !o)}
-            style={{ cursor: hasBody ? 'pointer' : 'default' }}>
-            {title}
+        {editing ? (
+          <div className="post-edit-wrap">
+            <input
+              className="post-edit-title"
+              value={editTitle}
+              onChange={e => setEditTitle(e.target.value)}
+              placeholder="제목"
+            />
+            <textarea
+              className="post-edit-body"
+              value={editBody}
+              onChange={e => setEditBody(e.target.value)}
+              rows={6}
+            />
+            <div className="post-edit-footer">
+              <button className="post-edit-cancel" onClick={() => setEditing(false)}>취소</button>
+              <button className="post-edit-save" onClick={handleSaveEdit} disabled={editSaving}>
+                {editSaving ? '저장 중…' : '저장'}
+              </button>
+            </div>
           </div>
-        )}
-
-        {!open && (
-          <div className={`feed-body${hasMedia ? ' post-rich-body' : ''}`}>
-            {hasMedia
-              ? <div dangerouslySetInnerHTML={{ __html: body }} />
-              : <p>{stripped.slice(0, 200)}{hasMore ? '…' : ''}</p>
-            }
-          </div>
-        )}
-        {open && body && (
-          <div className="feed-body post-rich-body" dangerouslySetInnerHTML={{ __html: body }} />
+        ) : (
+          <>
+            {title && (
+              <div className="feed-title" onClick={() => hasBody && setOpen(o => !o)}
+                style={{ cursor: hasBody ? 'pointer' : 'default' }}>
+                {title}
+              </div>
+            )}
+            {!open && (
+              <div className={`feed-body${hasMedia ? ' post-rich-body' : ''}`}>
+                {hasMedia
+                  ? <div dangerouslySetInnerHTML={{ __html: body }} />
+                  : <p>{stripped.slice(0, 200)}{hasMore ? '…' : ''}</p>
+                }
+              </div>
+            )}
+            {open && body && (
+              <div className="feed-body post-rich-body" dangerouslySetInnerHTML={{ __html: body }} />
+            )}
+          </>
         )}
 
         <div className="feed-footer">
@@ -235,16 +292,14 @@ function PostCard({
           </button>
           <button className={`feed-action${commentsOpen ? ' active' : ''}`} onClick={handleToggleComments}>
             <ChatCircle size={13} weight="bold" style={{marginRight:3}} />
-            {comments.length > 0 ? comments.length : (lang === 'ko' ? '댓글' : lang === 'fr' ? 'Commentaires' : 'Comments')}
+            {commentsOpen && comments.length > 0 ? comments.length : (lang === 'ko' ? '댓글' : lang === 'fr' ? 'Commentaires' : 'Comments')}
           </button>
-          {(hasMore || hasMedia) && (
+          {(hasMore || hasMedia) && !editing && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
               {open ? t.home.collapse : t.home.readMore}
             </button>
           )}
-          <button className={`feed-action${shared ? ' shared' : ''}`} onClick={handleShare}>
-            {shared ? <CheckCircle size={13} weight="bold" style={{marginRight:3}} /> : <ShareNetwork size={13} weight="bold" style={{marginRight:3}} />} {lang === 'ko' ? '공유' : lang === 'fr' ? 'Partager' : 'Share'}
-          </button>
+          <ShareDropdown channel={channel} postId={post.id} />
         </div>
 
         {commentsOpen && (
@@ -289,7 +344,9 @@ function PostCard({
                   placeholder="댓글을 입력하세요…"
                   value={commentBody}
                   onChange={e => setCommentBody(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }}
+                  onCompositionStart={() => { isComposingRef.current = true }}
+                  onCompositionEnd={() => { isComposingRef.current = false }}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !isComposingRef.current) { e.preventDefault(); handleAddComment() } }}
                 />
                 <button
                   className={`post-comment-privacy${commentPrivate ? ' active' : ''}`}
@@ -760,6 +817,9 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
     }
   }, [loading, channel])
 
+  function handleEdit(id: string, fields: { title_ko?: string; body_ko?: string }) {
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, ...fields } : p))
+  }
   function handlePosted(post: ChannelPost) {
     setPosts(prev => [...prev, post])
     // Scroll to bottom after new post
@@ -797,6 +857,7 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
               isAdmin={isAdmin}
               onDelete={handleDelete}
               onPin={handlePin}
+              onEdit={handleEdit}
               channel={channel}
               userId={user?.id}
               likedByMe={likedIds.has(post.id)}

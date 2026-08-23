@@ -1572,3 +1572,95 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   padding: 1px 6px;
   border-radius: 4px;
 }
+
+/* ── Post edit ───────────────────────────────────────────────────────────── */
+.post-edit-wrap {
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.post-edit-title {
+  border: 1px solid #d0cfc8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  outline: none;
+  background: #fafaf8;
+}
+.post-edit-title:focus { border-color: #111; background: #fff; }
+.post-edit-body {
+  border: 1px solid #d0cfc8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  background: #fafaf8;
+  line-height: 1.6;
+}
+.post-edit-body:focus { border-color: #111; background: #fff; }
+.post-edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.post-edit-cancel {
+  background: none;
+  border: 1px solid #d0cfc8;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.post-edit-save {
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.post-edit-save:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Share dropdown ──────────────────────────────────────────────────────── */
+.share-dropdown-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.share-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: #fff;
+  border: 1px solid #e0dfd8;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12);
+  min-width: 170px;
+  z-index: 100;
+  overflow: hidden;
+}
+.share-dropdown button,
+.share-dropdown a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #111;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f0efea;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  transition: background .1s;
+}
+.share-dropdown button:last-child,
+.share-dropdown a:last-child { border-bottom: none; }
+.share-dropdown button:hover,
+.share-dropdown a:hover { background: #f7f6f1; }

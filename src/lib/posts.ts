@@ -66,6 +66,12 @@ export async function deletePost(id: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
+export async function updatePost(id: string, fields: { title_ko?: string; body_ko?: string; body_en?: string; body_fr?: string }): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('channel_posts').update(fields).eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
 export async function togglePin(id: string, is_pinned: boolean): Promise<void> {
   if (!supabase) return
   const { error } = await supabase.from('channel_posts').update({ is_pinned }).eq('id', id)
