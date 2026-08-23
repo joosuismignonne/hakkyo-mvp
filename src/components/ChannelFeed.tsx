@@ -28,7 +28,8 @@ import { useLang, useT, pick } from '../lib/lang'
 import type { Lang } from '../lib/lang'
 import {
   getChannelPosts, createPost, deletePost, togglePin, isAdminEmail,
-  type ChannelPost,
+  getLikedPostIds, toggleLike, getComments, addComment,
+  type ChannelPost, type PostComment,
 } from '../lib/posts'
 import { Heart, ChatCircle, CheckCircle, ShareNetwork, HandWaving, Lock as LockIcon } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
@@ -84,18 +85,29 @@ function Avatar({ avatar, size = 36 }: { avatar: string; size?: number }) {
 
 // ── PostCard ───────────────────────────────────────────────────────────────
 function PostCard({
-  post, isAdmin, onDelete, onPin, channel,
+  post, isAdmin, onDelete, onPin, channel, userId, likedByMe, userNickname, userAvatar,
 }: {
   post: ChannelPost
   isAdmin: boolean
   onDelete: (id: string) => void
   onPin: (id: string, pinned: boolean) => void
   channel: string
+  userId?: string
+  likedByMe: boolean
+  userNickname: string
+  userAvatar: string
 }) {
   const [open, setOpen] = useState(false)
-  const [liked, setLiked] = useState(false)
+  const [liked, setLiked] = useState(likedByMe)
+  const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
+  const [likePending, setLikePending] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [shared, setShared] = useState(false)
+  const [commentsOpen, setCommentsOpen] = useState(false)
+  const [comments, setComments] = useState<PostComment[]>([])
+  const [commentsLoaded, setCommentsLoaded] = useState(false)
+  const [commentBody, setCommentBody] = useState('')
+  const [commentSending, setCommentSending] = useState(false)
   const { lang } = useLang()
   const t = useT()
 
@@ -110,6 +122,47 @@ function PostCard({
     sharePost(channel, post.id)
     setShared(true)
     setTimeout(() => setShared(false), 2000)
+  }
+
+  async function handleLike() {
+    if (!userId || likePending) return
+    setLikePending(true)
+    const wasLiked = liked
+    setLiked(!wasLiked)
+    setLikeCount(c => wasLiked ? Math.max(0, c - 1) : c + 1)
+    try {
+      const newCount = await toggleLike(post.id, userId, wasLiked)
+      setLikeCount(newCount)
+    } catch {
+      setLiked(wasLiked)
+      setLikeCount(c => wasLiked ? c + 1 : Math.max(0, c - 1))
+    } finally {
+      setLikePending(false)
+    }
+  }
+
+  async function handleToggleComments() {
+    const next = !commentsOpen
+    setCommentsOpen(next)
+    if (next && !commentsLoaded) {
+      const data = await getComments(post.id)
+      setComments(data)
+      setCommentsLoaded(true)
+    }
+  }
+
+  async function handleAddComment() {
+    if (!commentBody.trim() || !userId) return
+    setCommentSending(true)
+    try {
+      const comment = await addComment(post.id, userNickname, userAvatar, commentBody.trim())
+      if (comment) {
+        setComments(prev => [...prev, comment])
+        setCommentBody('')
+      }
+    } catch { /* noop */ } finally {
+      setCommentSending(false)
+    }
   }
 
   return (
@@ -164,18 +217,71 @@ function PostCard({
         )}
 
         <div className="feed-footer">
-          <button className={`feed-action${liked ? ' liked' : ''}`} onClick={() => setLiked(l => !l)}>
-            <Heart size={13} weight={liked ? 'fill' : 'regular'} color={liked ? '#e53e3e' : undefined} style={{marginRight:3}} /> {t.home.like}
+          <button
+            className={`feed-action${liked ? ' liked' : ''}`}
+            onClick={handleLike}
+            disabled={!userId}
+            title={!userId ? '로그인 후 좋아요를 누를 수 있어요' : undefined}
+          >
+            <Heart size={13} weight={liked ? 'fill' : 'regular'} color={liked ? '#e53e3e' : undefined} style={{marginRight:3}} />
+            {likeCount > 0 ? likeCount : t.home.like}
+          </button>
+          <button className={`feed-action${commentsOpen ? ' active' : ''}`} onClick={handleToggleComments}>
+            <ChatCircle size={13} weight="bold" style={{marginRight:3}} />
+            {comments.length > 0 ? comments.length : (lang === 'ko' ? '댓글' : lang === 'fr' ? 'Commentaires' : 'Comments')}
           </button>
           {(hasMore || hasMedia) && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
-              <ChatCircle size={13} weight="bold" style={{marginRight:3}} /> {open ? t.home.collapse : t.home.readMore}
+              {open ? t.home.collapse : t.home.readMore}
             </button>
           )}
           <button className={`feed-action${shared ? ' shared' : ''}`} onClick={handleShare}>
             {shared ? <CheckCircle size={13} weight="bold" style={{marginRight:3}} /> : <ShareNetwork size={13} weight="bold" style={{marginRight:3}} />} {lang === 'ko' ? '공유' : lang === 'fr' ? 'Partager' : 'Share'}
           </button>
         </div>
+
+        {commentsOpen && (
+          <div className="post-comments">
+            {comments.length === 0 && (
+              <div className="post-comments-empty">첫 댓글을 남겨보세요</div>
+            )}
+            {comments.map(c => (
+              <div key={c.id} className="post-comment-item">
+                <div className="post-comment-avatar">
+                  <Avatar avatar={c.author_avatar || c.author_name[0]?.toUpperCase() || '?'} size={26} />
+                </div>
+                <div className="post-comment-content">
+                  <div className="post-comment-header">
+                    <span className="post-comment-author">{c.author_name}</span>
+                    <span className="post-comment-time">{relTime(c.created_at, lang)}</span>
+                  </div>
+                  <div className="post-comment-body">{c.body}</div>
+                </div>
+              </div>
+            ))}
+            {userId && (
+              <div className="post-comment-compose">
+                <div className="post-comment-avatar">
+                  <Avatar avatar={userAvatar || userNickname[0]?.toUpperCase() || '?'} size={26} />
+                </div>
+                <input
+                  className="post-comment-input"
+                  placeholder="댓글을 입력하세요…"
+                  value={commentBody}
+                  onChange={e => setCommentBody(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }}
+                />
+                <button
+                  className="post-comment-send"
+                  onClick={handleAddComment}
+                  disabled={!commentBody.trim() || commentSending}
+                >
+                  {commentSending ? '…' : '등록'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -592,15 +698,32 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
   const { user } = useAuth()
   const [posts, setPosts] = useState<ChannelPost[]>([])
   const [loading, setLoading] = useState(true)
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
+  const [userNickname, setUserNickname] = useState('')
+  const [userAvatar, setUserAvatar] = useState('')
   const isAdmin = isAdminEmail(user?.email)
   const isLoggedIn = !!user
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getChannelPosts(channel)
-      .then(setPosts)
+      .then(async data => {
+        setPosts(data)
+        if (user && data.length > 0) {
+          const liked = await getLikedPostIds(user.id, data.map(p => p.id))
+          setLikedIds(liked)
+        }
+      })
       .finally(() => setLoading(false))
-  }, [channel])
+  }, [channel, user?.id])
+
+  useEffect(() => {
+    if (!user || !supabase) return
+    supabase.from('profiles').select('nickname,avatar_url').eq('id', user.id).single().then(({ data }) => {
+      if (data?.nickname) setUserNickname(data.nickname)
+      if (data?.avatar_url) setUserAvatar(data.avatar_url)
+    })
+  }, [user])
 
   // Scroll to bottom when posts load or channel changes
   useEffect(() => {
@@ -647,6 +770,10 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
               onDelete={handleDelete}
               onPin={handlePin}
               channel={channel}
+              userId={user?.id}
+              likedByMe={likedIds.has(post.id)}
+              userNickname={userNickname || user?.email?.split('@')[0] || ''}
+              userAvatar={userAvatar}
             />
           ))}
           {/* children (empty state) only shown when no DB posts exist */}

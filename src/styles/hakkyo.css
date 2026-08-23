@@ -1418,3 +1418,98 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   .chat-panel { width: calc(100vw - 32px); }
   .chat-widget-root { right: 16px; bottom: 80px; }
 }
+
+/* ── Post comments ──────────────────────────────────────────────────────── */
+.post-comments {
+  margin-top: 12px;
+  border-top: 1px solid #f0efea;
+  padding-top: 12px;
+}
+.post-comments-empty {
+  font-size: 13px;
+  color: #bbb;
+  padding: 8px 0;
+}
+.post-comment-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+}
+.post-comment-avatar {
+  flex-shrink: 0;
+}
+.post-comment-content {
+  flex: 1;
+  min-width: 0;
+}
+.post-comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.post-comment-author {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+}
+.post-comment-time {
+  font-size: 11px;
+  color: #aaa;
+}
+.post-comment-body {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.post-comment-compose {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0efea;
+}
+.post-comment-input {
+  flex: 1;
+  border: 1px solid #e0dfd8;
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 13px;
+  background: #fafaf8;
+  outline: none;
+  transition: border-color .15s;
+}
+.post-comment-input:focus {
+  border-color: #111;
+  background: #fff;
+}
+.post-comment-send {
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s;
+}
+.post-comment-send:hover:not(:disabled) {
+  background: #333;
+}
+.post-comment-send:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.feed-action.active {
+  color: #111;
+  font-weight: 600;
+}
+.feed-action:disabled {
+  opacity: .45;
+  cursor: default;
+}
