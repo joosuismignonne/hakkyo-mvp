@@ -164,10 +164,11 @@ function CommentItem({ comment, isAdmin, currentUserName, lang, onUpdate, onDele
         </div>
         {editing ? (
           <div className="post-comment-edit">
-            <input
+            <textarea
               className="post-comment-input"
               value={editBody}
               onChange={e => setEditBody(e.target.value)}
+              rows={2}
               onCompositionStart={() => { isComposingRef.current = true }}
               onCompositionEnd={() => { isComposingRef.current = false }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !isComposingRef.current) { e.preventDefault(); handleSave() } if (e.key === 'Escape') setEditing(false) }}
@@ -390,11 +391,12 @@ function PostCard({
                     : <div className="post-comment-avatar-placeholder">{guestName[0]?.toUpperCase() || '?'}</div>
                   }
                 </div>
-                <input
+                <textarea
                   className="post-comment-input"
-                  placeholder="댓글을 입력하세요…"
+                  placeholder="댓글을 입력하세요… (Shift+Enter 줄바꿈)"
                   value={commentBody}
                   onChange={e => setCommentBody(e.target.value)}
+                  rows={2}
                   onCompositionStart={() => { isComposingRef.current = true }}
                   onCompositionEnd={() => { isComposingRef.current = false }}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !isComposingRef.current) { e.preventDefault(); handleAddComment() } }}

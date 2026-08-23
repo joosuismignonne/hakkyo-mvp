@@ -1794,3 +1794,28 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   padding: 4px;
 }
 .post-comment-edit-cancel:hover { color: #333; }
+
+/* ── Comment textarea override ───────────────────────────────────────────── */
+.post-comment-input {
+  resize: none;
+  min-height: 60px;
+  line-height: 1.5;
+  padding: 9px 14px;
+  align-self: stretch;
+}
+.post-comment-compose-row {
+  align-items: flex-start;
+}
+.post-comment-compose-row .post-comment-send,
+.post-comment-compose-row .post-comment-privacy {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.post-comment-edit {
+  align-items: flex-start;
+}
+.post-comment-edit .post-comment-send,
+.post-comment-edit .post-comment-edit-cancel {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
