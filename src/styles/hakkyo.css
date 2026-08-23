@@ -490,15 +490,15 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 }
 .ch-header-right { margin-left: auto; flex-shrink: 0; }
 .ch-header-action {
-  background: #111; color: #f5c542;
+  background: #f5c542; color: #111;
   border: none; border-radius: 10px; padding: 7px 14px;
   font-size: 12px; font-weight: 700; cursor: pointer;
   font-family: inherit; white-space: nowrap; flex-shrink: 0;
   display: inline-flex; align-items: center; gap: 5px;
   transition: background .2s ease, transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  box-shadow: 0 1px 4px rgba(0,0,0,.10);
 }
-.ch-header-action:hover { background: #222; transform: translateY(-2px) scale(1.02); box-shadow: 0 5px 14px rgba(0,0,0,.28); }
+.ch-header-action:hover { background: #edbc30; transform: translateY(-2px) scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
 .ch-scroll { flex: 1; overflow-y: auto; background: var(--main-bg, #f5f4ef); }
 .ch-scroll::-webkit-scrollbar { width: 4px; }
 .ch-scroll::-webkit-scrollbar-thumb { background: #deded6; border-radius: 3px; }
@@ -533,33 +533,27 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 }
 .feed-card:hover { border-color: #c8c7c0; box-shadow: 0 8px 24px rgba(0,0,0,.10); transform: translateY(-2px); }
 
-/* Pinned card — dark style */
+/* Pinned card */
 .feed-card-pinned {
-  border-color: transparent;
-  background: #111;
-  box-shadow: 0 4px 18px rgba(0,0,0,.22);
+  border-color: #eae9e4;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  border-left: 3px solid #f5c542;
   transition: border-color .25s cubic-bezier(.4,0,.2,1), box-shadow .25s cubic-bezier(.4,0,.2,1), transform .25s cubic-bezier(.34,1.4,.64,1);
 }
 .feed-card-pinned:hover {
-  box-shadow: 0 10px 32px rgba(0,0,0,.32);
+  border-color: #d4d3cc;
+  border-left-color: #e0b030;
+  box-shadow: 0 8px 24px rgba(0,0,0,.10);
   transform: translateY(-3px);
 }
-.feed-card-pinned .feed-card-inner { border-top: 1px solid #222; }
-.feed-card-pinned .feed-title { color: #fff; }
-.feed-card-pinned .feed-body { color: #aaa; }
-.feed-card-pinned .feed-author { color: #ddd; }
-.feed-card-pinned .feed-time { color: #555; }
-.feed-card-pinned .feed-footer { border-top-color: #222; }
-.feed-card-pinned .feed-action { color: #666; }
-.feed-card-pinned .feed-action:hover { background: #1e1e1e; color: #ccc; }
-.feed-card-pinned .feed-action.subscribed { color: #f5c542; }
 
 .feed-pin-bar {
   display: flex; align-items: center; gap: 5px;
-  padding: 6px 18px; font-size: 9.5px; font-weight: 800;
-  letter-spacing: 1.2px; color: #f5c542;
-  background: #0a0a0a;
-  border-bottom: 1px solid #1e1e1e;
+  padding: 5px 16px; font-size: 9.5px; font-weight: 800;
+  letter-spacing: 1.2px; color: #9a7800;
+  background: #fffbea;
+  border-bottom: 1px solid #f5e97a;
   text-transform: uppercase;
 }
 .feed-pin-dot {
@@ -583,7 +577,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   white-space: nowrap; flex-shrink: 0;
 }
 .feed-tag-event { background: #fef8d4; color: #907200; }
-.feed-tag-program { background: #111; color: #f5c542; }
+.feed-tag-program { background: #111; color: #f5c542; letter-spacing: .5px; }
 .feed-tag-mini { background: #ede8ff; color: #4a18a8; }
 .feed-tag-chat { background: #e8f4fd; color: #1565c0; }
 .feed-title { font-size: 15px; font-weight: 760; letter-spacing: -.3px; color: #111; margin-bottom: 8px; line-height: 1.45; }
