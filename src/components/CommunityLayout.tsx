@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import SiteDetails from './SiteDetails'
@@ -137,14 +137,14 @@ function SearchOverlay({
             <div className="search-empty">{t.search.empty(q)}</div>
           )}
           {results.map((r, i) => (
-            <a key={i} href={r.href} className="search-result-item" onClick={onClose}>
+            <Link key={i} to={r.href} className="search-result-item" onClick={onClose}>
               <span className="search-result-icon"><r.Icon size={15} weight="bold" /></span>
               <div className="search-result-body">
                 <div className="search-result-title">{r.title}</div>
                 <div className="search-result-sub">{r.sub}</div>
               </div>
               <span className="search-result-arrow">→</span>
-            </a>
+            </Link>
           ))}
         </div>
         {!q && <div className="search-hint">{t.search.hint}</div>}
@@ -381,7 +381,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
         <aside className={`app-sidebar${open ? ' open' : ''}${collapsed ? ' collapsed' : ''}`}>
           {/* Logo */}
           <div className="sidebar-logo">
-            <a href="/" className="sidebar-logo-link">
+            <Link to="/" className="sidebar-logo-link">
               <div className="sidebar-logo-mark">H</div>
               {!collapsed && (
                 <div>
@@ -389,7 +389,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
                   <div className="sidebar-city">MONTRÉAL · 2026</div>
                 </div>
               )}
-            </a>
+            </Link>
             <button className="sidebar-collapse-btn" onClick={toggleCollapsed} title={collapsed ? '사이드바 열기' : '사이드바 닫기'}>
               {collapsed ? '›' : '‹'}
             </button>
@@ -411,13 +411,13 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
           <nav className="sidebar-section">
             {!collapsed && <div className="sidebar-section-label">{t.section.main}</div>}
             {navItems.map(item => (
-              <a key={item.href} href={item.href}
+              <Link key={item.href} to={item.href}
                 className={`sidebar-item${isActive(item.href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
                 onMouseEnter={e => showTip(e, item.name)}
                 onMouseLeave={hideTip}>
                 <span className="sidebar-item-icon"><item.Ic size={16} weight="bold" /></span>
                 {!collapsed && <span>{item.name}</span>}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -440,12 +440,12 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
               const href = slugToHref(ch.slug)
               return (
                 <div key={ch.id} className={`sidebar-ch-row${collapsed ? ' collapsed' : ''}`}>
-                  <a href={href} className={`sidebar-item sidebar-ch-item${isActive(href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
+                  <Link to={href} className={`sidebar-item sidebar-ch-item${isActive(href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
                     onMouseEnter={e => showTip(e, channelMap[ch.name] || ch.name)}
                     onMouseLeave={hideTip}>
                     <span className="sidebar-item-icon sidebar-ch-hash"><ChanIcon slug={ch.slug} /></span>
                     {!collapsed && <span>{channelMap[ch.name] || ch.name}</span>}
-                  </a>
+                  </Link>
                   {isAdmin && !collapsed && (
                     <button className="sidebar-ch-delete" onClick={() => handleDeleteChannel(ch)} title="채널 삭제">✕</button>
                   )}
