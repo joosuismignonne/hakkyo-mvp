@@ -1819,3 +1819,76 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   margin-top: 2px;
   flex-shrink: 0;
 }
+
+/* ── Login prompt modal ──────────────────────────────────────────────────── */
+.login-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+@media (min-width: 600px) {
+  .login-prompt-overlay { align-items: center; }
+  .login-prompt-sheet { border-radius: 20px !important; max-width: 400px; }
+}
+.login-prompt-sheet {
+  background: #fff;
+  width: 100%;
+  border-radius: 20px 20px 0 0;
+  padding: 32px 24px 40px;
+  text-align: center;
+  animation: slide-up .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.login-prompt-icon { font-size: 40px; margin-bottom: 12px; }
+.login-prompt-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #111;
+}
+.login-prompt-sub {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.login-prompt-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.login-prompt-btn {
+  display: block;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity .12s;
+}
+.login-prompt-btn:hover { opacity: .85; }
+.login-prompt-btn.primary {
+  background: #111;
+  color: #fff;
+}
+.login-prompt-btn.secondary {
+  background: #f5c542;
+  color: #111;
+}
+.login-prompt-close {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.login-prompt-close:hover { color: #666; }

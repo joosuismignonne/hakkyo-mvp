@@ -112,6 +112,24 @@ function Avatar({ avatar, size = 36 }: { avatar: string; size?: number }) {
   )
 }
 
+// ── Login prompt modal ─────────────────────────────────────────────────────
+function LoginPromptModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="login-prompt-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="login-prompt-sheet">
+        <div className="login-prompt-icon">🐱</div>
+        <div className="login-prompt-title">로그인 후 이용할 수 있어요</div>
+        <div className="login-prompt-sub">HAKKYO 커뮤니티 멤버가 되면 좋아요, 댓글 등 모든 기능을 이용할 수 있어요.</div>
+        <div className="login-prompt-btns">
+          <a href="/login" className="login-prompt-btn primary">로그인</a>
+          <a href="/apply/community" className="login-prompt-btn secondary">커뮤니티 신청</a>
+        </div>
+        <button className="login-prompt-close" onClick={onClose}>닫기</button>
+      </div>
+    </div>
+  )
+}
+
 // ── CommentItem ────────────────────────────────────────────────────────────
 function CommentItem({ comment, isAdmin, currentUserName, lang, onUpdate, onDelete }: {
   comment: PostComment
@@ -215,6 +233,7 @@ function PostCard({
   const [commentPrivate, setCommentPrivate] = useState(false)
   const [guestName, setGuestName] = useState('')
   const [editing, setEditing] = useState(false)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const isComposingRef = useRef(false)
   const { lang } = useLang()
   const t = useT()
@@ -235,7 +254,8 @@ function PostCard({
   }
 
   async function handleLike() {
-    if (!userId || likePending) return
+    if (!userId) { setShowLoginPrompt(true); return }
+    if (likePending) return
     setLikePending(true)
     const wasLiked = liked
     setLiked(!wasLiked)
@@ -252,6 +272,7 @@ function PostCard({
   }
 
   async function handleToggleComments() {
+    if (!userId) { setShowLoginPrompt(true); return }
     const next = !commentsOpen
     setCommentsOpen(next)
     if (next && !commentsLoaded) {
@@ -318,6 +339,7 @@ function PostCard({
         {editing && (
           <PostEditInline post={post} onSave={handleSaveEdit} onCancel={() => setEditing(false)} />
         )}
+        {showLoginPrompt && <LoginPromptModal onClose={() => setShowLoginPrompt(false)} />}
         {title && (
           <div className="feed-title" onClick={() => hasBody && setOpen(o => !o)}
             style={{ cursor: hasBody ? 'pointer' : 'default' }}>
@@ -340,8 +362,6 @@ function PostCard({
           <button
             className={`feed-action${liked ? ' liked' : ''}`}
             onClick={handleLike}
-            disabled={!userId}
-            title={!userId ? '로그인 후 좋아요를 누를 수 있어요' : undefined}
           >
             <Heart size={13} weight={liked ? 'fill' : 'regular'} color={liked ? '#e53e3e' : undefined} style={{marginRight:3}} />
             {likeCount > 0 ? likeCount : t.home.like}
