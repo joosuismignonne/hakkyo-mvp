@@ -126,7 +126,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 .home-feed-more:hover{color:var(--ink)}
 .home-feed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .home-feed-card{display:flex;flex-direction:column;gap:8px;padding:20px;background:#fff;border:1.5px solid var(--line);border-radius:16px;text-decoration:none;color:inherit;transition:border-color .18s,transform .18s,box-shadow .18s}
-.home-feed-card:hover{border-color:var(--ink);transform:translateY(-3px);box-shadow:0 6px 0 var(--yellow)}
+.home-feed-card:hover{border-color:#999;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.10)}
 .home-feed-card-top{display:flex;align-items:center;gap:8px}
 .home-feed-tag{font-size:9px;font-weight:800;letter-spacing:.8px;padding:4px 8px;border-radius:99px}
 .home-feed-pin{font-size:13px}
@@ -617,7 +617,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   transition: border-color .25s cubic-bezier(.4,0,.2,1), box-shadow .25s cubic-bezier(.4,0,.2,1), transform .25s cubic-bezier(.34,1.4,.64,1);
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
-.feed-event-card:hover { border-color: #e8c030; box-shadow: 0 6px 22px rgba(245,197,66,.22); transform: translateY(-2px); }
+.feed-event-card:hover { border-color: #c8c7c0; box-shadow: 0 8px 24px rgba(0,0,0,.10); transform: translateY(-2px); }
 .feed-dday {
   min-width: 58px; padding: 8px 12px; border-radius: 11px;
   background: #f5c542; font-size: 16px; font-weight: 900;
