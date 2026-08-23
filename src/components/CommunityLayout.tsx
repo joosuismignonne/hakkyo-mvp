@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import SiteDetails from './SiteDetails'
 import { programs, activities } from '../data/hakkyo'
 import { useLang, useT, UI } from '../lib/lang'
@@ -281,7 +282,7 @@ function SidebarTooltip({ text, anchorRef }: { text: string; anchorRef: HTMLElem
 // ── Main layout ────────────────────────────────────────────────────────────
 export default function CommunityLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [channels, setChannels] = useState<Channel[]>(DEFAULT_CHANNELS)
   const [open, setOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
@@ -454,7 +455,41 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
             })}
           </nav>
 
-          {/* Footer intentionally empty — apply CTA lives in each channel page */}
+          {/* User profile footer */}
+          <div className="sidebar-divider" />
+          <div style={{ padding: collapsed ? '8px 4px' : '8px 12px 16px', flexShrink: 0 }}>
+            {user ? (
+              collapsed ? (
+                <button onClick={signOut} title={user.email ?? ''}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#0e0e12' }}>
+                    {user.email?.[0]?.toUpperCase() ?? '?'}
+                  </div>
+                </button>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#0e0e12', flexShrink: 0 }}>
+                    {user.email?.[0]?.toUpperCase() ?? '?'}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sidebar-fg)', truncate: true, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user.email}
+                    </div>
+                    <button onClick={signOut}
+                      style={{ fontSize: 11, color: '#888', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginTop: 2 }}>
+                      로그아웃
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <Link to="/login"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: 8, padding: '8px 4px', fontSize: 13, fontWeight: 600, color: '#888', textDecoration: 'none' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2a2a35', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#555' }}>?</div>
+                {!collapsed && <span>로그인</span>}
+              </Link>
+            )}
+          </div>
         </aside>
 
         <main className="app-main">
