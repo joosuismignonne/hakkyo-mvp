@@ -1694,3 +1694,65 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   border-top: 1px solid #e8e7e0;
   background: #fafaf8;
 }
+
+/* ── Post edit modal ─────────────────────────────────────────────────────── */
+.post-edit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.post-edit-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.post-edit-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8e7e0;
+}
+.post-edit-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.post-edit-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #666;
+  padding: 4px 8px;
+}
+.post-edit-modal-close:hover { color: #111; }
+.post-edit-modal .post-edit-rich {
+  flex: 1;
+  overflow-y: auto;
+  border: none;
+  border-radius: 0;
+}
+.post-edit-modal .post-edit-title {
+  border-bottom: 1px solid #e8e7e0;
+  border-radius: 0;
+}
+.post-edit-modal .compose-editor-wrap {
+  min-height: 200px;
+}
+.post-edit-modal .post-edit-footer {
+  border-top: 1px solid #e8e7e0;
+  padding: 14px 20px;
+  background: #fafaf8;
+  flex-shrink: 0;
+}

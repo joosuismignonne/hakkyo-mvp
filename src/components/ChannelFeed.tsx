@@ -227,28 +227,25 @@ function PostCard({
           )}
         </div>
 
-        {editing ? (
+        {editing && (
           <PostEditInline post={post} onSave={handleSaveEdit} onCancel={() => setEditing(false)} />
-        ) : (
-          <>
-            {title && (
-              <div className="feed-title" onClick={() => hasBody && setOpen(o => !o)}
-                style={{ cursor: hasBody ? 'pointer' : 'default' }}>
-                {title}
-              </div>
-            )}
-            {!open && (
-              <div className={`feed-body${hasMedia ? ' post-rich-body' : ''}`}>
-                {hasMedia
-                  ? <div dangerouslySetInnerHTML={{ __html: body }} />
-                  : <p>{stripped.slice(0, 200)}{hasMore ? '…' : ''}</p>
-                }
-              </div>
-            )}
-            {open && body && (
-              <div className="feed-body post-rich-body" dangerouslySetInnerHTML={{ __html: body }} />
-            )}
-          </>
+        )}
+        {title && (
+          <div className="feed-title" onClick={() => hasBody && setOpen(o => !o)}
+            style={{ cursor: hasBody ? 'pointer' : 'default' }}>
+            {title}
+          </div>
+        )}
+        {!open && (
+          <div className={`feed-body${hasMedia ? ' post-rich-body' : ''}`}>
+            {hasMedia
+              ? <div dangerouslySetInnerHTML={{ __html: body }} />
+              : <p>{stripped.slice(0, 200)}{hasMore ? '…' : ''}</p>
+            }
+          </div>
+        )}
+        {open && body && (
+          <div className="feed-body post-rich-body" dangerouslySetInnerHTML={{ __html: body }} />
         )}
 
         <div className="feed-footer">
@@ -390,7 +387,7 @@ function ComposeToolbar({ editor, onFileUpload, uploading }: {
   )
 }
 
-// ── Post edit (rich) ──────────────────────────────────────────────────────
+// ── Post edit modal ────────────────────────────────────────────────────────
 function PostEditInline({
   post, onSave, onCancel,
 }: {
@@ -458,21 +455,29 @@ function PostEditInline({
   }
 
   return (
-    <div className="post-edit-rich">
-      <input
-        className="post-edit-title"
-        value={title}
-        onChange={e => setTitle(e.target.value)}
-        placeholder="제목 (선택사항)"
-      />
-      <ComposeToolbar editor={editor} onFileUpload={handleFileUpload} uploading={uploading} />
-      <EditorContent editor={editor} className="compose-editor-wrap" />
-      {error && <div className="compose-error">{error}</div>}
-      <div className="post-edit-footer">
-        <button className="post-edit-cancel" onClick={onCancel}>취소</button>
-        <button className="post-edit-save" onClick={handleSave} disabled={saving}>
-          {saving ? '저장 중…' : '저장'}
-        </button>
+    <div className="post-edit-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onCancel() }}>
+      <div className="post-edit-modal">
+        <div className="post-edit-modal-header">
+          <span className="post-edit-modal-title">글 수정</span>
+          <button className="post-edit-modal-close" onClick={onCancel}>✕</button>
+        </div>
+        <div className="post-edit-rich">
+          <input
+            className="post-edit-title"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="제목 (선택사항)"
+          />
+          <ComposeToolbar editor={editor} onFileUpload={handleFileUpload} uploading={uploading} />
+          <EditorContent editor={editor} className="compose-editor-wrap" />
+          {error && <div className="compose-error">{error}</div>}
+        </div>
+        <div className="post-edit-footer">
+          <button className="post-edit-cancel" onClick={onCancel}>취소</button>
+          <button className="post-edit-save" onClick={handleSave} disabled={saving}>
+            {saving ? '저장 중…' : '저장'}
+          </button>
+        </div>
       </div>
     </div>
   )
