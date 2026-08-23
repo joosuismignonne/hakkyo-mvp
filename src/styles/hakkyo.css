@@ -1263,7 +1263,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 /* ── Chat Widget ─────────────────────────────────────────────────────────── */
 .chat-widget-root {
   position: fixed;
-  bottom: 24px;
+  bottom: 88px;
   right: 24px;
   z-index: 9000;
   display: flex;
@@ -1339,5 +1339,5 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 }
 @media (max-width: 480px) {
   .chat-panel { width: calc(100vw - 32px); }
-  .chat-widget-root { right: 16px; bottom: 16px; }
+  .chat-widget-root { right: 16px; bottom: 80px; }
 }
