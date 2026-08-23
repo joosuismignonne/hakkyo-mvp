@@ -588,6 +588,28 @@ function PostEditInline({
   )
 }
 
+// ── Post templates ─────────────────────────────────────────────────────────
+const POST_TEMPLATES: Record<string, { label: string; emoji: string; title: string; ko: string; en: string; fr: string }[]> = {
+  jobs: [
+    {
+      label: '구인 공고',
+      emoji: '💼',
+      title: '[구인] ',
+      ko: `<p><strong>- 직무:</strong> </p><p><strong>- 시급:</strong> $</p><p><strong>- 근무시간:</strong> </p><p><strong>- 구사 언어:</strong> </p><p><strong>- 베네핏:</strong> </p><p><strong>- 근무지:</strong> </p><p></p><p>해당 채용 공고에 관심 있을 경우, 댓글 혹은 @hakkyo.mtl DM으로 연락해 주시면 안내 도와드릴 예정입니다.</p>`,
+      en: `<p><strong>- Position:</strong> </p><p><strong>- Hourly Wage:</strong> $</p><p><strong>- Hours:</strong> </p><p><strong>- Language:</strong> </p><p><strong>- Benefits:</strong> </p><p><strong>- Location:</strong> </p><p></p><p>If you're interested in this position, please leave a comment or send us a DM at @hakkyo.mtl. We'll be happy to help.</p>`,
+      fr: `<p><strong>- Poste :</strong> </p><p><strong>- Salaire horaire :</strong> $</p><p><strong>- Horaires :</strong> </p><p><strong>- Langue :</strong> </p><p><strong>- Avantages :</strong> </p><p><strong>- Lieu de travail :</strong> </p><p></p><p>Si ce poste vous intéresse, laissez un commentaire ou envoyez-nous un DM à @hakkyo.mtl.</p>`,
+    },
+    {
+      label: '구직 공고',
+      emoji: '🙋',
+      title: '[구직] ',
+      ko: `<p><strong>- 이름:</strong> </p><p><strong>- 구사 언어:</strong> </p><p><strong>- 경력:</strong> </p><p><strong>- 희망 직종:</strong> </p><p><strong>- 희망 시급:</strong> $</p><p><strong>- 근무 가능 시간:</strong> </p><p></p><p>연락은 댓글 혹은 @hakkyo.mtl DM으로 부탁드립니다.</p>`,
+      en: `<p><strong>- Name:</strong> </p><p><strong>- Languages:</strong> </p><p><strong>- Experience:</strong> </p><p><strong>- Desired Position:</strong> </p><p><strong>- Desired Wage:</strong> $</p><p><strong>- Availability:</strong> </p><p></p><p>Please reach out via comment or DM at @hakkyo.mtl.</p>`,
+      fr: `<p><strong>- Nom :</strong> </p><p><strong>- Langues :</strong> </p><p><strong>- Expérience :</strong> </p><p><strong>- Poste recherché :</strong> </p><p><strong>- Salaire souhaité :</strong> $</p><p><strong>- Disponibilités :</strong> </p><p></p><p>Contactez-nous par commentaire ou DM à @hakkyo.mtl.</p>`,
+    },
+  ],
+}
+
 // ── Admin compose ──────────────────────────────────────────────────────────
 
 function AdminCompose({
@@ -768,6 +790,27 @@ function AdminCompose({
         <span className="member-compose-name">{authorName}</span>
         <button className="member-compose-close" onClick={resetAll}>✕</button>
       </div>
+
+      {/* Template picker — only for channels that have templates */}
+      {POST_TEMPLATES[channel] && (
+        <div className="compose-template-bar">
+          <span className="compose-template-label">템플릿</span>
+          {POST_TEMPLATES[channel].map(tpl => (
+            <button
+              key={tpl.label}
+              className="compose-template-btn"
+              onClick={() => {
+                setTitleKo(tpl.title)
+                editorKo?.commands.setContent(tpl.ko)
+                editorEn?.commands.setContent(tpl.en)
+                editorFr?.commands.setContent(tpl.fr)
+              }}
+            >
+              {tpl.emoji} {tpl.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Title */}
       <input

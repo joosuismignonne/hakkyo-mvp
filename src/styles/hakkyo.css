@@ -1903,3 +1903,37 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   width: 100%;
   box-sizing: border-box;
 }
+
+/* ── Compose template bar ────────────────────────────────────────────────── */
+.compose-template-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e8e7e0;
+  flex-wrap: wrap;
+}
+.compose-template-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #999;
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+.compose-template-btn {
+  background: #f7f6f1;
+  border: 1px solid #e0dfd8;
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #333;
+  transition: background .12s, border-color .12s;
+  white-space: nowrap;
+}
+.compose-template-btn:hover {
+  background: #f5c542;
+  border-color: #f5c542;
+  color: #111;
+}
