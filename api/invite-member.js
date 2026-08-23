@@ -22,7 +22,7 @@ export default async function handler(req, res) {
         'apikey': serviceKey,
         'Authorization': `Bearer ${serviceKey}`,
       },
-      body: JSON.stringify({ email, data: { role: 'member' } }),
+      body: JSON.stringify({ email, data: { role: 'member' }, redirect_to: 'https://hakkyo-mtl.vercel.app' }),
     })
 
     const text = await response.text()
