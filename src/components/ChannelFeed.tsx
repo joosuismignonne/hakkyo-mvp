@@ -258,11 +258,11 @@ function PostCard({
     if (likePending) return
     setLikePending(true)
     const wasLiked = liked
+    // Optimistic update — show immediately, revert only on error
     setLiked(!wasLiked)
     setLikeCount(c => wasLiked ? Math.max(0, c - 1) : c + 1)
     try {
-      const newCount = await toggleLike(post.id, userId, wasLiked)
-      setLikeCount(newCount)
+      await toggleLike(post.id, userId, wasLiked)
     } catch {
       setLiked(wasLiked)
       setLikeCount(c => wasLiked ? c + 1 : Math.max(0, c - 1))
