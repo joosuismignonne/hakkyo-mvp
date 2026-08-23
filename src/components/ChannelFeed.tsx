@@ -237,6 +237,7 @@ function AdminCompose({
   defaultAuthorName: string
   onPosted: (post: ChannelPost) => void
 }) {
+  const { user } = useAuth()
   const [expanded, setExpanded] = useState(false)
   const [activeLang, setActiveLang] = useState<Lang>('ko')
   const [authorName, setAuthorName] = useState(defaultAuthorName)
@@ -244,11 +245,20 @@ function AdminCompose({
   const [avatar, setAvatar] = useState(() => {
     try { return localStorage.getItem('admin-avatar') || '🐱' } catch { return '🐱' }
   })
+  const [avatarUrl, setAvatarUrl] = useState('')
   const [pinned, setPinned] = useState(false)
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!user || !supabase) return
+    supabase.from('profiles').select('nickname,avatar_url').eq('id', user.id).single().then(({ data }) => {
+      if (data?.nickname) setAuthorName(data.nickname)
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url)
+    })
+  }, [user])
 
   // One editor per language, but only one visible at a time
   const sharedExtensions = [
@@ -360,7 +370,7 @@ function AdminCompose({
       const post = await createPost({
         channel,
         author_name: authorName || defaultAuthorName,
-        author_avatar: avatar,
+        author_avatar: avatarUrl || avatar,
         title_ko: titleKo, title_en: '', title_fr: '',
         body_ko: bodyKo, body_en: bodyEn, body_fr: bodyFr,
         is_pinned: pinned,
@@ -371,105 +381,77 @@ function AdminCompose({
     } finally { setSending(false) }
   }
 
-  return (
-    <div className={`admin-compose${expanded ? ' expanded' : ''}`}>
-      {expanded && (
-        <>
-          {/* Profile row */}
-          <div className="compose-profile-row">
-            <div className="compose-avatar-pick">
-              <button className="compose-avatar-upload-btn" onClick={() => avatarInputRef.current?.click()} title="프로필 사진 변경">
-                <Avatar avatar={avatar} size={34} />
-                <span className="compose-avatar-upload-label">📷</span>
-              </button>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={e => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  const reader = new FileReader()
-                  reader.onload = ev => {
-                    const dataUrl = ev.target?.result as string
-                    setAvatar(dataUrl)
-                    try { localStorage.setItem('admin-avatar', dataUrl) } catch {}
-                  }
-                  reader.readAsDataURL(file)
-                }}
-              />
-            </div>
-            <input
-              className="compose-name-input"
-              value={authorName}
-              onChange={e => setAuthorName(e.target.value)}
-              placeholder="닉네임"
-            />
-          </div>
+  const displayAvatar = avatarUrl || avatar
+  const avatarBg = avatarUrl ? 'transparent' : '#f5c542'
 
-          {/* Title */}
-          <input
-            className="compose-title-input"
-            placeholder="제목 (선택사항)"
-            value={titleKo}
-            onChange={e => setTitleKo(e.target.value)}
-          />
-
-          {/* Lang tabs + toolbar */}
-          <div className="compose-lang-tabs">
-            {(['ko','en','fr'] as Lang[]).map(l => (
-              <button key={l} className={`compose-lang-tab${activeLang === l ? ' active' : ''}`}
-                onClick={() => setActiveLang(l)}>
-                {l === 'ko' ? '한' : l === 'en' ? 'EN' : 'FR'}
-              </button>
-            ))}
-          </div>
-          <ComposeToolbar editor={activeEditor} onFileUpload={handleFileUpload} uploading={uploading} />
-
-          {/* Editors (hidden when not active lang) */}
-          <div style={{ display: activeLang === 'ko' ? 'block' : 'none' }}>
-            <EditorContent editor={editorKo} className="compose-editor-wrap" />
-          </div>
-          <div style={{ display: activeLang === 'en' ? 'block' : 'none' }}>
-            <EditorContent editor={editorEn} className="compose-editor-wrap" />
-          </div>
-          <div style={{ display: activeLang === 'fr' ? 'block' : 'none' }}>
-            <EditorContent editor={editorFr} className="compose-editor-wrap" />
-          </div>
-        </>
-      )}
-
-      {/* Bottom bar — always visible */}
-      <div className="compose-input-row">
-        {!expanded && <Avatar avatar={avatar} size={30} />}
-        {!expanded && (
-          <button className="compose-textarea compose-placeholder-btn"
-            onClick={() => setExpanded(true)}
-            style={{ flex: 1, textAlign: 'left', color: '#aaa', background: '#f9f9f7', border: '1px solid #e0e0d8', borderRadius: 10, padding: '9px 12px', fontSize: 14, cursor: 'text' }}>
-            {channel} 채널에 올릴 내용을 입력하세요…
-          </button>
-        )}
-        <div className="compose-actions">
-          {expanded && (
-            <>
-              <button className={`compose-pin-btn${pinned ? ' active' : ''}`}
-                onClick={() => setPinned(p => !p)} title="공지로 고정">📌</button>
-              <button className="compose-cancel-btn" onClick={resetAll}>✕</button>
-            </>
-          )}
-          <button className="compose-send-btn" onClick={handleSend} disabled={sending}>
-            {sending ? '…' : '↑'}
-          </button>
+  if (!expanded) {
+    return (
+      <div className="member-compose-collapsed" onClick={() => setExpanded(true)}>
+        <div className="member-compose-avatar" style={{ background: avatarBg }}>
+          {avatarUrl
+            ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            : <Avatar avatar={displayAvatar} size={32} />}
         </div>
+        <div className="member-compose-ph">하고 싶은 이야기를 써주세요…</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="member-compose-expanded">
+      <div className="member-compose-header">
+        <div className="member-compose-avatar" style={{ background: avatarBg }}>
+          {avatarUrl
+            ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            : <Avatar avatar={displayAvatar} size={32} />}
+        </div>
+        <span className="member-compose-name">{authorName}</span>
+        <button className="member-compose-close" onClick={resetAll}>✕</button>
+      </div>
+
+      {/* Title */}
+      <input
+        className="member-compose-title"
+        placeholder="제목 (선택사항)"
+        value={titleKo}
+        onChange={e => setTitleKo(e.target.value)}
+      />
+
+      {/* Lang tabs */}
+      <div className="member-compose-lang-tabs">
+        {(['ko','en','fr'] as Lang[]).map(l => (
+          <button key={l} className={`member-compose-lang-tab${activeLang === l ? ' active' : ''}`}
+            onClick={() => setActiveLang(l)}>
+            {l === 'ko' ? '한국어' : l === 'en' ? 'English' : 'Français'}
+          </button>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <ComposeToolbar editor={activeEditor} onFileUpload={handleFileUpload} uploading={uploading} />
+
+      {/* Editors */}
+      <div style={{ display: activeLang === 'ko' ? 'block' : 'none' }}>
+        <EditorContent editor={editorKo} className="compose-editor-wrap" />
+      </div>
+      <div style={{ display: activeLang === 'en' ? 'block' : 'none' }}>
+        <EditorContent editor={editorEn} className="compose-editor-wrap" />
+      </div>
+      <div style={{ display: activeLang === 'fr' ? 'block' : 'none' }}>
+        <EditorContent editor={editorFr} className="compose-editor-wrap" />
       </div>
 
       {error && <div className="compose-error">{error}</div>}
-      {expanded && (
-        <div className="compose-hint">
-          📎 파일 첨부 (이미지·영상) · 🖼 이미지 URL · ▶ YouTube URL · EN/FR 버전 추가 가능 · 📌 공지 고정
-        </div>
-      )}
+      <div className="member-compose-footer">
+        <button className={`member-compose-pin${pinned ? ' active' : ''}`}
+          onClick={() => setPinned(p => !p)} title="공지로 고정">
+          📌 공지 고정
+        </button>
+        <button className="member-compose-send" onClick={handleSend} disabled={sending}>
+          {sending ? '전송 중…' : '올리기'}
+        </button>
+      </div>
+      <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} />
     </div>
   )
 }
@@ -482,11 +464,23 @@ function MemberCompose({
   userEmail: string
   onPosted: (post: ChannelPost) => void
 }) {
+  const { user } = useAuth()
   const [expanded, setExpanded] = useState(false)
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
-  const displayName = userEmail.split('@')[0]
+  const [nickname, setNickname] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
+
+  useEffect(() => {
+    if (!user || !supabase) return
+    supabase.from('profiles').select('nickname,avatar_url').eq('id', user.id).single().then(({ data }) => {
+      if (data?.nickname) setNickname(data.nickname)
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url)
+    })
+  }, [user])
+
+  const displayName = nickname || userEmail.split('@')[0]
   const initial = displayName[0]?.toUpperCase() ?? '?'
 
   async function handleSend() {
@@ -496,7 +490,7 @@ function MemberCompose({
       const post = await createPost({
         channel,
         author_name: displayName,
-        author_avatar: initial,
+        author_avatar: avatarUrl || initial,
         title_ko: '', title_en: '', title_fr: '',
         body_ko: body.trim(), body_en: '', body_fr: '',
         is_pinned: false,
@@ -507,39 +501,46 @@ function MemberCompose({
     } finally { setSending(false) }
   }
 
-  return (
-    <div className={`admin-compose${expanded ? ' expanded' : ''}`}>
-      {expanded && (
-        <textarea
-          placeholder={`${channel} 채널에 올릴 내용을 입력하세요…`}
-          value={body}
-          onChange={e => setBody(e.target.value)}
-          rows={4}
-          autoFocus
-          style={{ width: '100%', resize: 'vertical', fontSize: 14, padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0d8', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 8 }}
-        />
-      )}
-      <div className="compose-input-row">
-        {!expanded && (
-          <div className="feed-avatar" style={{ width: 30, height: 30, background: '#f5c542', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', flexShrink: 0 }}>{initial}</div>
-        )}
-        {!expanded && (
-          <button className="compose-textarea compose-placeholder-btn"
-            onClick={() => setExpanded(true)}
-            style={{ flex: 1, textAlign: 'left', color: '#aaa', background: '#f9f9f7', border: '1px solid #e0e0d8', borderRadius: 10, padding: '9px 12px', fontSize: 14, cursor: 'text' }}>
-            {channel} 채널에 글을 올려보세요…
-          </button>
-        )}
-        <div className="compose-actions">
-          {expanded && (
-            <button className="compose-cancel-btn" onClick={() => { setExpanded(false); setBody(''); setError('') }}>✕</button>
-          )}
-          <button className="compose-send-btn" onClick={expanded ? handleSend : () => setExpanded(true)} disabled={sending}>
-            {sending ? '…' : '↑'}
-          </button>
+  const avatarBg = avatarUrl ? 'transparent' : '#f5c542'
+
+  if (!expanded) {
+    return (
+      <div className="member-compose-collapsed" onClick={() => setExpanded(true)}>
+        <div className="member-compose-avatar" style={{ background: avatarBg }}>
+          {avatarUrl
+            ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            : <span>{initial}</span>}
         </div>
+        <div className="member-compose-ph">하고 싶은 이야기를 써주세요…</div>
       </div>
+    )
+  }
+
+  return (
+    <div className="member-compose-expanded">
+      <div className="member-compose-header">
+        <div className="member-compose-avatar" style={{ background: avatarBg }}>
+          {avatarUrl
+            ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            : <span>{initial}</span>}
+        </div>
+        <span className="member-compose-name">{displayName}</span>
+        <button className="member-compose-close" onClick={() => { setExpanded(false); setBody(''); setError('') }}>✕</button>
+      </div>
+      <textarea
+        className="member-compose-textarea"
+        placeholder={`${channel} 채널에 올릴 내용을 입력하세요…`}
+        value={body}
+        onChange={e => setBody(e.target.value)}
+        rows={4}
+        autoFocus
+      />
       {error && <div className="compose-error">{error}</div>}
+      <div className="member-compose-footer">
+        <button className="member-compose-send" onClick={handleSend} disabled={sending || !body.trim()}>
+          {sending ? '전송 중…' : '올리기'}
+        </button>
+      </div>
     </div>
   )
 }

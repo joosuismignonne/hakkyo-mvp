@@ -293,9 +293,12 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   const t = useT()
   const [tooltip, setTooltip] = useState<{ text: string; el: HTMLElement } | null>(null)
   const [nickname, setNickname] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
   const [profileOpen, setProfileOpen] = useState(false)
   const [editNickname, setEditNickname] = useState('')
+  const [editAvatarUrl, setEditAvatarUrl] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email)
 
@@ -321,8 +324,9 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!user || !supabase) return
-    supabase.from('profiles').select('nickname').eq('id', user.id).single().then(({ data }) => {
+    supabase.from('profiles').select('nickname,avatar_url').eq('id', user.id).single().then(({ data }) => {
       if (data?.nickname) setNickname(data.nickname)
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url)
     })
   }, [user])
 
@@ -470,17 +474,17 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
           <div style={{ padding: collapsed ? '8px 4px 0' : '8px 12px 0', flexShrink: 0 }}>
             {user ? (
               collapsed ? (
-                <button onClick={() => { setEditNickname(nickname); setProfileOpen(true) }} title={nickname || user.email || ''}
+                <button onClick={() => { setEditNickname(nickname); setEditAvatarUrl(avatarUrl); setProfileOpen(true) }} title={nickname || user.email || ''}
                   style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px 8px 12px', background: 'none', border: 'none', cursor: 'pointer' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#0e0e12' }}>
-                    {(nickname || user.email || '?')[0].toUpperCase()}
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarUrl ? 'transparent' : '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#0e0e12', overflow: 'hidden' }}>
+                    {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (nickname || user.email || '?')[0].toUpperCase()}
                   </div>
                 </button>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 4px 12px', cursor: 'pointer' }}
-                  onClick={() => { setEditNickname(nickname); setProfileOpen(true) }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#0e0e12', flexShrink: 0 }}>
-                    {(nickname || user.email || '?')[0].toUpperCase()}
+                  onClick={() => { setEditNickname(nickname); setEditAvatarUrl(avatarUrl); setProfileOpen(true) }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarUrl ? 'transparent' : '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#0e0e12', flexShrink: 0, overflow: 'hidden' }}>
+                    {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (nickname || user.email || '?')[0].toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sidebar-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -506,20 +510,46 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Profile edit modal */}
+          <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={async e => {
+              const file = e.target.files?.[0]
+              if (!file || !user || !supabase) return
+              const ext = file.name.split('.').pop() || 'jpg'
+              const path = `avatars/${user.id}.${ext}`
+              const { error: upErr } = await supabase.storage.from('media').upload(path, file, { upsert: true })
+              if (!upErr) {
+                const { data } = supabase.storage.from('media').getPublicUrl(path)
+                setEditAvatarUrl(data.publicUrl + '?t=' + Date.now())
+              } else {
+                const reader = new FileReader()
+                reader.onload = ev => setEditAvatarUrl(ev.target?.result as string)
+                reader.readAsDataURL(file)
+              }
+              e.target.value = ''
+            }} />
           {profileOpen && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               onClick={() => setProfileOpen(false)}>
-              <div style={{ background: '#18181f', borderRadius: 16, padding: '32px 28px', width: 340, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
+              <div style={{ background: '#18181f', borderRadius: 16, padding: '28px 24px', width: 320, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
                 onClick={e => e.stopPropagation()}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
-                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#0e0e12' }}>
-                    {(nickname || user?.email || '?')[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{nickname || '닉네임 없음'}</div>
-                    <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{user?.email}</div>
-                  </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 20 }}>프로필 수정</div>
+
+                {/* Avatar upload */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                  <button onClick={() => avatarInputRef.current?.click()}
+                    style={{ position: 'relative', width: 72, height: 72, borderRadius: '50%', background: editAvatarUrl ? 'transparent' : '#f5c542', border: 'none', cursor: 'pointer', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#0e0e12' }}>
+                    {editAvatarUrl
+                      ? <img src={editAvatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : (editNickname || user?.email || '?')[0].toUpperCase()}
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity .15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                      <span style={{ fontSize: 18 }}>📷</span>
+                    </div>
+                  </button>
                 </div>
+                <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginBottom: 20 }}>사진 클릭해서 변경</div>
+
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: '#888', letterSpacing: 0.5, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>닉네임</label>
                   <input
@@ -533,13 +563,15 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
                     onBlur={e => e.target.style.borderColor = '#2a2a35'}
                   />
                 </div>
+                <div style={{ fontSize: 11, color: '#555', marginBottom: 20 }}>{user?.email}</div>
                 <button
                   disabled={savingProfile || editNickname.trim().length < 2}
                   onClick={async () => {
                     if (!user || !supabase || editNickname.trim().length < 2) return
                     setSavingProfile(true)
-                    await supabase.from('profiles').upsert({ id: user.id, nickname: editNickname.trim() })
+                    await supabase.from('profiles').upsert({ id: user.id, nickname: editNickname.trim(), avatar_url: editAvatarUrl || null })
                     setNickname(editNickname.trim())
+                    setAvatarUrl(editAvatarUrl)
                     setSavingProfile(false)
                     setProfileOpen(false)
                   }}
