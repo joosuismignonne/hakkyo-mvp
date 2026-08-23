@@ -1,5 +1,3 @@
-const WEBHOOK = import.meta.env.VITE_DISCORD_WEBHOOK as string | undefined
-
 interface DiscordEmbed {
   title: string
   description?: string
@@ -10,9 +8,8 @@ interface DiscordEmbed {
 }
 
 async function send(embed: DiscordEmbed): Promise<void> {
-  if (!WEBHOOK) return
   try {
-    await fetch(WEBHOOK, {
+    await fetch('/api/discord-notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ embeds: [embed] }),
