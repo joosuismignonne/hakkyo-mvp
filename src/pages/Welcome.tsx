@@ -12,9 +12,8 @@ export default function Welcome() {
 
   useEffect(() => {
     if (!user) { navigate('/login', { replace: true }); return }
-    // 이미 닉네임 있으면 스킵
     supabase?.from('profiles').select('nickname').eq('id', user.id).single().then(({ data }) => {
-      if (data?.nickname) navigate('/community/general', { replace: true })
+      if (data?.nickname) navigate('/community/chat', { replace: true })
     })
   }, [user])
 
@@ -26,44 +25,85 @@ export default function Welcome() {
     setSaving(true); setError('')
     const { error: err } = await supabase.from('profiles').upsert({ id: user.id, nickname: nickname.trim() })
     if (err) { setError('저장 중 오류가 발생했어요.'); setSaving(false); return }
-    navigate('/community/general', { replace: true })
+    navigate('/community/chat', { replace: true })
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#f9f9f7' }}>
-      <div className="w-full max-w-sm">
-        <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.5, marginBottom: 4 }}>HAKKYO</div>
-        <div style={{ height: 3, width: 36, background: '#f5c542', borderRadius: 2, marginBottom: 32 }} />
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#0e0e12', color: '#fff', fontFamily: 'inherit' }}>
+      {/* Left panel */}
+      <div style={{ width: 420, padding: '56px 48px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid #1e1e24' }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 48, color: '#fff' }}>HAKKYO</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#f5c542', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>Bienvenue · Welcome · 환영해요</div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.2, marginBottom: 20, color: '#fff' }}>
+            몬트리올에서의<br />새로운 시작 🎉
+          </h1>
+          <p style={{ fontSize: 15, color: '#888', lineHeight: 1.8, marginBottom: 12 }}>
+            Vous faites maintenant partie de la communauté HAKKYO à Montréal.
+          </p>
+          <p style={{ fontSize: 14, color: '#666', lineHeight: 1.8 }}>
+            HAKKYO 커뮤니티 멤버가 되셨습니다.<br />
+            프로그램, 액티비티, 커뮤니티 채널을 자유롭게 이용하세요.
+          </p>
+        </div>
 
-        <h1 className="text-2xl font-bold mb-1">환영해요! 🎉</h1>
-        <p className="text-sm text-gray-400 mb-2">Bienvenue · Welcome</p>
-        <p className="text-sm text-gray-500 mb-8">커뮤니티에서 사용할 닉네임을 설정해 주세요.</p>
+        <div style={{ fontSize: 12, color: '#444' }}>
+          {user?.email}
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">닉네임 · Pseudo</label>
-            <input
-              type="text"
-              className="input w-full"
-              placeholder="예: 민준, Sophie, Alex…"
-              value={nickname}
-              onChange={e => setNickname(e.target.value)}
-              maxLength={20}
-              autoFocus
-            />
-            <p className="text-xs text-gray-400 mt-1">{nickname.trim().length}/20</p>
+      {/* Right panel */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 64px' }}>
+        <div style={{ width: '100%', maxWidth: 400 }}>
+          <div style={{ marginBottom: 32 }}>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>Step 1 of 1</p>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 8 }}>닉네임을 설정해 주세요</h2>
+            <p style={{ fontSize: 14, color: '#666' }}>커뮤니티에서 표시될 이름이에요. 나중에 변경할 수 있어요.</p>
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 24 }}>
+              <input
+                type="text"
+                placeholder="예: 민준, Sophie, Alex…"
+                value={nickname}
+                onChange={e => setNickname(e.target.value)}
+                maxLength={20}
+                autoFocus
+                style={{
+                  width: '100%', padding: '16px 20px', fontSize: 16,
+                  background: '#18181f', border: '1.5px solid #2a2a35',
+                  borderRadius: 12, color: '#fff', outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.15s',
+                }}
+                onFocus={e => e.target.style.borderColor = '#f5c542'}
+                onBlur={e => e.target.style.borderColor = '#2a2a35'}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                {error
+                  ? <span style={{ fontSize: 13, color: '#f56565' }}>{error}</span>
+                  : <span />
+                }
+                <span style={{ fontSize: 12, color: '#555' }}>{nickname.trim().length}/20</span>
+              </div>
+            </div>
 
-          <button type="submit" disabled={saving} className="btn-yellow w-full">
-            {saving ? '저장 중…' : '커뮤니티 시작하기 →'}
-          </button>
-        </form>
-
-        <p className="text-xs text-gray-400 mt-6 text-center">
-          {user?.email} · 닉네임은 나중에 변경할 수 있어요.
-        </p>
+            <button
+              type="submit"
+              disabled={saving || nickname.trim().length < 2}
+              style={{
+                width: '100%', padding: '16px', fontSize: 15, fontWeight: 700,
+                background: saving || nickname.trim().length < 2 ? '#2a2a35' : '#f5c542',
+                color: saving || nickname.trim().length < 2 ? '#555' : '#0e0e12',
+                border: 'none', borderRadius: 12, cursor: saving || nickname.trim().length < 2 ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {saving ? '저장 중…' : '커뮤니티 시작하기 →'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )
