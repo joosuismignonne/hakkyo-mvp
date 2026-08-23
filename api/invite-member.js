@@ -1,5 +1,3 @@
-const { createClient } = require('@supabase/supabase-js')
-
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -13,17 +11,22 @@ module.exports = async (req, res) => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL
   const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceKey) {
-    return res.status(500).json({ error: 'Supabase service key not configured' })
+    return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' })
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
+  const response = await fetch(`${supabaseUrl}/auth/v1/invite`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': serviceKey,
+      'Authorization': `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ email, data: { role: 'member' } }),
   })
 
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    data: { role: 'member' },
-  })
-
-  if (error) return res.status(400).json({ error: error.message })
+  const data = await response.json()
+  if (!response.ok) {
+    return res.status(400).json({ error: data.msg || data.error_description || data.error || '초대 실패' })
+  }
   res.json({ success: true })
 }
