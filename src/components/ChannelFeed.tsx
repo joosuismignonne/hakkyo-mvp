@@ -64,19 +64,32 @@ function copyLink(url: string) {
 
 function ShareDropdown({ channel, postId }: { channel: string; postId: string }) {
   const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
   const url = `${window.location.origin}/community/${channel}?post=${postId}`
   const encodedUrl = encodeURIComponent(url)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as globalThis.Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
   return (
-    <div className="share-dropdown-wrap" onMouseLeave={() => setOpen(false)}>
+    <div className="share-dropdown-wrap" ref={wrapRef}>
       <button className="feed-action" onClick={() => setOpen(o => !o)}>
         <ShareNetwork size={13} weight="bold" style={{marginRight:3}} /> 공유
       </button>
       {open && (
         <div className="share-dropdown">
           <button onClick={() => { copyLink(url); setOpen(false) }}>🔗 링크 복사</button>
-          <a href={`https://www.threads.net/intent/post?text=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>🧵 Threads</a>
-          <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>𝕏 Twitter</a>
-          <a href={`https://www.instagram.com/`} target="_blank" rel="noopener noreferrer" onClick={() => { copyLink(url); setOpen(false) }}>📷 Instagram (링크 복사)</a>
+          <a href={`https://www.threads.net/intent/post?text=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>🧵 Threads에 공유</a>
+          <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>𝕏 Twitter에 공유</a>
+          <button onClick={() => { copyLink(url); setOpen(false) }}>📷 Instagram (링크 복사 후 붙여넣기)</button>
         </div>
       )}
     </div>
