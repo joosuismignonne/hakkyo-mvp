@@ -111,6 +111,18 @@ export async function getComments(postId: string): Promise<PostComment[]> {
   return data ?? []
 }
 
+export async function updateComment(id: string, body: string): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('post_comments').update({ body }).eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function deleteComment(id: string): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('post_comments').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
 export async function addComment(
   postId: string,
   authorName: string,

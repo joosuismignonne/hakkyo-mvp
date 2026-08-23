@@ -28,7 +28,7 @@ import { useLang, useT, pick } from '../lib/lang'
 import type { Lang } from '../lib/lang'
 import {
   getChannelPosts, createPost, deletePost, togglePin, updatePost, isAdminEmail,
-  getLikedPostIds, toggleLike, getComments, addComment,
+  getLikedPostIds, toggleLike, getComments, addComment, updateComment, deleteComment,
   type ChannelPost, type PostComment,
 } from '../lib/posts'
 import { Heart, ChatCircle, ShareNetwork, HandWaving, Lock as LockIcon } from '@phosphor-icons/react'
@@ -95,6 +95,80 @@ function Avatar({ avatar, size = 36 }: { avatar: string; size?: number }) {
           ? avatar
           : <span style={{ fontSize: size * 0.45, fontWeight: 700 }}>{avatar.slice(0,2).toUpperCase()}</span>
       }
+    </div>
+  )
+}
+
+// ── CommentItem ────────────────────────────────────────────────────────────
+function CommentItem({ comment, isAdmin, currentUserName, lang, onUpdate, onDelete }: {
+  comment: PostComment
+  isAdmin: boolean
+  currentUserName: string
+  lang: Lang
+  onUpdate: (id: string, body: string) => void
+  onDelete: (id: string) => void
+}) {
+  const canEdit = isAdmin || comment.author_name === currentUserName
+  const [editing, setEditing] = useState(false)
+  const [editBody, setEditBody] = useState(comment.body)
+  const [saving, setSaving] = useState(false)
+  const isComposingRef = useRef(false)
+
+  async function handleSave() {
+    if (!editBody.trim()) return
+    setSaving(true)
+    try {
+      await updateComment(comment.id, editBody.trim())
+      onUpdate(comment.id, editBody.trim())
+      setEditing(false)
+    } catch (e) { console.error(e) } finally { setSaving(false) }
+  }
+
+  async function handleDelete() {
+    if (!confirm('댓글을 삭제할까요?')) return
+    try {
+      await deleteComment(comment.id)
+      onDelete(comment.id)
+    } catch (e) { console.error(e) }
+  }
+
+  return (
+    <div className={`post-comment-item${comment.is_private ? ' post-comment-private' : ''}`}>
+      <div className="post-comment-avatar">
+        <Avatar avatar={comment.author_avatar || comment.author_name[0]?.toUpperCase() || '?'} size={26} />
+      </div>
+      <div className="post-comment-content">
+        <div className="post-comment-header">
+          <span className="post-comment-author">{comment.author_name}</span>
+          {comment.is_private && <span className="post-comment-private-badge">🔒 비공개</span>}
+          <span className="post-comment-time">{relTime(comment.created_at, lang)}</span>
+          {canEdit && !editing && (
+            <div className="post-comment-actions">
+              <button className="post-comment-action-btn" onClick={() => { setEditBody(comment.body); setEditing(true) }}>수정</button>
+              <button className="post-comment-action-btn danger" onClick={handleDelete}>삭제</button>
+            </div>
+          )}
+        </div>
+        {editing ? (
+          <div className="post-comment-edit">
+            <input
+              className="post-comment-input"
+              value={editBody}
+              onChange={e => setEditBody(e.target.value)}
+              onCompositionStart={() => { isComposingRef.current = true }}
+              onCompositionEnd={() => { isComposingRef.current = false }}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !isComposingRef.current) { e.preventDefault(); handleSave() } if (e.key === 'Escape') setEditing(false) }}
+              autoFocus
+            />
+            <button className="post-comment-send" onClick={handleSave} disabled={saving || !editBody.trim()}>
+              {saving ? '…' : '저장'}
+            </button>
+            <button className="post-comment-edit-cancel" onClick={() => setEditing(false)}>취소</button>
+          </div>
+        ) : (
+          <div className="post-comment-body">{comment.body}</div>
+        )}
+      </div>
     </div>
   )
 }
@@ -276,19 +350,15 @@ function PostCard({
               <div className="post-comments-empty">첫 댓글을 남겨보세요</div>
             )}
             {comments.map(c => (
-              <div key={c.id} className={`post-comment-item${c.is_private ? ' post-comment-private' : ''}`}>
-                <div className="post-comment-avatar">
-                  <Avatar avatar={c.author_avatar || c.author_name[0]?.toUpperCase() || '?'} size={26} />
-                </div>
-                <div className="post-comment-content">
-                  <div className="post-comment-header">
-                    <span className="post-comment-author">{c.author_name}</span>
-                    {c.is_private && <span className="post-comment-private-badge">🔒 비공개</span>}
-                    <span className="post-comment-time">{relTime(c.created_at, lang)}</span>
-                  </div>
-                  <div className="post-comment-body">{c.body}</div>
-                </div>
-              </div>
+              <CommentItem
+                key={c.id}
+                comment={c}
+                isAdmin={isAdmin}
+                currentUserName={userNickname}
+                lang={lang}
+                onUpdate={(id, body) => setComments(prev => prev.map(x => x.id === id ? { ...x, body } : x))}
+                onDelete={(id) => setComments(prev => prev.filter(x => x.id !== id))}
+              />
             ))}
             <div className="post-comment-compose">
               {!userId && (
