@@ -28,7 +28,7 @@ import { useLang, useT, pick } from '../lib/lang'
 import type { Lang } from '../lib/lang'
 import {
   getChannelPosts, createPost, deletePost, togglePin, updatePost, isAdminEmail,
-  getLikedPostIds, toggleLike, getComments, addComment, updateComment, deleteComment,
+  getLikedPostIds, toggleLike, getComments, getCommentCounts, addComment, updateComment, deleteComment,
   type ChannelPost, type PostComment,
 } from '../lib/posts'
 import { Heart, ChatCircle, ShareNetwork, HandWaving, Lock as LockIcon } from '@phosphor-icons/react'
@@ -207,7 +207,7 @@ function CommentItem({ comment, isAdmin, currentUserName, lang, onUpdate, onDele
 
 // ── PostCard ───────────────────────────────────────────────────────────────
 function PostCard({
-  post, isAdmin, onDelete, onPin, onEdit, channel, userId, likedByMe, userNickname, userAvatar,
+  post, isAdmin, onDelete, onPin, onEdit, channel, userId, likedByMe, userNickname, userAvatar, initialCommentCount,
 }: {
   post: ChannelPost
   isAdmin: boolean
@@ -219,6 +219,7 @@ function PostCard({
   likedByMe: boolean
   userNickname: string
   userAvatar: string
+  initialCommentCount?: number
 }) {
   const [open, setOpen] = useState(false)
   const [liked, setLiked] = useState(likedByMe)
@@ -228,6 +229,7 @@ function PostCard({
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [comments, setComments] = useState<PostComment[]>([])
   const [commentsLoaded, setCommentsLoaded] = useState(false)
+  const [commentCount, setCommentCount] = useState(initialCommentCount ?? 0)
   const [commentBody, setCommentBody] = useState('')
   const [commentSending, setCommentSending] = useState(false)
   const [commentPrivate, setCommentPrivate] = useState(false)
@@ -278,6 +280,7 @@ function PostCard({
     if (next && !commentsLoaded) {
       const data = await getComments(post.id)
       setComments(data)
+      setCommentCount(data.length)
       setCommentsLoaded(true)
     }
   }
@@ -294,6 +297,7 @@ function PostCard({
       const comment = await addComment(post.id, name, avatar, trimmed, commentPrivate, userId ? undefined : guestName.trim())
       if (comment) {
         setComments(prev => [...prev, comment])
+        setCommentCount(c => c + 1)
         setCommentBody('')
       }
     } catch (e) {
@@ -368,7 +372,7 @@ function PostCard({
           </button>
           <button className={`feed-action${commentsOpen ? ' active' : ''}`} onClick={handleToggleComments}>
             <ChatCircle size={13} weight="bold" style={{marginRight:3}} />
-            {commentsOpen && comments.length > 0 ? comments.length : (lang === 'ko' ? '댓글' : lang === 'fr' ? 'Commentaires' : 'Comments')}
+            {commentCount > 0 ? commentCount : (lang === 'ko' ? '댓글' : lang === 'fr' ? 'Commentaires' : 'Comments')}
           </button>
           {(hasMore || hasMedia) && !editing && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
@@ -391,7 +395,7 @@ function PostCard({
                 currentUserName={userNickname}
                 lang={lang}
                 onUpdate={(id, body) => setComments(prev => prev.map(x => x.id === id ? { ...x, body } : x))}
-                onDelete={(id) => setComments(prev => prev.filter(x => x.id !== id))}
+                onDelete={(id) => { setComments(prev => prev.filter(x => x.id !== id)); setCommentCount(c => Math.max(0, c - 1)) }}
               />
             ))}
             <div className="post-comment-compose">
@@ -988,6 +992,7 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
   const [posts, setPosts] = useState<ChannelPost[]>([])
   const [loading, setLoading] = useState(true)
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({})
   const [userNickname, setUserNickname] = useState('')
   const [userAvatar, setUserAvatar] = useState('')
   const isAdmin = isAdminEmail(user?.email)
@@ -998,10 +1003,13 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
     getChannelPosts(channel)
       .then(async data => {
         setPosts(data)
-        if (user && data.length > 0) {
-          const liked = await getLikedPostIds(user.id, data.map(p => p.id))
-          setLikedIds(liked)
-        }
+        const ids = data.map(p => p.id)
+        const [liked, counts] = await Promise.all([
+          user && ids.length > 0 ? getLikedPostIds(user.id, ids) : Promise.resolve(new Set<string>()),
+          ids.length > 0 ? getCommentCounts(ids) : Promise.resolve({}),
+        ])
+        setLikedIds(liked)
+        setCommentCounts(counts)
       })
       .finally(() => setLoading(false))
   }, [channel, user?.id])
@@ -1067,6 +1075,7 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
               likedByMe={likedIds.has(post.id)}
               userNickname={userNickname || user?.email?.split('@')[0] || ''}
               userAvatar={userAvatar}
+              initialCommentCount={commentCounts[post.id] ?? 0}
             />
           ))}
           {/* children (empty state) only shown when no DB posts exist */}

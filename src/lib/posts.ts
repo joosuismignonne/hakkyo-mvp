@@ -97,6 +97,19 @@ export async function toggleLike(postId: string, userId: string, liked: boolean)
   }
 }
 
+export async function getCommentCounts(postIds: string[]): Promise<Record<string, number>> {
+  if (!supabase || postIds.length === 0) return {}
+  const { data } = await supabase
+    .from('post_comments')
+    .select('post_id')
+    .in('post_id', postIds)
+  const counts: Record<string, number> = {}
+  for (const row of (data ?? [])) {
+    counts[row.post_id] = (counts[row.post_id] ?? 0) + 1
+  }
+  return counts
+}
+
 export async function getComments(postId: string): Promise<PostComment[]> {
   if (!supabase) return []
   const { data } = await supabase
