@@ -1,3 +1,26 @@
+const https = require('https')
+const url   = require('url')
+
+function post(targetUrl, data, headers) {
+  return new Promise((resolve, reject) => {
+    const parsed = url.parse(targetUrl)
+    const body   = JSON.stringify(data)
+    const req    = https.request({
+      hostname: parsed.hostname,
+      path:     parsed.path,
+      method:   'POST',
+      headers:  { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), ...headers },
+    }, res => {
+      let raw = ''
+      res.on('data', c => { raw += c })
+      res.on('end', () => resolve({ status: res.statusCode, body: raw }))
+    })
+    req.on('error', reject)
+    req.write(body)
+    req.end()
+  })
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -15,22 +38,20 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' })
     }
 
-    const response = await fetch(`${supabaseUrl}/auth/v1/invite`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': serviceKey,
-        'Authorization': `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({ email, data: { role: 'member' } }),
-    })
+    const result = await post(
+      `${supabaseUrl}/auth/v1/invite`,
+      { email, data: { role: 'member' } },
+      { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+    )
 
-    const data = await response.json()
-    if (!response.ok) {
-      return res.status(400).json({ error: data.msg || data.error_description || data.error || '초대 실패' })
+    let parsed = {}
+    try { parsed = JSON.parse(result.body) } catch {}
+
+    if (result.status >= 400) {
+      return res.status(400).json({ error: parsed.msg || parsed.error_description || parsed.error || result.body || '초대 실패' })
     }
-    return res.json({ success: true })
+    return res.status(200).json({ success: true })
   } catch (err) {
-    return res.status(500).json({ error: err.message || 'internal server error' })
+    return res.status(500).json({ error: err.message || 'internal error' })
   }
 }
