@@ -54,17 +54,15 @@ function relTime(iso: string, lang: Lang): string {
 // ── Share ──────────────────────────────────────────────────────────────────
 function sharePost(channel: string, postId: string) {
   const url = `${window.location.origin}/community/${channel}?post=${postId}`
-  if (navigator.share) {
-    navigator.share({ url }).catch(() => {})
-  } else {
-    navigator.clipboard.writeText(url).then(() => {
-      const t = document.createElement('div')
-      t.textContent = '링크 복사됨'
-      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#11110f;color:#fff;padding:8px 18px;border-radius:99px;font-size:13px;z-index:9999;pointer-events:none'
-      document.body.appendChild(t)
-      setTimeout(() => t.remove(), 2000)
-    })
-  }
+  navigator.clipboard.writeText(url).then(() => {
+    const t = document.createElement('div')
+    t.textContent = '🔗 링크 복사됨'
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#11110f;color:#fff;padding:8px 18px;border-radius:99px;font-size:13px;z-index:9999;pointer-events:none;white-space:nowrap'
+    document.body.appendChild(t)
+    setTimeout(() => t.remove(), 2000)
+  }).catch(() => {
+    prompt('링크를 복사해 주세요:', url)
+  })
 }
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
