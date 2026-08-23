@@ -13,7 +13,7 @@ import {
 import {
   House, Books, Cat,
   Megaphone, Star, Chat, Globe, Buildings, Briefcase, CalendarBlank,
-  MagnifyingGlass, Hash, type Icon,
+  MagnifyingGlass, Hash, Bell, Handshake, type Icon,
 } from '@phosphor-icons/react'
 
 const CHANNEL_ICON: Record<string, Icon> = {
@@ -59,30 +59,32 @@ function applyTheme(t: typeof DEFAULT_THEME) {
   r.style.setProperty('--main-bg', t.color_main_bg)
 }
 
-interface SearchResult { icon: string; title: string; sub: string; href: string }
+type SearchIcon = Icon
+interface SearchResult { Icon: SearchIcon; title: string; sub: string; href: string }
 
 function buildSearchIndex(lang: Lang, channels: Channel[]): SearchResult[] {
   const t = UI[lang].searchItems
+  const slugIcon: Record<string, Icon> = { board: Megaphone, reviews: Star, chat: Chat, exchange: Globe, housing: Buildings, jobs: Briefcase, events: CalendarBlank }
   const results: SearchResult[] = [
-    { icon: '🏠', title: t.home[0],          sub: t.home[1],          href: '/' },
-    { icon: '📢', title: t.board[0],         sub: t.board[1],         href: '/board' },
-    { icon: '📚', title: t.programs[0],      sub: t.programs[1],      href: '/programs' },
-    { icon: '🐱', title: t.mini[0],          sub: t.mini[1],          href: '/activities' },
-    { icon: '🔔', title: t.applyNews[0],     sub: t.applyNews[1],     href: '/apply/news' },
-    { icon: '🤝', title: t.applyCommunity[0], sub: t.applyCommunity[1], href: '/apply/community' },
+    { Icon: House,     title: t.home[0],           sub: t.home[1],           href: '/' },
+    { Icon: Megaphone, title: t.board[0],          sub: t.board[1],          href: '/board' },
+    { Icon: Books,     title: t.programs[0],       sub: t.programs[1],       href: '/programs' },
+    { Icon: Cat,       title: t.mini[0],           sub: t.mini[1],           href: '/activities' },
+    { Icon: Bell,      title: t.applyNews[0],      sub: t.applyNews[1],      href: '/apply/news' },
+    { Icon: Handshake, title: t.applyCommunity[0], sub: t.applyCommunity[1], href: '/apply/community' },
   ]
   programs.forEach(p => results.push({
-    icon: p.mark || '📚', title: p.lang,
+    Icon: Books, title: p.lang,
     sub: `${p.level} · SESSION 04`, href: p.href,
   }))
   activities.forEach(a => results.push({
-    icon: '🐱', title: a.ko,
+    Icon: Cat, title: a.ko,
     sub: `Mini HAKKYO · ${(a as any).date || ''}`, href: `/activities/${a.slug}`,
   }))
   const channelMap = UI[lang].channels as Record<string, string>
   channels.filter(c => c.slug !== 'board').forEach(ch => {
     results.push({
-      icon: ch.icon,
+      Icon: slugIcon[ch.slug] || Hash,
       title: channelMap[ch.name] || ch.name,
       sub: t.channelSub,
       href: slugToHref(ch.slug),
@@ -136,7 +138,7 @@ function SearchOverlay({
           )}
           {results.map((r, i) => (
             <a key={i} href={r.href} className="search-result-item" onClick={onClose}>
-              <span className="search-result-icon">{r.icon}</span>
+              <span className="search-result-icon"><r.Icon size={15} weight="bold" /></span>
               <div className="search-result-body">
                 <div className="search-result-title">{r.title}</div>
                 <div className="search-result-sub">{r.sub}</div>
@@ -464,14 +466,14 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
               {LANG_LABELS.map(l => (
                 <button key={l.code} className={`lang-btn-mobile${lang === l.code ? ' active' : ''}`} onClick={() => setLang(l.code)}>{l.label}</button>
               ))}
-              <button className="mobile-search-btn" onClick={() => setSearchOpen(true)}>🔍</button>
+              <button className="mobile-search-btn" onClick={() => setSearchOpen(true)}><MagnifyingGlass size={16} weight="bold" /></button>
             </div>
           </div>
 
           {/* Desktop global topbar */}
           <div className="global-topbar">
             <button className="global-search-btn" onClick={() => setSearchOpen(true)}>
-              <span>🔍</span>
+              <MagnifyingGlass size={14} weight="bold" />
               <span className="global-search-label">{t.search.label}</span>
               <kbd className="global-search-kbd">{t.search.kbd}</kbd>
             </button>

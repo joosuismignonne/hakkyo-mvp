@@ -1,9 +1,12 @@
 import { useParams } from 'react-router-dom'
 import { useT } from '../lib/lang'
 import ChannelFeed from '../components/ChannelFeed'
+import {
+  ChatCircle, Globe, House, Briefcase, CalendarBlank, Cat, HandWaving, Bell, Hash, type Icon,
+} from '@phosphor-icons/react'
 
 interface ChannelConfig {
-  icon: string
+  Icon: Icon
   title: string
   desc: string
   tag: string
@@ -12,23 +15,23 @@ interface ChannelConfig {
 
 const CHANNELS: Record<string, ChannelConfig> = {
   chat: {
-    icon: '💬', title: '자유게시판', desc: '자유롭게 이야기해요',
+    Icon: ChatCircle, title: '자유게시판', desc: '자유롭게 이야기해요',
     tag: 'CHAT', placeholder: '하고 싶은 이야기를 써주세요',
   },
   exchange: {
-    icon: '🌐', title: '언어교환', desc: '언어를 함께 배우고 교환해요',
+    Icon: Globe, title: '언어교환', desc: '언어를 함께 배우고 교환해요',
     tag: 'EXCHANGE', placeholder: '언어 교환 파트너를 찾아보세요',
   },
   housing: {
-    icon: '🏠', title: '주거', desc: '몬트리올 주거 정보와 경험을 나눠요',
+    Icon: House, title: '주거', desc: '몬트리올 주거 정보와 경험을 나눠요',
     tag: 'HOUSING', placeholder: '주거 관련 질문이나 정보를 올려주세요',
   },
   jobs: {
-    icon: '💼', title: '취업·이민', desc: '일과 이민에 대한 이야기',
+    Icon: Briefcase, title: '취업·이민', desc: '일과 이민에 대한 이야기',
     tag: 'JOBS & IMMIGRATION', placeholder: '취업과 이민 관련 경험을 나눠주세요',
   },
   events: {
-    icon: '📅', title: '이벤트·모임', desc: '같이 뭔가 하고 싶은 분들',
+    Icon: CalendarBlank, title: '이벤트·모임', desc: '같이 뭔가 하고 싶은 분들',
     tag: 'EVENTS', placeholder: '모임이나 이벤트를 제안해 보세요',
   },
 }
@@ -43,7 +46,7 @@ export default function NewCommunity() {
     return (
       <div className="ch-feed">
         <div className="ch-header">
-          <span className="ch-header-icon">💬</span>
+          <span className="ch-header-icon"><Hash size={20} weight="bold" /></span>
           <h1 className="ch-header-title">커뮤니티</h1>
         </div>
         <div className="ch-scroll">
@@ -64,7 +67,7 @@ export default function NewCommunity() {
 
   const header = (
     <div className="ch-header">
-      <span className="ch-header-icon">{cfg.icon}</span>
+      <span className="ch-header-icon"><cfg.Icon size={20} weight="bold" /></span>
       <div className="ch-header-text">
         <h1 className="ch-header-title">{channelMap[cfg.title] || cfg.title}</h1>
         <span className="ch-header-desc">{cfg.desc}</span>
@@ -81,9 +84,9 @@ export default function NewCommunity() {
     <ChannelFeed channel={channel!} header={header}>
       {/* Compose stub for non-admins */}
       <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
-        <div className="ch-compose-avatar">😺</div>
+        <div className="ch-compose-avatar"><Cat size={18} weight="bold" /></div>
         <span className="ch-compose-ph">{cfg.placeholder}</span>
-        <button className="ch-compose-btn">{t.footer.apply}</button>
+        <button className="ch-compose-btn"><HandWaving size={14} weight="bold" style={{marginRight:4}} />{t.footer.apply}</button>
       </div>
 
       {/* Coming soon card */}
@@ -101,7 +104,7 @@ export default function NewCommunity() {
           </div>
           <div className="feed-footer">
             <button className="feed-action subscribed" onClick={() => window.location.href='/apply/community'}>
-              ✋ 커뮤니티 신청하기
+              커뮤니티 신청하기
             </button>
             <button className="feed-action" onClick={() => window.location.href='/apply/news'}>
               🔔 소식 받기
@@ -116,7 +119,7 @@ export default function NewCommunity() {
         .filter(([k]) => k !== channel)
         .map(([k, c]) => (
           <a key={k} href={`/community/${k}`} className="feed-event-card">
-            <div className="feed-dday" style={{ fontSize: 20, background:'#f5f5f0' }}>{c.icon}</div>
+            <div className="feed-dday" style={{ background:'#f5f5f0', display:'flex', alignItems:'center', justifyContent:'center' }}><c.Icon size={20} weight="bold" /></div>
             <div className="feed-event-body">
               <div className="feed-event-title">{c.title}</div>
               <div className="feed-event-meta">{c.desc}</div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Bell, Books, Star, House, Cat, ChatCircle, HandWaving } from '@phosphor-icons/react'
 import { programs, activities } from '../data/hakkyo'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
@@ -104,11 +105,11 @@ function NoticeCard({ n }: { n: Notice }) {
           </button>
           {hasBody && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
-              💬 {open ? t.home.collapse : t.home.readMore}
+              <ChatCircle size={13} weight="bold" style={{marginRight:4}} />{open ? t.home.collapse : t.home.readMore}
             </button>
           )}
           <button className="feed-action feed-action-accent" onClick={() => window.location.href='/apply/news'}>
-            🔔 {t.home.subscribeBtn}
+            <Bell size={13} weight="bold" style={{marginRight:4}} />{t.home.subscribeBtn}
           </button>
         </div>
       </div>
@@ -415,10 +416,10 @@ export default function NewHome() {
               <div className="feed-title">{t.home.ctaTitle}</div>
               <div className="feed-footer">
                 <button className="feed-action feed-action-accent" onClick={() => window.location.href='/apply/news'}>
-                  🔔 {t.home.subscribeBtn}
+                  <Bell size={13} weight="bold" style={{marginRight:4}} />{t.home.subscribeBtn}
                 </button>
                 <button className="feed-action" onClick={() => window.location.href='/programs'}>
-                  📚 {t.nav.programs}
+                  <Books size={13} weight="bold" style={{marginRight:4}} />{t.nav.programs}
                 </button>
               </div>
             </div>
@@ -427,7 +428,7 @@ export default function NewHome() {
       case 'reviews':
         return (
           <a href="/community/reviews" className="feed-event-card" style={{ textDecoration:'none' }}>
-            <div className="feed-dday" style={{ background:'#f5f5f0', fontSize:22 }}>⭐</div>
+            <div className="feed-dday" style={{ background:'#f5f5f0', display:'flex', alignItems:'center', justifyContent:'center' }}><Star size={22} weight="fill" color="#f5c542" /></div>
             <div className="feed-event-body">
               <div className="feed-event-title">{t.home.reviewSection}</div>
               <div className="feed-event-meta">
@@ -471,7 +472,7 @@ export default function NewHome() {
   return (
     <div className="ch-feed">
       <div className="ch-header">
-        <span className="ch-header-icon">🏠</span>
+        <span className="ch-header-icon"><House size={20} weight="bold" /></span>
         <div className="ch-header-text">
           <h1 className="ch-header-title">{t.home.title}</h1>
           <span className="ch-header-desc">{t.home.desc}</span>
@@ -481,7 +482,7 @@ export default function NewHome() {
       <div className="ch-scroll">
         <div className="ch-inner">
           <div className="ch-compose" onClick={() => window.location.href='/apply/community'}>
-            <div className="ch-compose-avatar">😺</div>
+            <div className="ch-compose-avatar"><Cat size={18} weight="bold" /></div>
             <span className="ch-compose-ph">{t.home.compose}</span>
             <button className="ch-compose-btn">{t.home.applyBtn}</button>
           </div>

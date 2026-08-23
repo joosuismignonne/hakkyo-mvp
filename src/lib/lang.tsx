@@ -13,7 +13,7 @@ export const UI = {
       hint: '자주 찾는 페이지 · ↵ 로 이동',
       empty: (q: string) => `"${q}"에 대한 결과가 없어요`,
     },
-    footer: { apply: '✋ 커뮤니티 신청', subscribe: '🔔 소식 받기' },
+    footer: { apply: '커뮤니티 신청', subscribe: '소식 받기' },
     home: {
       title: '홈', desc: 'Montréal Learning Community · 2026',
       compose: 'HAKKYO 커뮤니티에 참여하고 싶으신가요?', applyBtn: '커뮤니티 신청',
@@ -28,7 +28,7 @@ export const UI = {
     },
     board: { title: '공지', desc: '공식 소식과 공지사항' },
     programs: { title: '프로그램', desc: 'SESSION 04 언어 프로그램', applyBtn: '신청하기', sessionLabel: 'SESSION 04' },
-    activities: { title: 'Mini HAKKYO', desc: '매주 수요일 클럽 활동', applyBtn: '✋ 신청하기' },
+    activities: { title: 'Mini HAKKYO', desc: '매주 수요일 클럽 활동', applyBtn: '신청하기' },
     channels: {
       '공지': '공지',
       '자유게시판': '자유게시판',
@@ -43,7 +43,7 @@ export const UI = {
       compose: '후기를 작성하고 싶으신가요?', joinBtn: '커뮤니티 가입 후 이용',
       comingSoonTitle: '리뷰 채널이 곧 열려요',
       comingSoonBody: 'HAKKYO 수강생이라면 누구나 솔직한 후기를 올릴 수 있어요. 커뮤니티에 신청하면 채널이 열릴 때 가장 먼저 알려드려요.',
-      joinCta: '✋ 커뮤니티 신청하기', subscribeCta: '🔔 소식 받기',
+      joinCta: '커뮤니티 신청하기', subscribeCta: '소식 받기',
     },
     searchItems: {
       home: ['홈', 'HAKKYO 메인'],
@@ -64,7 +64,7 @@ export const UI = {
       hint: 'Quick access · Press ↵ to open',
       empty: (q: string) => `No results for "${q}"`,
     },
-    footer: { apply: '✋ Join Community', subscribe: '🔔 Subscribe' },
+    footer: { apply: 'Join Community', subscribe: 'Subscribe' },
     home: {
       title: 'Home', desc: 'Montréal Learning Community · 2026',
       compose: 'Want to join the HAKKYO community?', applyBtn: 'Join',
@@ -79,7 +79,7 @@ export const UI = {
     },
     board: { title: 'Announcements', desc: 'Official news & announcements' },
     programs: { title: 'Programs', desc: 'SESSION 04 Language Programs', applyBtn: 'Apply', sessionLabel: 'SESSION 04' },
-    activities: { title: 'Mini HAKKYO', desc: 'Weekly Wednesday clubs', applyBtn: '✋ Apply' },
+    activities: { title: 'Mini HAKKYO', desc: 'Weekly Wednesday clubs', applyBtn: 'Apply' },
     channels: {
       '공지': 'Announcements',
       '자유게시판': 'General',
@@ -94,7 +94,7 @@ export const UI = {
       compose: 'Want to share your experience?', joinBtn: 'Join to post',
       comingSoonTitle: 'Reviews channel coming soon',
       comingSoonBody: 'Any HAKKYO student can share an honest review. Apply to the community and we\'ll notify you when this channel opens.',
-      joinCta: '✋ Join Community', subscribeCta: '🔔 Subscribe',
+      joinCta: 'Join Community', subscribeCta: 'Subscribe',
     },
     searchItems: {
       home: ['Home', 'HAKKYO Main'],
@@ -115,7 +115,7 @@ export const UI = {
       hint: 'Accès rapide · ↵ pour ouvrir',
       empty: (q: string) => `Aucun résultat pour "${q}"`,
     },
-    footer: { apply: '✋ Rejoindre', subscribe: '🔔 S\'abonner' },
+    footer: { apply: 'Rejoindre', subscribe: 'S\'abonner' },
     home: {
       title: 'Accueil', desc: 'Montréal Learning Community · 2026',
       compose: 'Envie de rejoindre la communauté HAKKYO ?', applyBtn: 'Rejoindre',
@@ -130,7 +130,7 @@ export const UI = {
     },
     board: { title: 'Annonces', desc: 'Nouvelles et annonces officielles' },
     programs: { title: 'Programmes', desc: 'Programmes de langues SESSION 04', applyBtn: 'S\'inscrire', sessionLabel: 'SESSION 04' },
-    activities: { title: 'Mini HAKKYO', desc: 'Clubs du mercredi', applyBtn: '✋ S\'inscrire' },
+    activities: { title: 'Mini HAKKYO', desc: 'Clubs du mercredi', applyBtn: 'S\'inscrire' },
     channels: {
       '공지': 'Annonces',
       '자유게시판': 'Général',
@@ -145,7 +145,7 @@ export const UI = {
       compose: 'Envie de partager votre expérience ?', joinBtn: 'Rejoindre pour écrire',
       comingSoonTitle: 'Canal d\'avis bientôt disponible',
       comingSoonBody: 'Tout étudiant HAKKYO peut partager un avis honnête. Rejoignez la communauté pour être notifié à l\'ouverture.',
-      joinCta: '✋ Rejoindre', subscribeCta: '🔔 S\'abonner',
+      joinCta: 'Rejoindre', subscribeCta: 'S\'abonner',
     },
     searchItems: {
       home: ['Accueil', 'Principal HAKKYO'],
