@@ -55,6 +55,8 @@ function AuthListener() {
       if (event === 'SIGNED_IN' && session?.user) {
         const skip = ['/reset-password', '/welcome', '/login', '/admin']
         if (skip.some(p => window.location.pathname.startsWith(p))) return
+        const adminEmails = ['seojoo1124@gmail.com', 'zoe.mekhoukh@gmail.com']
+        if (adminEmails.includes(session.user.email ?? '')) return
         const { data } = await supabase!.from('profiles').select('nickname').eq('id', session.user.id).single()
         if (!data?.nickname) navigate('/welcome', { replace: true })
       }
