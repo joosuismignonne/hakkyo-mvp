@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { programs } from '../data/hakkyo'
 import { useLang, useT } from '../lib/lang'
+import { Books, Bell, Cat, PushPin } from '@phosphor-icons/react'
 
 function ProgramDetail({ slug }: { slug: string }) {
   const p = programs.find(x => x.href === `/programs/${slug}`)
@@ -12,7 +13,7 @@ function ProgramDetail({ slug }: { slug: string }) {
   if (!p) return (
     <div className="ch-feed">
       <div className="ch-header">
-        <span className="ch-header-icon">📚</span>
+        <span className="ch-header-icon"><Books size={20} weight="bold" /></span>
         <h1 className="ch-header-title">{t.programs.title}</h1>
       </div>
       <div className="ch-scroll"><div className="ch-inner">
@@ -31,10 +32,10 @@ function ProgramDetail({ slug }: { slug: string }) {
   const progCls   = lang === 'en' ? pp.classesEn: lang === 'fr' ? pp.classesFr: pp.classes
   const progPrice = lang === 'en' ? pp.priceEn  : lang === 'fr' ? pp.priceFr  : pp.price
 
-  const subBtn    = lang === 'en' ? '🔔 Subscribe' : lang === 'fr' ? '🔔 S\'abonner' : '🔔 소식 받기'
-  const subBtn4   = lang === 'en' ? '🔔 Get notified for Session 4' : lang === 'fr' ? '🔔 Notification Session 4' : '🔔 4기 소식 받기'
+  const subBtn    = lang === 'en' ? 'Subscribe' : lang === 'fr' ? 'S\'abonner' : '소식 받기'
+  const subBtn4   = lang === 'en' ? 'Get notified for Session 4' : lang === 'fr' ? 'Notification Session 4' : '4기 소식 받기'
   const backBtn   = lang === 'en' ? '← All programs' : lang === 'fr' ? '← Tous les programmes' : '← 전체 보기'
-  const pinLabel  = lang === 'en' ? `📌 ${progName} Program` : lang === 'fr' ? `📌 Programme ${progName}` : `📌 ${progName} 프로그램`
+  const pinLabel  = lang === 'en' ? `${progName} Program` : lang === 'fr' ? `Programme ${progName}` : `${progName} 프로그램`
   const levelLbl  = lang === 'en' ? 'Level'    : lang === 'fr' ? 'Niveau'  : '레벨'
   const classLbl  = lang === 'en' ? 'Sessions' : lang === 'fr' ? 'Séances' : '수업 횟수'
   const priceLbl  = lang === 'en' ? 'Fee'      : lang === 'fr' ? 'Tarif'   : '참가비'
@@ -48,17 +49,17 @@ function ProgramDetail({ slug }: { slug: string }) {
   return (
     <div className="ch-feed">
       <div className="ch-header">
-        <span className="ch-header-icon">📚</span>
+        <span className="ch-header-icon"><Books size={20} weight="bold" /></span>
         <h1 className="ch-header-title">{progName}</h1>
         <span className="ch-header-desc">{progLevel} · SESSION 04</span>
         <button className="ch-header-action" onClick={() => window.location.href='/apply/news'}>
-          {subBtn}
+          <Bell size={13} weight="bold" style={{marginRight:4}} />{subBtn}
         </button>
       </div>
       <div className="ch-scroll">
         <div className="ch-inner">
           <div className="feed-card feed-card-pinned">
-            <div className="feed-pin-bar">{pinLabel}</div>
+            <div className="feed-pin-bar"><PushPin size={13} weight="bold" style={{marginRight:4}} />{pinLabel}</div>
             <div className="feed-card-inner">
               <div className="feed-meta">
                 <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
@@ -77,7 +78,7 @@ function ProgramDetail({ slug }: { slug: string }) {
                 </ul>
               </div>
               <div className="feed-footer">
-                <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}>{subBtn4}</button>
+                <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}><Bell size={13} weight="bold" style={{marginRight:4}} />{subBtn4}</button>
                 <button className="feed-action" onClick={() => window.location.href='/programs'}>{backBtn}</button>
               </div>
             </div>
@@ -86,7 +87,7 @@ function ProgramDetail({ slug }: { slug: string }) {
           <div className="feed-card">
             <div className="feed-card-inner">
               <div className="feed-meta">
-                <div className="feed-avatar" style={{ background:'#111', color:'#f5c542', fontSize:14 }}>🐱</div>
+                <div className="feed-avatar" style={{ background:'#111', color:'#f5c542', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}><Cat size={14} weight="bold" /></div>
                 <span className="feed-author">MINI</span>
                 <span className="feed-tag">MINI'S NOTE</span>
               </div>
@@ -106,11 +107,11 @@ export default function NewPrograms() {
   const t = useT()
   if (slug) return <ProgramDetail slug={slug} />
 
-  const subBtn    = lang === 'en' ? '🔔 Subscribe' : lang === 'fr' ? '🔔 S\'abonner' : '🔔 소식 받기'
-  const pinLabel  = lang === 'en' ? '📌 Session 4 Info' : lang === 'fr' ? '📌 Info Session 4' : '📌 4기 안내'
+  const subBtn    = lang === 'en' ? 'Subscribe' : lang === 'fr' ? 'S\'abonner' : '소식 받기'
+  const pinLabel  = lang === 'en' ? 'Session 4 Info' : lang === 'fr' ? 'Info Session 4' : '4기 안내'
   const ctaTitle  = lang === 'en' ? 'Session 4 Language Programs — Starting October 2026' : lang === 'fr' ? 'Programmes de langues Session 4 — Début octobre 2026' : '4기 언어 프로그램 — 2026년 10월 시작 예정'
   const ctaBody   = lang === 'en' ? 'Enrollment for Korean, English, and French programs is opening soon. Subscribers will be notified first with exact dates and fees.' : lang === 'fr' ? 'Les inscriptions aux programmes de coréen, anglais et français ouvrent bientôt. Les abonnés seront les premiers informés des dates et tarifs exacts.' : '한국어·영어·불어 프로그램 4기 모집이 곧 시작돼요. 정확한 일정과 참가비는 소식 신청자에게 가장 먼저 알려드릴게요.'
-  const subBtn4   = lang === 'en' ? '🔔 Subscribe for updates' : lang === 'fr' ? '🔔 S\'abonner aux mises à jour' : '🔔 소식 신청하기'
+  const subBtn4   = lang === 'en' ? 'Subscribe for updates' : lang === 'fr' ? 'S\'abonner aux mises à jour' : '소식 신청하기'
   const listLabel = lang === 'en' ? 'Program List' : lang === 'fr' ? 'Liste des programmes' : '프로그램 목록'
   const faqLabel  = lang === 'en' ? 'FAQ' : lang === 'fr' ? 'Questions fréquentes' : '자주 묻는 질문'
 
@@ -131,18 +132,18 @@ export default function NewPrograms() {
   return (
     <div className="ch-feed">
       <div className="ch-header">
-        <span className="ch-header-icon">📚</span>
+        <span className="ch-header-icon"><Books size={20} weight="bold" /></span>
         <h1 className="ch-header-title">{t.programs.title}</h1>
         <span className="ch-header-desc">SESSION 04 · 2026 FALL</span>
         <button className="ch-header-action" onClick={() => window.location.href='/apply/news'}>
-          {subBtn}
+          <Bell size={13} weight="bold" style={{marginRight:4}} />{subBtn}
         </button>
       </div>
       <div className="ch-scroll">
         <div className="ch-inner">
 
           <div className="feed-card feed-card-pinned">
-            <div className="feed-pin-bar">{pinLabel}</div>
+            <div className="feed-pin-bar"><PushPin size={13} weight="bold" style={{marginRight:4}} />{pinLabel}</div>
             <div className="feed-card-inner">
               <div className="feed-meta">
                 <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
@@ -153,7 +154,7 @@ export default function NewPrograms() {
               <div className="feed-title">{ctaTitle}</div>
               <div className="feed-body"><p>{ctaBody}</p></div>
               <div className="feed-footer">
-                <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}>{subBtn4}</button>
+                <button className="feed-action subscribed" onClick={() => window.location.href='/apply/news'}><Bell size={13} weight="bold" style={{marginRight:4}} />{subBtn4}</button>
               </div>
             </div>
           </div>

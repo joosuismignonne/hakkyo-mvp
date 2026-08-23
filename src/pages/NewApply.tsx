@@ -7,6 +7,7 @@ import { submitApplication, ApplicationPayload } from '../lib/hakkyoApi'
 import { trackEvent } from '../lib/analytics'
 import { notifyNewsletterSubscription, notifyActivityApplication, notifyProgramApplication } from '../lib/discord'
 import { useLang } from '../lib/lang'
+import { Bell, Books, Cat } from '@phosphor-icons/react'
 
 const APPLY_UI = {
   ko: { next: '다음', prev: '← 이전', back: '← 돌아가기', send: '신청서 보내기', sending: '보내는 중…', required: '* 표시된 질문은 필수예요.', done_title: '신청이 접수됐어요!', done_body: 'HAKKYO에서 곧 이메일로 연락드릴게요.', home: '← 홈으로', goBack: '← 돌아가기', error: '접수 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.' },
@@ -39,7 +40,7 @@ function NewsletterForm() {
   return (
     <div className="ch-feed">
       <div className="ch-header">
-        <span className="ch-header-icon">🔔</span>
+        <span className="ch-header-icon"><Bell size={20} weight="bold" /></span>
         <h1 className="ch-header-title">소식 신청</h1>
         <span className="ch-header-desc">SESSION 04 · NEWS</span>
       </div>
@@ -74,7 +75,7 @@ function NewsletterForm() {
                 <div className="feed-body"><p>곧 이메일로 만나요. HAKKYO에서 소식이 생기면 가장 먼저 알려드릴게요.</p></div>
                 <div className="feed-footer">
                   <button className="feed-action" onClick={() => window.location.href='/'}>← 홈으로</button>
-                  <button className="feed-action" onClick={() => window.location.href='/programs'}>📚 프로그램 보기</button>
+                  <button className="feed-action" onClick={() => window.location.href='/programs'}><Books size={13} weight="bold" style={{marginRight:4}} />프로그램 보기</button>
                 </div>
               </div>
             </div>
@@ -82,7 +83,7 @@ function NewsletterForm() {
             <div className="feed-card">
               <div className="feed-card-inner">
                 <div className="feed-meta">
-                  <div className="feed-avatar" style={{ background:'#111', color:'#f5c542', fontSize:14 }}>🐱</div>
+                  <div className="feed-avatar" style={{ background:'#111', color:'#f5c542', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}><Cat size={14} weight="bold" /></div>
                   <span className="feed-author">MINI</span>
                   <span className="feed-tag">이메일로 소식 받기</span>
                 </div>
@@ -459,8 +460,8 @@ export default function NewApply() {
                 <div className="feed-title">신청 페이지를 찾을 수 없어요</div>
                 <div className="feed-body"><p>프로그램이나 액티비티를 선택해 주세요.</p></div>
                 <div className="feed-footer">
-                  <button className="feed-action" onClick={() => window.location.href='/programs'}>📚 프로그램 보기</button>
-                  <button className="feed-action" onClick={() => window.location.href='/activities'}>🐱 Mini HAKKYO 보기</button>
+                  <button className="feed-action" onClick={() => window.location.href='/programs'}><Books size={13} weight="bold" style={{marginRight:4}} />프로그램 보기</button>
+                  <button className="feed-action" onClick={() => window.location.href='/activities'}><Cat size={13} weight="bold" style={{marginRight:4}} />Mini HAKKYO 보기</button>
                 </div>
               </div>
             </div>

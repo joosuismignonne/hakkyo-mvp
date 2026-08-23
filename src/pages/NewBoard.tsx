@@ -4,6 +4,7 @@ import type { Notice } from '../types'
 import { useT, useLang } from '../lib/lang'
 import type { Lang } from '../lib/lang'
 import ChannelFeed from '../components/ChannelFeed'
+import { Bell, Megaphone, Heart, ChatCircle, CheckCircle, ShareNetwork } from '@phosphor-icons/react'
 
 const FALLBACK: Notice[] = [
   {
@@ -113,15 +114,15 @@ function NoticeCard({ n, lang }: { n: Notice; lang: Lang }) {
 
         <div className="feed-footer">
           <button className={`feed-action${liked ? ' liked' : ''}`} onClick={() => setLiked(l => !l)}>
-            {liked ? '❤️' : '🤍'} 좋아요
+            <Heart size={13} weight={liked ? 'fill' : 'regular'} color={liked ? '#e53e3e' : undefined} style={{marginRight:3}} /> 좋아요
           </button>
           {(hasMore || hasMedia) && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
-              💬 {open ? '접기' : '더 보기'}
+              <ChatCircle size={13} weight="bold" style={{marginRight:3}} /> {open ? '접기' : '더 보기'}
             </button>
           )}
           <button className={`feed-action${shared ? ' shared' : ''}`} onClick={handleShare}>
-            {shared ? '✅' : '🔗'} 공유
+            {shared ? <CheckCircle size={13} weight="bold" style={{marginRight:3}} /> : <ShareNetwork size={13} weight="bold" style={{marginRight:3}} />} 공유
           </button>
         </div>
       </div>
@@ -145,14 +146,14 @@ export default function NewBoard() {
 
   const header = (
     <div className="ch-header">
-      <span className="ch-header-icon">📢</span>
+      <span className="ch-header-icon"><Megaphone size={20} weight="bold" /></span>
       <div className="ch-header-text">
         <h1 className="ch-header-title">{t.board.title}</h1>
         <span className="ch-header-desc">{t.board.desc}</span>
       </div>
       <div className="ch-header-right">
         <a href="/apply/news" className="ch-header-action">
-          🔔 {t.footer.subscribe}
+          <Bell size={13} weight="bold" style={{marginRight:4}} />{t.footer.subscribe}
         </a>
       </div>
     </div>

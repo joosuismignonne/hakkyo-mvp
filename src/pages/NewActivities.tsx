@@ -4,6 +4,7 @@ import { activities } from '../data/hakkyo'
 import { supabase } from '../lib/supabase'
 import { trackEvent } from '../lib/analytics'
 import { useT, useLang } from '../lib/lang'
+import { Books, Cat, PushPin, Handshake, PersonSimpleRun, GameController, type Icon } from '@phosphor-icons/react'
 
 function getDday(dateIso: string) {
   const today = new Date(); today.setHours(0,0,0,0)
@@ -115,10 +116,10 @@ const PREP: Record<string, { ko: string[]; en: string[]; fr: string[] }> = {
   },
 }
 
-const POSTER_EMOJI: Record<string, string> = {
-  'book-club':      '📚',
-  'running-club':   '🏃',
-  'boardgame-club': '🎲',
+const POSTER_ICON: Record<string, Icon> = {
+  'book-club':      Books,
+  'running-club':   PersonSimpleRun,
+  'boardgame-club': GameController,
 }
 
 function ActivityDetail({ slug }: { slug: string }) {
@@ -129,7 +130,7 @@ function ActivityDetail({ slug }: { slug: string }) {
 
   if (!a) return (
     <div className="ch-feed">
-      <div className="ch-header"><span className="ch-header-icon">🐱</span><h1 className="ch-header-title">Mini HAKKYO</h1></div>
+      <div className="ch-header"><span className="ch-header-icon"><Cat size={20} weight="bold" /></span><h1 className="ch-header-title">Mini HAKKYO</h1></div>
       <div className="ch-scroll"><div className="ch-inner">
         <div className="feed-card"><div className="feed-card-inner">
           <div className="feed-title">{lang === 'en' ? 'Club not found' : lang === 'fr' ? 'Club introuvable' : '클럽을 찾을 수 없어요'}</div>
@@ -169,7 +170,7 @@ function ActivityDetail({ slug }: { slug: string }) {
   return (
     <div className="ch-feed">
       <div className="ch-header">
-        <span className="ch-header-icon">{POSTER_EMOJI[slug] || '🐱'}</span>
+        <span className="ch-header-icon">{(() => { const Ic = POSTER_ICON[slug] || Cat; return <Ic size={20} weight="bold" /> })()}</span>
         <h1 className="ch-header-title">{actTitle}</h1>
         <span className="ch-header-desc">Mini HAKKYO · {a.code}</span>
         <button className="activity-apply-btn activity-apply-btn-sm" onClick={() => {
@@ -198,7 +199,7 @@ function ActivityDetail({ slug }: { slug: string }) {
 
           {/* Detail card */}
           <div className="feed-card feed-card-pinned">
-            <div className="feed-pin-bar">📌 {a.code} — Mini HAKKYO</div>
+            <div className="feed-pin-bar"><PushPin size={13} weight="bold" style={{marginRight:4}} />{a.code} — Mini HAKKYO</div>
             <div className="feed-card-inner">
               <div className="feed-meta">
                 <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
@@ -273,12 +274,12 @@ export default function NewActivities() {
   const miniLabel  = lang === 'en' ? 'What is Mini HAKKYO?' : lang === 'fr' ? 'C\'est quoi Mini HAKKYO ?' : 'Mini HAKKYO란?'
   const ctaTitle   = lang === 'en' ? 'Meet new people in Montréal' : lang === 'fr' ? 'Rencontrez de nouvelles personnes à Montréal' : '몬트리올에서 새로운 사람을 만나요'
   const ctaBody    = lang === 'en' ? 'Connect with people spending time in the same city.' : lang === 'fr' ? 'Rencontrez des personnes qui vivent le même moment dans la même ville.' : '같은 도시에서 새로운 시간을 보내는 사람들과 연결돼요.'
-  const ctaBtn     = lang === 'en' ? '🤝 Join the Community' : lang === 'fr' ? '🤝 Rejoindre la communauté' : '🤝 커뮤니티 참여하기'
+  const ctaBtn     = lang === 'en' ? 'Join the Community' : lang === 'fr' ? 'Rejoindre la communauté' : '커뮤니티 참여하기'
 
   return (
     <div className="ch-feed">
       <div className="ch-header">
-        <span className="ch-header-icon">🐱</span>
+        <span className="ch-header-icon"><Cat size={20} weight="bold" /></span>
         <div className="ch-header-text">
           <h1 className="ch-header-title">{t.activities.title}</h1>
           <span className="ch-header-desc">{t.activities.desc}</span>
@@ -289,7 +290,7 @@ export default function NewActivities() {
 
           {/* What is Mini */}
           <div className="feed-card feed-card-pinned">
-            <div className="feed-pin-bar">📌 {miniLabel}</div>
+            <div className="feed-pin-bar"><PushPin size={13} weight="bold" style={{marginRight:4}} />{miniLabel}</div>
             <div className="feed-card-inner">
               <div className="feed-meta">
                 <div className="feed-avatar" style={{ background:'#f5c542' }}>H</div>
@@ -323,7 +324,7 @@ export default function NewActivities() {
                 onClick={() => trackEvent({ eventName:'activity_card_clicked', targetType:'activity', targetLabel:a.slug })}>
                 <div className="feed-dday" style={a.dday < 0 ? { background:'#e8e8e0', color:'#aaa' } : {}}>
                   {ddLabel}
-                  <div className="feed-dday-sub">{POSTER_EMOJI[a.slug]}</div>
+                  <div className="feed-dday-sub">{(() => { const Ic = POSTER_ICON[a.slug]; return Ic ? <Ic size={16} weight="bold" /> : null })()}</div>
                 </div>
                 <div className="feed-event-body">
                   <div className="feed-event-title">{actName}</div>
@@ -341,14 +342,14 @@ export default function NewActivities() {
           <div className="feed-card">
             <div className="feed-card-inner">
               <div className="feed-meta">
-                <div className="feed-avatar" style={{ background:'#111', color:'#f5c542' }}>🐱</div>
+                <div className="feed-avatar" style={{ background:'#111', color:'#f5c542', display:'flex', alignItems:'center', justifyContent:'center' }}><Cat size={16} weight="bold" /></div>
                 <span className="feed-author">HAKKYO</span>
               </div>
               <div className="feed-title">{ctaTitle}</div>
               <div className="feed-body"><p>{ctaBody}</p></div>
               <div className="feed-footer">
                 <button className="feed-action subscribed" onClick={() => window.location.href='/apply/community'}>
-                  {ctaBtn}
+                  <Handshake size={13} weight="bold" style={{marginRight:4}} />{ctaBtn}
                 </button>
               </div>
             </div>

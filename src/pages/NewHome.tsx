@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Bell, Books, Star, House, Cat, ChatCircle, HandWaving } from '@phosphor-icons/react'
+import { Bell, Books, Star, House, Cat, ChatCircle, HandWaving, Heart } from '@phosphor-icons/react'
 import { programs, activities } from '../data/hakkyo'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
@@ -101,7 +101,7 @@ function NoticeCard({ n }: { n: Notice }) {
         )}
         <div className="feed-footer">
           <button className={`feed-action${liked ? ' liked' : ''}`} onClick={() => setLiked(l => !l)}>
-            {liked ? '❤️' : '🤍'} {t.home.like}
+            <Heart size={13} weight={liked ? 'fill' : 'regular'} color={liked ? '#e53e3e' : undefined} style={{marginRight:3}} /> {t.home.like}
           </button>
           {hasBody && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>

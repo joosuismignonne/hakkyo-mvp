@@ -9,13 +9,13 @@ import { useLang } from '../context/LangContext'
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const TAGS = [
-  { value: 'housing',           ko: '🏠 주거',      en: '🏠 Housing',          fr: '🏠 Logement'   },
-  { value: 'jobs',              ko: '💼 취업',      en: '💼 Jobs',             fr: '💼 Emploi'     },
-  { value: 'events',            ko: '🎉 이벤트',    en: '🎉 Events',           fr: '🎉 Événements' },
-  { value: 'language_exchange', ko: '💬 언어교환',  en: '💬 Exchange',         fr: '💬 Échange'    },
-  { value: 'friends',           ko: '🤝 친구',      en: '🤝 Friends',          fr: '🤝 Amis'       },
-  { value: 'questions',         ko: '❓ 질문',      en: '❓ Questions',        fr: '❓ Questions'  },
-  { value: 'general',           ko: '✏️ 자유',      en: '✏️ General',         fr: '✏️ Général'    },
+  { value: 'housing',           ko: '주거',      en: 'Housing',      fr: 'Logement'   },
+  { value: 'jobs',              ko: '취업',      en: 'Jobs',         fr: 'Emploi'     },
+  { value: 'events',            ko: '이벤트',    en: 'Events',       fr: 'Événements' },
+  { value: 'language_exchange', ko: '언어교환',  en: 'Exchange',     fr: 'Échange'    },
+  { value: 'friends',           ko: '친구',      en: 'Friends',      fr: 'Amis'       },
+  { value: 'questions',         ko: '질문',      en: 'Questions',    fr: 'Questions'  },
+  { value: 'general',           ko: '자유',      en: 'General',      fr: 'Général'    },
 ]
 
 const EXAMPLES = [

@@ -107,7 +107,7 @@ export default function NewCommunity() {
               커뮤니티 신청하기
             </button>
             <button className="feed-action" onClick={() => window.location.href='/apply/news'}>
-              🔔 소식 받기
+              <Bell size={13} weight="bold" style={{marginRight:4}} />{t.footer.subscribe}
             </button>
           </div>
         </div>

@@ -30,6 +30,7 @@ import {
   getChannelPosts, createPost, deletePost, togglePin, isAdminEmail,
   type ChannelPost,
 } from '../lib/posts'
+import { Heart, ChatCircle, CheckCircle, ShareNetwork, HandWaving, Lock as LockIcon } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
 
 // Channels where only admins can write (non-admins see a locked state)
@@ -164,15 +165,15 @@ function PostCard({
 
         <div className="feed-footer">
           <button className={`feed-action${liked ? ' liked' : ''}`} onClick={() => setLiked(l => !l)}>
-            {liked ? '❤️' : '🤍'} {t.home.like}
+            <Heart size={13} weight={liked ? 'fill' : 'regular'} color={liked ? '#e53e3e' : undefined} style={{marginRight:3}} /> {t.home.like}
           </button>
           {(hasMore || hasMedia) && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
-              💬 {open ? t.home.collapse : t.home.readMore}
+              <ChatCircle size={13} weight="bold" style={{marginRight:3}} /> {open ? t.home.collapse : t.home.readMore}
             </button>
           )}
           <button className={`feed-action${shared ? ' shared' : ''}`} onClick={handleShare}>
-            {shared ? '✅' : '🔗'} {lang === 'ko' ? '공유' : lang === 'fr' ? 'Partager' : 'Share'}
+            {shared ? <CheckCircle size={13} weight="bold" style={{marginRight:3}} /> : <ShareNetwork size={13} weight="bold" style={{marginRight:3}} />} {lang === 'ko' ? '공유' : lang === 'fr' ? 'Partager' : 'Share'}
           </button>
         </div>
       </div>
@@ -479,7 +480,7 @@ function NonAdminCompose({ channel, isLoggedIn }: { channel: string; isLoggedIn:
   if (isAdminOnly) {
     return (
       <div className="compose-locked">
-        <span className="compose-locked-icon">🔒</span>
+        <span className="compose-locked-icon"><LockIcon size={18} weight="bold" /></span>
         <div>
           <div className="compose-locked-title">관리자 전용 채널</div>
           <div className="compose-locked-sub">이 채널은 관리자만 글을 올릴 수 있어요</div>
@@ -495,7 +496,7 @@ function NonAdminCompose({ channel, isLoggedIn }: { channel: string; isLoggedIn:
           <div className="compose-locked-title">커뮤니티에 가입하면 글을 올릴 수 있어요</div>
           <div className="compose-locked-sub">HAKKYO 커뮤니티 멤버가 되면 모든 채널에서 자유롭게 소통할 수 있어요</div>
         </div>
-        <a href="/apply/community" className="compose-locked-btn">✋ 커뮤니티 신청</a>
+        <a href="/apply/community" className="compose-locked-btn"><HandWaving size={14} weight="bold" style={{marginRight:4}} />커뮤니티 신청</a>
       </div>
     )
   }
