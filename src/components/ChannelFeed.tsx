@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { Node, mergeAttributes } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
@@ -114,7 +115,7 @@ function Avatar({ avatar, size = 36 }: { avatar: string; size?: number }) {
 
 // ── Login prompt modal ─────────────────────────────────────────────────────
 function LoginPromptModal({ onClose }: { onClose: () => void }) {
-  return (
+  return createPortal(
     <div className="login-prompt-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="login-prompt-sheet">
         <div className="login-prompt-icon">🐱</div>
@@ -126,7 +127,8 @@ function LoginPromptModal({ onClose }: { onClose: () => void }) {
         </div>
         <button className="login-prompt-close" onClick={onClose}>닫기</button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -546,7 +548,7 @@ function PostEditInline({
     } catch (e: any) { setError(e.message || '저장 실패') } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="post-edit-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onCancel() }}>
       <div className="post-edit-modal">
         <div className="post-edit-modal-header">
@@ -580,7 +582,8 @@ function PostEditInline({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
