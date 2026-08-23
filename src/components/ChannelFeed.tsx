@@ -474,8 +474,85 @@ function AdminCompose({
   )
 }
 
+// ── Member compose (logged-in, non-admin) ─────────────────────────────────
+function MemberCompose({
+  channel, userEmail, onPosted,
+}: {
+  channel: string
+  userEmail: string
+  onPosted: (post: ChannelPost) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [body, setBody] = useState('')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const displayName = userEmail.split('@')[0]
+  const initial = displayName[0]?.toUpperCase() ?? '?'
+
+  async function handleSend() {
+    if (!body.trim()) { setError('내용을 입력해 주세요'); return }
+    setSending(true); setError('')
+    try {
+      const post = await createPost({
+        channel,
+        author_name: displayName,
+        author_avatar: initial,
+        title_ko: '', title_en: '', title_fr: '',
+        body_ko: body.trim(), body_en: '', body_fr: '',
+        is_pinned: false,
+      })
+      if (post) { onPosted(post); setBody(''); setExpanded(false) }
+    } catch (e: any) {
+      setError(e.message || '오류가 발생했어요')
+    } finally { setSending(false) }
+  }
+
+  return (
+    <div className={`admin-compose${expanded ? ' expanded' : ''}`}>
+      {expanded && (
+        <textarea
+          placeholder={`${channel} 채널에 올릴 내용을 입력하세요…`}
+          value={body}
+          onChange={e => setBody(e.target.value)}
+          rows={4}
+          autoFocus
+          style={{ width: '100%', resize: 'vertical', fontSize: 14, padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0d8', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 8 }}
+        />
+      )}
+      <div className="compose-input-row">
+        {!expanded && (
+          <div className="feed-avatar" style={{ width: 30, height: 30, background: '#f5c542', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', flexShrink: 0 }}>{initial}</div>
+        )}
+        {!expanded && (
+          <button className="compose-textarea compose-placeholder-btn"
+            onClick={() => setExpanded(true)}
+            style={{ flex: 1, textAlign: 'left', color: '#aaa', background: '#f9f9f7', border: '1px solid #e0e0d8', borderRadius: 10, padding: '9px 12px', fontSize: 14, cursor: 'text' }}>
+            {channel} 채널에 글을 올려보세요…
+          </button>
+        )}
+        <div className="compose-actions">
+          {expanded && (
+            <button className="compose-cancel-btn" onClick={() => { setExpanded(false); setBody(''); setError('') }}>✕</button>
+          )}
+          <button className="compose-send-btn" onClick={expanded ? handleSend : () => setExpanded(true)} disabled={sending}>
+            {sending ? '…' : '↑'}
+          </button>
+        </div>
+      </div>
+      {error && <div className="compose-error">{error}</div>}
+    </div>
+  )
+}
+
 // ── Non-admin compose stub ─────────────────────────────────────────────────
-function NonAdminCompose({ channel, isLoggedIn }: { channel: string; isLoggedIn: boolean }) {
+function NonAdminCompose({
+  channel, isLoggedIn, userEmail, onPosted,
+}: {
+  channel: string
+  isLoggedIn: boolean
+  userEmail: string
+  onPosted: (post: ChannelPost) => void
+}) {
   const isAdminOnly = ADMIN_ONLY_CHANNELS.has(channel)
   if (isAdminOnly) {
     return (
@@ -491,7 +568,7 @@ function NonAdminCompose({ channel, isLoggedIn }: { channel: string; isLoggedIn:
   if (!isLoggedIn) {
     return (
       <div className="compose-locked compose-locked-join">
-        <span className="compose-locked-icon">✍️</span>
+        <span className="compose-locked-icon"><HandWaving size={18} weight="bold" /></span>
         <div>
           <div className="compose-locked-title">커뮤니티에 가입하면 글을 올릴 수 있어요</div>
           <div className="compose-locked-sub">HAKKYO 커뮤니티 멤버가 되면 모든 채널에서 자유롭게 소통할 수 있어요</div>
@@ -500,16 +577,7 @@ function NonAdminCompose({ channel, isLoggedIn }: { channel: string; isLoggedIn:
       </div>
     )
   }
-  // Logged in but not admin — coming soon
-  return (
-    <div className="compose-locked compose-locked-soon">
-      <span className="compose-locked-icon">⏳</span>
-      <div>
-        <div className="compose-locked-title">멤버 글쓰기 기능 준비 중</div>
-        <div className="compose-locked-sub">곧 모든 멤버가 채널에 직접 글을 올릴 수 있어요</div>
-      </div>
-    </div>
-  )
+  return <MemberCompose channel={channel} userEmail={userEmail} onPosted={onPosted} />
 }
 
 // ── Main ChannelFeed ───────────────────────────────────────────────────────
@@ -587,7 +655,7 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
 
       {isAdmin
         ? <AdminCompose channel={channel} defaultAuthorName={displayName} onPosted={handlePosted} />
-        : <NonAdminCompose channel={channel} isLoggedIn={isLoggedIn} />
+        : <NonAdminCompose channel={channel} isLoggedIn={isLoggedIn} userEmail={user?.email ?? ''} onPosted={handlePosted} />
       }
     </div>
   )

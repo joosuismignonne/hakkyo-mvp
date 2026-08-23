@@ -2570,8 +2570,10 @@ const HAKKYO_SUB_FIELDS: { key: string; label: string }[] = [
 function HakkyoSubCard({ s, index, onDelete }: { s: Record<string, unknown>; index: number; onDelete: (id: string) => void }) {
   const [open, setOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [inviting, setInviting] = useState(false)
+  const [invited, setInvited] = useState(false)
   const str = (k: string) => s[k] != null ? String(s[k]) : ''
-  const kindLabel: Record<string, string> = { activity: '🐱 액티비티', community: '🤝 커뮤니티', newsletter: '🔔 소식', program: '📚 프로그램' }
+  const kindLabel: Record<string, string> = { activity: '액티비티', community: '커뮤니티', newsletter: '소식', program: '프로그램' }
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation()
@@ -2580,6 +2582,29 @@ function HakkyoSubCard({ s, index, onDelete }: { s: Record<string, unknown>; ind
     const { error } = await supabase!.from('hakkyo_submissions').delete().eq('id', str('id'))
     if (!error) onDelete(str('id'))
     else { alert('삭제 실패: ' + error.message); setDeleting(false) }
+  }
+
+  async function handleInvite(e: React.MouseEvent) {
+    e.stopPropagation()
+    const email = str('email')
+    if (!email) return alert('이메일 정보가 없어요')
+    if (!confirm(`${email} 에게 멤버 초대 이메일을 보낼까요?`)) return
+    setInviting(true)
+    try {
+      const res = await fetch('/api/invite-member', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || '초대 실패')
+      setInvited(true)
+      alert(`✓ ${email} 에게 초대 이메일을 보냈어요`)
+    } catch (err: any) {
+      alert('초대 실패: ' + err.message)
+    } finally {
+      setInviting(false)
+    }
   }
 
   return (
@@ -2605,6 +2630,15 @@ function HakkyoSubCard({ s, index, onDelete }: { s: Record<string, unknown>; ind
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+          {str('kind') === 'community' && str('email') && (
+            <button
+              onClick={handleInvite}
+              disabled={inviting || invited}
+              className={`text-[10px] border rounded px-1.5 py-0.5 transition-colors ${invited ? 'text-green-600 border-green-300 bg-green-50' : 'text-blue-500 hover:text-blue-700 border-blue-200 hover:border-blue-400'}`}
+            >
+              {invited ? '초대됨' : inviting ? '…' : '멤버 초대'}
+            </button>
+          )}
           <button
             onClick={handleDelete}
             disabled={deleting}
