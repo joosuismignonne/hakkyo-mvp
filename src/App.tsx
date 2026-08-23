@@ -41,6 +41,12 @@ function RouteTracker() {
 function AuthListener() {
   const navigate = useNavigate()
   useEffect(() => {
+    // invite 링크는 /#access_token=...&type=invite 형태로 와서 Site URL(홈)에 착지
+    const hash = window.location.hash
+    if (hash.includes('type=invite') || hash.includes('type=signup')) {
+      navigate('/reset-password', { replace: true })
+      return
+    }
     if (!supabase) return
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
