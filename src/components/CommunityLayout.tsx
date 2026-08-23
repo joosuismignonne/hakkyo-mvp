@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { supabase } from '../lib/supabase'
 import SiteDetails from './SiteDetails'
 import { programs, activities } from '../data/hakkyo'
 import { useLang, useT, UI } from '../lib/lang'
@@ -472,7 +471,7 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
                     {user.email?.[0]?.toUpperCase() ?? '?'}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sidebar-fg)', truncate: true, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sidebar-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {user.email}
                     </div>
                     <button onClick={signOut}
