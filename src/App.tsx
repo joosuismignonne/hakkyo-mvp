@@ -41,16 +41,22 @@ function RouteTracker() {
 function AuthListener() {
   const navigate = useNavigate()
   useEffect(() => {
-    // invite 링크는 /#access_token=...&type=invite 형태로 와서 Site URL(홈)에 착지
     const hash = window.location.hash
     if (hash.includes('type=invite') || hash.includes('type=signup')) {
       navigate('/reset-password', { replace: true })
       return
     }
     if (!supabase) return
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password', { replace: true })
+        return
+      }
+      if (event === 'SIGNED_IN' && session?.user) {
+        const skip = ['/reset-password', '/welcome', '/login']
+        if (skip.some(p => window.location.pathname.startsWith(p))) return
+        const { data } = await supabase!.from('profiles').select('nickname').eq('id', session.user.id).single()
+        if (!data?.nickname) navigate('/welcome', { replace: true })
       }
     })
     return () => subscription.unsubscribe()
