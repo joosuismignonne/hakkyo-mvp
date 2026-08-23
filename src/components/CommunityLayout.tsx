@@ -292,6 +292,10 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   const { lang, setLang } = useLang()
   const t = useT()
   const [tooltip, setTooltip] = useState<{ text: string; el: HTMLElement } | null>(null)
+  const [nickname, setNickname] = useState('')
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [editNickname, setEditNickname] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
 
   const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email)
 
@@ -314,6 +318,13 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
       if (chs.length > 0) setChannels(chs)
     })
   }, [])
+
+  useEffect(() => {
+    if (!user || !supabase) return
+    supabase.from('profiles').select('nickname').eq('id', user.id).single().then(({ data }) => {
+      if (data?.nickname) setNickname(data.nickname)
+    })
+  }, [user])
 
   useEffect(() => { setOpen(false) }, [location.pathname])
   useEffect(() => {
@@ -456,39 +467,92 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
 
           {/* User profile footer */}
           <div className="sidebar-divider" />
-          <div style={{ padding: collapsed ? '8px 4px' : '8px 12px 16px', flexShrink: 0 }}>
+          <div style={{ padding: collapsed ? '8px 4px 0' : '8px 12px 0', flexShrink: 0 }}>
             {user ? (
               collapsed ? (
-                <button onClick={signOut} title={user.email ?? ''}
-                  style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => { setEditNickname(nickname); setProfileOpen(true) }} title={nickname || user.email || ''}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px 8px 12px', background: 'none', border: 'none', cursor: 'pointer' }}>
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#0e0e12' }}>
-                    {user.email?.[0]?.toUpperCase() ?? '?'}
+                    {(nickname || user.email || '?')[0].toUpperCase()}
                   </div>
                 </button>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#0e0e12', flexShrink: 0 }}>
-                    {user.email?.[0]?.toUpperCase() ?? '?'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 4px 12px', cursor: 'pointer' }}
+                  onClick={() => { setEditNickname(nickname); setProfileOpen(true) }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#0e0e12', flexShrink: 0 }}>
+                    {(nickname || user.email || '?')[0].toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sidebar-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--sidebar-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {nickname || '닉네임 없음'}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>
                       {user.email}
                     </div>
-                    <button onClick={signOut}
-                      style={{ fontSize: 11, color: '#888', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginTop: 2 }}>
-                      로그아웃
-                    </button>
                   </div>
+                  <button onClick={e => { e.stopPropagation(); signOut() }}
+                    style={{ fontSize: 11, color: '#666', background: 'none', border: '1px solid #2a2a35', borderRadius: 6, padding: '3px 7px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    로그아웃
+                  </button>
                 </div>
               )
             ) : (
               <Link to="/login"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: 8, padding: '8px 4px', fontSize: 13, fontWeight: 600, color: '#888', textDecoration: 'none' }}>
+                style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: 8, padding: '8px 4px 12px', fontSize: 13, fontWeight: 600, color: '#888', textDecoration: 'none' }}>
                 <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2a2a35', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#555' }}>?</div>
                 {!collapsed && <span>로그인</span>}
               </Link>
             )}
           </div>
+
+          {/* Profile edit modal */}
+          {profileOpen && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={() => setProfileOpen(false)}>
+              <div style={{ background: '#18181f', borderRadius: 16, padding: '32px 28px', width: 340, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
+                onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#f5c542', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#0e0e12' }}>
+                    {(nickname || user?.email || '?')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{nickname || '닉네임 없음'}</div>
+                    <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{user?.email}</div>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#888', letterSpacing: 0.5, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>닉네임</label>
+                  <input
+                    type="text"
+                    value={editNickname}
+                    onChange={e => setEditNickname(e.target.value)}
+                    maxLength={20}
+                    placeholder="닉네임 입력"
+                    style={{ width: '100%', padding: '10px 14px', background: '#0e0e12', border: '1.5px solid #2a2a35', borderRadius: 8, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                    onFocus={e => e.target.style.borderColor = '#f5c542'}
+                    onBlur={e => e.target.style.borderColor = '#2a2a35'}
+                  />
+                </div>
+                <button
+                  disabled={savingProfile || editNickname.trim().length < 2}
+                  onClick={async () => {
+                    if (!user || !supabase || editNickname.trim().length < 2) return
+                    setSavingProfile(true)
+                    await supabase.from('profiles').upsert({ id: user.id, nickname: editNickname.trim() })
+                    setNickname(editNickname.trim())
+                    setSavingProfile(false)
+                    setProfileOpen(false)
+                  }}
+                  style={{ width: '100%', padding: '11px', background: savingProfile || editNickname.trim().length < 2 ? '#2a2a35' : '#f5c542', color: savingProfile || editNickname.trim().length < 2 ? '#555' : '#0e0e12', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: savingProfile || editNickname.trim().length < 2 ? 'not-allowed' : 'pointer', marginBottom: 10 }}>
+                  {savingProfile ? '저장 중…' : '저장'}
+                </button>
+                <button onClick={() => setProfileOpen(false)}
+                  style={{ width: '100%', padding: '10px', background: 'none', color: '#666', border: '1px solid #2a2a35', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
         </aside>
 
         <main className="app-main">
