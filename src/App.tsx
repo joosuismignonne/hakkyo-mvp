@@ -53,7 +53,7 @@ function AuthListener() {
         return
       }
       if (event === 'SIGNED_IN' && session?.user) {
-        const skip = ['/reset-password', '/welcome', '/login']
+        const skip = ['/reset-password', '/welcome', '/login', '/admin']
         if (skip.some(p => window.location.pathname.startsWith(p))) return
         const { data } = await supabase!.from('profiles').select('nickname').eq('id', session.user.id).single()
         if (!data?.nickname) navigate('/welcome', { replace: true })
