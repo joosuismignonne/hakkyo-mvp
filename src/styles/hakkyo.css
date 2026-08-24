@@ -896,9 +896,6 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   flex-shrink: 0;
   padding: 10px 16px 14px;
   border-top: 1px solid rgba(0,0,0,.07);
-  background: rgba(250,249,245,.95);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 .compose-lang-tabs {
   display: flex;
