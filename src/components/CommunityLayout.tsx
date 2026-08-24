@@ -95,7 +95,7 @@ function buildSearchIndex(lang: Lang, channels: Channel[]): SearchResult[] {
   channels.filter(c => c.slug !== 'board').forEach(ch => {
     results.push({
       Icon: slugIcon[ch.slug] || Hash,
-      title: channelMap[ch.name] || ch.name,
+      title: channelMap[ch.slug] || ch.name,
       sub: t.channelSub,
       href: slugToHref(ch.slug),
     })
@@ -546,10 +546,10 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
               return (
                 <div key={ch.id} className={`sidebar-ch-row${collapsed ? ' collapsed' : ''}`}>
                   <Link to={href} className={`sidebar-item sidebar-ch-item${isActive(href) ? ' active' : ''}${collapsed ? ' icon-only' : ''}`}
-                    onMouseEnter={e => showTip(e, channelMap[ch.name] || ch.name)}
+                    onMouseEnter={e => showTip(e, channelMap[ch.slug] || ch.name)}
                     onMouseLeave={hideTip}>
                     <span className="sidebar-item-icon sidebar-ch-hash"><ChanIcon slug={ch.slug} /></span>
-                    {!collapsed && <span>{channelMap[ch.name] || ch.name}</span>}
+                    {!collapsed && <span>{channelMap[ch.slug] || ch.name}</span>}
                   </Link>
                   {isAdmin && !collapsed && (
                     <button className="sidebar-ch-delete" onClick={() => handleDeleteChannel(ch)} title="채널 삭제">✕</button>
