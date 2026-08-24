@@ -92,9 +92,11 @@ export async function getLikedPostIds(userId: string, postIds: string[]): Promis
 export async function toggleLike(postId: string, userId: string, liked: boolean): Promise<void> {
   if (!supabase) return
   if (liked) {
-    await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', userId)
+    const { error } = await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', userId)
+    if (error) throw error
   } else {
-    await supabase.from('post_likes').upsert({ post_id: postId, user_id: userId })
+    const { error } = await supabase.from('post_likes').upsert({ post_id: postId, user_id: userId })
+    if (error) throw error
   }
 }
 

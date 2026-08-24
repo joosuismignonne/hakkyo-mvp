@@ -682,6 +682,18 @@ function AdminCompose({
   const [templateOpen, setTemplateOpen] = useState(false)
   const templateBtnRef = useRef<HTMLButtonElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
+  const composeCardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!expanded) return
+    function handleOutside(e: MouseEvent) {
+      if (composeCardRef.current && !composeCardRef.current.contains(e.target as globalThis.Node)) {
+        resetAll()
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [expanded])
 
   useEffect(() => {
     if (!user || !supabase) return
@@ -826,7 +838,7 @@ function AdminCompose({
   }
 
   return (
-    <div className="admin-compose-card">
+    <div className="admin-compose-card" ref={composeCardRef}>
       {/* Top row: title + lang tabs */}
       <div className="admin-compose-top">
         <input
@@ -1172,10 +1184,12 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
         </div>
       </div>
 
-      {isAdmin
-        ? <AdminCompose channel={channel} defaultAuthorName={displayName} onPosted={handlePosted} />
-        : <NonAdminCompose channel={channel} isLoggedIn={isLoggedIn} userEmail={user?.email ?? ''} onPosted={handlePosted} />
-      }
+      <div className="compose-outer">
+        {isAdmin
+          ? <AdminCompose channel={channel} defaultAuthorName={displayName} onPosted={handlePosted} />
+          : <NonAdminCompose channel={channel} isLoggedIn={isLoggedIn} userEmail={user?.email ?? ''} onPosted={handlePosted} />
+        }
+      </div>
     </div>
   )
 }

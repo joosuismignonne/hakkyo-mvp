@@ -891,17 +891,14 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
   .apply-question-label { font-size: 18px; }
 }
 
-/* ── Admin compose bar ──────────────────────────────────────────────────────── */
-.admin-compose {
+/* ── Compose outer wrapper ──────────────────────────────────────────────────── */
+.compose-outer {
+  flex-shrink: 0;
+  padding: 10px 16px 14px;
   border-top: 1px solid rgba(0,0,0,.07);
-  padding: 12px 18px;
   background: rgba(250,249,245,.95);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  flex-shrink: 0;
-}
-.admin-compose.expanded {
-  padding-top: 10px;
 }
 .compose-lang-tabs {
   display: flex;
