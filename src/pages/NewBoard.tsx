@@ -63,8 +63,13 @@ function NoticeShareDropdown({ noticeId }: { noticeId: string }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
+  const { lang } = useLang()
   const url = `${window.location.origin}/board?notice=${noticeId}`
   const encodedUrl = encodeURIComponent(url)
+  const shareLabel = lang === 'fr' ? 'Partager' : lang === 'en' ? 'Share' : '공유'
+  const copyLabel = lang === 'fr' ? '🔗 Copier le lien' : lang === 'en' ? '🔗 Copy link' : '🔗 링크 복사'
+  const igLabel = lang === 'fr' ? '📷 Instagram (copier le lien)' : lang === 'en' ? '📷 Instagram (copy link)' : '📷 Instagram (링크 복사)'
+  const onShare = lang === 'ko' ? '에 공유' : lang === 'fr' ? ' — Partager' : ' — Share'
 
   function toggle() {
     if (!open && btnRef.current) {
@@ -86,14 +91,14 @@ function NoticeShareDropdown({ noticeId }: { noticeId: string }) {
   return (
     <>
       <button ref={btnRef} className="feed-action" onClick={toggle}>
-        <ShareNetwork size={13} weight="bold" style={{marginRight:3}} /> 공유
+        <ShareNetwork size={13} weight="bold" style={{marginRight:3}} /> {shareLabel}
       </button>
       {open && createPortal(
         <div className="share-dropdown" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}>
-          <button onClick={() => { copyLink(url); setOpen(false) }}>🔗 링크 복사</button>
-          <a href={`https://www.threads.net/intent/post?text=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>🧵 Threads에 공유</a>
-          <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>𝕏 Twitter에 공유</a>
-          <button onClick={() => { copyLink(url); setOpen(false) }}>📷 Instagram (링크 복사)</button>
+          <button onClick={() => { copyLink(url); setOpen(false) }}>{copyLabel}</button>
+          <a href={`https://www.threads.net/intent/post?text=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>🧵 Threads{onShare}</a>
+          <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>𝕏 Twitter{onShare}</a>
+          <button onClick={() => { copyLink(url); setOpen(false) }}>{igLabel}</button>
         </div>,
         document.body
       )}
