@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { getNotices } from '../lib/db'
 import type { Notice } from '../types'
 import { useT, useLang } from '../lib/lang'
 import type { Lang } from '../lib/lang'
 import ChannelFeed from '../components/ChannelFeed'
-import { Bell, Megaphone, Heart, ChatCircle, CheckCircle, ShareNetwork } from '@phosphor-icons/react'
+import { Bell, Megaphone, Heart, ShareNetwork } from '@phosphor-icons/react'
 
 const FALLBACK: Notice[] = [
   {
@@ -48,41 +49,77 @@ function strip(html: string) {
   return html.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()
 }
 
+function copyLink(url: string) {
+  navigator.clipboard.writeText(url).then(() => {
+    const t = document.createElement('div')
+    t.textContent = '🔗 링크 복사됨'
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#11110f;color:#fff;padding:8px 18px;border-radius:99px;font-size:13px;z-index:9999;pointer-events:none;white-space:nowrap'
+    document.body.appendChild(t)
+    setTimeout(() => t.remove(), 2000)
+  }).catch(() => prompt('링크를 복사해 주세요:', url))
+}
+
+function NoticeShareDropdown({ noticeId }: { noticeId: string }) {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const url = `${window.location.origin}/board?notice=${noticeId}`
+  const encodedUrl = encodeURIComponent(url)
+
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      setPos({ top: r.bottom + 6, left: r.right - 170 })
+    }
+    setOpen(o => !o)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (btnRef.current && !btnRef.current.contains(e.target as globalThis.Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  return (
+    <>
+      <button ref={btnRef} className="feed-action" onClick={toggle}>
+        <ShareNetwork size={13} weight="bold" style={{marginRight:3}} /> 공유
+      </button>
+      {open && createPortal(
+        <div className="share-dropdown" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}>
+          <button onClick={() => { copyLink(url); setOpen(false) }}>🔗 링크 복사</button>
+          <a href={`https://www.threads.net/intent/post?text=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>🧵 Threads에 공유</a>
+          <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>𝕏 Twitter에 공유</a>
+          <button onClick={() => { copyLink(url); setOpen(false) }}>📷 Instagram (링크 복사)</button>
+        </div>,
+        document.body
+      )}
+    </>
+  )
+}
+
 function NoticeCard({ n, lang }: { n: Notice; lang: Lang }) {
   const [open, setOpen] = useState(false)
   const [liked, setLiked] = useState(false)
-  const [shared, setShared] = useState(false)
+  const t = useT()
   const tag = TYPE_TAG[n.type] ?? TYPE_TAG.notice
   const body = lang === 'en' ? (n.body_en || n.body_ko) : lang === 'fr' ? (n.body_fr || n.body_ko) : n.body_ko
   const title = lang === 'en' ? (n.title_en || n.title_ko) : lang === 'fr' ? (n.title_fr || n.title_ko) : n.title_ko
-  const preview = strip(body || '').slice(0, 200)
-  const hasMore = strip(body || '').length > 200
+  const stripped = strip(body || '')
+  const preview = stripped.slice(0, 200)
+  const hasMore = stripped.length > 200
   const hasBody = !!body
-  const hasMedia = /<img|<iframe/.test(body || '')
-
-  function handleShare() {
-    const url = `${window.location.origin}/board?notice=${n.id}`
-    if (navigator.share) {
-      navigator.share({ url }).catch(() => {})
-    } else {
-      navigator.clipboard.writeText(url).then(() => {
-        const t = document.createElement('div')
-        t.textContent = '링크 복사됨'
-        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#11110f;color:#fff;padding:8px 18px;border-radius:99px;font-size:13px;z-index:9999;pointer-events:none'
-        document.body.appendChild(t)
-        setTimeout(() => t.remove(), 2000)
-      })
-    }
-    setShared(true)
-    setTimeout(() => setShared(false), 2000)
-  }
+  const hasMedia = /<img|<iframe|<video/.test(body || '')
 
   return (
     <div className={`feed-card${n.is_pinned ? ' feed-card-pinned' : ''}`}>
       {n.is_pinned && (
         <div className="feed-pin-bar">
           <span className="feed-pin-dot" />
-          공지
+          {lang === 'fr' ? 'Épinglé' : lang === 'en' ? 'Pinned' : '공지'}
         </div>
       )}
       <div className="feed-card-inner">
@@ -101,7 +138,7 @@ function NoticeCard({ n, lang }: { n: Notice; lang: Lang }) {
         </div>
 
         {!open && (
-          <div className="feed-body">
+          <div className={`feed-body${hasMedia ? ' post-rich-body' : ''}`}>
             {hasMedia
               ? <div dangerouslySetInnerHTML={{ __html: body || '' }} />
               : <p>{preview}{hasMore ? '…' : ''}</p>
@@ -114,16 +151,15 @@ function NoticeCard({ n, lang }: { n: Notice; lang: Lang }) {
 
         <div className="feed-footer">
           <button className={`feed-action${liked ? ' liked' : ''}`} onClick={() => setLiked(l => !l)}>
-            <Heart size={13} weight={liked ? 'fill' : 'regular'} color={liked ? '#e53e3e' : undefined} style={{marginRight:3}} /> 좋아요
+            <Heart size={13} weight={liked ? 'fill' : 'regular'} color={liked ? '#e53e3e' : undefined} style={{marginRight:3}} />
+            {liked ? '1' : (lang === 'ko' ? '좋아요' : lang === 'fr' ? 'J\'aime' : 'Like')}
           </button>
           {(hasMore || hasMedia) && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
-              <ChatCircle size={13} weight="bold" style={{marginRight:3}} /> {open ? '접기' : '더 보기'}
+              {open ? t.home.collapse : t.home.readMore}
             </button>
           )}
-          <button className={`feed-action${shared ? ' shared' : ''}`} onClick={handleShare}>
-            {shared ? <CheckCircle size={13} weight="bold" style={{marginRight:3}} /> : <ShareNetwork size={13} weight="bold" style={{marginRight:3}} />} 공유
-          </button>
+          <NoticeShareDropdown noticeId={n.id} />
         </div>
       </div>
     </div>
