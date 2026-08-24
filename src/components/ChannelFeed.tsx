@@ -703,6 +703,8 @@ function AdminCompose({
     })
   }, [user])
 
+  useEffect(() => { resetAll() }, [channel])
+
   // One editor per language, but only one visible at a time
   const sharedExtensions = [
     StarterKit,
@@ -712,7 +714,7 @@ function AdminCompose({
     VideoNode,
   ]
   const editorKo = useEditor({
-    extensions: [...sharedExtensions, Placeholder.configure({ placeholder: `# ${channel} 채널 — 한국어 내용을 입력하세요` })],
+    extensions: [...sharedExtensions, Placeholder.configure({ placeholder: '편하게 이야기를 남겨 보세요…' })],
     content: '',
     editorProps: { attributes: { class: 'compose-rich-editor' } },
   })
