@@ -670,18 +670,16 @@ function AdminCompose({
   onPosted: (post: ChannelPost) => void
 }) {
   const { user } = useAuth()
-  const [expanded, setExpanded] = useState(false)
   const [activeLang, setActiveLang] = useState<Lang>('ko')
   const [authorName, setAuthorName] = useState(defaultAuthorName)
   const [titleKo, setTitleKo] = useState('')
-  const [avatar, setAvatar] = useState(() => {
-    try { return localStorage.getItem('admin-avatar') || '🐱' } catch { return '🐱' }
-  })
   const [avatarUrl, setAvatarUrl] = useState('')
   const [pinned, setPinned] = useState(false)
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [templateOpen, setTemplateOpen] = useState(false)
+  const templateBtnRef = useRef<HTMLButtonElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -786,7 +784,6 @@ function AdminCompose({
     editorFr?.commands.setContent('')
     setTitleKo('')
     setPinned(false)
-    setExpanded(false)
     setActiveLang('ko')
   }
 
@@ -802,7 +799,7 @@ function AdminCompose({
       const post = await createPost({
         channel,
         author_name: authorName || defaultAuthorName,
-        author_avatar: avatarUrl || avatar,
+        author_avatar: avatarUrl || '🐱',
         title_ko: titleKo, title_en: '', title_fr: '',
         body_ko: bodyKo, body_en: bodyEn, body_fr: bodyFr,
         is_pinned: pinned,
@@ -813,98 +810,113 @@ function AdminCompose({
     } finally { setSending(false) }
   }
 
-  const displayAvatar = avatarUrl || avatar
-  const avatarBg = avatarUrl ? 'transparent' : '#f5c542'
-
-  if (!expanded) {
-    return (
-      <div className="member-compose-collapsed" onClick={() => setExpanded(true)}>
-        <div className="member-compose-avatar" style={{ background: avatarBg }}>
-          {avatarUrl
-            ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-            : <Avatar avatar={displayAvatar} size={32} />}
-        </div>
-        <div className="member-compose-ph">하고 싶은 이야기를 써주세요…</div>
-      </div>
-    )
-  }
-
   return (
-    <div className="member-compose-expanded">
-      <div className="member-compose-header">
-        <div className="member-compose-avatar" style={{ background: avatarBg }}>
-          {avatarUrl
-            ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-            : <Avatar avatar={displayAvatar} size={32} />}
-        </div>
-        <span className="member-compose-name">{authorName}</span>
-        <button className="member-compose-close" onClick={resetAll}>✕</button>
-      </div>
-
-      {/* Template picker — only for channels that have templates */}
-      {POST_TEMPLATES[channel] && (
-        <div className="compose-template-bar">
-          <span className="compose-template-label">템플릿</span>
-          {POST_TEMPLATES[channel].map(tpl => (
-            <button
-              key={tpl.label}
-              className="compose-template-btn"
-              onClick={() => {
-                setTitleKo(tpl.title)
-                editorKo?.commands.setContent(tpl.ko)
-                editorEn?.commands.setContent(tpl.en)
-                editorFr?.commands.setContent(tpl.fr)
-              }}
-            >
-              {tpl.emoji} {tpl.label}
+    <div className="admin-compose">
+      {/* Top row: title + lang tabs */}
+      <div className="admin-compose-top">
+        <input
+          className="admin-compose-title"
+          placeholder="제목 (선택사항)"
+          value={titleKo}
+          onChange={e => setTitleKo(e.target.value)}
+        />
+        <div className="admin-compose-lang-pills">
+          {(['ko','en','fr'] as Lang[]).map(l => (
+            <button key={l}
+              className={`admin-compose-lang-pill${activeLang === l ? ' active' : ''}`}
+              onClick={() => setActiveLang(l)}>
+              {l === 'ko' ? '한' : l === 'en' ? 'EN' : 'FR'}
             </button>
           ))}
         </div>
-      )}
+      </div>
 
-      {/* Title */}
-      <input
-        className="member-compose-title"
-        placeholder="제목 (선택사항)"
-        value={titleKo}
-        onChange={e => setTitleKo(e.target.value)}
-      />
+      {/* Editor area */}
+      <div className="admin-compose-body">
+        <div style={{ display: activeLang === 'ko' ? 'block' : 'none' }}>
+          <EditorContent editor={editorKo} className="compose-rich-editor admin-compose-editor" />
+        </div>
+        <div style={{ display: activeLang === 'en' ? 'block' : 'none' }}>
+          <EditorContent editor={editorEn} className="compose-rich-editor admin-compose-editor" />
+        </div>
+        <div style={{ display: activeLang === 'fr' ? 'block' : 'none' }}>
+          <EditorContent editor={editorFr} className="compose-rich-editor admin-compose-editor" />
+        </div>
+      </div>
 
-      {/* Lang tabs */}
-      <div className="member-compose-lang-tabs">
-        {(['ko','en','fr'] as Lang[]).map(l => (
-          <button key={l} className={`member-compose-lang-tab${activeLang === l ? ' active' : ''}`}
-            onClick={() => setActiveLang(l)}>
-            {l === 'ko' ? '한국어' : l === 'en' ? 'English' : 'Français'}
+      {error && <div className="compose-error" style={{ padding: '0 14px 8px' }}>{error}</div>}
+
+      {/* Bottom toolbar */}
+      <div className="admin-compose-toolbar">
+        <div className="admin-compose-tools">
+          {/* Template dropdown */}
+          {POST_TEMPLATES[channel] && (
+            <div style={{ position: 'relative' }}>
+              <button ref={templateBtnRef} type="button" className="admin-tool-btn"
+                title="템플릿" onClick={() => setTemplateOpen(o => !o)}>
+                📋
+              </button>
+              {templateOpen && (
+                <div className="admin-template-dropdown">
+                  {POST_TEMPLATES[channel].map(tpl => (
+                    <button key={tpl.label} onClick={() => {
+                      setTitleKo(tpl.title)
+                      editorKo?.commands.setContent(tpl.ko)
+                      editorEn?.commands.setContent(tpl.en)
+                      editorFr?.commands.setContent(tpl.fr)
+                      setTemplateOpen(false)
+                    }}>
+                      {tpl.emoji} {tpl.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <span className="admin-tool-sep" />
+          {activeEditor && <>
+            <button type="button" className={`admin-tool-btn${activeEditor.isActive('bold') ? ' active' : ''}`}
+              title="Bold" onClick={() => activeEditor.chain().focus().toggleBold().run()}>B</button>
+            <button type="button" className={`admin-tool-btn italic${activeEditor.isActive('italic') ? ' active' : ''}`}
+              title="Italic" onClick={() => activeEditor.chain().focus().toggleItalic().run()}>I</button>
+            <button type="button" className={`admin-tool-btn${activeEditor.isActive('bulletList') ? ' active' : ''}`}
+              title="Bullet list" onClick={() => activeEditor.chain().focus().toggleBulletList().run()}>•</button>
+            <button type="button" className={`admin-tool-btn${activeEditor.isActive('blockquote') ? ' active' : ''}`}
+              title="Blockquote" onClick={() => activeEditor.chain().focus().toggleBlockquote().run()}>"</button>
+            <span className="admin-tool-sep" />
+            <button type="button" className="admin-tool-btn" title="파일 첨부"
+              disabled={uploading}
+              onClick={() => avatarInputRef.current?.click()}>
+              {uploading ? '⏳' : '📎'}
+            </button>
+            <button type="button" className="admin-tool-btn" title="YouTube"
+              onClick={() => {
+                const url = window.prompt('YouTube URL을 입력하세요')
+                if (url?.trim()) activeEditor.chain().focus().setYoutubeVideo({ src: url.trim(), width: 640, height: 360 }).run()
+              }}>▶</button>
+            <button type="button" className="admin-tool-btn" title="링크"
+              onClick={() => {
+                const url = window.prompt('링크 URL을 입력하세요')
+                if (url?.trim()) activeEditor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run()
+              }}>🔗</button>
+          </>}
+        </div>
+        <div className="admin-compose-actions">
+          <button className={`admin-pin-btn${pinned ? ' active' : ''}`}
+            onClick={() => setPinned(p => !p)} title="공지로 고정">
+            📌
           </button>
-        ))}
+          <button className="admin-send-btn" onClick={handleSend} disabled={sending}>
+            {sending ? '…' : '올리기'}
+          </button>
+        </div>
       </div>
 
-      {/* Toolbar */}
-      <ComposeToolbar editor={activeEditor} onFileUpload={handleFileUpload} uploading={uploading} />
-
-      {/* Editors */}
-      <div style={{ display: activeLang === 'ko' ? 'block' : 'none' }}>
-        <EditorContent editor={editorKo} className="compose-editor-wrap" />
-      </div>
-      <div style={{ display: activeLang === 'en' ? 'block' : 'none' }}>
-        <EditorContent editor={editorEn} className="compose-editor-wrap" />
-      </div>
-      <div style={{ display: activeLang === 'fr' ? 'block' : 'none' }}>
-        <EditorContent editor={editorFr} className="compose-editor-wrap" />
-      </div>
-
-      {error && <div className="compose-error">{error}</div>}
-      <div className="member-compose-footer">
-        <button className={`member-compose-pin${pinned ? ' active' : ''}`}
-          onClick={() => setPinned(p => !p)} title="공지로 고정">
-          📌 공지 고정
-        </button>
-        <button className="member-compose-send" onClick={handleSend} disabled={sending}>
-          {sending ? '전송 중…' : '올리기'}
-        </button>
-      </div>
-      <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} />
+      <input ref={avatarInputRef} type="file" accept="image/*,video/*" style={{ display: 'none' }}
+        onChange={async e => {
+          const file = e.target.files?.[0]
+          if (file) { await handleFileUpload(file); e.target.value = '' }
+        }} />
     </div>
   )
 }
