@@ -5185,7 +5185,7 @@ function CalendarAdmin() {
         if (data?.value_ko) {
           try {
             const parsed = JSON.parse(data.value_ko)
-            if (Array.isArray(parsed) && parsed.length > 0) { setEvents(parsed); return }
+            if (Array.isArray(parsed)) { setEvents(parsed); return }
           } catch {}
         }
         setEvents(DEFAULT_ADMIN_CAL)

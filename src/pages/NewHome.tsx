@@ -268,7 +268,8 @@ function useCalEvents(): CalEvent[] {
         if (data?.value_ko) {
           try {
             const parsed = JSON.parse(data.value_ko) as CalEvent[]
-            if (Array.isArray(parsed) && parsed.length > 0) setEvents(parsed)
+            // Use DB value as source of truth (even empty array means "admin cleared all")
+            if (Array.isArray(parsed)) setEvents(parsed)
           } catch {}
         }
       })
