@@ -401,7 +401,7 @@ function PostCard({
           </button>
           {viewCount > 0 && (
             <span className="feed-view-count">
-              👁 {viewCount.toLocaleString()}
+              {viewCount.toLocaleString()} views
             </span>
           )}
           {(hasMore || hasMedia) && !editing && (
