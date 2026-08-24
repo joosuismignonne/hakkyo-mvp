@@ -1188,6 +1188,11 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 .admin-compose-editor blockquote {
   border-left: 3px solid #e0dfd8; margin: 4px 0; padding-left: 12px; color: #777;
 }
+.admin-compose-hint {
+  padding: 0 14px 8px;
+  font-size: 11.5px;
+  color: #bbb;
+}
 .admin-compose-toolbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 6px 10px 8px;

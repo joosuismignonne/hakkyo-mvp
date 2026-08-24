@@ -876,6 +876,10 @@ function AdminCompose({
 
       {error && <div className="compose-error" style={{ padding: '0 14px 8px' }}>{error}</div>}
 
+      {POST_TEMPLATES[channel] && !error && (
+        <div className="admin-compose-hint">내용을 수정한 뒤 올리기를 눌러주세요.</div>
+      )}
+
       {/* Bottom toolbar */}
       <div className="admin-compose-toolbar">
         <div className="admin-compose-tools">
