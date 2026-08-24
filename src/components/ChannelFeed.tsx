@@ -30,7 +30,7 @@ import type { Lang } from '../lib/lang'
 import {
   getChannelPosts, createPost, deletePost, togglePin, updatePost, isAdminEmail,
   getLikedPostIds, toggleLike, getComments, getCommentCounts, addComment, updateComment, deleteComment,
-  type ChannelPost, type PostComment,
+  incrementPostView, type ChannelPost, type PostComment,
 } from '../lib/posts'
 import { Heart, ChatCircle, ShareNetwork, HandWaving, Lock as LockIcon } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
@@ -238,9 +238,32 @@ function PostCard({
   const [guestName, setGuestName] = useState('')
   const [editing, setEditing] = useState(false)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [viewCount, setViewCount] = useState(post.view_count ?? 0)
+  const cardRef = useRef<HTMLDivElement>(null)
   const isComposingRef = useRef(false)
   const { lang } = useLang()
   const t = useT()
+
+  // Count view once per session when card enters viewport
+  useEffect(() => {
+    const sessionKey = `viewed_post_${post.id}`
+    if (sessionStorage.getItem(sessionKey)) return
+    const el = cardRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          observer.disconnect()
+          sessionStorage.setItem(sessionKey, '1')
+          setViewCount(v => v + 1)
+          incrementPostView(post.id)
+        }
+      },
+      { threshold: 0.5 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [post.id])
 
   const title = pick({ ko: post.title_ko, en: post.title_en, fr: post.title_fr }, lang)
   const body  = pick({ ko: post.body_ko,  en: post.body_en,  fr: post.body_fr  }, lang)
@@ -310,7 +333,7 @@ function PostCard({
   }
 
   return (
-    <div className={`feed-card${post.is_pinned ? ' feed-card-pinned' : ''}`}>
+    <div ref={cardRef} className={`feed-card${post.is_pinned ? ' feed-card-pinned' : ''}`}>
       {post.is_pinned && (
         <div className="feed-pin-bar">
           <span className="feed-pin-dot" />
@@ -376,6 +399,11 @@ function PostCard({
             <ChatCircle size={13} weight="bold" style={{marginRight:3}} />
             {commentCount > 0 ? commentCount : (lang === 'ko' ? '댓글' : lang === 'fr' ? 'Commentaires' : 'Comments')}
           </button>
+          {viewCount > 0 && (
+            <span className="feed-view-count">
+              👁 {viewCount.toLocaleString()}
+            </span>
+          )}
           {(hasMore || hasMedia) && !editing && (
             <button className="feed-action" onClick={() => setOpen(o => !o)}>
               {open ? t.home.collapse : t.home.readMore}

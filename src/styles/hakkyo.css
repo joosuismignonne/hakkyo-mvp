@@ -586,6 +586,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 .feed-body li { margin-bottom: 3px; }
 .feed-body strong { font-weight: 700; color: #444; }
 .feed-footer { display: flex; align-items: center; gap: 1px; flex-wrap: wrap; margin-top: 6px; border-top: 1px solid #f0efe8; padding-top: 8px; }
+.feed-view-count { margin-left: auto; font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 3px; padding: 0 4px; }
 .feed-action {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 5px 10px; border-radius: 8px;

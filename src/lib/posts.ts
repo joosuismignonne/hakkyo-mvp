@@ -15,6 +15,7 @@ export interface ChannelPost {
   is_pinned: boolean
   created_at: string
   like_count?: number
+  view_count?: number
 }
 
 export interface PostComment {
@@ -95,6 +96,11 @@ export async function toggleLike(postId: string, userId: string, liked: boolean)
   } else {
     await supabase.from('post_likes').upsert({ post_id: postId, user_id: userId })
   }
+}
+
+export async function incrementPostView(postId: string): Promise<void> {
+  if (!supabase) return
+  await supabase.rpc('increment_post_view', { post_id: postId })
 }
 
 export async function getCommentCounts(postIds: string[]): Promise<Record<string, number>> {
