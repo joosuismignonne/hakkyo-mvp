@@ -94,9 +94,11 @@ export async function toggleLike(postId: string, userId: string, liked: boolean)
   if (liked) {
     const { error } = await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', userId)
     if (error) throw error
+    await supabase.rpc('decrement_post_like', { post_id: postId })
   } else {
     const { error } = await supabase.from('post_likes').upsert({ post_id: postId, user_id: userId })
     if (error) throw error
+    await supabase.rpc('increment_post_like', { post_id: postId })
   }
 }
 
