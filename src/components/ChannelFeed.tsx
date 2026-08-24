@@ -670,6 +670,7 @@ function AdminCompose({
   onPosted: (post: ChannelPost) => void
 }) {
   const { user } = useAuth()
+  const [expanded, setExpanded] = useState(false)
   const [activeLang, setActiveLang] = useState<Lang>('ko')
   const [authorName, setAuthorName] = useState(defaultAuthorName)
   const [titleKo, setTitleKo] = useState('')
@@ -784,6 +785,7 @@ function AdminCompose({
     editorFr?.commands.setContent('')
     setTitleKo('')
     setPinned(false)
+    setExpanded(false)
     setActiveLang('ko')
   }
 
@@ -810,8 +812,21 @@ function AdminCompose({
     } finally { setSending(false) }
   }
 
+  if (!expanded) {
+    return (
+      <div className="admin-compose-collapsed" onClick={() => setExpanded(true)}>
+        <div className="admin-compose-avatar">
+          {avatarUrl
+            ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            : <span style={{ fontSize: 14 }}>✏️</span>}
+        </div>
+        <span className="admin-compose-ph">하고 싶은 이야기를 써주세요…</span>
+      </div>
+    )
+  }
+
   return (
-    <div className="admin-compose">
+    <div className="admin-compose-card">
       {/* Top row: title + lang tabs */}
       <div className="admin-compose-top">
         <input
@@ -821,6 +836,7 @@ function AdminCompose({
           onChange={e => setTitleKo(e.target.value)}
         />
         <div className="admin-compose-lang-pills">
+          <button className="member-compose-close" onClick={resetAll} style={{ marginRight: 4 }}>✕</button>
           {(['ko','en','fr'] as Lang[]).map(l => (
             <button key={l}
               className={`admin-compose-lang-pill${activeLang === l ? ' active' : ''}`}

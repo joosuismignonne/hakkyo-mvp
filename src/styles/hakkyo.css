@@ -1126,15 +1126,28 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 .member-compose-send:disabled { opacity: .3; cursor: not-allowed; }
 
 /* ── Admin compose (Slack-style) ─────────────────────────────────────────── */
-.admin-compose {
+.admin-compose-collapsed {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: #fff;
+  border: 1.5px solid #e0dfd8; border-radius: 12px;
+  cursor: text; transition: border-color .15s, box-shadow .15s;
+}
+.admin-compose-collapsed:hover { border-color: #b0afaa; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.admin-compose-avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  background: #f5c542; display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.admin-compose-ph { color: #c0bfb8; font-size: 14px; flex: 1; }
+.admin-compose-card {
   background: #fff;
   border: 1.5px solid #d8d7d0;
   border-radius: 14px;
   overflow: visible;
-  margin: 0 0 8px;
+  margin: 0 0 4px;
   transition: border-color .15s, box-shadow .15s;
 }
-.admin-compose:focus-within {
+.admin-compose-card:focus-within {
   border-color: #b0afaa;
   box-shadow: 0 2px 12px rgba(0,0,0,.08);
 }
