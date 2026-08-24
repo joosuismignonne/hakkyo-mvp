@@ -52,11 +52,21 @@ const DEFAULT_THEME = {
   color_main_bg: '#f7f7f5',
 }
 
+const THEME_CACHE_KEY = 'hakkyo_theme'
+
 function applyTheme(t: typeof DEFAULT_THEME) {
   const r = document.documentElement
   r.style.setProperty('--sidebar-bg', t.color_sidebar)
   r.style.setProperty('--sidebar-accent', t.color_accent)
   r.style.setProperty('--main-bg', t.color_main_bg)
+}
+
+function getCachedTheme(): typeof DEFAULT_THEME | null {
+  try { return JSON.parse(localStorage.getItem(THEME_CACHE_KEY) || 'null') } catch { return null }
+}
+
+function setCachedTheme(t: typeof DEFAULT_THEME) {
+  try { localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(t)) } catch {}
 }
 
 type SearchIcon = Icon
@@ -380,17 +390,20 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email)
 
   useEffect(() => {
-    applyTheme(DEFAULT_THEME)
+    // Apply cached theme immediately to prevent flash
+    applyTheme(getCachedTheme() ?? DEFAULT_THEME)
     if (!supabase) return
 
     supabase.from('site_content').select('key,value_ko').eq('page', 'theme').then(({ data }) => {
       if (!data?.length) return
       const get = (k: string) => data.find(r => r.key === k)?.value_ko
-      applyTheme({
+      const theme = {
         color_sidebar: get('color_sidebar') || DEFAULT_THEME.color_sidebar,
         color_accent:  get('color_accent')  || DEFAULT_THEME.color_accent,
         color_main_bg: get('color_main_bg') || DEFAULT_THEME.color_main_bg,
-      })
+      }
+      applyTheme(theme)
+      setCachedTheme(theme)
     })
 
     // Load from new channels table
