@@ -65,35 +65,43 @@ function copyLink(url: string) {
 
 function ShareDropdown({ channel, postId }: { channel: string; postId: string }) {
   const [open, setOpen] = useState(false)
-  const wrapRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
   const url = `${window.location.origin}/community/${channel}?post=${postId}`
   const encodedUrl = encodeURIComponent(url)
+
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      setPos({ top: r.bottom + 6, left: r.right - 170 })
+    }
+    setOpen(o => !o)
+  }
 
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as globalThis.Node)) {
-        setOpen(false)
-      }
+      if (btnRef.current && !btnRef.current.contains(e.target as globalThis.Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
   return (
-    <div className="share-dropdown-wrap" ref={wrapRef}>
-      <button className="feed-action" onClick={() => setOpen(o => !o)}>
+    <>
+      <button ref={btnRef} className="feed-action" onClick={toggle}>
         <ShareNetwork size={13} weight="bold" style={{marginRight:3}} /> 공유
       </button>
-      {open && (
-        <div className="share-dropdown">
+      {open && createPortal(
+        <div className="share-dropdown" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}>
           <button onClick={() => { copyLink(url); setOpen(false) }}>🔗 링크 복사</button>
           <a href={`https://www.threads.net/intent/post?text=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>🧵 Threads에 공유</a>
           <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>𝕏 Twitter에 공유</a>
           <button onClick={() => { copyLink(url); setOpen(false) }}>📷 Instagram (링크 복사 후 붙여넣기)</button>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   )
 }
 
