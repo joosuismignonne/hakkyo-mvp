@@ -1635,7 +1635,7 @@ a,button,input,select,textarea,[data-cursor]{font-family:inherit}
 .share-dropdown {
   position: absolute;
   bottom: calc(100% + 6px);
-  left: 0;
+  right: 0;
   background: #fff;
   border: 1px solid #e0dfd8;
   border-radius: 10px;
