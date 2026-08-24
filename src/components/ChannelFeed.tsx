@@ -38,6 +38,20 @@ import { supabase } from '../lib/supabase'
 // Channels where only admins can write (non-admins see a locked state)
 export const ADMIN_ONLY_CHANNELS = new Set(['board', 'exchange'])
 
+// ── localStorage-backed like cache ─────────────────────────────────────────
+function likesKey(userId: string) { return `hakkyo_likes_${userId}` }
+function getLikedLocal(userId: string): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(likesKey(userId)) || '[]')) } catch { return new Set() }
+}
+function setLikedLocal(userId: string, ids: Set<string>) {
+  try { localStorage.setItem(likesKey(userId), JSON.stringify([...ids])) } catch {}
+}
+function toggleLikedLocal(userId: string, postId: string, liked: boolean) {
+  const ids = getLikedLocal(userId)
+  liked ? ids.delete(postId) : ids.add(postId)
+  setLikedLocal(userId, ids)
+}
+
 // ── Relative time ──────────────────────────────────────────────────────────
 function relTime(iso: string, lang: Lang): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -293,14 +307,15 @@ function PostCard({
     if (likePending) return
     setLikePending(true)
     const wasLiked = liked
-    // Optimistic update — show immediately, revert only on error
     setLiked(!wasLiked)
     setLikeCount(c => wasLiked ? Math.max(0, c - 1) : c + 1)
+    toggleLikedLocal(userId, post.id, wasLiked)
     try {
       await toggleLike(post.id, userId, wasLiked)
     } catch {
       setLiked(wasLiked)
       setLikeCount(c => wasLiked ? c + 1 : Math.max(0, c - 1))
+      toggleLikedLocal(userId, post.id, !wasLiked) // revert local too
     } finally {
       setLikePending(false)
     }
@@ -1039,15 +1054,22 @@ export default function ChannelFeed({ channel, header, children }: ChannelFeedPr
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // Seed localStorage likes immediately so UI shows correct state before DB responds
+    if (user) setLikedIds(getLikedLocal(user.id))
     getChannelPosts(channel)
       .then(async data => {
         setPosts(data)
         const ids = data.map(p => p.id)
-        const [liked, counts] = await Promise.all([
+        const [dbLiked, counts] = await Promise.all([
           user && ids.length > 0 ? getLikedPostIds(user.id, ids) : Promise.resolve(new Set<string>()),
           ids.length > 0 ? getCommentCounts(ids) : Promise.resolve({}),
         ])
-        setLikedIds(liked)
+        // Merge DB result into localStorage and use the union
+        if (user && dbLiked.size > 0) {
+          const merged = new Set([...getLikedLocal(user.id), ...dbLiked])
+          setLikedLocal(user.id, merged)
+          setLikedIds(merged)
+        }
         setCommentCounts(counts)
       })
       .finally(() => setLoading(false))
