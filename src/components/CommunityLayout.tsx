@@ -278,6 +278,83 @@ function SidebarTooltip({ text, anchorRef }: { text: string; anchorRef: HTMLElem
   )
 }
 
+// ── Sidebar chat trigger ───────────────────────────────────────────────────
+import { createPortal } from 'react-dom'
+
+function SidebarChatTrigger({ collapsed }: { collapsed: boolean }) {
+  const { lang } = useLang()
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ bottom: 0, left: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const [email, setEmail] = useState('')
+  const [msg, setMsg] = useState('')
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
+
+  const WEBHOOK = (import.meta as any).env?.VITE_DISCORD_WEBHOOK as string | undefined
+
+  function openPanel() {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      setPos({ bottom: window.innerHeight - r.bottom, left: r.right + 10 })
+    }
+    setOpen(true)
+  }
+
+  async function handleSend() {
+    if (!email.trim() || !msg.trim()) return
+    setStatus('sending')
+    try {
+      if (!WEBHOOK) throw new Error('no webhook')
+      await fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeds: [{ title: '💬 HAKKYO 문의', color: 0x6C63FF, fields: [{ name: '이메일', value: email }, { name: '메세지', value: msg }], timestamp: new Date().toISOString() }] }),
+      })
+      setStatus('success')
+    } catch { setStatus('error') }
+  }
+
+  const label = lang === 'fr' ? 'Des questions ?' : lang === 'en' ? 'Any questions?' : '궁금한 점이 있으신가요?'
+
+  return (
+    <>
+      <button ref={btnRef} onClick={openPanel}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: collapsed ? '8px' : '8px 12px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sidebar-fg, #ccc)', fontSize: 13, fontWeight: 500, width: '100%', borderRadius: 8, transition: 'background .15s', justifyContent: collapsed ? 'center' : 'flex-start' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.07)') }
+        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+        title={label}
+      >
+        <span style={{ fontSize: 16 }}>🐱</span>
+        {!collapsed && <span>{label}</span>}
+      </button>
+
+      {open && createPortal(
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 8999 }} onClick={() => setOpen(false)} />
+          <div style={{ position: 'fixed', bottom: pos.bottom, left: pos.left, zIndex: 9000, width: 300, background: '#141418', border: '1px solid rgba(255,255,255,.1)', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,.5)', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>JOO에게 메세지 남기기</span>
+              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#888', fontSize: 16, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+            </div>
+            {status === 'success' ? (
+              <div style={{ padding: 20, color: '#aaa', fontSize: 13, textAlign: 'center' }}>메세지를 보냈어요! 곧 답변드릴게요 🐱</div>
+            ) : (
+              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <p style={{ fontSize: 12, color: '#888', margin: 0, lineHeight: 1.5 }}>궁금한 점이 있으시면 메세지를 남겨주세요. JOO가 확인 후 답변드릴게요!</p>
+                <input className="chat-input" type="email" placeholder="이메일 주소" value={email} onChange={e => setEmail(e.target.value)} disabled={status === 'sending'} />
+                <textarea className="chat-input chat-textarea" placeholder="메세지를 입력하세요…" value={msg} onChange={e => setMsg(e.target.value)} disabled={status === 'sending'} rows={3} />
+                {status === 'error' && <p style={{ color: '#f87171', fontSize: 12, margin: 0 }}>전송에 실패했어요. 다시 시도해주세요.</p>}
+                <button className="chat-send-btn" onClick={handleSend} disabled={status === 'sending'}>{status === 'sending' ? '전송 중…' : '보내기'}</button>
+              </div>
+            )}
+          </div>
+        </>,
+        document.body
+      )}
+    </>
+  )
+}
+
 // ── Main layout ────────────────────────────────────────────────────────────
 export default function CommunityLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
@@ -468,6 +545,9 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
               )
             })}
           </nav>
+
+          {/* Chat widget trigger */}
+          <SidebarChatTrigger collapsed={collapsed} />
 
           {/* User profile footer */}
           <div className="sidebar-divider" />

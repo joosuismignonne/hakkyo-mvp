@@ -110,7 +110,6 @@ export default function App() {
           <Route path="/community/:id" element={<Navigate to="/" replace />} />
         </Routes>
         <Analytics />
-        <ChatWidget />
       </BrowserRouter>
     </AuthProvider>
     </LangProvider>
