@@ -36,7 +36,7 @@ import { Heart, ChatCircle, ShareNetwork, HandWaving, Lock as LockIcon } from '@
 import { supabase } from '../lib/supabase'
 
 // Channels where only admins can write (non-admins see a locked state)
-export const ADMIN_ONLY_CHANNELS = new Set(['board', 'exchange'])
+export const ADMIN_ONLY_CHANNELS = new Set(['board'])
 
 // ── localStorage-backed like cache ─────────────────────────────────────────
 function likesKey(userId: string) { return `hakkyo_likes_${userId}` }
@@ -1048,6 +1048,77 @@ function MemberCompose({
   )
 }
 
+// ── Guest compose (no login required) ────────────────────────────────────
+function GuestCompose({ channel, onPosted }: { channel: string; onPosted: (post: ChannelPost) => void }) {
+  const [expanded, setExpanded] = useState(false)
+  const [guestName, setGuestName] = useState('')
+  const [body, setBody] = useState(  '')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSend() {
+    const name = guestName.trim() || '익명'
+    if (!body.trim()) { setError('내용을 입력해 주세요'); return }
+    setSending(true); setError('')
+    try {
+      const post = await createPost({
+        channel,
+        author_name: name,
+        author_avatar: name[0]?.toUpperCase() || '?',
+        title_ko: '', title_en: '', title_fr: '',
+        body_ko: body.trim(), body_en: '', body_fr: '',
+        is_pinned: false,
+      })
+      if (post) { onPosted(post); setBody(''); setGuestName(''); setExpanded(false) }
+    } catch (e: any) {
+      setError(e.message || '오류가 발생했어요')
+    } finally { setSending(false) }
+  }
+
+  if (!expanded) {
+    return (
+      <div className="member-compose-collapsed" onClick={() => setExpanded(true)}>
+        <div className="member-compose-avatar" style={{ background: '#e0dfd8' }}>
+          <span style={{ color: '#888' }}>?</span>
+        </div>
+        <div className="member-compose-ph">하고 싶은 이야기를 써주세요…</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="member-compose-expanded">
+      <div className="member-compose-header">
+        <div className="member-compose-avatar" style={{ background: '#e0dfd8' }}>
+          <span style={{ color: '#888' }}>{guestName.trim()[0]?.toUpperCase() || '?'}</span>
+        </div>
+        <input
+          className="member-compose-name-input"
+          placeholder="이름 (선택)"
+          value={guestName}
+          onChange={e => setGuestName(e.target.value)}
+          maxLength={30}
+        />
+        <button className="member-compose-close" onClick={() => { setExpanded(false); setBody(''); setGuestName(''); setError('') }}>✕</button>
+      </div>
+      <textarea
+        className="member-compose-textarea"
+        placeholder="하고 싶은 이야기를 써주세요…"
+        value={body}
+        onChange={e => setBody(e.target.value)}
+        rows={4}
+        autoFocus
+      />
+      {error && <div className="compose-error">{error}</div>}
+      <div className="member-compose-footer">
+        <button className="member-compose-send" onClick={handleSend} disabled={sending || !body.trim()}>
+          {sending ? '전송 중…' : '올리기'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Non-admin compose stub ─────────────────────────────────────────────────
 function NonAdminCompose({
   channel, isLoggedIn, userEmail, onPosted,
@@ -1070,16 +1141,7 @@ function NonAdminCompose({
     )
   }
   if (!isLoggedIn) {
-    return (
-      <div className="compose-locked compose-locked-join">
-        <span className="compose-locked-icon"><HandWaving size={18} weight="bold" /></span>
-        <div>
-          <div className="compose-locked-title">커뮤니티에 가입하면 글을 올릴 수 있어요</div>
-          <div className="compose-locked-sub">HAKKYO 커뮤니티 멤버가 되면 모든 채널에서 자유롭게 소통할 수 있어요</div>
-        </div>
-        <a href="/apply/community" className="compose-locked-btn"><HandWaving size={14} weight="bold" style={{marginRight:4}} />커뮤니티 신청</a>
-      </div>
-    )
+    return <GuestCompose channel={channel} onPosted={onPosted} />
   }
   return <MemberCompose channel={channel} userEmail={userEmail} onPosted={onPosted} />
 }
